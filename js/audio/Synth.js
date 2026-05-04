@@ -3,6 +3,13 @@
  * Handles oscillator creation and audio synthesis
  */
 class SimpleSynth {
+    static getNoteNameStatic(noteIndex) {
+        const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const octave = Math.floor(noteIndex / 12) + 4;
+        const note = notes[noteIndex % 12];
+        return note + octave;
+    }
+
     constructor(audioContext) {
         this.audioContext = audioContext;
         this.oscillators = new Map();

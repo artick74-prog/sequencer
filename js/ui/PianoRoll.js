@@ -310,7 +310,7 @@ class PianoRoll {
      * Get note name at position for tooltip
      */
     getNoteNameAtPosition(step, note) {
-        return new SimpleSynth(null).getNoteName(note);
+        return SimpleSynth.getNoteNameStatic(note);
     }
 }
 
