@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Sequencer - Retro Tracker Style</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎵 WEB SEQUENCER</h1>
+            <div class="header-info">
+                <span id="currentBPM">120 BPM</span>
+                <span id="currentStep">Step: 1/16</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="controls-group">
+                    <label for="tempoSlider">Tempo (BPM):</label>
+                    <input type="range" id="tempoSlider" min="30" max="300" value="120" class="slider">
+                    <span id="tempoValue">120</span>
+                </div>
+
+                <div class="controls-group">
+                    <button id="playBtn" class="btn btn-play">▶ Play</button>
+                    <button id="stopBtn" class="btn btn-stop">⏹ Stop</button>
+                    <button id="clearBtn" class="btn btn-clear">🗑 Clear All</button>
+                </div>
+
+                <div class="controls-group">
+                    <label for="waveformSelect">Wave:</label>
+                    <select id="waveformSelect" class="select">
+                        <option value="square">Square</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="sawtooth">Sawtooth</option>
+                    </select>
+                </div>
+
+                <div class="controls-group">
+                    <label for="volumeSlider">Volume:</label>
+                    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.3" class="slider">
+                    <span id="volumeValue">30%</span>
+                </div>
+
+                <div class="controls-group midi-controls">
+                    <label for="midiOutput">MIDI Output:</label>
+                    <select id="midiOutput" class="select">
+                        <option value="">None</option>
+                    </select>
+                    <button id="midiExportBtn" class="btn btn-secondary">📥 Export MIDI</button>
+                </div>
+            </div>
+
+            <!-- Piano Roll -->
+            <div class="piano-roll-container">
+                <div class="note-labels">
+                    <div class="note-label" data-note="0">C4</div>
+                    <div class="note-label" data-note="1">D4</div>
+                    <div class="note-label" data-note="2">E4</div>
+                    <div class="note-label" data-note="3">F4</div>
+                    <div class="note-label" data-note="4">G4</div>
+                    <div class="note-label" data-note="5">A4</div>
+                    <div class="note-label" data-note="6">B4</div>
+                    <div class="note-label" data-note="7">C5</div>
+                    <div class="note-label" data-note="8">D5</div>
+                    <div class="note-label" data-note="9">E5</div>
+                    <div class="note-label" data-note="10">F5</div>
+                    <div class="note-label" data-note="11">G5</div>
+                </div>
+
+                <canvas id="pianoRoll" class="piano-roll-canvas"></canvas>
+            </div>
+
+            <!-- Track Information -->
+            <div class="track-info">
+                <div class="track-selector">
+                    <button class="track-btn active" data-track="0">Track 1</button>
+                    <button class="track-btn" data-track="1">Track 2</button>
+                    <button class="track-btn" data-track="2">Track 3</button>
+                </div>
+                <div class="track-controls">
+                    <label for="trackVolume">Track Volume:</label>
+                    <input type="range" id="trackVolume" min="0" max="1" step="0.01" value="0.5" class="slider">
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Space: Play/Stop | Del: Clear Step | Use Mouse to place notes on Piano Roll</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/core/State.js"></script>
+    <script src="js/audio/Synth.js"></script>
+    <script src="js/audio/AudioEngine.js"></script>
+    <script src="js/midi/MidiOutput.js"></script>
+    <script src="js/midi/MidiExporter.js"></script>
+    <script src="js/core/Sequencer.js"></script>
+    <script src="js/ui/PianoRoll.js"></script>
+    <script src="js/ui/Controls.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
