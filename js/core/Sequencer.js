@@ -109,6 +109,7 @@ class Sequencer {
         // Play note from each track if it has a note at this step
         appState.tracks.forEach((track, trackIndex) => {
             const noteIndex = track.notes[stepIndex];
+            const instrument = track.instrument || 'synth';
 
             if (noteIndex !== null) {
                 // Play internal audio
@@ -117,17 +118,19 @@ class Sequencer {
                     trackIndex,
                     noteIndex,
                     noteDuration,
-                    appState.waveform,
-                    track.volume
+                    instrument === 'drums' ? 'square' : appState.waveform,
+                    track.volume,
+                    instrument
                 );
 
                 // Send MIDI if enabled
                 if (this.midiEnabled && midiManager.isEnabled()) {
-                    midiManager.noteOn(noteIndex, 100, trackIndex);
+                    const midiChannel = instrument === 'drums' ? 9 : trackIndex;
+                    midiManager.noteOn(noteIndex, 100, midiChannel);
 
                     // Schedule MIDI note off
                     setTimeout(() => {
-                        midiManager.noteOff(noteIndex, 64, trackIndex);
+                        midiManager.noteOff(noteIndex, 64, midiChannel);
                     }, noteDuration * 1000);
                 }
             }

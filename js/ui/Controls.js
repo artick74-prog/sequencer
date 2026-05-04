@@ -29,6 +29,7 @@ class UIControls {
 
             // Selects
             waveformSelect: document.getElementById('waveformSelect'),
+            instrumentButtons: document.querySelectorAll('.instrument-btn'),
             midiOutput: document.getElementById('midiOutput'),
 
             // Info displays
@@ -39,6 +40,7 @@ class UIControls {
 
             // Track selection
             trackBtns: document.querySelectorAll('.track-btn'),
+            selectedInstrument: document.getElementById('selectedInstrument'),
 
             // Note labels
             noteLabels: document.querySelectorAll('.note-label')
@@ -88,6 +90,18 @@ class UIControls {
             sequencer.setWaveform(e.target.value);
         });
 
+        // Instrument selection buttons
+        this.elements.instrumentButtons?.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const instrument = e.target.dataset.instrument;
+                const trackIndex = appState.selectedTrack;
+                appState.setInstrument(trackIndex, instrument);
+                this.updateInstrumentButtons(instrument);
+                this.toggleInstrumentUI(trackIndex);
+                this.updateInstrumentLabels();
+            });
+        });
+
         // Track Volume
         this.elements.trackVolume?.addEventListener('input', (e) => {
             const volume = parseFloat(e.target.value);
@@ -129,8 +143,23 @@ class UIControls {
         // Subscribe to state changes
         appState.subscribe('stateChange', () => this.updateDisplays());
         appState.subscribe('stepChange', () => this.updateStepDisplay());
-        appState.subscribe('trackChange', () => this.updateTrackSelection());
+        appState.subscribe('trackChange', () => {
+            this.updateTrackSelection();
+            this.updateTrackVolume();
+            this.updateInstrumentLabels();
+            this.toggleInstrumentUI(appState.selectedTrack);
+        });
         appState.subscribe('playStateChange', () => this.updatePlayStopButtons());
+
+        // Initialize UI from state
+        this.updateTrackSelection();
+        this.updateTrackVolume();
+        this.updateInstrumentLabels();
+        this.toggleInstrumentUI(appState.selectedTrack);
+        if (this.elements.selectedInstrument) {
+            const instrument = appState.tracks[appState.selectedTrack].instrument || 'synth';
+            this.elements.selectedInstrument.textContent = instrument === 'drums' ? 'Drums' : 'Synth';
+        }
     }
 
     /**
@@ -262,6 +291,15 @@ class UIControls {
                 btn.classList.remove('active');
             }
         });
+
+        const trackIndex = appState.selectedTrack;
+        const trackInstrument = appState.tracks[trackIndex].instrument || 'synth';
+        this.updateInstrumentButtons(trackInstrument);
+        if (this.elements.selectedInstrument) {
+            this.elements.selectedInstrument.textContent = trackInstrument === 'drums' ? 'Drums' : 'Synth';
+        }
+        this.toggleInstrumentUI(trackIndex);
+        this.updateInstrumentLabels();
     }
 
     /**
@@ -271,6 +309,45 @@ class UIControls {
         const trackIndex = appState.selectedTrack;
         const volume = appState.tracks[trackIndex].volume;
         this.elements.trackVolume.value = volume;
+    }
+
+    updateInstrumentButtons(activeInstrument) {
+        this.elements.instrumentButtons.forEach(btn => {
+            if (btn.dataset.instrument === activeInstrument) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * Enable/disable waveform control depending on instrument type
+     */
+    toggleInstrumentUI(trackIndex) {
+        const instrument = appState.tracks[trackIndex].instrument || 'synth';
+        if (instrument === 'drums') {
+            this.elements.waveformSelect.disabled = true;
+            this.elements.waveformSelect.parentElement.style.opacity = '0.6';
+        } else {
+            this.elements.waveformSelect.disabled = false;
+            this.elements.waveformSelect.parentElement.style.opacity = '1';
+        }
+    }
+
+    /**
+     * Update note labels for selected instrument
+     */
+    updateInstrumentLabels() {
+        const trackIndex = appState.selectedTrack;
+        const instrument = appState.tracks[trackIndex].instrument || 'synth';
+
+        const synthLabels = ['C4','D4','E4','F4','G4','A4','B4','C5','D5','E5','F5','G5'];
+        const drumLabels = ['Kick','Snare','Hi-Hat','Clap','Tom','Rim','Perc','Shaker','Low Tom','Mid Tom','Open Hat','Crash'];
+
+        this.elements.noteLabels.forEach((label, index) => {
+            label.textContent = instrument === 'drums' ? drumLabels[index] : synthLabels[index];
+        });
     }
 
     /**

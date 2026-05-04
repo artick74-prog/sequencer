@@ -71,49 +71,145 @@ class AudioEngine {
      * Update timeline and playback
      * Called by sequencer to trigger notes at specific steps
      */
-    playStep(trackIndex, noteIndex, duration, waveform = 'square', volume = 0.5) {
+    playStep(trackIndex, noteIndex, duration, waveform = 'square', volume = 0.5, instrument = 'synth') {
         if (noteIndex === null || noteIndex === undefined) return;
 
-        const synth = this.synths[trackIndex];
         const trackGain = this.trackGains[trackIndex];
+        const finalVolume = volume * appState.tracks[trackIndex].volume * appState.masterVolume;
 
-        // Store original destination and redirect to track gain
+        if (instrument === 'drums') {
+            this.playDrum(trackGain, noteIndex, duration, finalVolume);
+            return;
+        }
+
+        const synth = this.synths[trackIndex];
         const oscillator = this.audioContext.createOscillator();
         const gain = this.audioContext.createGain();
 
         oscillator.type = waveform;
         oscillator.frequency.value = synth.getFrequency(noteIndex);
-
-        // Calculate volume considering track and master volumes
-        const finalVolume = volume * appState.tracks[trackIndex].volume * appState.masterVolume;
         gain.gain.value = finalVolume;
 
-        // ADSR Envelope
         const now = this.audioContext.currentTime;
         const attackTime = 0.01;
         const decayTime = 0.1;
         const sustainLevel = 0.7;
         const releaseTime = 0.1;
 
-        // Attack
         gain.gain.setValueAtTime(0, now);
         gain.gain.linearRampToValueAtTime(finalVolume, now + attackTime);
-
-        // Decay
         gain.gain.linearRampToValueAtTime(finalVolume * sustainLevel, now + attackTime + decayTime);
 
-        // Release
         const cutoffTime = now + duration - releaseTime;
         gain.gain.setValueAtTime(finalVolume * sustainLevel, cutoffTime);
         gain.gain.linearRampToValueAtTime(0, cutoffTime + releaseTime);
 
-        // Connect and play
         oscillator.connect(gain);
         gain.connect(trackGain);
 
         const stopTime = now + duration;
         oscillator.start(now);
         oscillator.stop(stopTime);
+    }
+
+    playDrum(trackGain, noteIndex, duration, volume) {
+        const now = this.audioContext.currentTime;
+        const drumType = noteIndex;
+
+        const createNoiseSource = () => {
+            const bufferSource = this.audioContext.createBufferSource();
+            bufferSource.buffer = this.noiseBuffer || (this.noiseBuffer = this.createNoiseBuffer());
+            bufferSource.loop = false;
+            return bufferSource;
+        };
+
+        const createEnvelopedGain = (attack = 0.001, release = duration * 0.6) => {
+            const gain = this.audioContext.createGain();
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(volume, now + attack);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + release);
+            return gain;
+        };
+
+        const makeNoise = (filterType, frequency, q = 1, localVolume = 1) => {
+            const noise = createNoiseSource();
+            const filter = this.audioContext.createBiquadFilter();
+            filter.type = filterType;
+            filter.frequency.value = frequency;
+            filter.Q.value = q;
+            const gainNode = createEnvelopedGain(0.001, duration * 0.8);
+            gainNode.gain.setValueAtTime(0.0001, now);
+            gainNode.gain.exponentialRampToValueAtTime(volume * localVolume, now + 0.008);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            noise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(trackGain);
+            noise.start(now);
+            noise.stop(now + duration);
+        };
+
+        const makeKick = () => {
+            const osc = this.audioContext.createOscillator();
+            const gainNode = createEnvelopedGain(0.001, duration * 0.75);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(160, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + duration * 0.8);
+            osc.connect(gainNode);
+            gainNode.connect(trackGain);
+            osc.start(now);
+            osc.stop(now + duration);
+        };
+
+        switch (drumType) {
+            case 0:
+                makeKick();
+                break;
+            case 1:
+                makeNoise('bandpass', 1800, 1.5, 0.9);
+                break;
+            case 2:
+                makeNoise('highpass', 8000, 1, 0.6);
+                break;
+            case 3:
+                makeNoise('bandpass', 1200, 2, 0.8);
+                break;
+            case 4:
+                makeNoise('bandpass', 900, 1.2, 0.7);
+                break;
+            case 5:
+                makeNoise('bandpass', 1200, 5, 0.5);
+                break;
+            case 6:
+                makeNoise('highpass', 4000, 0.8, 0.55);
+                break;
+            case 7:
+                makeNoise('highpass', 7000, 0.8, 0.5);
+                break;
+            case 8:
+                makeKick();
+                break;
+            case 9:
+                makeNoise('bandpass', 600, 1.2, 0.6);
+                break;
+            case 10:
+                makeNoise('highpass', 9000, 1.1, 0.65);
+                break;
+            case 11:
+                makeNoise('highpass', 5000, 0.9, 1);
+                break;
+            default:
+                makeNoise('bandpass', 1500, 1, 0.6);
+        }
+    }
+
+    createNoiseBuffer() {
+        const sampleRate = this.audioContext.sampleRate;
+        const buffer = this.audioContext.createBuffer(1, sampleRate * 1, sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < output.length; i++) {
+            output[i] = (Math.random() * 2 - 1) * 0.4;
+        }
+        return buffer;
     }
 
     /**

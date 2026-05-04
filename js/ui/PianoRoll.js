@@ -54,13 +54,21 @@ class PianoRoll {
      * Resize canvas to fit container
      */
     resizeCanvas() {
-        const rect = this.canvas.parentElement.getBoundingClientRect();
-        this.canvas.width = rect.width;
-        this.canvas.height = rect.height;
+        const rect = this.canvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
 
-        // Calculate cell dimensions
-        this.cellWidth = this.canvas.width / this.stepCount;
-        this.cellHeight = this.canvas.height / this.noteCount;
+        this.canvas.style.width = `${rect.width}px`;
+        this.canvas.style.height = `${rect.height}px`;
+        this.canvas.width = rect.width * ratio;
+        this.canvas.height = rect.height * ratio;
+
+        this.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+        // Store CSS pixel dimensions for drawing and hit testing
+        this.canvasWidth = rect.width;
+        this.canvasHeight = rect.height;
+        this.cellWidth = rect.width / this.stepCount;
+        this.cellHeight = rect.height / this.noteCount;
     }
 
     /**
@@ -180,7 +188,7 @@ class PianoRoll {
     render() {
         // Clear canvas
         this.ctx.fillStyle = this.colors.background;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
         // Draw grid
         this.drawGrid();
@@ -213,7 +221,7 @@ class PianoRoll {
             this.ctx.lineWidth = (step % 4 === 0) ? 2 : 1;
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.lineTo(x, this.canvasHeight);
             this.ctx.stroke();
         }
 
@@ -224,7 +232,7 @@ class PianoRoll {
             this.ctx.lineWidth = 1;
             this.ctx.beginPath();
             this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.lineTo(this.canvasWidth, y);
             this.ctx.stroke();
         }
     }
@@ -272,7 +280,7 @@ class PianoRoll {
         this.ctx.globalAlpha = 0.8;
         this.ctx.beginPath();
         this.ctx.moveTo(x, 0);
-        this.ctx.lineTo(x, this.canvas.height);
+        this.ctx.lineTo(x, this.canvasHeight);
         this.ctx.stroke();
         this.ctx.globalAlpha = 1.0;
 

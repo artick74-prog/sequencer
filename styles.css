@@ -90,6 +90,27 @@ body {
     padding: 5px;
 }
 
+.instrument-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.instrument-btn {
+    padding: 8px 12px;
+    border: 2px solid var(--border-color);
+    background: var(--tertiary-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    border-radius: 3px;
+}
+
+.instrument-btn.active {
+    background: #7cff7c;
+    border-color: #7cff7c;
+    color: #1a1a1a;
+}
+
 .controls-group label {
     min-width: 100px;
     font-size: 12px;
@@ -305,6 +326,16 @@ body {
     font-size: 12px;
     min-width: 90px;
     text-align: right;
+}
+
+.track-instrument {
+    font-size: 12px;
+    color: #7cff7c;
+    padding: 6px 10px;
+    border: 1px solid rgba(124, 255, 124, 0.3);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
 }
 
 /* Footer */

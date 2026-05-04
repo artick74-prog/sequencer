@@ -16,9 +16,9 @@ class SequencerState {
 
         // Pattern data: 3 tracks, 16 steps, 12 notes each
         this.tracks = [
-            { name: 'Track 1', volume: 0.5, notes: this.createEmptyPattern() },
-            { name: 'Track 2', volume: 0.5, notes: this.createEmptyPattern() },
-            { name: 'Track 3', volume: 0.5, notes: this.createEmptyPattern() }
+            { name: 'Track 1', volume: 0.5, instrument: 'synth', notes: this.createEmptyPattern() },
+            { name: 'Track 2', volume: 0.5, instrument: 'synth', notes: this.createEmptyPattern() },
+            { name: 'Track 3', volume: 0.5, instrument: 'synth', notes: this.createEmptyPattern() }
         ];
 
         // Listeners for state changes
@@ -164,6 +164,16 @@ class SequencerState {
     }
 
     /**
+     * Set instrument type for a track
+     */
+    setInstrument(trackIndex, instrument) {
+        if (trackIndex >= 0 && trackIndex < 3 && ['synth', 'drums'].includes(instrument)) {
+            this.tracks[trackIndex].instrument = instrument;
+            this.notifyListeners('stateChange');
+        }
+    }
+
+    /**
      * Set MIDI output
      */
     setMidiOutput(deviceId) {
@@ -212,6 +222,7 @@ class SequencerState {
             tracks: this.tracks.map(track => ({
                 name: track.name,
                 volume: track.volume,
+                instrument: track.instrument,
                 notes: [...track.notes]
             }))
         };
@@ -232,8 +243,8 @@ class SequencerState {
                 if (index < this.tracks.length) {
                     if (trackData.name) this.tracks[index].name = trackData.name;
                     if (trackData.volume !== undefined) this.tracks[index].volume = trackData.volume;
-                    if (trackData.notes && Array.isArray(trackData.notes)) {
-                        this.tracks[index].notes = [...trackData.notes];
+                    if (trackData.instrument && ['synth', 'drums'].includes(trackData.instrument)) {
+                        this.tracks[index].instrument = trackData.instrument;
                     }
                 }
             });

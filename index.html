@@ -34,7 +34,15 @@
                 </div>
 
                 <div class="controls-group">
-                    <label for="waveformSelect">Wave:</label>
+                    <label>Instrument:</label>
+                    <div class="instrument-buttons">
+                        <button type="button" class="btn instrument-btn active" data-instrument="synth">Synth</button>
+                        <button type="button" class="btn instrument-btn" data-instrument="drums">Drums</button>
+                    </div>
+                </div>
+
+                <div class="controls-group">
+                    <label for="waveformSelect">Synth Wave:</label>
                     <select id="waveformSelect" class="select">
                         <option value="square">Square</option>
                         <option value="triangle">Triangle</option>
@@ -87,6 +95,7 @@
                 <div class="track-controls">
                     <label for="trackVolume">Track Volume:</label>
                     <input type="range" id="trackVolume" min="0" max="1" step="0.01" value="0.5" class="slider">
+                    <div class="track-instrument">Instrument: <span id="selectedInstrument">Synth</span></div>
                 </div>
             </div>
         </main>
