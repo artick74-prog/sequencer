@@ -189,6 +189,17 @@ class PianoRoll {
         // Clear canvas
         this.ctx.fillStyle = this.colors.background;
         this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+        // Отрисовка названий нот (хроматическая гамма)
+        this.ctx.fillStyle = "#cccccc";
+        this.ctx.font = "11px Arial";
+        this.ctx.textAlign = "right";
+        this.ctx.textBaseline = "middle";
+        for (let row = 0; row < this.rows; row++) {
+            const noteIndex = this.rows - 1 - row;
+            const noteName = SimpleSynth.getNoteNameStatic(noteIndex);
+            const y = row * this.rowHeight + (this.rowHeight / 2);
+            this.ctx.fillText(noteName, this.leftPadding - 6, y);
+        }
 
         // Draw grid
         this.drawGrid();
