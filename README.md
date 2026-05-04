@@ -1,5 +1,9 @@
 # 🎵 Web Sequencer - Retro Tracker Style
 
+**Live demo:** [https://artick74-prog.github.io/sequencer/](https://artick74-prog.github.io/sequencer/)
+
+> Если открываешь GitHub с телефона, используй именно эту ссылку в браузере, а не страницу репозитория.
+
 A modern web-based music sequencer inspired by classic trackers like FastTracker, built with vanilla JavaScript, Web Audio API, and Web MIDI API.
 
 ## Features
