@@ -28,6 +28,7 @@ body {
     font-family: 'Courier New', monospace;
     overflow: hidden;
     height: 100vh;
+    touch-action: manipulation;
 }
 
 .container {
@@ -48,6 +49,7 @@ body {
     align-items: center;
     border-radius: 3px;
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    flex-shrink: 0;
 }
 
 .header h1 {
@@ -70,6 +72,7 @@ body {
     gap: 10px;
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 
 /* Control Panel */
@@ -81,6 +84,7 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 15px;
     border-radius: 3px;
+    flex-shrink: 0;
 }
 
 .controls-group {
@@ -88,6 +92,7 @@ body {
     align-items: center;
     gap: 10px;
     padding: 5px;
+    flex-wrap: wrap;
 }
 
 .instrument-buttons {
@@ -182,6 +187,7 @@ body {
     border-radius: 3px;
     transition: all 0.1s;
     font-size: 12px;
+    touch-action: manipulation;
 }
 
 .btn:hover {
@@ -244,6 +250,7 @@ body {
     padding: 10px;
     border-radius: 3px;
     overflow: hidden;
+    min-height: 0;
 }
 
 .note-labels {
@@ -252,6 +259,7 @@ body {
     gap: 0;
     min-width: 50px;
     justify-content: flex-start;
+    flex-shrink: 0;
 }
 
 .note-label {
@@ -274,6 +282,7 @@ body {
     border: 1px solid var(--grid-line);
     cursor: crosshair;
     display: block;
+    touch-action: none;
 }
 
 /* Track Information */
@@ -286,6 +295,8 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 20px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
 .track-selector {
@@ -320,6 +331,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .track-controls label {
@@ -347,33 +359,7 @@ body {
     font-size: 11px;
     color: var(--text-secondary);
     border-radius: 3px;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .control-panel {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .control-panel {
-        grid-template-columns: 1fr;
-    }
-
-    .track-info {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .controls-group.midi-controls {
-        grid-column: span 1;
-    }
+    flex-shrink: 0;
 }
 
 /* Scrollbar styling */
@@ -393,4 +379,207 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent-light);
+}
+
+/* Responsive Design for Tablets */
+@media (max-width: 1200px) {
+    .control-panel {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .header-info {
+        gap: 15px;
+        font-size: 12px;
+    }
+}
+
+/* Responsive Design for Mobile */
+@media (max-width: 768px) {
+    .container {
+        padding: 5px;
+        gap: 5px;
+    }
+    
+    .header {
+        padding: 10px;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .header h1 {
+        font-size: 18px;
+    }
+    
+    .header-info {
+        flex-direction: column;
+        gap: 8px;
+        font-size: 11px;
+    }
+
+    .control-panel {
+        grid-template-columns: 1fr;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .controls-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .controls-group label {
+        text-align: left;
+        min-width: unset;
+    }
+    
+    .controls-group.midi-controls {
+        grid-column: span 1;
+    }
+    
+    .slider {
+        width: 100%;
+    }
+    
+    .select {
+        width: 100%;
+    }
+    
+    .instrument-buttons {
+        width: 100%;
+        gap: 5px;
+    }
+    
+    .instrument-btn {
+        flex: 1;
+        padding: 10px;
+        font-size: 11px;
+    }
+
+    .piano-roll-container {
+        padding: 5px;
+        gap: 5px;
+        flex-direction: column;
+    }
+    
+    .note-labels {
+        min-width: 40px;
+        flex-direction: row;
+        overflow-x: auto;
+        justify-content: flex-start;
+    }
+    
+    .note-label {
+        width: 40px;
+        height: 30px;
+        font-size: 10px;
+        padding: 5px;
+    }
+    
+    .piano-roll-canvas {
+        min-height: 200px;
+    }
+
+    .track-info {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .track-selector {
+        width: 100%;
+        gap: 5px;
+    }
+    
+    .track-btn {
+        flex: 1;
+        padding: 10px;
+        font-size: 11px;
+    }
+    
+    .track-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .track-controls label {
+        text-align: left;
+        min-width: unset;
+        margin-bottom: 5px;
+    }
+    
+    .track-instrument {
+        font-size: 11px;
+    }
+    
+    .footer {
+        padding: 8px;
+        font-size: 10px;
+    }
+    
+    .btn {
+        padding: 10px 12px;
+        font-size: 11px;
+    }
+}
+
+/* Extra Small Devices (< 480px) */
+@media (max-width: 480px) {
+    .container {
+        padding: 3px;
+        gap: 3px;
+    }
+    
+    .header {
+        padding: 8px;
+        gap: 5px;
+    }
+    
+    .header h1 {
+        font-size: 16px;
+    }
+    
+    .header-info {
+        gap: 5px;
+        font-size: 10px;
+    }
+    
+    .control-panel {
+        padding: 8px;
+        gap: 8px;
+    }
+    
+    .controls-group {
+        gap: 5px;
+    }
+    
+    .note-labels {
+        min-width: 35px;
+    }
+    
+    .note-label {
+        width: 35px;
+        height: 25px;
+        font-size: 9px;
+    }
+    
+    .piano-roll-canvas {
+        min-height: 150px;
+    }
+    
+    .track-info {
+        padding: 8px;
+        gap: 8px;
+    }
+    
+    .btn {
+        padding: 8px 10px;
+        font-size: 10px;
+    }
 }
