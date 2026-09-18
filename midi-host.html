@@ -2079,7 +2079,7 @@ select, input[type="number"], input[type="text"] {
 
         const lab = document.createElement("span");
         lab.className = "marker-label";
-        lab.textContent = m.text;
+        lab.textContent = `${m.bar} · ${m.text}`;
         lab.title = `${m.text} · bar ${m.bar} — click to seek`;
         lab.style.left = `${x + 4}px`;
         mRuler.appendChild(lab);
