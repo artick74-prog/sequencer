@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "name": "example-hardware",
+  "ppq": 480,
+  "tempo": 120,
+  "lengthTicks": 3840,
+  "hardware": {
+    "output": "TD-3 USB (thru to XR20 DIN)",
+    "channels": {
+      "1": "XR20 bass",
+      "2": "TD-3 acid",
+      "10": "XR20 drums"
+    }
+  },
+  "markers": [],
+  "tracks": [
+    {
+      "id": "ch10",
+      "name": "XR20 Drums",
+      "channel": 10,
+      "role": "xr20-drums",
+      "mute": false,
+      "notes": [
+        { "tick": 0, "duration": 60, "note": 36, "velocity": 110 },
+        { "tick": 480, "duration": 60, "note": 38, "velocity": 95 },
+        { "tick": 960, "duration": 60, "note": 36, "velocity": 110 },
+        { "tick": 1440, "duration": 60, "note": 38, "velocity": 95 },
+        { "tick": 1920, "duration": 60, "note": 36, "velocity": 110 },
+        { "tick": 2400, "duration": 60, "note": 38, "velocity": 95 },
+        { "tick": 2880, "duration": 60, "note": 36, "velocity": 110 },
+        { "tick": 3360, "duration": 60, "note": 38, "velocity": 95 }
+      ]
+    },
+    {
+      "id": "ch1",
+      "name": "XR20 Bass",
+      "channel": 1,
+      "role": "xr20-bass",
+      "mute": false,
+      "notes": [
+        { "tick": 0, "duration": 240, "note": 28, "velocity": 100 },
+        { "tick": 480, "duration": 240, "note": 28, "velocity": 88 },
+        { "tick": 960, "duration": 240, "note": 31, "velocity": 100 },
+        { "tick": 1440, "duration": 240, "note": 28, "velocity": 88 },
+        { "tick": 1920, "duration": 240, "note": 28, "velocity": 100 },
+        { "tick": 2400, "duration": 240, "note": 33, "velocity": 95 },
+        { "tick": 2880, "duration": 240, "note": 31, "velocity": 100 },
+        { "tick": 3360, "duration": 240, "note": 28, "velocity": 88 }
+      ]
+    },
+    {
+      "id": "ch2",
+      "name": "TD-3 Acid",
+      "channel": 2,
+      "role": "td3",
+      "mute": false,
+      "notes": [
+        { "tick": 0, "duration": 120, "note": 28, "velocity": 115 },
+        { "tick": 120, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 240, "duration": 120, "note": 31, "velocity": 88 },
+        { "tick": 360, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 480, "duration": 120, "note": 28, "velocity": 115 },
+        { "tick": 600, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 720, "duration": 120, "note": 35, "velocity": 88 },
+        { "tick": 840, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 960, "duration": 120, "note": 28, "velocity": 115 },
+        { "tick": 1080, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 1200, "duration": 120, "note": 31, "velocity": 88 },
+        { "tick": 1320, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 1440, "duration": 120, "note": 28, "velocity": 115 },
+        { "tick": 1560, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 1680, "duration": 120, "note": 35, "velocity": 88 },
+        { "tick": 1800, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 1920, "duration": 120, "note": 28, "velocity": 115 },
+        { "tick": 2040, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 2160, "duration": 120, "note": 31, "velocity": 88 },
+        { "tick": 2280, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 2400, "duration": 120, "note": 28, "velocity": 115 },
+        { "tick": 2520, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 2640, "duration": 120, "note": 35, "velocity": 88 },
+        { "tick": 2760, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 2880, "duration": 120, "note": 28, "velocity": 115 },
+        { "tick": 3000, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 3120, "duration": 120, "note": 31, "velocity": 88 },
+        { "tick": 3240, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 3360, "duration": 120, "note": 28, "velocity": 115 },
+        { "tick": 3480, "duration": 120, "note": 28, "velocity": 88 },
+        { "tick": 3600, "duration": 120, "note": 35, "velocity": 88 },
+        { "tick": 3720, "duration": 120, "note": 28, "velocity": 88 }
+      ]
+    }
+  ]
+}

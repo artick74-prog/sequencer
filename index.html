@@ -1,120 +1,5055 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Sequencer - Retro Tracker Style</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chiptune Piano Roll Sequencer</title>
+<style>
+/* ═══════════════════════════════════════════
+   БАЗОВЫЕ СТИЛИ И РЕТРО-ТЕМА
+   ═══════════════════════════════════════════ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-dark: #0a0a12;
+  --bg-panel: #12121e;
+  --bg-grid: #1a1a2e;
+  --bg-cell: #22223a;
+  --border: #2a2a44;
+  --text: #c8c8e0;
+  --text-dim: #6a6a88;
+  --accent: #00e5ff;
+  --accent-dim: #006978;
+  --accent-pastel: #9ed4e6;
+  --playhead: #ff4081;
+  --track1: #ff6b6b;
+  --track2: #4ecdc4;
+  --track3: #ffe66d;
+  --drum-bg: #1e1020;
+  --drum-border: #3a2040;
+  --note-h: 18px;
+  --drum-row-h: 22px;
+  --step-w: 32px;
+  --label-w: 42px;
+  --drum-label-w: 56px;
+}
+
+body {
+  background: var(--bg-dark);
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   ЗАГОЛОВОК
+   ═══════════════════════════════════════════ */
+.header {
+  text-align: center;
+  padding: 16px 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.header h1 {
+  font-size: 20px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  text-transform: uppercase;
+  text-shadow: 0 0 10px var(--accent-dim);
+}
+.header .subtitle {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   ПАНЕЛЬ УПРАВЛЕНИЯ
+   ═══════════════════════════════════════════ */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.btn {
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.btn:hover { background: var(--border); color: #fff; }
+.btn.playing { background: var(--playhead); color: #fff; border-color: var(--playhead); }
+.btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.view-switcher { display: flex; gap: 2px; margin-left: auto; }
+.view-btn { font-size: 10px !important; padding: 4px 8px !important; }
+.song-arranger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  max-width: 500px;
+  overflow-x: auto;
+}
+.song-arranger label {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.song-blocks {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.song-block {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: rgba(158,212,230,0.1);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  color: #000;
+  flex-shrink: 0;
+  transition: all 0.1s;
+}
+.song-block:hover { border-color: var(--text-dim); }
+.song-block .block-num {
+  min-width: 12px;
+  text-align: center;
+}
+.song-block .block-del {
+  font-size: 9px;
+  color: var(--text-dim);
+  line-height: 1;
+  margin-left: 2px;
+}
+.song-block .block-del:hover { color: var(--playhead); }
+.song-block .block-name {
+  font-size: 10px;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 80px;
+}
+.song-block.active {
+  background: var(--accent-pastel);
+  color: #000;
+  border-color: var(--accent-pastel);
+}
+.song-add-btn {
+  height: 24px;
+  width: 24px;
+  flex-shrink: 0;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+.song-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ctrl-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctrl-group label {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.ctrl-group select, .ctrl-group input[type="range"] {
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  border-radius: 3px;
+}
+.ctrl-group input[type="range"] {
+  width: 100px;
+  accent-color: var(--accent);
+}
+.bpm-display {
+  color: var(--accent);
+  font-weight: bold;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════
+   ДОРОЖКА (контейнер)
+   ═══════════════════════════════════════════ */
+.track-container {
+  margin: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: background 0.2s, border-color 0.2s;
+}
+.track-container.drum-mode {
+  background: var(--drum-bg);
+  border-color: var(--drum-border);
+}
+
+.track-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.track-header .track-name {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.track-header select {
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.track-header .preset-select {
+  width: 90px;
+  font-size: 9px;
+  opacity: 0.85;
+  cursor: pointer;
+}
+.track-header .preset-select:hover {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════
+   Piano Roll (мелодическая дорожка)
+   ═══════════════════════════════════════════ */
+.piano-roll-wrapper {
+  display: flex;
+  overflow-x: auto;
+  position: relative;
+}
+.note-labels {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  width: var(--label-w);
+}
+.note-label {
+  height: var(--note-h);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  font-size: 9px;
+  color: var(--text-dim);
+  border-bottom: 1px solid rgba(42, 42, 68, 0.4);
+}
+.note-label.c-note { color: var(--accent); font-weight: bold; }
+
+.piano-roll {
+  position: relative;
+  flex-shrink: 0;
+}
+.grid-row {
+  display: flex;
+  height: var(--note-h);
+  border-bottom: 1px solid rgba(42, 42, 68, 0.4);
+}
+.grid-row.c-row { border-bottom: 1px solid rgba(0, 229, 255, 0.2); }
+.grid-row.sharp-row { background: rgba(0, 0, 0, 0.15); }
+
+.grid-cell {
+  width: var(--step-w);
+  height: 100%;
+  border-right: 1px solid rgba(42, 42, 68, 0.4);
+  cursor: pointer;
+  transition: background 0.08s;
+  position: relative;
+}
+.grid-cell:hover { background: rgba(255, 255, 255, 0.06); }
+.grid-cell.beat-group-1 { background: rgba(0,229,255,0.08); }
+.grid-cell.beat-group-2 { background: rgba(255,255,255,0.04); }
+.grid-cell.beat-group-3 { background: rgba(0,229,255,0.16); }
+.grid-cell.beat-start { border-left: 1px solid rgba(255, 255, 255, 0.12); }
+.grid-cell.selected { box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 8px rgba(0,229,255,0.25); }
+.select-mode .grid-cell { cursor: crosshair; }
+.select-mode .drum-cell { cursor: crosshair; }
+.select-mode .step-num { cursor: crosshair; }
+
+.note-block {
+  position: absolute;
+  top: 1px; left: 1px; right: 1px; bottom: 1px;
+  border-radius: 2px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.note-block.ghost {
+  opacity: 0.2;
+  box-shadow: inset 0 0 2px rgba(255,255,255,0.15);
+}
+.drum-block.ghost {
+  opacity: 0.2;
+}
+
+/* ═══════════════════════════════════════════
+   Drum Grid (барабанная дорожка)
+   ═══════════════════════════════════════════ */
+.drum-grid-wrapper {
+  display: flex;
+  overflow-x: auto;
+  position: relative;
+}
+.drum-labels {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: var(--drum-bg);
+  border-right: 1px solid var(--drum-border);
+  flex-shrink: 0;
+  width: var(--drum-label-w);
+}
+.drum-label {
+  height: var(--drum-row-h);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  font-size: 9px;
+  font-weight: bold;
+  color: #d4a0d4;
+  border-bottom: 1px solid rgba(58, 32, 64, 0.5);
+  letter-spacing: 0.5px;
+}
+
+.drum-grid {
+  position: relative;
+  flex-shrink: 0;
+}
+.drum-row {
+  display: flex;
+  height: var(--drum-row-h);
+  border-bottom: 1px solid rgba(58, 32, 64, 0.5);
+}
+
+.drum-cell {
+  width: var(--step-w);
+  height: 100%;
+  border-right: 1px solid rgba(58, 32, 64, 0.5);
+  cursor: pointer;
+  transition: background 0.08s;
+  position: relative;
+}
+.drum-cell:hover { background: rgba(255, 255, 255, 0.06); }
+.drum-cell.beat-group-1 { background: rgba(0,229,255,0.08); }
+.drum-cell.beat-group-2 { background: rgba(255,255,255,0.04); }
+.drum-cell.beat-group-3 { background: rgba(0,229,255,0.16); }
+.drum-cell.beat-start { border-left: 1px solid rgba(255, 255, 255, 0.12); }
+.drum-cell.selected { box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 8px rgba(0,229,255,0.25); }
+
+.drum-block {
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  border-radius: 2px;
+  opacity: 0.9;
+  pointer-events: none;
+  box-shadow: 0 0 4px rgba(212, 160, 212, 0.3);
+}
+
+/* ═══════════════════════════════════════════
+   Бегунок текущего шага
+   ═══════════════════════════════════════════ */
+.playhead-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--step-w);
+  height: 100%;
+  background: rgba(255, 64, 129, 0.10);
+  border-left: 2px solid var(--playhead);
+  border-right: 2px solid var(--playhead);
+  pointer-events: none;
+  z-index: 5;
+  transition: transform 0.05s linear;
+  display: none;
+}
+
+/* ═══════════════════════════════════════════
+   Номера шагов
+   ═══════════════════════════════════════════ */
+.step-numbers {
+  display: flex;
+  margin-left: var(--label-w);
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.step-numbers.drum-steps {
+  margin-left: var(--drum-label-w);
+  background: var(--drum-bg);
+  border-color: var(--drum-border);
+}
+.step-num {
+  width: var(--step-w);
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-dim);
+  padding: 2px 0;
+  border-right: 1px solid rgba(42, 42, 68, 0.4);
+}
+.step-num.beat-group-1 { background: rgba(255,255,255,0.07); }
+.step-num.beat-group-2 { background: rgba(255,255,255,0.04); }
+.step-num.beat-group-3 { background: rgba(255,255,255,0.10); }
+.step-num.beat-start { border-left: 1px solid rgba(255, 255, 255, 0.08); }
+.step-num.paste-target { border-left: 2px solid var(--accent); color: var(--accent); font-weight: bold; }
+
+/* ═══════════════════════════════════════════
+   ПАНЕЛЬ СИНТЕЗАТОРА (ADSR + Filter)
+   ═══════════════════════════════════════════ */
+.synth-panel {
+  display: none;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+}
+.synth-panel.open { display: block; }
+.synth-panel.drum-panel {
+  border-color: var(--drum-border);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.synth-section {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.synth-section:last-child { margin-bottom: 0; }
+
+.synth-section-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  padding-right: 8px;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+  margin-right: 8px;
+}
+.drum-panel .synth-section-label {
+  border-color: var(--drum-border);
+}
+
+.fader-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 32px;
+}
+.fader-group label {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.fader-group .fader-value {
+  font-size: 9px;
+  color: var(--accent);
+  font-weight: bold;
+  min-height: 12px;
+}
+
+/* Вертикальный фейдер */
+.fader-track {
+  position: relative;
+  width: 16px;
+  height: 64px;
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.drum-panel .fader-track { border-color: var(--drum-border); }
+
+.fader-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  border-radius: 3px;
+  background: var(--accent);
+  pointer-events: none;
+  transition: height 0.05s;
+}
+.fader-thumb {
+  position: absolute;
+  left: -4px;
+  width: 16px;
+  height: 6px;
+  background: #ddd;
+  border: 1px solid #999;
+  border-radius: 2px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+/* ─── Табы переключения дорожек ─── */
+.track-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  margin-bottom: 0;
+}
+.track-tab {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  border-left: 3px solid transparent;
+  font-family: inherit;
+}
+.track-tab:hover {
+  background: var(--bg-grid);
+  color: var(--text);
+}
+.track-tab.active {
+  background: var(--bg-grid);
+  color: var(--text);
+  font-weight: bold;
+}
+
+/* ─── Панель выбора паттерна ─── */
+.pattern-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+}
+.pattern-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--accent);
+  margin-right: 6px;
+  letter-spacing: 1px;
+}
+.pattern-btn {
+  width: 26px; height: 26px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: bold;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-grid);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.pattern-btn:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+.pattern-btn.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+.pattern-btn.swap-source {
+  background: var(--playhead);
+  color: #fff;
+  border-color: var(--playhead);
+  box-shadow: 0 0 6px var(--playhead);
+}
+.swap-btn { width: 30px !important; font-size: 13px !important; line-height: 1; }
+.variant-toggle {
+  width: 32px; height: 26px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-grid);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.1s;
+  margin-right: 6px;
+  letter-spacing: 0;
+}
+.variant-toggle:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(0,229,255,0.3);
+}
+.pattern-length-input {
+  width: 48px; height: 26px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-grid);
+  color: var(--text);
+  outline: none;
+}
+.pattern-length-input:focus {
+  border-color: var(--accent);
+}
+
+/* ─── Кнопка в панели синтезатора ─── */
+.synth-toggle-btn {
+  font-family: inherit;
+  font-size: 10px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-grid);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.synth-toggle-btn:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+.synth-toggle-btn.active {
+  background: var(--accent);
+  color: #000;
+  font-weight: bold;
+}
+.mute-group {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.mute-btn {
+  font-family: inherit;
+  font-size: 9px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-grid);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.1s;
+  text-align: center;
+  line-height: 20px;
+  font-weight: bold;
+}
+.mute-btn:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+.mute-btn.muted {
+  background: #441111;
+  border-color: #cc3333;
+  color: #ff5555;
+  opacity: 0.85;
+}
+
+/* ─── Транспортный блок ─── */
+.transport-group {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  margin-left: auto;
+}
+.btn-transport {
+  width: 36px;
+  height: 26px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 24px;
+  text-align: center;
+}
+.btn-transport.playing {
+  background: var(--playhead);
+  color: #fff;
+  border-color: var(--playhead);
+}
+
+/* ═══════════════════════════════════════════
+   BAR RULER + LOCATORS
+   ═══════════════════════════════════════════ */
+.bar-ruler {
+  position: relative;
+  height: 24px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.ruler-bar-line {
+  position: absolute;
+  top: 0; width: 1px; height: 24px;
+  background: var(--border);
+  pointer-events: none;
+}
+.ruler-bar-label {
+  position: absolute;
+  top: 5px;
+  font-size: 9px;
+  color: var(--text-dim);
+  pointer-events: none;
+  user-select: none;
+}
+.ruler-range-fill {
+  position: absolute;
+  top: 0; height: 24px;
+  background: rgba(158, 212, 230, 0.18);
+  pointer-events: none;
+  z-index: 1;
+}
+.ruler-locator {
+  position: absolute;
+  top: 0; width: 12px; height: 24px;
+  margin-left: -6px;
+  cursor: ew-resize;
+  z-index: 3;
+}
+.ruler-locator::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 5px; width: 2px; height: 24px;
+  background: var(--accent-pastel);
+  pointer-events: none;
+}
+.ruler-locator::after {
+  content: '';
+  position: absolute;
+  top: 2px; width: 8px; height: 12px;
+  background: var(--accent-pastel);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.ruler-locator[data-loc="a"]::after { left: 0; }
+.ruler-locator[data-loc="b"]::after { right: 0; }
+.ruler-spacer {
+  height: 24px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+/* ═══════════════════════════════════════════
+   АДАПТИВНОСТЬ
+   ═══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal h2 {
+  font-size: 16px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.modal-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.modal-row input[type="text"] {
+  flex: 1;
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  border-radius: 3px;
+}
+
+.slot-list {
+  margin-top: 12px;
+}
+.slot-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  margin-bottom: 4px;
+  transition: background 0.1s;
+}
+.slot-item:hover { background: var(--bg-grid); }
+.slot-item.active { border-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
+
+.slot-name {
+  flex: 1;
+  font-size: 12px;
+  cursor: pointer;
+}
+.slot-name:hover { color: var(--accent); }
+
+.slot-info {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.slot-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 2px;
+  font-family: inherit;
+}
+.slot-btn:hover { border-color: var(--border); color: var(--text); }
+.slot-btn.danger:hover { border-color: #ff4466; color: #ff4466; }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════
+   АДАПТИВНОСТЬ
+   ═══════════════════════════════════════════ */
+@media (max-width: 700px) {
+  :root { --step-w: 24px; --note-h: 15px; --label-w: 36px; --drum-row-h: 18px; --drum-label-w: 46px; }
+  .controls { gap: 6px; padding: 8px; }
+  .btn { padding: 5px 8px; font-size: 11px; }
+  .drum-label, .note-label { font-size: 8px; }
+  .synth-section { gap: 4px; }
+  .fader-track { height: 48px; width: 6px; }
+}
+
+/* ═══════════════════════════════════════════
+   ARRANGE VIEW
+   ═══════════════════════════════════════════ */
+}
+
+/* ═══════════════════════════════════════════
+   ARRANGE VIEW
+   ═══════════════════════════════════════════ */
+.arrange-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+}
+.arrange-lane {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-panel);
+}
+.arrange-lane-label {
+  width: 24px;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+.arrange-blocks {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  flex: 1;
+}
+.arrange-block {
+  flex-shrink: 0;
+  min-width: 40px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-pastel);
+  border-radius: 3px;
+  background: rgba(158,212,230,0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 9px;
+  color: #000;
+  font-weight: bold;
+  transition: all 0.1s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+}
+.arrange-block:hover { border-color: var(--text-dim); }
+.arrange-block.active { box-shadow: 0 0 6px var(--accent); border-color: var(--accent) !important; }
+.arrange-block.drag-over { border-color: var(--accent) !important; box-shadow: 0 0 8px var(--accent); }
+.arrange-add-btn {
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: 18px;
+  height: 24px;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.arrange-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,229,255,0.1);
+}
+.arrange-block .block-name {
+  font-size: 8px;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+}
+.arrange-block.editing {
+  box-shadow: 0 0 8px var(--accent-pastel);
+  border-color: var(--accent-pastel) !important;
+  outline: 1px solid #fff;
+}
+.arrange-lane-empty {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 4px 12px;
+  font-style: italic;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  cursor: default;
+  transition: all 0.15s;
+}
+.arrange-lane-empty.drag-over {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,229,255,0.1);
+}
+
+/* ─── Context Menu (pattern level) ─── */
+.pattern-ctx-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #1a1a2e;
+  border: 1px solid var(--accent-pastel);
+  border-radius: 4px;
+  min-width: 160px;
+  padding: 4px 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+}
+.pattern-ctx-menu .ctx-item {
+  padding: 6px 14px;
+  font-size: 11px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+.pattern-ctx-menu .ctx-item:hover {
+  background: rgba(158,212,230,0.15);
+  color: #fff;
+}
+.pattern-ctx-menu .ctx-item.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.pattern-ctx-menu .ctx-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 8px;
+}
+
+/* ─── Copy/Paste Track Select Dialog ─── */
+.cp-dialog-overlay {
+  position: fixed;
+  z-index: 9998;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cp-dialog {
+  background: #1a1a2e;
+  border: 1px solid var(--accent-pastel);
+  border-radius: 6px;
+  padding: 18px 22px;
+  min-width: 220px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+}
+.cp-dialog-title {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+.cp-dialog-tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.cp-dialog-tracks label {
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cp-dialog-tracks input[type="checkbox"] {
+  accent-color: var(--accent-pastel);
+}
+.cp-dialog-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.cp-dialog-buttons .btn {
+  font-size: 11px;
+  padding: 4px 14px;
+}
+
+/* ─── Settings Modal ─── */
+.settings-group { margin-bottom: 14px; }
+.settings-group label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text); cursor: pointer;
+}
+.settings-group input[type="checkbox"] { accent-color: var(--accent-pastel); }
+
+/* ─── Modal Tabs ─── */
+.modal-tabs {
+  display: flex; gap: 0; margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-tab {
+  flex: 1; padding: 6px 12px;
+  font-family: inherit; font-size: 11px;
+  background: var(--bg-grid); border: 1px solid var(--border);
+  border-bottom: none; color: var(--text-dim);
+  cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+}
+.modal-tab:hover { color: var(--text); }
+.modal-tab.active { background: var(--bg-panel); color: var(--accent); font-weight: bold; }
+.modal-tab-content { display: none; }
+.modal-tab-content.active { display: block; }
+
+/* ─── Pattern Library ─── */
+.lib-filter { margin-bottom: 10px; }
+.lib-filter select {
+  width: 100%; padding: 4px 6px;
+  background: var(--bg-grid); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: 11px; border-radius: 3px;
+}
+.lib-list { max-height: 240px; overflow-y: auto; margin-bottom: 10px; }
+.lib-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 8px; border: 1px solid var(--border);
+  border-radius: 3px; margin-bottom: 4px; font-size: 11px;
+}
+.lib-item:hover { background: var(--bg-grid); }
+.lib-item .lib-style {
+  background: rgba(158,212,230,0.15); color: var(--accent-pastel);
+  padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: bold;
+}
+.lib-item .lib-name { flex: 1; }
+.lib-item .lib-import-btn {
+  background: none; border: 1px solid transparent; color: var(--accent);
+  cursor: pointer; font-family: inherit; font-size: 10px; padding: 2px 8px; border-radius: 2px;
+}
+.lib-item .lib-import-btn:hover { border-color: var(--accent); }
+.lib-item .lib-del-btn {
+  background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 12px;
+}
+.lib-item .lib-del-btn:hover { color: var(--playhead); }
+
+/* ─── Arrange Transport ─── */
+.arrange-transport {
+  display: flex; gap: 4px; align-items: center;
+  padding: 4px 8px; border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+/* ─── Arrange View Ruler ─── */
+.arrange-ruler {
+  position: relative;
+  height: 24px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+.arrange-ruler .ruler-beat-line {
+  position: absolute;
+  top: 12px;
+  width: 1px;
+  height: 12px;
+  background: var(--text-dim);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.arrange-playhead {
+  position: absolute;
+  top: 0; left: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--playhead);
+  pointer-events: none;
+  z-index: 5;
+  display: none;
+  transition: transform 0.05s linear;
+}
+
+/* ─── Drag-and-drop in Arrange ─── */
+.arrange-block.dragging {
+  opacity: 0.35;
+}
+.drag-placeholder {
+  flex-shrink: 0;
+  width: 3px;
+  height: 24px;
+  background: var(--playhead);
+  border-radius: 2px;
+  margin: 0 1px;
+  pointer-events: none;
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>🎵 WEB SEQUENCER</h1>
-            <div class="header-info">
-                <span id="currentBPM">120 BPM</span>
-                <span id="currentStep">Step: 1/16</span>
-            </div>
-        </header>
 
-        <!-- Main Content -->
-        <main class="main">
-            <!-- Control Panel -->
-            <div class="control-panel">
-                <div class="controls-group">
-                    <label for="tempoSlider">Tempo (BPM):</label>
-                    <input type="range" id="tempoSlider" min="30" max="300" value="120" class="slider">
-                    <span id="tempoValue">120</span>
-                </div>
+<!-- ═══════════════════════════════════════════
+     HTML-РАЗМЕТКА
+     ═══════════════════════════════════════════ -->
+<div class="header">
+  <h1>Chiptune Sequencer</h1>
+  <div class="subtitle">Piano Roll Tracker — 3 Voices — TR-909 Drums — Web Audio API · <a href="midi-host.html" style="color:var(--accent)">Hardware MIDI Host</a></div>
+</div>
 
-                <div class="controls-group">
-                    <button id="playBtn" class="btn btn-play">▶ Play</button>
-                    <button id="stopBtn" class="btn btn-stop">⏹ Stop</button>
-                    <button id="clearBtn" class="btn btn-clear">🗑 Clear All</button>
-                </div>
+<div class="controls" id="controls">
+  <button class="btn" id="btnClear">✕ Clear All</button>
+  <button class="btn" id="btnDelete" title="Delete selected steps (Del)" style="opacity:0.4">⌫ Delete</button>
+  <button class="btn" id="btnUndo" title="Undo (Ctrl+Z)">↶ Undo</button>
+  <button class="btn" id="btnRedo" title="Redo (Ctrl+Y)">↷ Redo</button>
+  <button class="btn" id="btnCopy" title="Copy selected steps (Ctrl+C)" style="opacity:0.4">📋 Copy</button>
+  <button class="btn" id="btnPaste" title="Paste (Ctrl+V)" style="opacity:0.4">📋 Paste</button>
+  <button class="btn" id="btnTool" title="Toggle tool (Draw / Select)">✎ Draw</button>
+  <button class="btn" id="btnProject">💾 Project</button>
+  <button class="btn" id="btnSettings">⚙</button>
+  <button class="btn" id="btnSavePattern" style="font-size:10px">📚 Save Pattern</button>
 
-                <div class="controls-group">
-                    <label>Instrument:</label>
-                    <div class="instrument-buttons">
-                        <button type="button" class="btn instrument-btn active" data-instrument="synth">Synth</button>
-                        <button type="button" class="btn instrument-btn" data-instrument="drums">Drums</button>
-                    </div>
-                </div>
+  <div class="ctrl-group">
+    <label>BPM</label>
+    <input type="range" id="tempoSlider" min="60" max="200" value="130">
+    <span class="bpm-display" id="bpmDisplay">130</span>
+  </div>
 
-                <div class="controls-group">
-                    <label for="waveformSelect">Synth Wave:</label>
-                    <select id="waveformSelect" class="select">
-                        <option value="square">Square</option>
-                        <option value="triangle">Triangle</option>
-                        <option value="sawtooth">Sawtooth</option>
-                    </select>
-                </div>
+  <div id="songGroup" style="display:none" class="song-arranger">
+    <label>Seq</label>
+    <div class="song-blocks" id="songBlocks"></div>
+    <button class="song-add-btn" id="songAddBtn" title="Add pattern">+</button>
+  </div>
+  <button class="btn" id="btnSong">Song</button>
+  <div class="view-switcher">
+    <button class="btn view-btn active" data-view="edit">Edit</button>
+    <button class="btn view-btn" data-view="arrange">Arrange</button>
+  </div>
 
-                <div class="controls-group">
-                    <label for="volumeSlider">Volume:</label>
-                    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.3" class="slider">
-                    <span id="volumeValue">30%</span>
-                </div>
+  <div class="ctrl-group">
+    <label>Swing</label>
+    <input type="range" id="swingSlider" min="0" max="50" value="0">
+    <span class="bpm-display" id="swingDisplay">0%</span>
+  </div>
+</div>
 
-                <div class="controls-group midi-controls">
-                    <label for="midiOutput">MIDI Output:</label>
-                    <select id="midiOutput" class="select">
-                        <option value="">None</option>
-                    </select>
-                    <button id="midiExportBtn" class="btn btn-secondary">📥 Export MIDI</button>
-                </div>
-            </div>
+<!-- Контейнер дорожек (заполняется динамически) -->
+<div id="tracksContainer"></div>
 
-            <!-- Piano Roll -->
-            <div class="piano-roll-container">
-                <div class="note-labels">
-                    <div class="note-label" data-note="0">C4</div>
-                    <div class="note-label" data-note="1">D4</div>
-                    <div class="note-label" data-note="2">E4</div>
-                    <div class="note-label" data-note="3">F4</div>
-                    <div class="note-label" data-note="4">G4</div>
-                    <div class="note-label" data-note="5">A4</div>
-                    <div class="note-label" data-note="6">B4</div>
-                    <div class="note-label" data-note="7">C5</div>
-                    <div class="note-label" data-note="8">D5</div>
-                    <div class="note-label" data-note="9">E5</div>
-                    <div class="note-label" data-note="10">F5</div>
-                    <div class="note-label" data-note="11">G5</div>
-                </div>
+<!-- Модальное окно Settings -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>⚙ Settings</h2>
+    <div class="settings-group">
+      <label><input type="checkbox" id="chkAutosave"> ☑ Autosave — сохранять проект автоматически</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="settingsClose" style="flex:1;">Close</button>
+    </div>
+  </div>
+</div>
 
-                <canvas id="pianoRoll" class="piano-roll-canvas"></canvas>
-            </div>
-
-            <!-- Track Information -->
-            <div class="track-info">
-                <div class="track-selector">
-                    <button class="track-btn active" data-track="0">Track 1</button>
-                    <button class="track-btn" data-track="1">Track 2</button>
-                    <button class="track-btn" data-track="2">Track 3</button>
-                </div>
-                <div class="track-controls">
-                    <label for="trackVolume">Track Volume:</label>
-                    <input type="range" id="trackVolume" min="0" max="1" step="0.01" value="0.5" class="slider">
-                    <div class="track-instrument">Instrument: <span id="selectedInstrument">Synth</span></div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>Space: Play/Stop | Del: Clear Step | Use Mouse to place notes on Piano Roll</p>
-        </footer>
+<!-- Модальное окно Project Manager -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <h2>💾 Project Manager</h2>
+    <div class="modal-tabs">
+      <button class="modal-tab active" data-tab="proj-tab">Projects</button>
+      <button class="modal-tab" data-tab="pat-tab">Pattern Library</button>
     </div>
 
-    <!-- Scripts -->
-    <script src="js/core/State.js"></script>
-    <script src="js/audio/Synth.js"></script>
-    <script src="js/audio/AudioEngine.js"></script>
-    <script src="js/midi/MidiOutput.js"></script>
-    <script src="js/midi/MidiExporter.js"></script>
-    <script src="js/core/Sequencer.js"></script>
-    <script src="js/ui/PianoRoll.js"></script>
-    <script src="js/ui/Controls.js"></script>
-    <script src="js/main.js"></script>
+    <!-- Projects Tab -->
+    <div class="modal-tab-content active" id="proj-tab">
+      <div class="modal-row">
+        <input type="text" id="projectName" placeholder="Project name...">
+      </div>
+      <div class="modal-row">
+        <button class="btn" id="modalSave">💾 Save Project</button>
+        <button class="btn" id="modalExport">📤 Export .json</button>
+        <button class="btn" id="modalImport">📥 Import .json</button>
+      </div>
+      <div class="slot-list" id="slotInfo">
+        <div style="font-size:11px;color:var(--text-dim);padding:4px 0;">Project auto-saves to browser storage.</div>
+      </div>
+    </div>
+
+    <!-- Pattern Library Tab -->
+    <div class="modal-tab-content" id="pat-tab">
+      <div class="lib-filter">
+        <select id="libStyleFilter">
+          <option value="">All styles</option>
+        </select>
+      </div>
+      <div class="lib-list" id="libList"></div>
+      <div class="modal-row">
+        <button class="btn" id="libImportBtn" disabled style="flex:1">Import selected</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" id="modalClose" style="flex:1;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   КОНФИГУРАЦИЯ
+   ═══════════════════════════════════════════════════════════ */
+const CONFIG = {
+  TRACKS: 3,
+  STEPS: 16,
+  MIN_STEPS: 1,
+  MAX_STEPS: 256,
+  NOTE_MIN: 36,   // C2 (расширили до 3 октав)
+  NOTE_MAX: 71,   // B4
+  LOOKAHEAD: 0.1,
+  SCHEDULE_INTERVAL: 25,
+  OSC_GAIN: 0.25,
+  ATTACK: 0.01,
+  RELEASE: 0.08,
+  DRUM_GAIN: 0.3, // громкость барабанов
+  TRACK_COLORS: ['#ff6b6b', '#4ecdc4', '#ffe66d'],
+  WAVE_TYPES: ['square', 'triangle', 'sawtooth'],
+  TRACK_TYPES: ['melodic', 'melodic', 'melodic'],
+  DRUM_INSTRUMENTS: [
+    { id: 'kick',   name: 'BD', fullName: 'Bass Drum',    color: '#ff4466' },
+    { id: 'snare',  name: 'SD', fullName: 'Snare Drum',   color: '#ff8844' },
+    { id: 'clap',   name: 'CP', fullName: 'Clap',         color: '#ffaa22' },
+    { id: 'clhat',  name: 'CH', fullName: 'Closed HiHat', color: '#aabb44' },
+    { id: 'ophat',  name: 'OH', fullName: 'Open HiHat',   color: '#88bb44' },
+    { id: 'lotom',  name: 'LT', fullName: 'Low Tom',      color: '#66aacc' },
+    { id: 'hitom',  name: 'HT', fullName: 'High Tom',     color: '#44aadd' },
+    { id: 'crash',  name: 'CR', fullName: 'Crash Cymbal', color: '#aa66cc' },
+  ],
+  DRUM_NOTE_MAP: [48, 50, 52, 53, 55, 57, 59, 60],
+  //                    C3   D3   E3   F3   G3   A3   B3   C4
+};
+
+/* ═══════════════════════════════════════════════════════════
+   БИБЛИОТЕКА ПРЕСЕТОВ (MIDI-паттерны)
+   Каждый пресет: { name, pattern: [[step, value], ...] }
+   Для барабанов value = drumIdx (0-7), для мелодии value = midiNote
+   ═══════════════════════════════════════════════════════════ */
+const PRESETS = {
+  drum: [
+    {
+      name: 'Four on Floor',
+      // kick 4/4, snare 2&4, closed hi-hat 8ths
+      pattern: [
+        [0,0],[4,0],[8,0],[12,0],
+        [4,1],[12,1],
+        [0,3],[2,3],[4,3],[6,3],[8,3],[10,3],[12,3],[14,3],
+      ],
+    },
+    {
+      name: 'Basic Rock',
+      // kick 1&3, snare 2&4, hi-hat 8ths, crash on 1
+      pattern: [
+        [0,0],[6,0],[8,0],[14,0],
+        [4,1],[12,1],
+        [0,3],[2,3],[4,3],[6,3],[8,3],[10,3],[12,3],[14,3],
+        [0,7],
+      ],
+    },
+    {
+      name: 'Techno',
+      // kick 1,3,5,7,9,11,13,15; snare 4,8,12; closed hi-hat ticks
+      pattern: [
+        [0,0],[2,0],[4,0],[6,0],[8,0],[10,0],[12,0],[14,0],
+        [4,1],[8,1],[12,1],
+        [1,3],[3,3],[5,3],[7,3],[9,3],[11,3],[13,3],[15,3],
+      ],
+    },
+    {
+      name: 'Funk',
+      // syncopated kick, snare 2&4, off-beat hi-hat shuttle
+      pattern: [
+        [0,0],[3,0],[6,0],[10,0],[12,0],[14,0],
+        [4,1],[12,1],
+        [1,3],[3,3],[5,3],[7,3],[9,3],[11,3],[13,3],[15,3],
+        [12,4],
+      ],
+    },
+    {
+      name: 'Half Time',
+      // kick 1&5&9&13, snare 5&13, hi-hat 8ths
+      pattern: [
+        [0,0],[4,0],[6,0],[8,0],[12,0],[14,0],
+        [4,1],[12,1],
+        [0,3],[2,3],[4,3],[6,3],[8,3],[10,3],[12,3],[14,3],
+      ],
+    },
+    {
+      name: 'House',
+      // kick all beats, snare 5&13, closed/open hi-hat
+      pattern: [
+        [0,0],[4,0],[8,0],[12,0],
+        [4,1],[12,1],
+        [0,3],[2,3],[4,3],[6,3],[8,3],[10,3],[12,3],[14,3],
+        [4,4],[12,4],
+      ],
+    },
+    {
+      name: 'Drum & Bass',
+      // kick 1&3&9&11, snare 5&13, hi-hat 16ths feel
+      pattern: [
+        [0,0],[4,0],[8,0],[12,0],
+        [4,1],[12,1],
+        [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],
+        [8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],
+      ],
+    },
+    {
+      name: 'Trap',
+      // kick 1,2,5,7,9,11,13; snare 5&13; hats fast
+      pattern: [
+        [0,0],[2,0],[5,0],[7,0],[9,0],[11,0],[13,0],[14,0],
+        [4,1],[12,1],
+        [0,3],[2,3],[4,3],[6,3],[8,3],[10,3],[12,3],[14,3],
+        [1,3],[3,3],[5,3],[7,3],[9,3],[11,3],[13,3],[15,3],
+        [0,2],[8,2],
+      ],
+    },
+  ],
+  melodic: [
+    {
+      name: 'Bass - Root Fifth',
+      // простая басовая линия: C3→C3→G3→G3→A3→A3→F3→F3
+      pattern: [
+        [0,48],[2,48],[4,55],[6,55],[8,57],[10,57],[12,53],[14,53],
+      ],
+    },
+    {
+      name: 'Bass - Walking',
+      // C3→E3→G3→A3→G3→E3→F3→G3
+      pattern: [
+        [0,48],[2,52],[4,55],[6,57],[8,55],[10,52],[12,53],[14,55],
+      ],
+    },
+    {
+      name: 'Arp - Minor Triad',
+      // C3→Eb3→G3→Eb3→C3→Eb3→G3→Eb3 (16ths)
+      pattern: [
+        [0,48],[1,51],[2,55],[3,51],[4,48],[5,51],[6,55],[7,51],
+        [8,48],[9,51],[10,55],[11,51],[12,48],[13,51],[14,55],[15,51],
+      ],
+    },
+    {
+      name: 'Lead - Syncopated',
+      // C4→D4→E4→G4→E4→D4→C4→D4 (синкопированный рифф)
+      pattern: [
+        [0,60],[2,62],[4,64],[6,67],[8,64],[10,62],[12,60],[14,62],
+      ],
+    },
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════════
+   УТИЛИТЫ
+   ═══════════════════════════════════════════════════════════ */
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+function midiToName(midi) {
+  const note = NOTE_NAMES[midi % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return note + octave;
+}
+
+function isSharp(midi) {
+  return [1, 3, 6, 8, 10].includes(midi % 12);
+}
+
+function isC(midi) {
+  return midi % 12 === 0;
+}
+
+/* Генератор белого шума (используется для синтезатора барабанов) */
+function createNoiseBuffer(ctx, duration) {
+  const len = Math.ceil(ctx.sampleRate * duration);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  return buf;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROJECT MANAGER
+   Сохранение/загрузка полного проекта в localStorage + JSON
+   ═══════════════════════════════════════════════════════════ */
+class ProjectManager {
+  constructor(state) {
+    this.state = state;
+    this.SAVE_KEY = 'chiptune_current_project';
+  }
+
+  /* Сохранить текущий проект в localStorage */
+  saveCurrentProject() {
+    const data = this.state.exportProject();
+    localStorage.setItem(this.SAVE_KEY, JSON.stringify(data));
+  }
+
+  /* Загрузить проект из localStorage (v2 + legacy) */
+  loadLastProject() {
+    try {
+      const raw = localStorage.getItem(this.SAVE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (data.version === 2) {
+        this.state.loadProject(data);
+        return true;
+      }
+      if (data._variantA) {
+        // Legacy format in localStorage → wrap into v2
+        const pl = data._variantA?.patternLength || CONFIG.STEPS;
+        const project = {
+          version: 2,
+          name: data.name || 'Project',
+          tempo: this.state.tempo,
+          swing: this.state.swing,
+          _arrangedPatterns: [{
+            name: data.name || '',
+            locatorA: data.locatorA ?? 0,
+            locatorB: data.locatorB ?? pl,
+            _activeVariant: data._activeVariant || 'a',
+            _variantA: JSON.parse(JSON.stringify(data._variantA)),
+            _variantB: data._variantB ? JSON.parse(JSON.stringify(data._variantB)) : null,
+          }],
+          songSequence: [0],
+          seqIndex: 0,
+          _editingIdx: 0,
+          songMode: false,
+        };
+        this.state.loadProject(project);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /* Экспорт полного проекта в JSON файл */
+  exportToFile() {
+    const data = this.state.exportProject();
+    const name = data.name || 'project';
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name.replace(/[^a-zа-я0-9_-]/gi, '_')}_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* Импорт проекта из JSON файла (v2 + legacy) */
+  importFromFile(callback) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (data.version === 2) {
+            this.state.loadProject(data);
+            if (callback) callback(data);
+          } else if (data._variantA) {
+            // Legacy single-pattern format → wrap into v2 project
+            const pl = data._variantA?.patternLength || CONFIG.STEPS;
+            const project = {
+              version: 2,
+              name: data.name || 'Imported Pattern',
+              tempo: this.state.tempo,
+              swing: this.state.swing,
+              _arrangedPatterns: [{
+                name: data.name || '',
+                locatorA: data.locatorA ?? 0,
+                locatorB: data.locatorB ?? pl,
+                _activeVariant: data._activeVariant || 'a',
+                _variantA: JSON.parse(JSON.stringify(data._variantA)),
+                _variantB: data._variantB ? JSON.parse(JSON.stringify(data._variantB)) : null,
+              }],
+              songSequence: [0],
+              seqIndex: 0,
+              _editingIdx: 0,
+              songMode: false,
+            };
+            this.state.loadProject(project);
+            if (callback) callback(project);
+          } else {
+            alert('Unsupported file format');
+          }
+        } catch (err) {
+          console.error('Import error:', err);
+          alert('Failed to load file');
+        }
+      };
+      reader.readAsText(file);
+    });
+    input.click();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PATTERN LIBRARY
+   Внутреннее хранилище паттернов по стилям (localStorage)
+   ═══════════════════════════════════════════════════════════ */
+class PatternLibrary {
+  constructor(state) {
+    this.state = state;
+    this.LIB_KEY = 'chiptune_pattern_lib';
+  }
+
+  /* Получить все паттерны */
+  getAll() {
+    try { return JSON.parse(localStorage.getItem(this.LIB_KEY)) || []; }
+    catch { return []; }
+  }
+
+  /* Сохранить список */
+  _save(list) {
+    localStorage.setItem(this.LIB_KEY, JSON.stringify(list));
+  }
+
+  /* Получить уникальные стили */
+  getStyles() {
+    const list = this.getAll();
+    return [...new Set(list.map(p => p.style).filter(Boolean))].sort();
+  }
+
+  /* Сохранить текущий паттерн в библиотеку */
+  savePattern(name, style) {
+    const list = this.getAll();
+    const ap = this.state._arrangedPatterns[this.state._editingIdx];
+    const vA = ap._variantA;
+    const vB = ap._variantB;
+    const entry = {
+      id: Date.now(),
+      name: name || 'Unnamed',
+      style: style || '',
+      savedAt: new Date().toISOString(),
+      patternLength: vA.patternLength,
+      variantA: {
+        melodicPattern: vA.melodicPattern.map(t => t.map(s => s)),
+        drumPattern: vA.drumPattern.map(t => t.map(s => [...s])),
+        trackTypes: [...vA.trackTypes],
+        trackWaves: [...vA.trackWaves],
+        drumSoundModes: [...vA.drumSoundModes],
+        trackAdsr: vA.trackAdsr.map(a => ({...a})),
+        trackFilter: vA.trackFilter.map(f => ({...f})),
+        adsrTarget: vA.adsrTarget.map(a => ({...a})),
+        adsrDepth: vA.adsrDepth.map(d => ({...d})),
+        trackMute: [...vA.trackMute],
+      },
+      variantB: vB ? {
+        melodicPattern: vB.melodicPattern.map(t => t.map(s => s)),
+        drumPattern: vB.drumPattern.map(t => t.map(s => [...s])),
+        trackTypes: [...vB.trackTypes],
+        trackWaves: [...vB.trackWaves],
+        drumSoundModes: [...vB.drumSoundModes],
+        trackAdsr: vB.trackAdsr.map(a => ({...a})),
+        trackFilter: vB.trackFilter.map(f => ({...f})),
+        adsrTarget: vB.adsrTarget.map(a => ({...a})),
+        adsrDepth: vB.adsrDepth.map(d => ({...d})),
+        trackMute: [...vB.trackMute],
+      } : null,
+    };
+    list.push(entry);
+    this._save(list);
+    return entry;
+  }
+
+  /* Удалить паттерн из библиотеки */
+  deletePattern(id) {
+    let list = this.getAll();
+    list = list.filter(p => p.id !== id);
+    this._save(list);
+  }
+
+  /* Импортировать паттерн из библиотеки в аранжировку */
+  importToArrangement(id) {
+    const list = this.getAll();
+    const entry = list.find(p => p.id === id);
+    if (!entry) return null;
+
+    const makeVariant = (src) => ({
+      patternLength: entry.patternLength,
+      melodicPattern: src.melodicPattern,
+      drumPattern: src.drumPattern.map(t => t.map(s => [...s])),
+      trackTypes: [...src.trackTypes],
+      trackWaves: [...src.trackWaves],
+      drumSoundModes: [...src.drumSoundModes],
+      trackAdsr: src.trackAdsr.map(a => ({...a})),
+      trackFilter: src.trackFilter.map(f => ({...f})),
+      adsrTarget: src.adsrTarget.map(a => ({...a})),
+      adsrDepth: src.adsrDepth.map(d => ({...d})),
+      trackMute: [...src.trackMute],
+    });
+
+    const newIdx = this.state._arrangedPatterns.length;
+    this.state._arrangedPatterns.push({
+      _variantA: makeVariant(entry.variantA),
+      _variantB: entry.variantB ? makeVariant(entry.variantB) : StateManager._makeEmptyPattern(entry.patternLength),
+      _activeVariant: 'a',
+      _undoStackA: [], _redoStackA: [],
+      _undoStackB: [], _redoStackB: [],
+      locatorA: 0,
+      locatorB: entry.patternLength,
+      name: entry.name,
+    });
+    this.state.songSequence.push(newIdx);
+
+    // Switch edited pattern to the new one
+    this.state._saveToArranged(this.state._editingIdx);
+    this.state._editingIdx = newIdx;
+    this.state._loadFromArranged(newIdx);
+    this.state._activeVariant = 'a';
+    this.state.currentStep = -1;
+
+    return newIdx;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE MANAGER
+   ═══════════════════════════════════════════════════════════ */
+class StateManager {
+  static _makeEmptyPattern(len = CONFIG.STEPS) {
+    return {
+      patternLength: len,
+      melodicPattern: Array.from({ length: CONFIG.TRACKS }, () =>
+        Array(len).fill(null)),
+      drumPattern: Array.from({ length: CONFIG.TRACKS }, () =>
+        Array.from({ length: len }, () =>
+          new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false))),
+      trackTypes: CONFIG.TRACK_TYPES.slice(),
+      trackWaves: CONFIG.WAVE_TYPES.slice(),
+      drumSoundModes: ['synth', 'synth', 'synth'],
+      trackAdsr: Array.from({ length: CONFIG.TRACKS }, () => ({
+        attack: 0.01, decay: 0.1, sustain: 0.7, release: 0.08,
+      })),
+      trackFilter: Array.from({ length: CONFIG.TRACKS }, () => ({
+        enabled: true, type: 'lowpass', frequency: 8000, q: 1,
+      })),
+      adsrTarget: Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false })),
+      adsrDepth: Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 })),
+      trackMute: [false, false, false],
+    };
+  }
+
+  constructor() {
+    const p = StateManager._makeEmptyPattern();
+    this.melodicPattern = p.melodicPattern;
+    this.drumPattern = p.drumPattern;
+    this.trackTypes = p.trackTypes;
+    this.trackWaves = p.trackWaves;
+    this.drumSoundModes = p.drumSoundModes;
+    this.trackAdsr = p.trackAdsr;
+    this.trackFilter = p.trackFilter;
+    this.adsrTarget = p.adsrTarget;
+    this.adsrDepth = p.adsrDepth;
+    this.trackMute = p.trackMute;
+    this.patternLength = p.patternLength;
+    this.steps = this.patternLength;
+
+    this.locatorA = 0;
+    this.locatorB = this.patternLength;
+
+    this.tempo = 130;
+    this.swing = 0;
+    this.isPlaying = false;
+    this.currentStep = -1;
+    this.activeTrack = 0;
+    this.synthPanelOpen = [false, false, false];
+    this._onChange = null;
+    this._undoMax = 50;
+    this._skipHistory = false;
+    this.viewMode = 'edit'; // 'edit' | 'arrange'
+    this.songMode = false;
+    this.songSequence = [];
+    this.seqIndex = 0;
+
+    // Tool & selection
+    this.toolMode = 'draw'; // 'draw' | 'select'
+    this.selStart = -1;
+    this.selEnd = -1;
+    this.pasteCursor = -1;
+    this.clipboard = null;
+    this._copyTrackMask = null;
+    this.patternClipboard = null;
+
+    // Single pattern with A/B variants
+    this._patternA = p;
+    this._patternB = StateManager._makeEmptyPattern();
+    this._activeVariant = 'a';
+    this._undoStackA = [];
+    this._redoStackA = [];
+    this._undoStackB = [];
+    this._redoStackB = [];
+    this._undoStack = this._undoStackA;
+    this._redoStack = this._redoStackA;
+
+    // Store for arranged patterns
+    this._arrangedPatterns = [];
+
+    // Initialize first arranged pattern from current buffer
+    this._arrangedPatterns.push(this._saveCurrentAsPatternData());
+    this._editingIdx = 0;
+    this.songSequence.push(0);
+  }
+
+  /* Вернуть данные текущего активного варианта */
+  _getCurrentData() {
+    return this._activeVariant === 'b' ? this._patternB : this._patternA;
+  }
+
+  /* Сохранить текущие стеки undo/redo */
+  _saveStacks() {
+    if (this._activeVariant === 'a') {
+      this._undoStackA = this._undoStack;
+      this._redoStackA = this._redoStack;
+    } else {
+      this._undoStackB = this._undoStack;
+      this._redoStackB = this._redoStack;
+    }
+  }
+
+  /* Загрузить стеки undo/redo */
+  _loadStacks() {
+    if (this._activeVariant === 'a') {
+      this._undoStack = this._undoStackA;
+      this._redoStack = this._redoStackA;
+    } else {
+      this._undoStack = this._undoStackB;
+      this._redoStack = this._redoStackB;
+    }
+  }
+
+  /* Создать snapshot текущего состояния как данные для хранения */
+  _saveCurrentAsPatternData() {
+    return {
+      _variantA: JSON.parse(JSON.stringify(this._patternA)),
+      _variantB: JSON.parse(JSON.stringify(this._patternB)),
+      _activeVariant: this._activeVariant,
+      _undoStackA: this._undoStackA,
+      _redoStackA: this._redoStackA,
+      _undoStackB: this._undoStackB,
+      _redoStackB: this._redoStackB,
+      locatorA: this.locatorA,
+      locatorB: this.locatorB,
+    };
+  }
+
+  /* Загрузить данные в редактор */
+  _loadPatternData(data) {
+    this._patternA = data._variantA;
+    this._patternB = data._variantB || JSON.parse(JSON.stringify(data._variantA));
+    this._activeVariant = data._activeVariant || 'a';
+    this._undoStackA = data._undoStackA || [];
+    this._redoStackA = data._redoStackA || [];
+    this._undoStackB = data._undoStackB || [];
+    this._redoStackB = data._redoStackB || [];
+    if (data.locatorA !== undefined) this.locatorA = data.locatorA;
+    if (data.locatorB !== undefined) this.locatorB = data.locatorB;
+  }
+
+  /* Переименовать паттерн в _arrangedPatterns */
+  renamePattern(idx, newName) {
+    if (idx < 0 || idx >= this._arrangedPatterns.length) return;
+    this._arrangedPatterns[idx].name = newName;
+    this._notify();
+  }
+
+  /* Сохранить текущее редактирование в конкретный элемент _arrangedPatterns */
+  _saveToArranged(idx) {
+    if (idx < 0 || idx >= this._arrangedPatterns.length) return;
+    this._saveStateToVariant();
+    const oldName = this._arrangedPatterns[idx].name;
+    this._arrangedPatterns[idx] = this._saveCurrentAsPatternData();
+    this._arrangedPatterns[idx].name = oldName;
+  }
+
+  /* Загрузить редактирование из конкретного элемента _arrangedPatterns */
+  _loadFromArranged(idx) {
+    if (idx < 0 || idx >= this._arrangedPatterns.length) return;
+    this._loadPatternData(this._arrangedPatterns[idx]);
+    this._loadVariantToState();
+    this._loadStacks();
+  }
+
+  /* Скопировать активный вариант из _patternA/B в state */
+  _loadVariantToState() {
+    const d = this._getCurrentData();
+    this.melodicPattern = d.melodicPattern;
+    this.drumPattern = d.drumPattern;
+    this.trackTypes = d.trackTypes;
+    this.trackWaves = d.trackWaves;
+    this.drumSoundModes = d.drumSoundModes;
+    this.trackAdsr = d.trackAdsr;
+    this.trackFilter = d.trackFilter;
+    this.adsrTarget = d.adsrTarget || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false }));
+    this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
+    this.trackMute = d.trackMute || [false, false, false];
+    this.patternLength = d.patternLength ?? CONFIG.STEPS;
+    this.steps = this.patternLength;
+    this.locatorA = Math.max(0, Math.min(this.locatorA, this.patternLength));
+    this.locatorB = Math.max(1, Math.min(this.locatorB, this.patternLength));
+    if (this.locatorA >= this.locatorB) this.locatorA = 0;
+    this.selStart = -1; this.selEnd = -1; this.pasteCursor = -1;
+  }
+
+  /* Скопировать state в активный вариант _patternA/B */
+  _saveStateToVariant() {
+    const d = this._getCurrentData();
+    d.patternLength = this.patternLength;
+    d.melodicPattern = this.melodicPattern;
+    d.drumPattern = this.drumPattern.map(t => t.map(s => [...s]));
+    d.trackTypes = [...this.trackTypes];
+    d.trackWaves = [...this.trackWaves];
+    d.drumSoundModes = [...this.drumSoundModes];
+    d.trackAdsr = this.trackAdsr.map(a => ({...a}));
+    d.trackFilter = this.trackFilter.map(f => ({...f}));
+    d.adsrTarget = this.adsrTarget.map(a => ({...a}));
+    d.adsrDepth = this.adsrDepth.map(d2 => ({...d2}));
+    d.trackMute = [...this.trackMute];
+  }
+
+  /* Коллбэк, вызываемый при каждом изменении состояния */
+  onChange(fn) { this._onChange = fn; }
+
+  /* Снимок текущего состояния */
+  _snapshot() {
+    return JSON.stringify({
+      patternLength: this.patternLength,
+      melodicPattern: this.melodicPattern,
+      drumPattern: this.drumPattern.map(t => t.map(s => [...s])),
+      trackTypes: [...this.trackTypes],
+      tempo: this.tempo,
+      swing: this.swing,
+      trackWaves: [...this.trackWaves],
+      drumSoundModes: [...this.drumSoundModes],
+      trackAdsr: this.trackAdsr.map(a => ({...a})),
+      trackFilter: this.trackFilter.map(f => ({...f})),
+      adsrTarget: [...this.adsrTarget],
+      adsrDepth: this.adsrDepth.map(d => ({...d})),
+      trackMute: [...this.trackMute],
+    });
+  }
+
+  /* Восстановить из снапшота */
+  _restore(json) {
+    const d = JSON.parse(json);
+    this.melodicPattern = d.melodicPattern;
+    this.drumPattern = d.drumPattern;
+    this.trackTypes = d.trackTypes;
+    this.tempo = d.tempo;
+    this.swing = d.swing;
+    this.trackWaves = d.trackWaves;
+    this.drumSoundModes = d.drumSoundModes;
+    this.trackAdsr = d.trackAdsr;
+    this.trackFilter = d.trackFilter;
+    this.adsrTarget = d.adsrTarget || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false }));
+    this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
+    this.trackMute = d.trackMute || [false, false, false];
+    this.patternLength = d.patternLength ?? CONFIG.STEPS;
+    this.steps = this.patternLength;
+    this._saveStateToVariant();
+  }
+
+  /* Пушнуть текущий state в undo-стек */
+  pushHistory() {
+    if (this._skipHistory) return;
+    this._undoStack.push(this._snapshot());
+    if (this._undoStack.length > this._undoMax) this._undoStack.shift();
+    this._redoStack = [];
+  }
+
+  undo() {
+    if (this._undoStack.length === 0) return false;
+    this._redoStack.push(this._snapshot());
+    this._skipHistory = true;
+    this._restore(this._undoStack.pop());
+    this._skipHistory = false;
+    return true;
+  }
+
+  redo() {
+    if (this._redoStack.length === 0) return false;
+    this._undoStack.push(this._snapshot());
+    this._skipHistory = true;
+    this._restore(this._redoStack.pop());
+    this._skipHistory = false;
+    return true;
+  }
+
+  canUndo() { return this._undoStack.length > 0; }
+  canRedo() { return this._redoStack.length > 0; }
+
+  _notify() {
+    if (this._onChange) this._onChange();
+    if (this._autosaveFn) this._autosaveFn();
+  }
+
+  /* Сохранить state в variant, переключить variant, загрузить variant */
+  toggleVariant() {
+    this._saveStateToVariant();
+    this._saveStacks();
+    this._activeVariant = this._activeVariant === 'a' ? 'b' : 'a';
+    this._loadVariantToState();
+    this._loadStacks();
+    this.currentStep = -1;
+    this._skipHistory = false;
+    this.steps = this.patternLength;
+    this.selStart = -1; this.selEnd = -1; this.pasteCursor = -1;
+    this._notify();
+  }
+
+  /* Переключение на другой аранжированный паттерн (используется при клике в Arrange) */
+  switchSongPattern(arrangedIdx) {
+    if (arrangedIdx < 0 || arrangedIdx >= this._arrangedPatterns.length) return;
+    this._saveToArranged(this._editingIdx);
+    this._editingIdx = arrangedIdx;
+    this._loadFromArranged(arrangedIdx);
+  }
+
+  /* ─── Tool / Selection / Copy-Paste ─── */
+  setTool(mode) {
+    if (this.toolMode === mode) return;
+    this.toolMode = mode;
+    this.selStart = -1;
+    this.selEnd = -1;
+    this.pasteCursor = -1;
+    this._notify();
+  }
+
+  beginSelect(step) {
+    this.selStart = step;
+    this.selEnd = step;
+    this.pasteCursor = -1;
+    this._notify();
+  }
+
+  extendSelect(step) {
+    this.selEnd = step;
+    // normalize not needed here – _updateSelection handles it
+    this._notify();
+  }
+
+  endSelect() {
+    if (this.selStart !== -1 && this.selEnd !== -1) {
+      if (this.selEnd < this.selStart) [this.selStart, this.selEnd] = [this.selEnd, this.selStart];
+      // single click = курсор В ЭТОМ шаге, drag = после выделения
+      this.pasteCursor = (this.selStart === this.selEnd) ? this.selStart : this.selEnd + 1;
+    }
+    this._notify();
+  }
+
+  copy(trackMask) {
+    if (this.selStart === -1 || this.selEnd === -1) return;
+    const mask = trackMask || [true, true, true];
+    const len = this.selEnd - this.selStart + 1;
+    const data = [];
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      if (!mask[t]) {
+        data.push(null);
+        continue;
+      }
+      const melodic = [];
+      const drum = [];
+      for (let s = this.selStart; s <= this.selEnd; s++) {
+        melodic.push(this.melodicPattern[t][s]);
+        drum.push(this.drumPattern[t][s] ? [...this.drumPattern[t][s]] : null);
+      }
+      data.push({ melodic, drum });
+    }
+    this.clipboard = { data, length: len, trackTypes: this.trackTypes.slice() };
+    this._copyTrackMask = mask;
+    this._notify();
+  }
+
+  paste(trackMask) {
+    if (!this.clipboard) return;
+    const target = this.pasteCursor !== -1 ? this.pasteCursor :
+                   this.selEnd !== -1 ? this.selEnd + 1 : 0;
+    const maxLen = this.steps - target;
+    if (maxLen <= 0) return;
+    const len = Math.min(this.clipboard.length, maxLen);
+    const mask = trackMask || this._copyTrackMask || [true, true, true];
+    this.pushHistory();
+    if (this.clipboard.trackTypes) this.trackTypes = this.clipboard.trackTypes.slice();
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      if (!mask[t]) continue;
+      if (!this.clipboard.data[t]) continue;
+      for (let i = 0; i < len; i++) {
+        const s = target + i;
+        this.melodicPattern[t][s] = this.clipboard.data[t].melodic[i];
+        this.drumPattern[t][s] = this.clipboard.data[t].drum[i]
+          ? [...this.clipboard.data[t].drum[i]]
+          : new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
+      }
+    }
+    this.pasteCursor = target + len;
+    this._notify();
+  }
+
+  duplicate() {
+    if (this.selStart === -1 || this.selEnd === -1) return;
+    this.copy();
+    this.pasteCursor = this.selEnd + 1;
+    this.paste();
+  }
+
+  /* Скопировать целый паттерн из _arrangedPatterns */
+  copyPatternFromIdx(idx, drumsOnly) {
+    if (idx < 0 || idx >= this._arrangedPatterns.length) return;
+    if (idx === this._editingIdx) this._saveToArranged(idx);
+    const data = this._arrangedPatterns[idx];
+    this.patternClipboard = {
+      variantA: JSON.parse(JSON.stringify(data._variantA)),
+      variantB: data._variantB ? JSON.parse(JSON.stringify(data._variantB)) : null,
+      name: data.name,
+      drumsOnly: !!drumsOnly,
+    };
+    this._notify();
+  }
+
+  /* Вставить целый паттерн в _arrangedPatterns */
+  pastePatternToIdx(idx) {
+    if (idx < 0 || idx >= this._arrangedPatterns.length || !this.patternClipboard) return;
+    const pc = this.patternClipboard;
+    const target = this._arrangedPatterns[idx];
+    if (pc.drumsOnly) {
+      target._variantA.drumPattern = JSON.parse(JSON.stringify(pc.variantA.drumPattern));
+      if (target._variantB && pc.variantB) {
+        target._variantB.drumPattern = JSON.parse(JSON.stringify(pc.variantB.drumPattern));
+      }
+    } else {
+      target._variantA = JSON.parse(JSON.stringify(pc.variantA));
+      target._variantB = pc.variantB ? JSON.parse(JSON.stringify(pc.variantB)) : null;
+    }
+    if (idx === this._editingIdx) {
+      this._loadFromArranged(idx);
+    }
+    this._notify();
+  }
+
+  deleteSelection() {
+    if (this.selStart === -1 || this.selEnd === -1) return;
+    this.pushHistory();
+    for (let s = this.selStart; s <= this.selEnd; s++) {
+      for (let t = 0; t < CONFIG.TRACKS; t++) {
+        this.melodicPattern[t][s] = null;
+        this.drumPattern[t][s] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
+      }
+    }
+    this._notify();
+  }
+
+  isDrumTrack(track) {
+    return this.trackTypes[track] === 'drum';
+  }
+
+  setTrackType(track, type) {
+    this.pushHistory();
+    this.trackTypes[track] = type;
+    this._notify();
+  }
+
+  setMelodicNote(track, step, midi) {
+    this.pushHistory();
+    if (this.melodicPattern[track][step] === midi) {
+      this.melodicPattern[track][step] = null;
+    } else {
+      this.melodicPattern[track][step] = midi;
+    }
+    this._notify();
+  }
+
+  toggleDrum(track, step, drumIdx) {
+    this.pushHistory();
+    this.drumPattern[track][step][drumIdx] = !this.drumPattern[track][step][drumIdx];
+    this._notify();
+  }
+
+  isDrumActive(track, step, drumIdx) {
+    return this.drumPattern[track][step][drumIdx] === true;
+  }
+
+  getPatternNoteCount(arrangedIdx, trackIdx) {
+    const ap = this._arrangedPatterns[arrangedIdx];
+    if (!ap) return 0;
+    const variant = ap._activeVariant === 'b' ? ap._variantB : ap._variantA;
+    if (!variant) return 0;
+    const steps = variant.patternLength || CONFIG.STEPS;
+    let count = 0;
+    if (this.trackTypes[trackIdx] === 'drum') {
+      for (let s = 0; s < steps; s++)
+        for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++)
+          if (variant.drumPattern[trackIdx]?.[s]?.[d]) count++;
+    } else {
+      for (let s = 0; s < steps; s++)
+        if (variant.melodicPattern[trackIdx]?.[s] !== null && variant.melodicPattern[trackIdx]?.[s] !== undefined) count++;
+    }
+    return count;
+  }
+
+  clearAll() {
+    this.pushHistory();
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      for (let s = 0; s < this.steps; s++) {
+        this.melodicPattern[t][s] = null;
+        for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
+          this.drumPattern[t][s][d] = false;
+        }
+      }
+    }
+    this._notify();
+  }
+
+  setPatternLength(n) {
+    const clamped = Math.max(CONFIG.MIN_STEPS, Math.min(CONFIG.MAX_STEPS, n));
+    if (clamped === this.steps) return;
+    this.pushHistory();
+    const oldLen = this.steps;
+    this.patternLength = clamped;
+    this.steps = clamped;
+    this.selStart = -1; this.selEnd = -1; this.pasteCursor = -1;
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      if (clamped > oldLen) {
+        this.melodicPattern[t].push(...Array(clamped - oldLen).fill(null));
+        this.drumPattern[t].push(...Array.from({ length: clamped - oldLen }, () =>
+          new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false)));
+      } else {
+        this.melodicPattern[t].length = clamped;
+        this.drumPattern[t].length = clamped;
+      }
+    }
+    // Синхронизируем длину с неактивным вариантом
+    const inactive = this._activeVariant === 'a' ? this._patternB : this._patternA;
+    inactive.patternLength = clamped;
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      const inactLen = inactive.melodicPattern[t].length;
+      if (clamped > inactLen) {
+        inactive.melodicPattern[t].push(...Array(clamped - inactLen).fill(null));
+        inactive.drumPattern[t].push(...Array.from({ length: clamped - inactLen }, () =>
+          new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false)));
+      } else {
+        inactive.melodicPattern[t].length = clamped;
+        inactive.drumPattern[t].length = clamped;
+      }
+    }
+    // Корректируем локаторы
+    if (this.locatorB > clamped) this.locatorB = clamped;
+    if (this.locatorA >= this.locatorB) this.locatorA = 0;
+    // Если играем, корректируем текущий шаг, чтобы он не вылез за границы
+    if (this.currentStep >= clamped) this.currentStep = 0;
+    this._notify();
+  }
+
+  getMelodicNotesAtStep(step) {
+    const result = new Map();
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      if (!this.isDrumTrack(t) && this.melodicPattern[t][step] !== null) {
+        result.set(t, this.melodicPattern[t][step]);
+      }
+    }
+    return result;
+  }
+
+  getDrumNotesAtStep(step) {
+    const result = new Map(); // track -> Set<drumIdx>
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      if (this.isDrumTrack(t)) {
+        const active = new Set();
+        for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
+          if (this.drumPattern[t][step][d]) {
+            active.add(d);
+          }
+        }
+        if (active.size > 0) {
+          result.set(t, active);
+        }
+      }
+    }
+    return result;
+  }
+
+  /* Экспорт текущего паттерна (обе вариации) */
+  exportMidi() {
+    this._saveStateToVariant();
+    const data = this._saveCurrentAsPatternData();
+    data.name = this._arrangedPatterns[this._editingIdx]?.name || '';
+    return data;
+  }
+
+  loadPattern(data) {
+    this.pushHistory();
+    if (data._variantA && data._variantB) {
+      this._loadPatternData(data);
+      this._loadVariantToState();
+      this._loadStacks();
+    } else {
+      // Legacy single-variant data
+      if (data.patternLength) { this.patternLength = data.patternLength; this.steps = data.patternLength; }
+      if (data.locatorA === undefined) { this.locatorA = 0; this.locatorB = this.steps; }
+      const d = this._getCurrentData();
+      if (data.melodicPattern) d.melodicPattern = data.melodicPattern;
+      if (data.drumPattern) d.drumPattern = data.drumPattern;
+      if (data.trackTypes) d.trackTypes = data.trackTypes;
+      if (data.trackWaves) d.trackWaves = data.trackWaves;
+      if (data.drumSoundModes) d.drumSoundModes = data.drumSoundModes;
+      if (data.adsrTarget) d.adsrTarget = data.adsrTarget;
+      if (data.adsrDepth) d.adsrDepth = data.adsrDepth;
+      this._loadVariantToState();
+    }
+    // Sync back to arranged store and restore name
+    this._arrangedPatterns[this._editingIdx] = this._saveCurrentAsPatternData();
+    if (data.name) this._arrangedPatterns[this._editingIdx].name = data.name;
+    this._notify();
+  }
+
+  /* ─── Экспорт полного проекта ─── */
+  exportProject() {
+    const data = {
+      version: 2,
+      name: this._arrangedPatterns[this._editingIdx]?.name || 'Project',
+      tempo: this.tempo,
+      swing: this.swing,
+      _arrangedPatterns: this._arrangedPatterns.map(ap => ({
+        name: ap.name,
+        locatorA: ap.locatorA,
+        locatorB: ap.locatorB,
+        _activeVariant: ap._activeVariant || 'a',
+        _variantA: JSON.parse(JSON.stringify(ap._variantA)),
+        _variantB: ap._variantB ? JSON.parse(JSON.stringify(ap._variantB)) : null,
+      })),
+      songSequence: [...this.songSequence],
+      seqIndex: this.seqIndex,
+      _editingIdx: this._editingIdx,
+      songMode: this.songMode,
+    };
+    return data;
+  }
+
+  /* ─── Загрузка полного проекта ─── */
+  loadProject(data) {
+    if (!data._arrangedPatterns || !Array.isArray(data._arrangedPatterns)) return;
+    if (data.tempo !== undefined) this.tempo = data.tempo;
+    if (data.swing !== undefined) this.swing = data.swing;
+    if (data.songSequence) this.songSequence = [...data.songSequence];
+    if (data.seqIndex !== undefined) this.seqIndex = data.seqIndex;
+    if (data.songMode !== undefined) this.songMode = data.songMode;
+
+    this._arrangedPatterns = data._arrangedPatterns.map(ap => ({
+      name: ap.name || '',
+      locatorA: ap.locatorA ?? 0,
+      locatorB: ap.locatorB ?? (ap._variantA?.patternLength || CONFIG.STEPS),
+      _activeVariant: ap._activeVariant || 'a',
+      _variantA: JSON.parse(JSON.stringify(ap._variantA)),
+      _variantB: ap._variantB ? JSON.parse(JSON.stringify(ap._variantB)) : null,
+      _undoStackA: [], _redoStackA: [],
+      _undoStackB: [], _redoStackB: [],
+    }));
+
+    if (this._arrangedPatterns.length === 0) {
+      const empty = StateManager._makeEmptyPattern();
+      this._arrangedPatterns.push({
+        _variantA: empty, _variantB: StateManager._makeEmptyPattern(),
+        _activeVariant: 'a', name: '',
+        locatorA: 0, locatorB: empty.patternLength,
+        _undoStackA: [], _redoStackA: [], _undoStackB: [], _redoStackB: [],
+      });
+      this.songSequence = [0];
+    }
+
+    this._editingIdx = Math.min(data._editingIdx ?? 0, this._arrangedPatterns.length - 1);
+    this._loadFromArranged(this._editingIdx);
+    this.steps = this._getCurrentData().patternLength ?? CONFIG.STEPS;
+    this.currentStep = -1;
+    this._notify();
+  }
+
+  /* ─── Settings ─── */
+  getSettings() {
+    try { return JSON.parse(localStorage.getItem('chiptune_settings')) || { autosave: false }; }
+    catch { return { autosave: false }; }
+  }
+  saveSettings(settings) {
+    localStorage.setItem('chiptune_settings', JSON.stringify(settings));
+  }
+
+  sendToMidiOut() {
+    // TODO: Web MIDI API
+    console.log('sendToMidiOut: не реализовано');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DRUM SYNTH
+   Синтез 8 инструментов TR-909 через Web Audio API
+   ═══════════════════════════════════════════════════════════ */
+class DrumSynth {
+  constructor(ctx) {
+    this.ctx = ctx;
+    this.noiseBuffer = createNoiseBuffer(ctx, 0.5);
+    this.samples = null; // AudioBuffer[] — инициализируется через initSamples()
+  }
+
+  /* Рендеринг всех 8 барабанов в AudioBuffer через OfflineAudioContext */
+  async initSamples() {
+    if (typeof OfflineAudioContext === 'undefined') return;
+    const sampleRate = this.ctx.sampleRate;
+    const duration = 0.8;
+    this.samples = [];
+
+    for (let i = 0; i < CONFIG.DRUM_INSTRUMENTS.length; i++) {
+      try {
+        const len = Math.ceil(sampleRate * duration);
+        const offlineCtx = new OfflineAudioContext(1, len, sampleRate);
+        const temp = new DrumSynth(offlineCtx);
+        const fn = temp[`_drum_${CONFIG.DRUM_INSTRUMENTS[i].id}`];
+        if (fn) fn.call(temp, 0.01);
+        this.samples.push(await offlineCtx.startRendering());
+      } catch (e) {
+        this.samples = null;
+        return; // fallback на синтез
+      }
+    }
+  }
+
+  /* Проигрывание сэмпла из буфера */
+  playSample(instrumentIdx, time) {
+    if (!this.samples || !this.samples[instrumentIdx]) {
+      this.play(instrumentIdx, time); // fallback на синтез
+      return;
+    }
+    const ctx = this.ctx;
+    const src = ctx.createBufferSource();
+    src.buffer = this.samples[instrumentIdx];
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(CONFIG.DRUM_GAIN, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + this.samples[instrumentIdx].duration);
+    src.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(time);
+  }
+
+  /* Синтез в реальном времени */
+  play(instrumentIdx, time) {
+    const fn = this[`_drum_${CONFIG.DRUM_INSTRUMENTS[instrumentIdx].id}`];
+    if (fn) fn.call(this, time);
+  }
+
+  /* ── Bass Drum ── */
+  _drum_kick(time) {
+    const ctx = this.ctx;
+    const { DRUM_GAIN } = CONFIG;
+
+    // Основной тон с pitch sweep down (имитация 808/909 kick)
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, time);
+    osc.frequency.exponentialRampToValueAtTime(30, time + 0.12);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(DRUM_GAIN * 1.2, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+
+    // Щелчок атака (click) — короткий импульс на высокой частоте
+    const clickOsc = ctx.createOscillator();
+    clickOsc.type = 'square';
+    clickOsc.frequency.setValueAtTime(800, time);
+    clickOsc.frequency.exponentialRampToValueAtTime(100, time + 0.02);
+
+    const clickGain = ctx.createGain();
+    clickGain.gain.setValueAtTime(DRUM_GAIN * 0.4, time);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    clickOsc.connect(clickGain);
+    clickGain.connect(ctx.destination);
+
+    osc.start(time);
+    osc.stop(time + 0.45);
+    clickOsc.start(time);
+    clickOsc.stop(time + 0.03);
+  }
+
+  /* ── Snare Drum ── */
+  _drum_snare(time) {
+    const ctx = this.ctx;
+    const { DRUM_GAIN } = CONFIG;
+
+    // Тон (треугольник ~200Hz)
+    const tone = ctx.createOscillator();
+    tone.type = 'triangle';
+    tone.frequency.setValueAtTime(200, time);
+    tone.frequency.exponentialRampToValueAtTime(120, time + 0.05);
+
+    const toneGain = ctx.createGain();
+    toneGain.gain.setValueAtTime(DRUM_GAIN * 0.6, time);
+    toneGain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+
+    // Шум (snare wires)
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = this.noiseBuffer;
+
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.setValueAtTime(3000, time);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(DRUM_GAIN * 0.7, time);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+
+    tone.connect(toneGain);
+    toneGain.connect(ctx.destination);
+    noiseSrc.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+
+    tone.start(time);
+    tone.stop(time + 0.15);
+    noiseSrc.start(time);
+    noiseSrc.stop(time + 0.2);
+  }
+
+  /* ── Clap ── */
+  _drum_clap(time) {
+    const ctx = this.ctx;
+    const { DRUM_GAIN } = CONFIG;
+
+    // Множественные всплески шума (имитация хлопка)
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = this.noiseBuffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(2500, time);
+    filter.Q.setValueAtTime(3, time);
+
+    const gain = ctx.createGain();
+    // Серия коротких атак: 3 быстрых всплеска + длинный затухающий хвост
+    const now = time;
+    gain.gain.setValueAtTime(0, now);
+    // Всплеск 1
+    gain.gain.linearRampToValueAtTime(DRUM_GAIN * 0.8, now + 0.002);
+    gain.gain.linearRampToValueAtTime(0.001, now + 0.01);
+    // Всплеск 2
+    gain.gain.linearRampToValueAtTime(DRUM_GAIN * 0.8, now + 0.015);
+    gain.gain.linearRampToValueAtTime(0.001, now + 0.025);
+    // Всплеск 3
+    gain.gain.linearRampToValueAtTime(DRUM_GAIN * 0.8, now + 0.03);
+    gain.gain.linearRampToValueAtTime(0.001, now + 0.04);
+    // Хвост
+    gain.gain.linearRampToValueAtTime(DRUM_GAIN * 0.6, now + 0.045);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    noiseSrc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    noiseSrc.start(time);
+    noiseSrc.stop(time + 0.2);
+  }
+
+  /* ── Closed HiHat ── */
+  _drum_clhat(time) {
+    const ctx = this.ctx;
+    const { DRUM_GAIN } = CONFIG;
+
+    // Модулированный шум (6 осцилляторов в TR-909)
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = this.noiseBuffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.setValueAtTime(7000, time);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(DRUM_GAIN * 0.5, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+
+    noiseSrc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    noiseSrc.start(time);
+    noiseSrc.stop(time + 0.08);
+  }
+
+  /* ── Open HiHat ── */
+  _drum_ophat(time) {
+    const ctx = this.ctx;
+    const { DRUM_GAIN } = CONFIG;
+
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = this.noiseBuffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.setValueAtTime(6000, time);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(DRUM_GAIN * 0.5, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+
+    noiseSrc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    noiseSrc.start(time);
+    noiseSrc.stop(time + 0.35);
+  }
+
+  /* ── Low Tom ── */
+  _drum_lotom(time) {
+    const ctx = this.ctx;
+    const { DRUM_GAIN } = CONFIG;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(200, time);
+    osc.frequency.exponentialRampToValueAtTime(80, time + 0.1);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(DRUM_GAIN * 0.8, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(time);
+    osc.stop(time + 0.3);
+  }
+
+  /* ── High Tom ── */
+  _drum_hitom(time) {
+    const ctx = this.ctx;
+    const { DRUM_GAIN } = CONFIG;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, time);
+    osc.frequency.exponentialRampToValueAtTime(120, time + 0.08);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(DRUM_GAIN * 0.8, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(time);
+    osc.stop(time + 0.25);
+  }
+
+  /* ── Crash Cymbal ── */
+  _drum_crash(time) {
+    const ctx = this.ctx;
+    const { DRUM_GAIN } = CONFIG;
+
+    // Два слоя шума для реалистичности
+    const noiseSrc1 = ctx.createBufferSource();
+    noiseSrc1.buffer = this.noiseBuffer;
+
+    const filter1 = ctx.createBiquadFilter();
+    filter1.type = 'bandpass';
+    filter1.frequency.setValueAtTime(5000, time);
+    filter1.Q.setValueAtTime(1, time);
+
+    const gain1 = ctx.createGain();
+    gain1.gain.setValueAtTime(DRUM_GAIN * 0.4, time);
+    gain1.gain.exponentialRampToValueAtTime(0.001, time + 0.6);
+
+    const noiseSrc2 = ctx.createBufferSource();
+    noiseSrc2.buffer = this.noiseBuffer;
+
+    const filter2 = ctx.createBiquadFilter();
+    filter2.type = 'highpass';
+    filter2.frequency.setValueAtTime(8000, time);
+
+    const gain2 = ctx.createGain();
+    gain2.gain.setValueAtTime(DRUM_GAIN * 0.3, time);
+    gain2.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+
+    noiseSrc1.connect(filter1);
+    filter1.connect(gain1);
+    gain1.connect(ctx.destination);
+
+    noiseSrc2.connect(filter2);
+    filter2.connect(gain2);
+    gain2.connect(ctx.destination);
+
+    noiseSrc1.start(time);
+    noiseSrc1.stop(time + 0.65);
+    noiseSrc2.start(time);
+    noiseSrc2.stop(time + 0.55);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AUDIO ENGINE
+   ═══════════════════════════════════════════════════════════ */
+class AudioEngine {
+  constructor() {
+    this.ctx = null;
+    this.drumSynth = null;
+    this.activeNotes = new Map();
+  }
+
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.drumSynth = new DrumSynth(this.ctx);
+      this.drumSynth.initSamples(); // рендеринг сэмплов (асинхронно)
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+    return this.ctx;
+  }
+
+  /* Сыграть мелодическую ноту с ADSR + Filter */
+  scheduleNote(track, midi, time, duration, waveType, adsr, filter, adsrTarget, adsrDepth) {
+    const ctx = this.ctx;
+    if (!ctx) return;
+
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+
+    const osc = ctx.createOscillator();
+    osc.type = waveType;
+    osc.frequency.setValueAtTime(freq, time);
+
+    // Фильтр (BiquadFilter)
+    const filterNode = ctx.createBiquadFilter();
+    const routeAmp = adsrTarget && adsrTarget.amp;
+    const routeFlt = adsrTarget && adsrTarget.filter;
+    const depthAmp = adsrDepth ? adsrDepth.amp : 1;
+    const depthFlt = adsrDepth ? adsrDepth.filter : 1;
+
+    if (filter && filter.enabled && !routeFlt) {
+      filterNode.type = filter.type;
+      filterNode.frequency.setValueAtTime(filter.frequency, time);
+      filterNode.Q.setValueAtTime(filter.q, time);
+    } else if (routeFlt) {
+      filterNode.type = filter ? filter.type : 'lowpass';
+      filterNode.Q.setValueAtTime(filter ? filter.q : 1, time);
+    } else {
+      filterNode.type = 'allpass';
+    }
+
+    const { attack, decay, sustain, release } = adsr;
+    const peak = CONFIG.OSC_GAIN;
+    const maxAttackDecay = duration * 0.6;
+    const adjAttack = Math.min(attack, maxAttackDecay * 0.5);
+    const adjDecay = Math.min(decay, maxAttackDecay - adjAttack);
+    const adjRelease = Math.min(release, duration * 0.5);
+    const decayEnd = time + adjAttack + adjDecay;
+    const sustainEnd = time + duration - adjRelease;
+
+    const gainNode = ctx.createGain();
+
+    if (routeAmp) {
+      // ADSR управляет громкостью с глубиной depthAmp
+      const centerAmp = peak;
+      const modRange = peak * depthAmp; // насколько может меняться
+      const minAmp = Math.max(0, centerAmp - modRange);
+      const maxAmp = Math.min(1, centerAmp);
+      gainNode.gain.setValueAtTime(minAmp, time);
+      gainNode.gain.linearRampToValueAtTime(maxAmp, time + adjAttack);
+      gainNode.gain.linearRampToValueAtTime(maxAmp - (maxAmp - minAmp) * (1 - sustain), decayEnd);
+      if (sustainEnd > decayEnd) {
+        gainNode.gain.setValueAtTime(maxAmp - (maxAmp - minAmp) * (1 - sustain), sustainEnd);
+      }
+      gainNode.gain.linearRampToValueAtTime(minAmp, time + duration);
+    } else {
+      gainNode.gain.setValueAtTime(peak, time);
+    }
+
+    if (routeFlt) {
+      // ADSR управляет частотой среза с глубиной depthFlt
+      const fMin = 20;
+      const fMax = filter && filter.enabled ? filter.frequency : 8000;
+      const fRange = (fMax - fMin) * depthFlt;
+      const baseFreq = fMax - fRange; // нижняя точка модуляции
+
+      filterNode.frequency.setValueAtTime(baseFreq, time);
+      filterNode.frequency.linearRampToValueAtTime(fMax, time + adjAttack);
+      filterNode.frequency.linearRampToValueAtTime(baseFreq + fRange * sustain, decayEnd);
+      if (sustainEnd > decayEnd) {
+        filterNode.frequency.setValueAtTime(baseFreq + fRange * sustain, sustainEnd);
+      }
+      filterNode.frequency.linearRampToValueAtTime(baseFreq, time + duration);
+    }
+
+    osc.connect(filterNode);
+    filterNode.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    osc.start(time);
+    osc.stop(time + duration + 0.01);
+
+    this.activeNotes.set(`${track}_${midi}_${time}`, {
+      oscillator: osc,
+      gainNode,
+      track,
+      startTime: time,
+      endTime: time + duration,
+    });
+  }
+
+  /* Сыграть барабан (синтез или сэмпл) */
+  scheduleDrum(track, drumIdx, time, useSample) {
+    if (!this.ctx || !this.drumSynth) return;
+    if (useSample) {
+      this.drumSynth.playSample(drumIdx, time);
+    } else {
+      this.drumSynth.play(drumIdx, time);
+    }
+  }
+
+  stopAll() {
+    const now = this.ctx ? this.ctx.currentTime : 0;
+    for (const [key, note] of this.activeNotes) {
+      try { note.oscillator.stop(now); } catch(e) {}
+      note.gainNode.gain.cancelScheduledValues(now);
+      note.gainNode.gain.setValueAtTime(0, now);
+    }
+    this.activeNotes.clear();
+  }
+
+  get currentTime() {
+    return this.ctx ? this.ctx.currentTime : 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SEQUENCER
+   ═══════════════════════════════════════════════════════════ */
+class Sequencer {
+  constructor(state, audio) {
+    this.state = state;
+    this.audio = audio;
+    this.nextStepTime = 0;
+    this.currentStep = 0;
+    this.timerID = null;
+    this._running = false;
+    this._hasScheduled = false;
+    this._didAdvance = false;
+  }
+
+  get isRunning() { return this._running; }
+
+  get stepDuration() {
+    return (60 / this.state.tempo) / 4;
+  }
+
+  start() {
+    if (this._running) return;
+    this.audio.init();
+
+    this._running = true;
+    this.state.isPlaying = true;
+    this.nextStepTime = this.audio.currentTime + 0.05;
+    const la = this.state.locatorA;
+    const lb = this.state.locatorB;
+    const cs = this.state.currentStep;
+    this.currentStep = (cs >= la && cs < lb) ? cs : la;
+
+    this.timerID = setInterval(() => this._schedulerTick(), CONFIG.SCHEDULE_INTERVAL);
+  }
+
+  stop() {
+    this._running = false;
+    this.state.isPlaying = false;
+    this.state.currentStep = -1;
+    this._hasScheduled = false;
+    this._didAdvance = false;
+
+    if (this.timerID) {
+      clearInterval(this.timerID);
+      this.timerID = null;
+    }
+    this.audio.stopAll();
+  }
+
+  _advancePattern() {
+    const seq = this.state.songSequence;
+    if (!seq || seq.length === 0) return;
+    const nextIdx = (this.state.seqIndex + 1) % seq.length;
+    this.state.seqIndex = nextIdx;
+    this.state.switchSongPattern(seq[nextIdx]);
+    this.currentStep = this.state.locatorA;
+  }
+
+  _schedulerTick() {
+    const ctx = this.audio.ctx;
+    if (!ctx) return;
+
+    while (this.nextStepTime < ctx.currentTime + CONFIG.LOOKAHEAD) {
+      // Авто-переключение на следующий паттерн, если шаг на границе локаторов
+      if (this.state.songMode && this.currentStep === this.state.locatorA && this._hasScheduled && !this._didAdvance) {
+        this._advancePattern();
+        this._didAdvance = true;
+      }
+
+      // Swing
+      let swingOffset = 0;
+      if (this.currentStep % 2 === 1 && this.state.swing > 0) {
+        swingOffset = (this.state.swing / 100) * this.stepDuration * 0.5;
+      }
+
+      const playTime = this.nextStepTime + swingOffset;
+      const duration = this.stepDuration * 0.92;
+
+      // Мелодические ноты
+      const melodicNotes = this.state.getMelodicNotesAtStep(this.currentStep);
+      for (const [track, midi] of melodicNotes) {
+        if (this.state.trackMute[track]) continue;
+        const wave = this.state.trackWaves[track];
+        const adsr = this.state.trackAdsr[track];
+        const filter = this.state.trackFilter[track];
+        const adsrTarget = this.state.adsrTarget[track];
+        const adsrDepth = this.state.adsrDepth[track];
+        this.audio.scheduleNote(track, midi, playTime, duration, wave, adsr, filter, adsrTarget, adsrDepth);
+      }
+
+      // Барабаны (полифония: все активные инструменты на шаге)
+      const drumNotes = this.state.getDrumNotesAtStep(this.currentStep);
+      for (const [track, drumSet] of drumNotes) {
+        if (this.state.trackMute[track]) continue;
+        const useSample = this.state.drumSoundModes[track] === 'sample';
+        for (const drumIdx of drumSet) {
+          this.audio.scheduleDrum(track, drumIdx, playTime, useSample);
+        }
+      }
+
+      // UI: запоминаем какой шаг сейчас играется, затем инкрементируем
+      const playingStep = this.currentStep;
+      const la = this.state.locatorA;
+      const lb = this.state.locatorB;
+      this.currentStep = this.currentStep + 1;
+      if (la >= 0 && lb > la && this.currentStep >= lb) this.currentStep = la;
+      this.state.currentStep = playingStep;
+      this._hasScheduled = true;
+      if (this.currentStep !== la) this._didAdvance = false;
+
+      this.nextStepTime += this.stepDuration;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UI RENDERER
+   ═══════════════════════════════════════════════════════════ */
+class UIRenderer {
+  constructor(state, sequencer) {
+    this.state = state;
+    this.sequencer = sequencer;
+    this.melodicCells = [];   // melodicCells[track][step][midi] → DOM
+    this.drumCells = [];      // drumCells[track][step][drumIdx] → DOM
+    this.playheadEls = [];
+    this._dragActive = false;
+
+    // document mouseup — завершение drag-выделения
+    document.addEventListener('mouseup', () => {
+      if (this._dragActive) {
+        this._dragActive = false;
+        this.state.endSelect();
+        this._updateSelection();
+        this._updatePasteCursor();
+      }
+    });
+
+    // document mousemove — автоскролл + выделение при drag
+    document.addEventListener('mousemove', (e) => {
+      if (!this._dragActive) return;
+      const track = this.state.activeTrack;
+      const isDrum = this.state.isDrumTrack(track);
+      // Ищем скроллящийся контейнер через ячейку под курсором
+      const cellUnder = document.elementFromPoint(e.clientX, e.clientY);
+      if (!cellUnder) return;
+      const scrollWrap = cellUnder.closest('.piano-roll-wrapper, .drum-grid-wrapper');
+      if (!scrollWrap) return;
+      const rect = scrollWrap.getBoundingClientRect();
+      const edge = 30;
+      if (e.clientX > rect.right - edge) { scrollWrap.scrollLeft += 10; }
+      else if (e.clientX < rect.left + edge) { scrollWrap.scrollLeft -= 10; }
+      // Определяем шаг под курсором
+      const stepEl = cellUnder.closest('[data-step]');
+      if (stepEl) {
+        const targetStep = parseInt(stepEl.dataset.step);
+        if (!isNaN(targetStep)) {
+          this.state.extendSelect(targetStep);
+          this._updateSelection();
+        }
+      }
+    });
+  }
+
+  render() {
+    const container = document.getElementById('tracksContainer');
+    container.innerHTML = '';
+
+    try {
+      if (this.state.viewMode === 'arrange') {
+        this._renderArrangeView(container);
+      } else {
+        this._renderEditView(container);
+      }
+    } catch (err) {
+      console.error('UI Render error:', err);
+      container.innerHTML = `<div style="color:red;padding:16px;font-family:monospace;">UI Render error: ${err.message}<br><pre>${err.stack}</pre></div>`;
+    }
+  }
+
+  _renderEditView(container) {
+    // ─── Панель выбора паттерна ───
+    const patBar = document.createElement('div');
+    patBar.className = 'pattern-bar';
+    const patLabel = document.createElement('button');
+    patLabel.className = 'pattern-label variant-toggle';
+    patLabel.textContent = this.state._activeVariant.toUpperCase();
+    patLabel.title = 'Toggle A/B variation';
+    patLabel.addEventListener('click', () => {
+      this.state.toggleVariant();
+      this.render();
+    });
+    patBar.appendChild(patLabel);
+
+    // Контрол длины паттерна (в тактах)
+    const barsLabel = document.createElement('span');
+    barsLabel.className = 'pattern-label';
+    barsLabel.textContent = 'Bars:';
+    patBar.appendChild(barsLabel);
+    const barValues = [1, 2, 4, 8, 16];
+    const currentBars = this.state.steps / 16;
+    barValues.forEach(bv => {
+      const btn = document.createElement('button');
+      btn.className = 'pattern-btn' + (currentBars === bv ? ' active' : '');
+      btn.textContent = bv;
+      btn.title = `${bv} bar${bv > 1 ? 's' : ''} (${bv * 16} steps)`;
+      btn.addEventListener('click', () => {
+        const steps = bv * 16;
+        this.state.setPatternLength(steps);
+        this.render();
+      });
+      patBar.appendChild(btn);
+    });
+    container.appendChild(patBar);
+
+    // ─── Табы переключения дорожек ───
+    const tabs = document.createElement('div');
+    tabs.className = 'track-tabs';
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      const tab = document.createElement('button');
+      tab.className = 'track-tab';
+      if (t === this.state.activeTrack) tab.classList.add('active');
+      tab.style.borderLeftColor = CONFIG.TRACK_COLORS[t];
+      const typeLabel = this.state.isDrumTrack(t) ? '♨' : '♫';
+      tab.textContent = `${typeLabel} Track ${t + 1}`;
+      tab.addEventListener('click', () => {
+        if (this.state.activeTrack === t) return;
+        this.state.activeTrack = t;
+        this.render();
+      });
+      tabs.appendChild(tab);
+    }
+    container.appendChild(tabs);
+
+    // ─── Активная дорожка (хедер + сетка) ───
+    container.appendChild(this._createTrack(this.state.activeTrack));
+
+    this._initMelodicCells();
+    this._initDrumCells();
+    this._initPlayheads();
+    this._updateAllMelodicNotes();
+    this._updateAllDrumNotes();
+    this._updateSelection();
+    this._updatePasteCursor();
+  }
+
+  _renderArrangeView(container) {
+    const state = this.state;
+    const seq = state.songSequence;
+    const wrap = document.createElement('div');
+    wrap.className = 'arrange-wrap';
+
+    // ─── Transport for Arrange view ───
+    const at = document.createElement('div');
+    at.className = 'arrange-transport';
+    const aPlay = document.createElement('button');
+    aPlay.className = 'btn btn-transport';
+    aPlay.id = 'btnPlay';
+    aPlay.textContent = state.isPlaying && this.sequencer.isRunning ? '❚❚' : '▶';
+    aPlay.classList.toggle('playing', state.isPlaying && this.sequencer.isRunning);
+    aPlay.title = 'Play (Space)';
+    aPlay.addEventListener('click', () => {
+      if (this.sequencer.isRunning) { this.sequencer.stop(); this.updatePlayButton(false); this.updatePlayhead(); }
+      else { this.sequencer.start(); this.updatePlayButton(true); }
+    });
+    at.appendChild(aPlay);
+    const aStop = document.createElement('button');
+    aStop.className = 'btn btn-transport';
+    aStop.id = 'btnStop';
+    aStop.textContent = '■';
+    aStop.title = 'Stop (Escape)';
+    aStop.addEventListener('click', () => { this.sequencer.stop(); this.updatePlayButton(false); this.updatePlayhead(); });
+    at.appendChild(aStop);
+    // Sync play button with sequencer
+    this._arrangePlayBtn = aPlay;
+    wrap.appendChild(at);
+
+    // ─── Ruler for Arrange view ───
+    const ruler = document.createElement('div');
+    const blocksOffset = 61; // lane padding(8) + label(24) + gap(8) + addBtn(18) + gap(3)
+    ruler.className = 'arrange-ruler';
+    let totalWidth = 0;
+    if (seq.length > 0) {
+      for (let i = 0; i < seq.length; i++) {
+        const ap = state._arrangedPatterns[seq[i]];
+        const v = ap ? (ap._activeVariant === 'b' ? ap._variantB : ap._variantA) : null;
+        const plen = v ? (v.patternLength || CONFIG.STEPS) : CONFIG.STEPS;
+        totalWidth += Math.max(1, plen / 16) * 40;
+      }
+      ruler.style.width = (totalWidth + blocksOffset) + 'px';
+      ruler.style.minWidth = (totalWidth + blocksOffset) + 'px';
+      const numBars = Math.ceil(totalWidth / 40);
+      for (let b = 0; b <= numBars; b++) {
+        const x = b * 40 + blocksOffset;
+        if (x > totalWidth + blocksOffset) break;
+        const line = document.createElement('div');
+        line.className = 'ruler-bar-line';
+        line.style.left = x + 'px';
+        ruler.appendChild(line);
+        if (b < numBars && x < totalWidth + blocksOffset) {
+          const label = document.createElement('div');
+          label.className = 'ruler-bar-label';
+          label.style.left = (x + 4) + 'px';
+          label.textContent = b + 1;
+          ruler.appendChild(label);
+          for (let beat = 1; beat < 4; beat++) {
+            const bx = x + beat * 10;
+            if (bx <= totalWidth + blocksOffset) {
+              const bl = document.createElement('div');
+              bl.className = 'ruler-beat-line';
+              bl.style.left = bx + 'px';
+              ruler.appendChild(bl);
+            }
+          }
+        }
+      }
+      const aph = document.createElement('div');
+      aph.className = 'arrange-playhead';
+      aph.style.left = blocksOffset + 'px';
+      ruler.appendChild(aph);
+      this._arrangePlayheadEl = aph;
+      this._rulerOffset = blocksOffset;
+    } else {
+      ruler.style.display = 'none';
+      this._arrangePlayheadEl = null;
+      this._rulerOffset = 0;
+    }
+    wrap.appendChild(ruler);
+
+    // ─── Drag-and-drop state ───
+    let _dragSourceSi = -1;
+    let _dragInsertIdx = -1;
+
+    const makeAddBtn = (idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'arrange-add-btn';
+      btn.textContent = '+';
+      btn.title = 'Add new pattern here';
+      btn.addEventListener('click', () => {
+        state._saveToArranged(state._editingIdx);
+        const empty = StateManager._makeEmptyPattern();
+        const newData = {
+          _variantA: empty,
+          _variantB: StateManager._makeEmptyPattern(),
+          _activeVariant: 'a',
+          _undoStackA: [], _redoStackA: [],
+          _undoStackB: [], _redoStackB: [],
+          locatorA: 0,
+          locatorB: empty.patternLength,
+        };
+        state._arrangedPatterns.push(newData);
+        const newIdx = state._arrangedPatterns.length - 1;
+        state.songSequence.splice(idx, 0, newIdx);
+        renderSongArranger();
+        this.render();
+      });
+      return btn;
+    };
+
+    const makeBlock = (arrangedIdx, si, variantKey) => {
+      const ap = state._arrangedPatterns[arrangedIdx];
+      const variant = ap ? (variantKey === 'b' ? ap._variantB : ap._variantA) : null;
+      let totalNotes = 0;
+      if (variant) {
+        for (let t = 0; t < CONFIG.TRACKS; t++) {
+          const steps = variant.patternLength || CONFIG.STEPS;
+          if (state.trackTypes[t] === 'drum') {
+            for (let s = 0; s < steps; s++)
+              for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++)
+                if (variant.drumPattern[t]?.[s]?.[d]) totalNotes++;
+          } else {
+            for (let s = 0; s < steps; s++)
+              if (variant.melodicPattern[t]?.[s] !== null) totalNotes++;
+          }
+        }
+      }
+      const bars = variant ? Math.max(1, variant.patternLength / 16) : 1;
+      const block = document.createElement('div');
+      const isActive = si === state.seqIndex && state.isPlaying;
+      block.className = 'arrange-block' + (isActive ? ' active' : '');
+      const isEditing = state._editingIdx === arrangedIdx && state._activeVariant === variantKey;
+      if (isEditing) block.classList.add('editing');
+      block.style.width = (bars * 40) + 'px';
+      if (totalNotes > 0) {
+        const alpha = 0.15 + Math.min(totalNotes / 64, 1) * 0.55;
+        block.style.background = `rgba(158, 212, 230, ${alpha})`;
+      }
+      const nameStr = ap && ap.name ? ap.name : '';
+      const label = variantKey.toUpperCase();
+      block.innerHTML = nameStr ? `<span class="block-name">${nameStr.replace(/</g,'&lt;')}</span> <span class="block-label">${label}</span>` : `<span class="block-label">${label}</span>`;
+      block.addEventListener('click', () => {
+        state._saveToArranged(state._editingIdx);
+        state._editingIdx = arrangedIdx;
+        state._loadFromArranged(arrangedIdx);
+        if (state._activeVariant !== variantKey) state.toggleVariant();
+        state.viewMode = 'edit';
+        this.render();
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'edit'));
+      });
+      block.addEventListener('contextmenu', (e) => {
+        showPatternCtxMenu(e, arrangedIdx);
+      });
+      // ─── Drag-and-drop ───
+      block.draggable = true;
+      block.dataset.si = si;
+      block.addEventListener('dragstart', (e) => {
+        _dragSourceSi = si;
+        _dragInsertIdx = -1;
+        e.dataTransfer.effectAllowed = 'move';
+        document.querySelectorAll('.arrange-block.dragging').forEach(el => el.classList.remove('dragging'));
+        block.classList.add('dragging');
+      });
+      block.addEventListener('dragend', () => {
+        document.querySelectorAll('.arrange-block.dragging').forEach(el => el.classList.remove('dragging'));
+        document.querySelectorAll('.arrange-blocks .drag-placeholder').forEach(el => el.remove());
+        _dragSourceSi = -1;
+        _dragInsertIdx = -1;
+      });
+      return block;
+    };
+
+    // ─── Placeholder helper ───
+    const showPlaceholder = (blocksContainer, insertIdx) => {
+      const ph = document.createElement('div');
+      ph.className = 'drag-placeholder';
+      if (insertIdx >= seq.length) {
+        const lastBlock = blocksContainer.querySelector('.arrange-block:last-child');
+        if (lastBlock && lastBlock.nextElementSibling) {
+          blocksContainer.insertBefore(ph, lastBlock.nextElementSibling);
+        } else {
+          blocksContainer.appendChild(ph);
+        }
+      } else {
+        const target = blocksContainer.querySelector(`.arrange-block[data-si="${insertIdx}"]`);
+        if (target) blocksContainer.insertBefore(ph, target);
+      }
+    };
+
+    // Helper to render one lane (A or B)
+    const spacer = () => {
+      const el = document.createElement('div');
+      el.className = 'arrange-add-btn';
+      el.style.visibility = 'hidden';
+      el.style.pointerEvents = 'none';
+      return el;
+    };
+    const renderLane = (variantKey) => {
+      const lane = document.createElement('div');
+      lane.className = 'arrange-lane';
+      const lbl = document.createElement('div');
+      lbl.className = 'arrange-lane-label';
+      lbl.textContent = variantKey.toUpperCase();
+      lbl.style.color = 'var(--accent)';
+      lane.appendChild(lbl);
+      const blocks = document.createElement('div');
+      blocks.className = 'arrange-blocks';
+
+      if (seq.length === 0) {
+        blocks.appendChild(variantKey === 'a' ? makeAddBtn(0) : spacer());
+        const empty = document.createElement('div');
+        empty.className = 'arrange-lane-empty';
+        empty.textContent = 'Click + to add a pattern';
+        blocks.appendChild(empty);
+      } else {
+        // Beginning + button (only lane A)
+        blocks.appendChild(variantKey === 'a' ? makeAddBtn(0) : spacer());
+
+        seq.forEach((arrangedIdx, si) => {
+          blocks.appendChild(makeBlock(arrangedIdx, si, variantKey));
+        });
+
+        // End + button
+        blocks.appendChild(variantKey === 'a' ? makeAddBtn(seq.length) : spacer());
+      }
+
+      // ─── Drag-and-drop container handlers ───
+      blocks.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const rect = blocks.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left + blocks.scrollLeft;
+        const blockEls = blocks.querySelectorAll('.arrange-block');
+        let insertIdx = seq.length;
+        for (const bEl of blockEls) {
+          const si = parseInt(bEl.dataset.si);
+          const bMid = bEl.offsetLeft + bEl.offsetWidth / 2;
+          if (mouseX < bMid) { insertIdx = si; break; }
+          insertIdx = si + 1;
+        }
+        insertIdx = Math.max(0, Math.min(seq.length, insertIdx));
+        if (insertIdx !== _dragInsertIdx) {
+          _dragInsertIdx = insertIdx;
+          document.querySelectorAll('.arrange-blocks .drag-placeholder').forEach(el => el.remove());
+          showPlaceholder(blocks, insertIdx);
+        }
+      });
+      blocks.addEventListener('dragleave', (e) => {
+        if (!blocks.contains(e.relatedTarget)) {
+          const ph = blocks.querySelector('.drag-placeholder');
+          if (ph) ph.remove();
+        }
+      });
+      blocks.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const from = _dragSourceSi;
+        document.querySelectorAll('.arrange-blocks .drag-placeholder').forEach(el => el.remove());
+        if (from < 0 || from >= seq.length) return;
+        let to = _dragInsertIdx;
+        if (to < 0 || to > seq.length) return;
+        if (from === to || from === to - 1) return;
+        const item = seq.splice(from, 1)[0];
+        seq.splice(from < to ? to - 1 : to, 0, item);
+        state._notify();
+        renderSongArranger();
+        this.render();
+      });
+
+      lane.appendChild(blocks);
+      wrap.appendChild(lane);
+    };
+
+    renderLane('a');
+    renderLane('b');
+    container.appendChild(wrap);
+  }
+
+  _createTrack(trackIdx) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'track-container';
+    wrapper.id = `track-container-${trackIdx}`;
+    if (this.state.isDrumTrack(trackIdx)) wrapper.classList.add('drum-mode');
+
+    // ─── Заголовок ───
+    const header = document.createElement('div');
+    header.className = 'track-header';
+
+    const name = document.createElement('span');
+    name.className = 'track-name';
+    name.style.color = CONFIG.TRACK_COLORS[trackIdx];
+    name.textContent = `Track ${trackIdx + 1}`;
+
+    // Выбор типа дорожки
+    const typeSelect = document.createElement('select');
+    typeSelect.dataset.track = trackIdx;
+    typeSelect.dataset.control = 'type';
+    ['melodic', 'drum'].forEach(type => {
+      const opt = document.createElement('option');
+      opt.value = type;
+      opt.textContent = type === 'melodic' ? '♫ Melodic' : '♨ Drums';
+      if (this.state.trackTypes[trackIdx] === type) opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener('change', (e) => {
+      this.state.setTrackType(trackIdx, e.target.value);
+      this.render(); // перерисовка всей дорожки
+    });
+
+    // Выбор волны (для мелодических)
+    const waveSelect = document.createElement('select');
+    waveSelect.dataset.track = trackIdx;
+    waveSelect.dataset.control = 'wave';
+    if (this.state.isDrumTrack(trackIdx)) waveSelect.style.display = 'none';
+    CONFIG.WAVE_TYPES.forEach(wave => {
+      const opt = document.createElement('option');
+      opt.value = wave;
+      opt.textContent = wave.charAt(0).toUpperCase() + wave.slice(1);
+      if (this.state.trackWaves[trackIdx] === wave) opt.selected = true;
+      waveSelect.appendChild(opt);
+    });
+    waveSelect.addEventListener('change', (e) => {
+      this.state.trackWaves[trackIdx] = e.target.value;
+    });
+
+    // Выбор режима синтеза (для барабанных)
+    const soundModeSelect = document.createElement('select');
+    soundModeSelect.dataset.track = trackIdx;
+    soundModeSelect.dataset.control = 'drumMode';
+    if (!this.state.isDrumTrack(trackIdx)) soundModeSelect.style.display = 'none';
+    [
+      { value: 'synth', label: 'Synth' },
+      { value: 'sample', label: 'Sample' },
+    ].forEach(mode => {
+      const opt = document.createElement('option');
+      opt.value = mode.value;
+      opt.textContent = mode.label;
+      if (this.state.drumSoundModes[trackIdx] === mode.value) opt.selected = true;
+      soundModeSelect.appendChild(opt);
+    });
+    soundModeSelect.addEventListener('change', (e) => {
+      this.state.drumSoundModes[trackIdx] = e.target.value;
+    });
+
+    // Выбор пресета
+    const presetSelect = document.createElement('select');
+    presetSelect.className = 'preset-select';
+    const presets = this.state.isDrumTrack(trackIdx) ? PRESETS.drum : PRESETS.melodic;
+    const emptyOpt = document.createElement('option');
+    emptyOpt.value = ''; emptyOpt.textContent = 'Presets ▾';
+    presetSelect.appendChild(emptyOpt);
+    presets.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p.name;
+      presetSelect.appendChild(opt);
+    });
+    presetSelect.addEventListener('change', (e) => {
+      const idx = parseInt(e.target.value);
+      if (isNaN(idx)) return;
+      const preset = presets[idx];
+      this.state.pushHistory();
+      if (this.state.isDrumTrack(trackIdx)) {
+        // Очищаем дорожку
+        for (let s = 0; s < this.state.steps; s++) {
+          for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
+            this.state.drumPattern[trackIdx][s][d] = false;
+          }
+        }
+        // Применяем пресет
+        for (const [step, drumIdx] of preset.pattern) {
+          if (step < this.state.steps) this.state.drumPattern[trackIdx][step][drumIdx] = true;
+        }
+      } else {
+        // Очищаем дорожку
+        for (let s = 0; s < this.state.steps; s++) {
+          this.state.melodicPattern[trackIdx][s] = null;
+        }
+        // Применяем пресет
+        for (const [step, midi] of preset.pattern) {
+          if (step < this.state.steps) this.state.melodicPattern[trackIdx][step] = midi;
+        }
+      }
+      // Обновляем UI
+      this._updateAllMelodicNotes();
+      this._updateAllDrumNotes();
+      this.state._notify();
+    });
+    header.appendChild(name);
+    header.appendChild(typeSelect);
+    header.appendChild(waveSelect);
+    header.appendChild(soundModeSelect);
+    header.appendChild(presetSelect);
+
+    // Кнопка раскрытия панели синтезатора
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'synth-toggle-btn' + (this.state.synthPanelOpen[trackIdx] ? ' active' : '');
+    toggleBtn.textContent = '⚙';
+    toggleBtn.title = 'Synth settings (ADSR + Filter)';
+    toggleBtn.addEventListener('click', () => {
+      this.state.synthPanelOpen[trackIdx] = !this.state.synthPanelOpen[trackIdx];
+      const panel = wrapper.querySelector('.synth-panel');
+      if (panel) {
+        panel.classList.toggle('open', this.state.synthPanelOpen[trackIdx]);
+        toggleBtn.classList.toggle('active', this.state.synthPanelOpen[trackIdx]);
+      }
+    });
+    header.appendChild(toggleBtn);
+
+    // Кнопки Mute справа
+    const muteGroup = document.createElement('div');
+    muteGroup.className = 'mute-group';
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      const mBtn = document.createElement('button');
+      mBtn.className = 'mute-btn' + (this.state.trackMute[t] ? ' muted' : '');
+      mBtn.textContent = `${t + 1}`;
+      mBtn.dataset.track = t;
+      mBtn.title = `Mute track ${t + 1}`;
+      mBtn.style.borderLeftColor = CONFIG.TRACK_COLORS[t];
+      mBtn.addEventListener('click', () => {
+        this.state.trackMute[t] = !this.state.trackMute[t];
+        mBtn.classList.toggle('muted', this.state.trackMute[t]);
+      });
+      muteGroup.appendChild(mBtn);
+    }
+    header.appendChild(muteGroup);
+
+    // ─── Транспортный блок (Play, Stop) ───
+    const transportGroup = document.createElement('div');
+    transportGroup.className = 'transport-group';
+    this._transportGroup = transportGroup;
+
+    const playBtn = document.createElement('button');
+    playBtn.className = 'btn btn-transport';
+    playBtn.id = 'btnPlay';
+    playBtn.textContent = '▶';
+    playBtn.title = 'Play (Space)';
+    playBtn.addEventListener('click', () => {
+      if (this.sequencer.isRunning) {
+        this.sequencer.stop();
+        this.updatePlayButton(false);
+        this.updatePlayhead();
+      } else {
+        this.sequencer.start();
+        this.updatePlayButton(true);
+      }
+    });
+    transportGroup.appendChild(playBtn);
+
+    const stopBtn = document.createElement('button');
+    stopBtn.className = 'btn btn-transport';
+    stopBtn.id = 'btnStop';
+    stopBtn.textContent = '■';
+    stopBtn.title = 'Stop (Escape)';
+    stopBtn.addEventListener('click', () => {
+      this.sequencer.stop();
+      this.updatePlayButton(false);
+      this.updatePlayhead();
+    });
+    transportGroup.appendChild(stopBtn);
+
+    // Loop indicator
+    const loopBtn = document.createElement('button');
+    loopBtn.className = 'btn btn-transport';
+    loopBtn.id = 'btnLoop';
+    loopBtn.textContent = '↺';
+    const hasLoop = this.state.locatorA > 0 || this.state.locatorB < this.state.steps;
+    loopBtn.classList.toggle('active', hasLoop);
+    loopBtn.title = hasLoop ? 'Loop active — click to reset' : 'Loop inactive';
+    loopBtn.addEventListener('click', () => {
+      if (this.state.locatorA > 0 || this.state.locatorB < this.state.steps) {
+        this.state.locatorA = 0;
+        this.state.locatorB = this.state.steps;
+        this.state._notify();
+        loopBtn.classList.remove('active');
+        loopBtn.title = 'Loop inactive';
+        const ruler = document.querySelector('.bar-ruler');
+        if (ruler) this._updateRuler(ruler);
+      }
+    });
+    transportGroup.appendChild(loopBtn);
+
+    header.appendChild(transportGroup);
+
+    wrapper.appendChild(header);
+
+    // ─── Панель синтезатора (ADSR + Filter) ───
+    const synthPanel = this._createSynthPanel(trackIdx);
+    if (this.state.synthPanelOpen[trackIdx]) synthPanel.classList.add('open');
+    wrapper.appendChild(synthPanel);
+
+    // ─── Контент ───
+    if (this.state.isDrumTrack(trackIdx)) {
+      wrapper.appendChild(this._createDrumGrid(trackIdx));
+    } else {
+      wrapper.appendChild(this._createMelodicGrid(trackIdx));
+    }
+
+    return wrapper;
+  }
+
+  /* ─── Панель синтезатора (ADSR + Filter) ─── */
+  _createSynthPanel(trackIdx) {
+    const panel = document.createElement('div');
+    panel.className = 'synth-panel';
+    panel.id = `synth-panel-${trackIdx}`;
+    if (this.state.isDrumTrack(trackIdx)) panel.classList.add('drum-panel');
+
+    const isDrum = this.state.isDrumTrack(trackIdx);
+
+    // ADSR секция
+    const adsrSection = document.createElement('div');
+    adsrSection.className = 'synth-section';
+
+    const adsrLabel = document.createElement('div');
+    adsrLabel.className = 'synth-section-label';
+    adsrLabel.textContent = isDrum ? 'Env' : 'ADSR';
+    adsrSection.appendChild(adsrLabel);
+
+    // ADSR параметры: attack, decay, sustain, release
+    const adsrParams = [
+      { key: 'attack', label: 'A', min: 0.001, max: 0.5, step: 0.001, formatFn: (v) => v < 0.01 ? `${(v * 1000).toFixed(0)}ms` : `${v.toFixed(3)}s` },
+      { key: 'decay', label: 'D', min: 0.001, max: 0.5, step: 0.001, formatFn: (v) => v < 0.01 ? `${(v * 1000).toFixed(0)}ms` : `${v.toFixed(3)}s` },
+      { key: 'sustain', label: 'S', min: 0, max: 1, step: 0.01, formatFn: (v) => `${(v * 100).toFixed(0)}%` },
+      { key: 'release', label: 'R', min: 0.01, max: 1, step: 0.01, formatFn: (v) => v < 0.1 ? `${(v * 1000).toFixed(0)}ms` : `${v.toFixed(3)}s` },
+    ];
+
+    // Для барабанных дорожек показываем упрощённый ADSR (только decay/release)
+    const visibleAdsr = isDrum ? adsrParams.filter(p => p.key === 'decay' || p.key === 'release') : adsrParams;
+
+    for (const param of visibleAdsr) {
+      const val = this.state.trackAdsr[trackIdx][param.key];
+      adsrSection.appendChild(this._createFader({
+        label: param.label,
+        value: val,
+        min: param.min,
+        max: param.max,
+        step: param.step,
+        formatFn: param.formatFn,
+        onChange: (v) => { this.state.trackAdsr[trackIdx][param.key] = v; },
+        color: CONFIG.TRACK_COLORS[trackIdx],
+      }));
+    }
+
+    // Маршрутизация ADSR: глубина (fader) + кнопка
+    if (!isDrum) {
+      const routeGroup = document.createElement('div');
+      routeGroup.style.cssText = 'display:flex;gap:6px;margin-top:6px;justify-content:center;';
+      const toggleStyle = (on) => `
+        flex:1; padding:2px 0; font-size:9px; font-family:inherit; cursor:pointer;
+        background: ${on ? 'var(--accent)' : 'var(--bg-grid)'};
+        border: 1px solid ${on ? 'var(--accent)' : 'var(--border)'};
+        color: ${on ? '#000' : 'var(--text-dim)'};
+        border-radius: 3px; text-transform:uppercase; letter-spacing:1px;
+        transition: all 0.1s;
+        font-weight: ${on ? 'bold' : 'normal'};
+      `;
+      ['amp', 'filter'].forEach(target => {
+        const cell = document.createElement('div');
+        cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex:1;gap:2px;';
+        // Вертикальный fader глубины
+        const depth = this.state.adsrDepth[trackIdx][target];
+        const fader = this._createFader({
+          label: '',
+          value: depth,
+          min: 0, max: 1, step: 0.01,
+          formatFn: (v) => `${Math.round(v * 100)}%`,
+          onChange: (v) => { this.state.adsrDepth[trackIdx][target] = v; },
+          color: CONFIG.TRACK_COLORS[trackIdx],
+        });
+        fader.style.marginBottom = '0';
+        // Уменьшаем высоту фейдера
+        const ft = fader.querySelector('.fader-track');
+        if (ft) ft.style.height = '40px';
+        cell.appendChild(fader);
+        // Кнопка вкл/выкл
+        const btn = document.createElement('button');
+        btn.textContent = target === 'amp' ? 'AMP' : 'FLT';
+        const isOn = this.state.adsrTarget[trackIdx][target];
+        btn.style.cssText = toggleStyle(isOn);
+        btn.title = target === 'amp' ? 'ADSR → Amplifier' : 'ADSR → Filter cutoff';
+        btn.addEventListener('click', () => {
+          const cur = this.state.adsrTarget[trackIdx][target];
+          this.state.adsrTarget[trackIdx][target] = !cur;
+          btn.style.cssText = toggleStyle(!cur);
+        });
+        cell.appendChild(btn);
+        routeGroup.appendChild(cell);
+      });
+      adsrSection.appendChild(routeGroup);
+    }
+
+    panel.appendChild(adsrSection);
+
+    // Filter секция (только для мелодических дорожек)
+    if (!isDrum) {
+      const filterSection = document.createElement('div');
+      filterSection.className = 'synth-section';
+
+      const filterLabel = document.createElement('div');
+      filterLabel.className = 'synth-section-label';
+      filterLabel.textContent = 'Filter';
+      filterSection.appendChild(filterLabel);
+
+      // Toggle фильтра (кнопка)
+      const filterToggle = document.createElement('button');
+      filterToggle.className = 'synth-toggle-btn';
+      const updateFilterBtn = () => {
+        const on = this.state.trackFilter[trackIdx].enabled;
+        filterToggle.textContent = on ? 'FLT: ON' : 'FLT: OFF';
+        filterToggle.classList.toggle('active', on);
+        filterToggle.style.borderColor = on ? CONFIG.TRACK_COLORS[trackIdx] : 'var(--border)';
+      };
+      updateFilterBtn();
+      filterToggle.addEventListener('click', () => {
+        this.state.trackFilter[trackIdx].enabled = !this.state.trackFilter[trackIdx].enabled;
+        updateFilterBtn();
+      });
+      filterSection.appendChild(filterToggle);
+
+      // Тип фильтра
+      filterSection.appendChild(this._createFilterTypeSelect(trackIdx));
+
+      // Cutoff frequency
+      const filt = this.state.trackFilter[trackIdx];
+      filterSection.appendChild(this._createFader({
+        label: 'Cutoff',
+        value: filt.frequency,
+        min: 100, max: 15000, step: 1,
+        formatFn: (v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`,
+        onChange: (v) => { this.state.trackFilter[trackIdx].frequency = v; },
+        color: CONFIG.TRACK_COLORS[trackIdx],
+        isLog: true,
+      }));
+
+      // Resonance (Q)
+      filterSection.appendChild(this._createFader({
+        label: 'Res',
+        value: filt.q,
+        min: 0.1, max: 20, step: 0.1,
+        formatFn: (v) => v.toFixed(1),
+        onChange: (v) => { this.state.trackFilter[trackIdx].q = v; },
+        color: CONFIG.TRACK_COLORS[trackIdx],
+      }));
+
+      panel.appendChild(filterSection);
+    } else {
+      // Для барабанных дорожек — только фильтр
+      const filterSection = document.createElement('div');
+      filterSection.className = 'synth-section';
+
+      const filterLabel = document.createElement('div');
+      filterLabel.className = 'synth-section-label';
+      filterLabel.textContent = 'Filter';
+      filterSection.appendChild(filterLabel);
+
+      // Toggle фильтра (кнопка)
+      const filterToggle = document.createElement('button');
+      filterToggle.className = 'synth-toggle-btn';
+      const updateFilterBtn = () => {
+        const on = this.state.trackFilter[trackIdx].enabled;
+        filterToggle.textContent = on ? 'FLT: ON' : 'FLT: OFF';
+        filterToggle.classList.toggle('active', on);
+        filterToggle.style.borderColor = on ? CONFIG.TRACK_COLORS[trackIdx] : 'var(--border)';
+      };
+      updateFilterBtn();
+      filterToggle.addEventListener('click', () => {
+        this.state.trackFilter[trackIdx].enabled = !this.state.trackFilter[trackIdx].enabled;
+        updateFilterBtn();
+      });
+      filterSection.appendChild(filterToggle);
+
+      // Тип фильтра
+      filterSection.appendChild(this._createFilterTypeSelect(trackIdx));
+
+      // Cutoff frequency
+      const filt = this.state.trackFilter[trackIdx];
+      filterSection.appendChild(this._createFader({
+        label: 'Cutoff',
+        value: filt.frequency,
+        min: 100, max: 15000, step: 1,
+        formatFn: (v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`,
+        onChange: (v) => { this.state.trackFilter[trackIdx].frequency = v; },
+        color: CONFIG.TRACK_COLORS[trackIdx],
+        isLog: true,
+      }));
+
+      // Resonance (Q)
+      filterSection.appendChild(this._createFader({
+        label: 'Res',
+        value: filt.q,
+        min: 0.1, max: 20, step: 0.1,
+        formatFn: (v) => v.toFixed(1),
+        onChange: (v) => { this.state.trackFilter[trackIdx].q = v; },
+        color: CONFIG.TRACK_COLORS[trackIdx],
+      }));
+
+      panel.appendChild(filterSection);
+    }
+
+    return panel;
+  }
+
+  /* ─── Создание вертикального фейдера ─── */
+  _createFader({ label, value, min, max, step, formatFn, onChange, color, isLog = false, isToggle = false }) {
+    const group = document.createElement('div');
+    group.className = 'fader-group';
+
+    const valueDisplay = document.createElement('div');
+    valueDisplay.className = 'fader-value';
+
+    const track = document.createElement('div');
+    track.className = 'fader-track';
+
+    const fill = document.createElement('div');
+    fill.className = 'fader-fill';
+    fill.style.background = color;
+
+    const thumb = document.createElement('div');
+    thumb.className = 'fader-thumb';
+
+    track.appendChild(fill);
+    track.appendChild(thumb);
+
+    const labelEl = document.createElement('label');
+    labelEl.textContent = label;
+
+    group.appendChild(valueDisplay);
+    group.appendChild(track);
+    group.appendChild(labelEl);
+
+    // Конвертация значения в позицию (0-1)
+    const toRatio = (v) => isLog
+      ? (Math.log(v) - Math.log(min)) / (Math.log(max) - Math.log(min))
+      : (v - min) / (max - min);
+
+    const fromRatio = (r) => isLog
+      ? Math.exp(Math.log(min) + r * (Math.log(max) - Math.log(min)))
+      : min + r * (max - min);
+
+    const updateVisual = (v) => {
+      const ratio = isToggle ? v : Math.max(0, Math.min(1, toRatio(v)));
+      fill.style.height = `${ratio * 100}%`;
+      thumb.style.bottom = `${ratio * 100}%`;
+      valueDisplay.textContent = formatFn(v);
+    };
+
+    updateVisual(value);
+
+    // Обработка клика и перетаскивания
+    let dragging = false;
+    const setValue = (clientY) => {
+      const rect = track.getBoundingClientRect();
+      const ratio = 1 - (clientY - rect.top) / rect.height;
+      const clamped = Math.max(0, Math.min(1, ratio));
+      const newVal = isToggle ? (clamped > 0.5 ? 1 : 0) : fromRatio(clamped);
+      const rounded = isToggle ? newVal : Math.round(newVal / step) * step;
+      const final = Math.max(min, Math.min(max, rounded));
+      onChange(final);
+      updateVisual(final);
+    };
+
+    track.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      dragging = true;
+      setValue(e.clientY);
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (dragging) setValue(e.clientY);
+    });
+    document.addEventListener('mouseup', () => { dragging = false; });
+
+    track.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      dragging = true;
+      setValue(e.touches[0].clientY);
+    }, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+      if (dragging) setValue(e.touches[0].clientY);
+    });
+    document.addEventListener('touchend', () => { dragging = false; });
+
+    return group;
+  }
+
+  /* ─── Селект типа фильтра ─── */
+  _createFilterTypeSelect(trackIdx) {
+    const group = document.createElement('div');
+    group.className = 'fader-group';
+
+    const valueDisplay = document.createElement('div');
+    valueDisplay.className = 'fader-value';
+
+    const select = document.createElement('select');
+    select.className = 'filter-type-select';
+    select.style.width = '48px';
+    ['lowpass', 'highpass', 'bandpass'].forEach(type => {
+      const opt = document.createElement('option');
+      opt.value = type;
+      opt.textContent = type === 'lowpass' ? 'LP' : type === 'highpass' ? 'HP' : 'BP';
+      if (this.state.trackFilter[trackIdx].type === type) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    const label = document.createElement('label');
+    label.textContent = 'Type';
+
+    select.addEventListener('change', () => {
+      this.state.trackFilter[trackIdx].type = select.value;
+    });
+
+    group.appendChild(valueDisplay);
+    group.appendChild(select);
+    group.appendChild(label);
+    return group;
+  }
+  _createMelodicGrid(trackIdx) {
+    const rollWrapper = document.createElement('div');
+    rollWrapper.className = 'piano-roll-wrapper';
+
+    const labels = document.createElement('div');
+    labels.className = 'note-labels';
+    // Ruler spacer at top of labels
+    const rulerSpacer = document.createElement('div');
+    rulerSpacer.className = 'ruler-spacer';
+    labels.appendChild(rulerSpacer);
+    for (let midi = CONFIG.NOTE_MAX; midi >= CONFIG.NOTE_MIN; midi--) {
+      const lbl = document.createElement('div');
+      lbl.className = 'note-label' + (isC(midi) ? ' c-note' : '');
+      lbl.textContent = midiToName(midi);
+      labels.appendChild(lbl);
+    }
+
+    const roll = document.createElement('div');
+    roll.className = 'piano-roll';
+    roll.dataset.track = trackIdx;
+    const steps = this.state.steps;
+
+    // Bar ruler
+    roll.appendChild(this._createBarRuler());
+
+    for (let midi = CONFIG.NOTE_MAX; midi >= CONFIG.NOTE_MIN; midi--) {
+      const row = document.createElement('div');
+      row.className = 'grid-row';
+      if (isC(midi)) row.classList.add('c-row');
+      if (isSharp(midi)) row.classList.add('sharp-row');
+
+      for (let step = 0; step < steps; step++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.dataset.track = trackIdx;
+        cell.dataset.step = step;
+        cell.dataset.midi = midi;
+        const beatGroup = (Math.floor(step / 16) % 2) * 2 + (Math.floor((step % 16) / 4) % 2);
+        cell.classList.add('beat-group-' + beatGroup);
+        if (step % 4 === 0) cell.classList.add('beat-start');
+        if (this.state.toolMode === 'select') {
+          cell.addEventListener('mousedown', (e) => {
+            if (this.sequencer.audio.ctx?.state === 'suspended')
+              this.sequencer.audio.ctx.resume();
+            this.state.beginSelect(step);
+            this._updateSelection();
+            this._dragActive = true;
+            e.preventDefault();
+          });
+          cell.addEventListener('mouseenter', (e) => {
+            if (this._dragActive && (e.buttons & 1)) {
+              this.state.extendSelect(step);
+              this._updateSelection();
+            }
+          });
+        } else {
+          cell.addEventListener('click', () => {
+            if (this.sequencer.audio.ctx?.state === 'suspended')
+              this.sequencer.audio.ctx.resume();
+            this.state.setMelodicNote(trackIdx, step, midi);
+            this._updateMelodicStep(trackIdx, step);
+          });
+        }
+        row.appendChild(cell);
+      }
+      roll.appendChild(row);
+    }
+
+    const playhead = document.createElement('div');
+    playhead.className = 'playhead-overlay';
+    playhead.id = `playhead-${trackIdx}`;
+    roll.appendChild(playhead);
+
+    rollWrapper.appendChild(labels);
+    rollWrapper.appendChild(roll);
+
+    // Номера шагов
+    const stepNums = document.createElement('div');
+    stepNums.className = 'step-numbers';
+    for (let s = 0; s < steps; s++) {
+      const num = document.createElement('div');
+      num.className = 'step-num';
+      num.textContent = s + 1;
+      num.dataset.step = s;
+      const beatGroup = (Math.floor(s / 16) % 2) * 2 + (Math.floor((s % 16) / 4) % 2);
+      num.classList.add('beat-group-' + beatGroup);
+      if (s % 4 === 0) num.classList.add('beat-start');
+      if (this.state.toolMode === 'select') {
+        num.addEventListener('mousedown', (e) => {
+          this.state.beginSelect(s);
+          this._updateSelection();
+          this._dragActive = true;
+          e.preventDefault();
+        });
+        num.addEventListener('mouseenter', (e) => {
+          if (this._dragActive && (e.buttons & 1)) {
+            this.state.extendSelect(s);
+            this._updateSelection();
+          }
+        });
+      }
+      stepNums.appendChild(num);
+    }
+
+    return this._wrapFragment(rollWrapper, stepNums);
+  }
+
+  _wrapFragment(...elements) {
+    const div = document.createElement('div');
+    elements.forEach(el => div.appendChild(el));
+    return div;
+  }
+
+  /* ─── Барабанная сетка ─── */
+  _createDrumGrid(trackIdx) {
+    const wrapper = document.createElement('div');
+    const gridWrapper = document.createElement('div');
+    gridWrapper.className = 'drum-grid-wrapper';
+
+    /* Рендерим инструменты снизу вверх: bass drum внизу, crash вверху */
+    const labels = document.createElement('div');
+    labels.className = 'drum-labels';
+    // Ruler spacer at top of labels
+    const rulerSpacer = document.createElement('div');
+    rulerSpacer.className = 'ruler-spacer';
+    labels.appendChild(rulerSpacer);
+    for (let i = CONFIG.DRUM_INSTRUMENTS.length - 1; i >= 0; i--) {
+      const drum = CONFIG.DRUM_INSTRUMENTS[i];
+      const lbl = document.createElement('div');
+      lbl.className = 'drum-label';
+      lbl.textContent = drum.name;
+      lbl.style.color = drum.color;
+      labels.appendChild(lbl);
+    }
+
+    const steps = this.state.steps;
+    const grid = document.createElement('div');
+    grid.className = 'drum-grid';
+    grid.dataset.track = trackIdx;
+
+    // Bar ruler
+    grid.appendChild(this._createBarRuler());
+
+    for (let i = CONFIG.DRUM_INSTRUMENTS.length - 1; i >= 0; i--) {
+      const drum = CONFIG.DRUM_INSTRUMENTS[i];
+      const drumIdx = i;
+      const row = document.createElement('div');
+      row.className = 'drum-row';
+
+      for (let step = 0; step < steps; step++) {
+        const cell = document.createElement('div');
+        cell.className = 'drum-cell';
+        cell.dataset.track = trackIdx;
+        cell.dataset.step = step;
+        cell.dataset.drum = drumIdx;
+        const beatGroup = (Math.floor(step / 16) % 2) * 2 + (Math.floor((step % 16) / 4) % 2);
+        cell.classList.add('beat-group-' + beatGroup);
+        if (step % 4 === 0) cell.classList.add('beat-start');
+        if (this.state.toolMode === 'select') {
+          cell.addEventListener('mousedown', (e) => {
+            if (this.sequencer.audio.ctx?.state === 'suspended')
+              this.sequencer.audio.ctx.resume();
+            this.state.beginSelect(step);
+            this._updateSelection();
+            this._dragActive = true;
+            e.preventDefault();
+          });
+          cell.addEventListener('mouseenter', (e) => {
+            if (this._dragActive && (e.buttons & 1)) {
+              this.state.extendSelect(step);
+              this._updateSelection();
+            }
+          });
+        } else {
+          cell.addEventListener('click', () => {
+            if (this.sequencer.audio.ctx?.state === 'suspended')
+              this.sequencer.audio.ctx.resume();
+            this.state.toggleDrum(trackIdx, step, drumIdx);
+            this._updateDrumCell(trackIdx, step, drumIdx);
+          });
+        }
+        row.appendChild(cell);
+      }
+      grid.appendChild(row);
+    }
+
+    const playhead = document.createElement('div');
+    playhead.className = 'playhead-overlay';
+    playhead.id = `playhead-${trackIdx}`;
+    grid.appendChild(playhead);
+
+    gridWrapper.appendChild(labels);
+    gridWrapper.appendChild(grid);
+
+    // Номера шагов
+    const stepNums = document.createElement('div');
+    stepNums.className = 'step-numbers drum-steps';
+    for (let s = 0; s < steps; s++) {
+      const num = document.createElement('div');
+      num.className = 'step-num';
+      num.textContent = s + 1;
+      num.dataset.step = s;
+      const beatGroup = (Math.floor(s / 16) % 2) * 2 + (Math.floor((s % 16) / 4) % 2);
+      num.classList.add('beat-group-' + beatGroup);
+      if (s % 4 === 0) num.classList.add('beat-start');
+      if (this.state.toolMode === 'select') {
+        num.addEventListener('mousedown', (e) => {
+          this.state.beginSelect(s);
+          this._updateSelection();
+          this._dragActive = true;
+          e.preventDefault();
+        });
+        num.addEventListener('mouseenter', (e) => {
+          if (this._dragActive && (e.buttons & 1)) {
+            this.state.extendSelect(s);
+            this._updateSelection();
+          }
+        });
+      }
+      stepNums.appendChild(num);
+    }
+
+    wrapper.appendChild(gridWrapper);
+    wrapper.appendChild(stepNums);
+    return wrapper;
+  }
+
+  /* ─── Создание bar ruler с локаторами ─── */
+  _createBarRuler() {
+    const steps = this.state.steps;
+    const stepW = CONFIG.STEP_WIDTH;
+    const ruler = document.createElement('div');
+    ruler.className = 'bar-ruler';
+    ruler.style.width = (steps * stepW) + 'px';
+    ruler.style.minWidth = (steps * stepW) + 'px';
+
+    for (let s = 0; s <= steps; s += 16) {
+      const x = s * stepW;
+      const line = document.createElement('div');
+      line.className = 'ruler-bar-line';
+      line.style.left = x + 'px';
+      ruler.appendChild(line);
+      if (s < steps) {
+        const label = document.createElement('div');
+        label.className = 'ruler-bar-label';
+        label.style.left = (x + 4) + 'px';
+        label.textContent = (s / 16) + 1;
+        ruler.appendChild(label);
+      }
+    }
+
+    const rangeFill = document.createElement('div');
+    rangeFill.className = 'ruler-range-fill';
+    ruler.appendChild(rangeFill);
+
+    const locA = document.createElement('div');
+    locA.className = 'ruler-locator';
+    locA.dataset.loc = 'a';
+    ruler.appendChild(locA);
+
+    const locB = document.createElement('div');
+    locB.className = 'ruler-locator';
+    locB.dataset.loc = 'b';
+    ruler.appendChild(locB);
+
+    this._updateRuler(ruler);
+    this._initLocatorDrag(ruler);
+    return ruler;
+  }
+
+  /* ─── Обновление позиций локаторов и заливки ─── */
+  _updateRuler(rulerEl) {
+    if (!rulerEl) return;
+    const la = this.state.locatorA;
+    const lb = this.state.locatorB;
+    const stepW = CONFIG.STEP_WIDTH;
+    const locAEl = rulerEl.querySelector('.ruler-locator[data-loc="a"]');
+    const locBEl = rulerEl.querySelector('.ruler-locator[data-loc="b"]');
+    const rangeFill = rulerEl.querySelector('.ruler-range-fill');
+    if (locAEl) locAEl.style.left = (la * stepW) + 'px';
+    if (locBEl) locBEl.style.left = (lb * stepW) + 'px';
+    if (rangeFill) {
+      rangeFill.style.left = (la * stepW) + 'px';
+      rangeFill.style.width = Math.max(0, (lb - la) * stepW) + 'px';
+    }
+  }
+
+  /* ─── Drag для локаторов ─── */
+  _initLocatorDrag(rulerEl) {
+    let dragging = null;
+    const self = this;
+
+    const snapToBar = (step) => Math.round(step / 16) * 16;
+
+    const onMove = (clientX) => {
+      if (!dragging) return;
+      const stepW = CONFIG.STEP_WIDTH;
+      const rect = rulerEl.getBoundingClientRect();
+      const x = clientX - rect.left;
+      let step = snapToBar(Math.round(x / stepW));
+      step = Math.max(0, Math.min(self.state.steps, step));
+
+      if (dragging === 'a' && step < self.state.locatorB) {
+        self.state.locatorA = step;
+        self.state._notify();
+        self._updateRuler(rulerEl);
+      } else if (dragging === 'b' && step > self.state.locatorA) {
+        self.state.locatorB = step;
+        self.state._notify();
+        self._updateRuler(rulerEl);
+      }
+    };
+
+    rulerEl.querySelectorAll('.ruler-locator').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        dragging = el.dataset.loc;
+        onMove(e.clientX);
+      });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (dragging) onMove(e.clientX);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (dragging) {
+        dragging = null;
+        self._updateRuler(rulerEl);
+      }
+    });
+  }
+
+  /* ─── Инициализация ячеек ─── */
+  _initMelodicCells() {
+    this.melodicCells = [];
+    const steps = this.state.steps;
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      this.melodicCells[t] = [];
+      for (let s = 0; s < steps; s++) {
+        this.melodicCells[t][s] = {};
+      }
+    }
+    document.querySelectorAll('.grid-cell[data-midi]').forEach(cell => {
+      const t = parseInt(cell.dataset.track);
+      const s = parseInt(cell.dataset.step);
+      const m = parseInt(cell.dataset.midi);
+      if (this.melodicCells[t]?.[s]) this.melodicCells[t][s][m] = cell;
+    });
+  }
+
+  _initDrumCells() {
+    this.drumCells = [];
+    const steps = this.state.steps;
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      this.drumCells[t] = [];
+      for (let s = 0; s < steps; s++) {
+        this.drumCells[t][s] = [];
+      }
+    }
+    document.querySelectorAll('.drum-cell').forEach(cell => {
+      const t = parseInt(cell.dataset.track);
+      const s = parseInt(cell.dataset.step);
+      const d = parseInt(cell.dataset.drum);
+      if (this.drumCells[t]?.[s]) this.drumCells[t][s][d] = cell;
+    });
+  }
+
+  _initPlayheads() {
+    this.playheadEls = [];
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      this.playheadEls[t] = document.getElementById(`playhead-${t}`);
+    }
+  }
+
+  /* ─── Подсветка выделения ─── */
+  _updateSelection() {
+    document.querySelectorAll('.grid-cell.selected').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('.drum-cell.selected').forEach(el => el.classList.remove('selected'));
+    const ss = this.state.selStart;
+    const se = this.state.selEnd;
+    if (ss === -1 || se === -1) return;
+    const min = Math.min(ss, se);
+    const max = Math.max(ss, se);
+    const track = this.state.activeTrack;
+    if (!this.state.isDrumTrack(track)) {
+      for (let s = min; s <= max; s++)
+        document.querySelectorAll(`.grid-cell[data-track="${track}"][data-step="${s}"]`).forEach(el => el.classList.add('selected'));
+    } else {
+      for (let s = min; s <= max; s++)
+        document.querySelectorAll(`.drum-cell[data-track="${track}"][data-step="${s}"]`).forEach(el => el.classList.add('selected'));
+    }
+  }
+
+  /* ─── Курсор вставки ─── */
+  _updatePasteCursor() {
+    document.querySelectorAll('.step-num').forEach(el => {
+      el.classList.remove('paste-target');
+    });
+    if (this.state.pasteCursor < 0) return;
+    const el = document.querySelector(`.step-num[data-step="${this.state.pasteCursor}"]`);
+    if (el) el.classList.add('paste-target');
+  }
+
+  /* ─── Обновление мелодических нот + ghost ─── */
+  _updateMelodicStep(track, step) {
+    for (let midi = CONFIG.NOTE_MIN; midi <= CONFIG.NOTE_MAX; midi++) {
+      const cell = this.melodicCells[track]?.[step]?.[midi];
+      if (cell) cell.innerHTML = '';
+    }
+    // Основная нота (текущая дорожка)
+    const midi = this.state.melodicPattern[track][step];
+    if (midi !== null) {
+      const cell = this.melodicCells[track]?.[step]?.[midi];
+      if (cell) {
+        const block = document.createElement('div');
+        block.className = 'note-block';
+        block.style.background = CONFIG.TRACK_COLORS[track];
+        cell.appendChild(block);
+      }
+    }
+    // Ghost-ноты из других дорожек
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      if (t === track) continue;
+      if (this.state.isDrumTrack(t)) {
+        // Барабаны отображаются как ghost-ноты на фиксированных клавишах
+        for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
+          if (this.state.isDrumActive(t, step, d)) {
+            const ghostMidi = CONFIG.DRUM_NOTE_MAP[d];
+            const cell = this.melodicCells[track]?.[step]?.[ghostMidi];
+            if (cell && !cell.querySelector('.note-block:not(.ghost)')) {
+              const block = document.createElement('div');
+              block.className = 'note-block ghost';
+              block.style.background = CONFIG.TRACK_COLORS[t];
+              cell.appendChild(block);
+            }
+          }
+        }
+      } else {
+        // Ghost мелодической ноты из другой мелодической дорожки
+        const ghostMidi = this.state.melodicPattern[t][step];
+        if (ghostMidi !== null) {
+          const cell = this.melodicCells[track]?.[step]?.[ghostMidi];
+          if (cell && !cell.querySelector('.note-block:not(.ghost)')) {
+            const block = document.createElement('div');
+            block.className = 'note-block ghost';
+            block.style.background = CONFIG.TRACK_COLORS[t];
+            cell.appendChild(block);
+          }
+        }
+      }
+    }
+  }
+
+  _updateAllMelodicNotes() {
+    const t = this.state.activeTrack;
+    if (this.state.isDrumTrack(t)) return;
+    for (let s = 0; s < this.state.steps; s++) {
+      this._updateMelodicStep(t, s);
+    }
+  }
+
+  /* ─── Обновление барабанных ячеек + ghost ─── */
+  _updateDrumCell(track, step, drumIdx) {
+    const cell = this.drumCells[track]?.[step]?.[drumIdx];
+    if (!cell) return;
+    cell.innerHTML = '';
+    // Основной барабан (текущая дорожка)
+    if (this.state.isDrumActive(track, step, drumIdx)) {
+      const block = document.createElement('div');
+      block.className = 'drum-block';
+      block.style.background = CONFIG.DRUM_INSTRUMENTS[drumIdx].color;
+      cell.appendChild(block);
+    }
+    // Ghost из других барабанных дорожек
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      if (t === track || !this.state.isDrumTrack(t)) continue;
+      if (this.state.isDrumActive(t, step, drumIdx)) {
+        const ghost = document.createElement('div');
+        ghost.className = 'drum-block ghost';
+        ghost.style.background = CONFIG.DRUM_INSTRUMENTS[drumIdx].color;
+        cell.appendChild(ghost);
+        break;
+      }
+    }
+  }
+
+  _updateAllDrumNotes() {
+    const t = this.state.activeTrack;
+    if (!this.state.isDrumTrack(t)) return;
+    for (let s = 0; s < this.state.steps; s++) {
+      for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
+        this._updateDrumCell(t, s, d);
+      }
+    }
+  }
+
+  /* ─── Бегунок ─── */
+  updatePlayhead() {
+    const step = this.state.currentStep;
+    if (step < 0 || !this.state.isPlaying) {
+      for (const el of this.playheadEls) {
+        if (el) el.style.display = 'none';
+      }
+      return;
+    }
+
+    const stepW = this.playheadEls[0]?.offsetWidth || CONFIG.STEP_WIDTH;
+    for (let t = 0; t < CONFIG.TRACKS; t++) {
+      const el = this.playheadEls[t];
+      if (el) {
+        el.style.display = 'block';
+        el.style.transform = `translateX(${step * stepW}px)`;
+      }
+    }
+  }
+
+  /* ─── Arrange playhead ─── */
+  updateArrangePlayhead() {
+    const el = this._arrangePlayheadEl;
+    if (!el) return;
+    const step = this.state.currentStep;
+    if (step < 0 || !this.state.isPlaying) {
+      el.style.display = 'none';
+      return;
+    }
+    const seq = this.state.songSequence;
+    const seqIdx = this.state.seqIndex;
+    let pos = 0;
+    for (let i = 0; i < seqIdx && i < seq.length; i++) {
+      const ap = this.state._arrangedPatterns[seq[i]];
+      const v = ap ? (ap._activeVariant === 'b' ? ap._variantB : ap._variantA) : null;
+      const plen = v ? (v.patternLength || CONFIG.STEPS) : CONFIG.STEPS;
+      pos += Math.max(1, plen / 16) * 40;
+    }
+    if (seqIdx >= 0 && seqIdx < seq.length) {
+      const ap = this.state._arrangedPatterns[seq[seqIdx]];
+      const v = ap ? (ap._activeVariant === 'b' ? ap._variantB : ap._variantA) : null;
+      if (v) {
+        const plen = v.patternLength || CONFIG.STEPS;
+        const blockWidth = Math.max(1, plen / 16) * 40;
+        pos += (Math.min(step, plen) / Math.max(1, plen)) * blockWidth;
+      }
+    }
+    el.style.display = 'block';
+    el.style.transform = `translateX(${pos}px)`;
+  }
+
+  updatePlayButton(isPlaying) {
+    const btn = document.getElementById('btnPlay');
+    if (btn) {
+      btn.textContent = isPlaying ? '❚❚' : '▶';
+      btn.classList.toggle('playing', isPlaying);
+    }
+    if (this._arrangePlayBtn) {
+      this._arrangePlayBtn.textContent = isPlaying ? '❚❚' : '▶';
+      this._arrangePlayBtn.classList.toggle('playing', isPlaying);
+    }
+  }
+}
+
+CONFIG.STEP_WIDTH = 32;
+
+/* ═══════════════════════════════════════════════════════════
+   ИНИЦИАЛИЗАЦИЯ
+   ═══════════════════════════════════════════════════════════ */
+const state = new StateManager();
+const audio = new AudioEngine();
+const sequencer = new Sequencer(state, audio);
+const ui = new UIRenderer(state, sequencer);
+const projectMgr = new ProjectManager(state);
+
+// ─── Autosave ───
+state._autosaveFn = () => {
+  const settings = state.getSettings();
+  if (settings.autosave) projectMgr.saveCurrentProject();
+};
+
+// Load settings
+const settings = state.getSettings();
+
+// ─── State onChange ───
+state.onChange(() => {
+  updateUndoRedoButtons();
+  const toolBtn = document.getElementById('btnTool');
+  if (toolBtn) {
+    toolBtn.textContent = state.toolMode === 'draw' ? '✎ Draw' : '⬚ Select';
+    toolBtn.classList.toggle('active', state.toolMode === 'select');
+  }
+  document.body.classList.toggle('select-mode', state.toolMode === 'select');
+  const copyBtn = document.getElementById('btnCopy');
+  const pasteBtn = document.getElementById('btnPaste');
+  const delBtn = document.getElementById('btnDelete');
+  if (copyBtn) copyBtn.style.opacity = state.clipboard ? '1' : '0.4';
+  if (pasteBtn) pasteBtn.style.opacity = state.clipboard ? '1' : '0.4';
+  if (delBtn) delBtn.style.opacity = (state.selStart !== -1 && state.selEnd !== -1) ? '1' : '0.4';
+});
+
+// ─── Pattern Library ───
+const patternLib = new PatternLibrary(state);
+
+// Try to load last project
+try {
+  projectMgr.loadLastProject();
+} catch {}
+
+ui.render();
+
+// ─── Project Manager UI ───
+const projectModal = document.getElementById('projectModal');
+const projectNameInput = document.getElementById('projectName');
+const libListEl = document.getElementById('libList');
+const libStyleFilter = document.getElementById('libStyleFilter');
+const libImportBtn = document.getElementById('libImportBtn');
+
+let _libSelectedId = null;
+
+function renderPatternLibrary() {
+  const all = patternLib.getAll();
+  const filter = libStyleFilter.value;
+  const filtered = filter ? all.filter(p => p.style === filter) : all;
+  libListEl.innerHTML = filtered.length === 0
+    ? '<div style="color:var(--text-dim);font-size:11px;padding:8px;">No patterns saved.</div>'
+    : filtered.map(p => `<div class="lib-item" data-id="${p.id}">
+        <span class="lib-style">${p.style || '—'}</span>
+        <span class="lib-name">${p.name}</span>
+        <button class="lib-import-btn">Import</button>
+        <button class="lib-del-btn">✕</button>
+      </div>`).join('');
+  libListEl.querySelectorAll('.lib-item').forEach(el => {
+    el.addEventListener('click', () => {
+      _libSelectedId = parseInt(el.dataset.id);
+      libListEl.querySelectorAll('.lib-item').forEach(e => e.style.borderColor = '');
+      el.style.borderColor = 'var(--accent)';
+      libImportBtn.disabled = false;
+    });
+    el.querySelector('.lib-import-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      patternLib.importToArrangement(parseInt(el.dataset.id));
+      libImportBtn.disabled = true;
+      _libSelectedId = null;
+      libListEl.querySelectorAll('.lib-item').forEach(e => e.style.borderColor = '');
+      ui.render();
+      renderPatternLibrary();
+    });
+    el.querySelector('.lib-del-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      patternLib.deletePattern(parseInt(el.dataset.id));
+      renderPatternLibrary();
+    });
+  });
+}
+
+function refreshLibStyles() {
+  const styles = patternLib.getStyles();
+  libStyleFilter.innerHTML = '<option value="">All styles</option>' +
+    styles.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+// Modal tab switching
+document.querySelectorAll('.modal-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'pat-tab') {
+      refreshLibStyles();
+      renderPatternLibrary();
+    }
+  });
+});
+
+libStyleFilter.addEventListener('change', renderPatternLibrary);
+
+libImportBtn.addEventListener('click', () => {
+  if (_libSelectedId) {
+    patternLib.importToArrangement(_libSelectedId);
+    _libSelectedId = null;
+    libImportBtn.disabled = true;
+    ui.render();
+    renderPatternLibrary();
+  }
+});
+
+// Открытие модалки
+document.getElementById('btnProject').addEventListener('click', () => {
+  projectNameInput.value = state._arrangedPatterns[state._editingIdx]?.name || '';
+  // Reset to Projects tab
+  document.querySelectorAll('.modal-tab').forEach((t,i) => t.classList.toggle('active', i === 0));
+  document.querySelectorAll('.modal-tab-content').forEach((c,i) => c.classList.toggle('active', i === 0));
+  projectModal.classList.add('open');
+});
+
+// Закрытие модалки
+document.getElementById('modalClose').addEventListener('click', () => {
+  projectModal.classList.remove('open');
+});
+projectModal.addEventListener('click', (e) => {
+  if (e.target === projectModal) projectModal.classList.remove('open');
+});
+
+// Save Project (localStorage)
+document.getElementById('modalSave').addEventListener('click', () => {
+  const n = projectNameInput.value.trim();
+  if (n && state._arrangedPatterns[state._editingIdx]) {
+    state._arrangedPatterns[state._editingIdx].name = n;
+  }
+  projectMgr.saveCurrentProject();
+  const info = document.getElementById('slotInfo');
+  if (info) info.innerHTML = '<div style="font-size:11px;color:var(--accent);padding:4px 0;">✓ Project saved.</div>';
+});
+
+// Export .json
+document.getElementById('modalExport').addEventListener('click', () => {
+  const n = projectNameInput.value.trim();
+  if (n && state._arrangedPatterns[state._editingIdx]) {
+    state._arrangedPatterns[state._editingIdx].name = n;
+  }
+  projectMgr.exportToFile();
+});
+
+// Import .json
+document.getElementById('modalImport').addEventListener('click', () => {
+  projectMgr.importFromFile(() => {
+    ui.render();
+  });
+});
+
+// ─── Settings ───
+const settingsModal = document.getElementById('settingsModal');
+const chkAutosave = document.getElementById('chkAutosave');
+chkAutosave.checked = settings.autosave === true;
+
+document.getElementById('btnSettings').addEventListener('click', () => {
+  chkAutosave.checked = state.getSettings().autosave === true;
+  settingsModal.classList.add('open');
+});
+document.getElementById('settingsClose').addEventListener('click', () => {
+  state.saveSettings({ autosave: chkAutosave.checked });
+  settingsModal.classList.remove('open');
+});
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) {
+    state.saveSettings({ autosave: chkAutosave.checked });
+    settingsModal.classList.remove('open');
+  }
+});
+
+// ─── Save Pattern to Library ───
+document.getElementById('btnSavePattern').addEventListener('click', () => {
+  const curName = state._arrangedPatterns[state._editingIdx]?.name || '';
+  const name = prompt('Pattern name:', curName);
+  if (!name) return;
+  const style = prompt('Style (e.g. rock, techno, house):', '');
+  if (style === null) return;
+  patternLib.savePattern(name, style || '');
+  document.getElementById('btnSavePattern').textContent = '✓ Saved';
+  setTimeout(() => { document.getElementById('btnSavePattern').textContent = '📚 Save Pattern'; }, 800);
+});
+
+// ─── Кнопки ───
+document.getElementById('btnClear').addEventListener('click', () => {
+  state.clearAll();
+  ui._updateAllMelodicNotes();
+  ui._updateAllDrumNotes();
+});
+
+document.getElementById('btnUndo').addEventListener('click', () => {
+  if (state.undo()) {
+    ui.render();
+  }
+});
+
+document.getElementById('btnRedo').addEventListener('click', () => {
+  if (state.redo()) {
+    ui.render();
+  }
+});
+
+document.getElementById('btnCopy').addEventListener('click', () => {
+  if (state.selStart === -1 || state.selEnd === -1) return;
+  showCopyPasteDialog('copy', (mask) => {
+    state.copy(mask);
+    const btn = document.getElementById('btnCopy');
+    btn.style.opacity = '1';
+    btn.textContent = '✓ Copied';
+    setTimeout(() => {
+      btn.textContent = '📋 Copy';
+      btn.style.opacity = state.clipboard ? '1' : '0.4';
+    }, 600);
+  });
+});
+
+document.getElementById('btnPaste').addEventListener('click', () => {
+  if (!state.clipboard) return;
+  showCopyPasteDialog('paste', (mask) => {
+    state.paste(mask);
+    ui.render();
+    const btn = document.getElementById('btnPaste');
+    btn.textContent = '✓ Pasted';
+    setTimeout(() => { btn.textContent = '📋 Paste'; }, 600);
+  });
+});
+
+document.getElementById('btnDelete').addEventListener('click', () => {
+  if (state.selStart !== -1 && state.selEnd !== -1) {
+    state.deleteSelection();
+    ui.render();
+  }
+});
+
+document.getElementById('btnTool').addEventListener('click', () => {
+  const newMode = state.toolMode === 'draw' ? 'select' : 'draw';
+  state.setTool(newMode);
+  const btn = document.getElementById('btnTool');
+  btn.textContent = newMode === 'draw' ? '✎ Draw' : '⬚ Select';
+  btn.classList.toggle('active', newMode === 'select');
+  ui.render();
+});
+
+function updateUndoRedoButtons() {
+  const undoBtn = document.getElementById('btnUndo');
+  const redoBtn = document.getElementById('btnRedo');
+  undoBtn.style.opacity = state.canUndo() ? '1' : '0.3';
+  redoBtn.style.opacity = state.canRedo() ? '1' : '0.3';
+}
+updateUndoRedoButtons();
+
+// ─── Слайдеры ───
+const tempoSlider = document.getElementById('tempoSlider');
+const bpmDisplay = document.getElementById('bpmDisplay');
+tempoSlider.addEventListener('input', () => {
+  state.tempo = parseInt(tempoSlider.value);
+  bpmDisplay.textContent = state.tempo;
+});
+
+const swingSlider = document.getElementById('swingSlider');
+const swingDisplay = document.getElementById('swingDisplay');
+swingSlider.addEventListener('input', () => {
+  state.swing = parseInt(swingSlider.value);
+  swingDisplay.textContent = state.swing + '%';
+});
+
+// ─── Song mode ───
+const songBtn = document.getElementById('btnSong');
+const songGroup = document.getElementById('songGroup');
+const songBlocksEl = document.getElementById('songBlocks');
+const songAddBtn = document.getElementById('songAddBtn');
+
+function renderSongArranger() {
+  const seq = state.songSequence;
+  songBlocksEl.innerHTML = '';
+  if (seq.length === 0) return;
+  seq.forEach((arrangedIdx, i) => {
+    const ap = state._arrangedPatterns[arrangedIdx];
+    const variant = ap ? (ap._activeVariant === 'b' ? ap._variantB : ap._variantA) : null;
+    const bars = variant ? Math.max(1, variant.patternLength / 16) : 1;
+    const block = document.createElement('div');
+    block.className = 'song-block' + (i === state.seqIndex && state.isPlaying ? ' active' : '');
+    block.style.width = (bars * 30) + 'px';
+    block.dataset.idx = i;
+    const label = ap ? ap._activeVariant.toUpperCase() : '?';
+    const nameStr = ap && ap.name ? ap.name : '';
+    block.title = nameStr ? nameStr + ' ' + label : label;
+    if (ap && ap.name) {
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'block-name';
+      nameSpan.textContent = nameStr;
+      block.appendChild(nameSpan);
+    }
+    const numSpan = document.createElement('span');
+    numSpan.className = 'block-num';
+    numSpan.textContent = label;
+    block.appendChild(numSpan);
+    // Крестик удаления
+    const delSpan = document.createElement('span');
+    delSpan.className = 'block-del';
+    delSpan.textContent = '✕';
+    delSpan.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (seq.length <= 1) return;
+      state.songSequence.splice(i, 1);
+      if (state.seqIndex >= state.songSequence.length) state.seqIndex = 0;
+      renderSongArranger();
+    });
+    block.appendChild(delSpan);
+    // Клик — открыть в редакторе
+    block.addEventListener('click', () => {
+      state._saveToArranged(state._editingIdx);
+      state._editingIdx = arrangedIdx;
+      state._loadFromArranged(arrangedIdx);
+      state.songMode = false;
+      songBtn.classList.remove('active');
+      songGroup.style.display = 'none';
+      state.viewMode = 'edit';
+      ui.render();
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'edit'));
+    });
+    block.addEventListener('contextmenu', (e) => {
+      showPatternCtxMenu(e, arrangedIdx);
+    });
+    songBlocksEl.appendChild(block);
+  });
+}
+
+songBtn.addEventListener('click', () => {
+  state.songMode = !state.songMode;
+  songBtn.classList.toggle('active', state.songMode);
+  songGroup.style.display = state.songMode ? '' : 'none';
+  if (state.songMode) {
+    const cur = state.songSequence.indexOf(state._editingIdx);
+    state.seqIndex = cur >= 0 ? cur : 0;
+    renderSongArranger();
+  } else {
+    state.seqIndex = 0;
+  }
+});
+
+songAddBtn.addEventListener('click', () => {
+  state._saveToArranged(state._editingIdx);
+  const empty = StateManager._makeEmptyPattern();
+  const newData = {
+    _variantA: empty,
+    _variantB: StateManager._makeEmptyPattern(),
+    _activeVariant: 'a',
+    _undoStackA: [], _redoStackA: [],
+    _undoStackB: [], _redoStackB: [],
+    locatorA: 0,
+    locatorB: empty.patternLength,
+  };
+  state._arrangedPatterns.push(newData);
+  const newIdx = state._arrangedPatterns.length - 1;
+  state.songSequence.push(newIdx);
+  renderSongArranger();
+});
+
+// ─── View switcher ───
+document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.viewMode = btn.dataset.view;
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === state.viewMode));
+    ui.render();
+  });
+});
+
+// ─── Анимация бегунка ───
+let lastAnimStep = -1;
+let lastSeqIdx = -1;
+function animatePlayhead() {
+  if (state.isPlaying && sequencer.isRunning) {
+    if (state.currentStep !== lastAnimStep) {
+      lastAnimStep = state.currentStep;
+      ui.updatePlayhead();
+      if (state.viewMode === 'arrange') ui.updateArrangePlayhead();
+    }
+    if (state.seqIndex !== lastSeqIdx) {
+      lastSeqIdx = state.seqIndex;
+      if (state.songMode) renderSongArranger();
+      if (state.viewMode === 'arrange') {
+        ui.render();
+        ui.updateArrangePlayhead();
+      }
+    }
+  } else if (state.viewMode === 'arrange' && ui._arrangePlayheadEl) {
+    ui._arrangePlayheadEl.style.display = 'none';
+  }
+  requestAnimationFrame(animatePlayhead);
+}
+requestAnimationFrame(animatePlayhead);
+
+// ─── Горячие клавиши ───
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyA') {
+    e.preventDefault();
+    if (state.toolMode === 'select') {
+      state.selStart = 0;
+      state.selEnd = state.steps - 1;
+      state.pasteCursor = -1;
+      state._notify();
+      ui.render();
+    }
+  }
+  if (e.code === 'Space') { e.preventDefault(); document.getElementById('btnPlay').click(); }
+  if (e.code === 'Escape') { document.getElementById('btnStop').click(); }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('btnUndo').click();
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))) {
+    e.preventDefault();
+    document.getElementById('btnRedo').click();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC') {
+    e.preventDefault();
+    if (state.selStart !== -1 && state.selEnd !== -1) {
+      showCopyPasteDialog('copy', (mask) => { state.copy(mask); });
+    }
+  }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV') {
+    e.preventDefault();
+    if (state.clipboard) {
+      showCopyPasteDialog('paste', (mask) => { state.paste(mask); ui.render(); });
+    }
+  }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyD') {
+    e.preventDefault();
+    if (state.selStart !== -1 && state.selEnd !== -1) {
+      state.copy();
+      state.pasteCursor = state.selEnd + 1;
+      state.paste();
+      ui.render();
+    }
+  }
+  if (e.code === 'Delete' || e.code === 'Backspace') {
+    if (state.selStart !== -1 && state.selEnd !== -1) {
+      e.preventDefault();
+      state.deleteSelection();
+      ui.render();
+    }
+  }
+});
+
+// ─── API для разработки ───
+window.sequencerAPI = {
+  savePattern: () => state.savePattern(),
+  loadPattern: (data) => { state.loadPattern(data); ui.render(); },
+  exportMidi: () => state.exportMidi(),
+  sendToMidiOut: () => state.sendToMidiOut(),
+};
+
+// ─── Copy/Paste track select dialog ───
+function showCopyPasteDialog(mode, callback) {
+  const overlay = document.createElement('div');
+  overlay.className = 'cp-dialog-overlay';
+  overlay.innerHTML = `
+    <div class="cp-dialog">
+      <div class="cp-dialog-title">${mode === 'copy' ? '📋 Copy — select tracks' : '📋 Paste — select tracks'}</div>
+      <div class="cp-dialog-tracks">
+        <label><input type="checkbox" data-track="0" checked> Track 1</label>
+        <label><input type="checkbox" data-track="1" checked> Track 2</label>
+        <label><input type="checkbox" data-track="2" checked> Track 3</label>
+      </div>
+      <div class="cp-dialog-buttons">
+        <button class="btn" id="cpOk">${mode === 'copy' ? 'Copy' : 'Paste'}</button>
+        <button class="btn" id="cpCancel">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
+  overlay.querySelector('#cpOk').addEventListener('click', () => {
+    const mask = [];
+    overlay.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      mask[parseInt(cb.dataset.track)] = cb.checked;
+    });
+    document.body.removeChild(overlay);
+    callback(mask);
+  });
+  overlay.querySelector('#cpCancel').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+}
+
+// ─── Context menu for pattern blocks (arrange + song) ───
+let _pCtx = null;
+let _pCtxIdx = -1;
+function showPatternCtxMenu(e, arrangedIdx) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!_pCtx) {
+    _pCtx = document.createElement('div');
+    _pCtx.className = 'pattern-ctx-menu';
+    document.body.appendChild(_pCtx);
+    document.addEventListener('click', (e) => {
+      if (!_pCtx.contains(e.target)) { _pCtx.style.display = 'none'; _pCtxIdx = -1; }
+    });
+    document.addEventListener('contextmenu', (e) => {
+      if (!_pCtx.contains(e.target)) { _pCtx.style.display = 'none'; _pCtxIdx = -1; }
+    });
+  }
+  _pCtxIdx = arrangedIdx;
+  _pCtx.innerHTML = '';
+  _pCtx.style.display = 'block';
+  _pCtx.style.left = e.clientX + 'px';
+  _pCtx.style.top = e.clientY + 'px';
+
+  const addItem = (label, fn, disabled) => {
+    const el = document.createElement('div');
+    el.className = 'ctx-item' + (disabled ? ' disabled' : '');
+    el.textContent = label;
+    if (!disabled) el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      _pCtx.style.display = 'none';
+      _pCtxIdx = -1;
+      fn();
+    });
+    _pCtx.appendChild(el);
+  };
+
+  const ap = state._arrangedPatterns[arrangedIdx];
+  addItem('✏ Rename', () => {
+    const n = prompt('Rename pattern:', ap && ap.name ? ap.name : '');
+    if (n !== null) { state.renamePattern(arrangedIdx, n); ui.render(); if (state.songMode) renderSongArranger(); }
+  });
+  addItem('📋 Copy (all)', () => { state.copyPatternFromIdx(arrangedIdx, false); });
+  addItem('🥁 Copy (drums only)', () => { state.copyPatternFromIdx(arrangedIdx, true); });
+  const sep = document.createElement('div'); sep.className = 'ctx-sep'; _pCtx.appendChild(sep);
+  addItem('📋 Paste', () => {
+    state.pastePatternToIdx(arrangedIdx);
+    ui.render();
+    if (state.songMode) renderSongArranger();
+  }, !state.patternClipboard);
+  const sep2 = document.createElement('div'); sep2.className = 'ctx-sep'; _pCtx.appendChild(sep2);
+  addItem('🗑 Delete', () => {
+    if (state._arrangedPatterns.length <= 1) return;
+    const delIdx = arrangedIdx;
+    state._arrangedPatterns.splice(delIdx, 1);
+    // Rebuild songSequence: remove references to delIdx, shift higher indices down
+    const newSeq = [];
+    for (let i = 0; i < state.songSequence.length; i++) {
+      const ref = state.songSequence[i];
+      if (ref === delIdx) continue;
+      newSeq.push(ref > delIdx ? ref - 1 : ref);
+    }
+    state.songSequence = newSeq;
+    // Adjust editing index
+    if (state._editingIdx > delIdx) {
+      state._editingIdx--;
+    } else if (state._editingIdx === delIdx) {
+      state._editingIdx = state._arrangedPatterns.length > 0 ? 0 : -1;
+    }
+    // Clamp seqIndex
+    if (state.seqIndex >= state.songSequence.length) {
+      state.seqIndex = Math.max(0, state.songSequence.length - 1);
+    }
+    state._notify();
+    ui.render();
+    if (state.songMode) renderSongArranger();
+  }, state._arrangedPatterns.length <= 1);
+}
+
+console.log('%c🎵 Chiptune Sequencer + TR-909 Drums ready', 'color: #00e5ff; font-size: 14px');
+console.log('API: window.sequencerAPI');
+</script>
 </body>
 </html>
