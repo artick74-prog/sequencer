@@ -931,7 +931,8 @@ select, input[type="number"], input[type="text"] {
     sf2Engine: null,
     sf2Ready: false,
     sf2Name: "",
-    sf2Loading: false,    bridgeReady: false,
+    sf2Loading: false,
+    bridgeReady: false,
   };
 
   function useSf2Output() {
@@ -2477,7 +2478,7 @@ select, input[type="number"], input[type="text"] {
       state.projectsDir = handle;
       await idbSet("projectsDir", handle);
       updateSyncUI();
-      setStatus(`Bound to folder “${handle.name}”. Use Sync to Cursor.`, "ok");
+      setStatus(`Bound to folder “${handle.name}”. Use Sync to AI.`, "ok");
     } catch (err) {
       if (err.name !== "AbortError") setStatus(`Bind failed: ${err.message}`, "err");
     }
