@@ -14,14 +14,26 @@
 
 Запуск UI:
 
-```bash
-python -m http.server 8080
+Рекомендуемый вариант для Hardware MIDI Host — локальный bridge-сервер:
+
+```text
+start-midi-host.bat
 ```
+
+или:
+
+```bash
+python scripts/local_server.py --open
+```
+
+Он слушает только `127.0.0.1:8080`, открывает `http://localhost:8080/midi-host.html` и даёт UI одно-кнопочный обмен с GitHub:
+- **Sync to AI** → пишет `projects/current.json` + overview, делает git commit и push;
+- **Reload from AI** → делает `git pull --ff-only` и загружает свежий `projects/current.json`.
+
+Обычный `python -m http.server 8080` остаётся fallback-вариантом без Git bridge.
 
 - Chiptune: http://localhost:8080/
 - Hardware host: http://localhost:8080/midi-host.html
-
-Web MIDI работает в **Chrome / Edge** на `localhost`. Встроенный браузер Cursor может не отдать MIDI — тогда открыть URL снаружи.
 
 ---
 
@@ -49,21 +61,30 @@ PC USB → TD-3 → MIDI Out (5-pin DIN) → XR20 In
 - Канал дорожки = самый частый channel в её нотах (потом правится в UI).
 - Маркеры Cubase попадают в `markers[]` и в overview/sections.
 
-### Синхронизация с Cursor (важно)
+### Синхронизация с AI / GitHub (важно)
 
-Ассистент **не видит браузер** — только файлы в репо.
+Ассистент **не видит браузер** — он читает файлы из GitHub. Поэтому нормальный рабочий режим — запуск через `start-midi-host.bat` / `scripts/local_server.py`.
 
-1. Один раз: **Bind projects/** → выбрать `d:\Dev\Sequencer\projects` (Chrome/Edge).
-2. Load MIDI → **Sync to Cursor** — пишет прямо в репо:
-   - `projects/current.json` — все ноты
-   - `projects/overview.json` — структура (маркеры, секции, плотность по 8 тактам)
-   - `projects/overview.md` — то же человекочитаемо (удобно читать ассистенту)
-3. Выделить регион → **Prepare for AI** — Sync + `selection.json` + промпт в буфер.
-4. В чате: «посмотри overview и перепиши selection…»
-5. Ассистент читает overview → правит `current.json` в диапазоне selection.
-6. В хосте: **Reload** → Play.
+1. **Load MIDI** → загрузить многодорожечный Standard MIDI.
+2. **Sync to AI**:
+   - пишет `projects/current.json`, `overview.json`, `overview.md`;
+   - при selection также пишет `selection.json`;
+   - автоматически делает git commit и `git push origin <current branch>`.
+3. После Sync ассистент может сразу прочитать новую версию из GitHub.
+4. Ассистент правит `current.json`/другие файлы в GitHub.
+5. В хосте **Reload from AI**:
+   - `git pull --ff-only`;
+   - загрузка свежего `projects/current.json`;
+   - Play.
 
-Без Bind: Sync скачивает файлы — положи их в `projects/` вручную.
+API локального bridge:
+- `GET /api/health` — проверка связи;
+- `POST /api/sync` — write + commit + push;
+- `POST /api/reload` — pull + return current.json.
+
+Bridge перед Sync делает `git fetch` и не пушит поверх более свежей удалённой версии: в таком случае UI попросит сначала **Reload from AI**.
+
+Старый **Bind projects/** остаётся fallback для браузеров с File System Access API. Без bridge и без Bind Sync скачивает файлы вручную.
 
 ### Файлы в `projects/`
 
