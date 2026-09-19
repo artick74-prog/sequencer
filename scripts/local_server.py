@@ -426,54 +426,48 @@ def build_library_catalog(force: bool = False, prefer_packs: bool = True) -> dic
 
 
 def warm_raw_archive_cache() -> dict:
-    """Sequentially cache archive MIDI so pack writing never seeks through tar.gz per file."""
-    locator_to_id = {
-        (path_text, member): item_id
-        for item_id, (mode, path_text, member) in LIBRARY_LOCATORS.items()
-        if mode == "archive"
-    }
-    archive_paths = sorted({
-        path_text
-        for mode, path_text, _ in LIBRARY_LOCATORS.values()
-        if mode == "archive"
-    })
+    """Fill only missing archive cache entries, scanning each required archive once."""
+    missing: dict[tuple[str, str], str] = {}
+    missing_archives: set[str] = set()
+    for item_id, (mode, path_text, member) in LIBRARY_LOCATORS.items():
+        if mode != "archive" or not member:
+            continue
+        if read_cached_midi(item_id) is None:
+            missing[(path_text, member)] = item_id
+            missing_archives.add(path_text)
+
+    if not missing:
+        return {"files": 0, "bytes": 0}
+
     cached_files = 0
     cached_bytes = 0
-
-    for path_text in archive_paths:
+    for path_text in sorted(missing_archives):
         archive = Path(path_text)
         if archive.name.lower().endswith(".zip"):
             with zipfile.ZipFile(archive) as zf:
                 for info in zf.infolist():
-                    if info.is_dir() or not info.filename.lower().endswith((".mid", ".midi")):
+                    if info.is_dir():
                         continue
-                    item_id = locator_to_id.get((path_text, info.filename))
+                    item_id = missing.get((path_text, info.filename))
                     if not item_id:
                         continue
-                    data = read_cached_midi(item_id)
-                    if data is None:
-                        data = zf.read(info)
-                        write_cached_midi(item_id, data)
+                    data = zf.read(info)
+                    write_cached_midi(item_id, data)
                     cached_files += 1
                     cached_bytes += len(data)
         else:
             with tarfile.open(archive, "r:*") as tf:
                 for member_info in tf:
-                    if (
-                        not member_info.isfile()
-                        or not member_info.name.lower().endswith((".mid", ".midi"))
-                    ):
+                    if not member_info.isfile():
                         continue
-                    item_id = locator_to_id.get((path_text, member_info.name))
+                    item_id = missing.get((path_text, member_info.name))
                     if not item_id:
                         continue
-                    data = read_cached_midi(item_id)
-                    if data is None:
-                        fh = tf.extractfile(member_info)
-                        if fh is None:
-                            continue
-                        data = fh.read()
-                        write_cached_midi(item_id, data)
+                    fh = tf.extractfile(member_info)
+                    if fh is None:
+                        continue
+                    data = fh.read()
+                    write_cached_midi(item_id, data)
                     cached_files += 1
                     cached_bytes += len(data)
 
@@ -531,7 +525,7 @@ def build_style_packs(max_files: int = PACK_MAX_FILES) -> dict:
             group.sort(key=lambda item: (item["name"].lower(), item["id"]))
             genre_slug = slugify_pack_part(genre)
             kind_slug = slugify_pack_part(kind)
-            source_slug = slugify_pack_part(source)
+            source_slug = slugify_pack_part(source)+"-"+hashlib.sha1(source.encode("utf-8")).hexdigest()[:6]
             total_parts = max(1, (len(group) + max_files - 1) // max_files)
 
             for part_idx in range(total_parts):
