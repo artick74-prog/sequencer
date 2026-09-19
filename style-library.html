@@ -67,7 +67,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   <select id="kind"><option value="">Все типы</option></select>
   <select id="source"><option value="">Все источники</option></select>
   <button id="rescan">Rescan</button>
-  <button id="optimize">Optimize cache</button>
+  <button id="repack">Rebuild packs</button>
   <span style="flex:1"></span>
   <span id="countLabel" style="color:var(--dim);font-size:12px">—</span>
 </div>
@@ -772,10 +772,16 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
       const c=data.counts||{};
       $("libraryCard").innerHTML=
         "<strong>"+(c.total||0).toLocaleString("ru-RU")+" MIDI</strong><br>"+
+        "Mode: <strong>"+escapeHtml(data.mode||"raw")+"</strong>"+
+        (data.mode==="packs"?" · "+Number(data.packCount||0).toLocaleString("ru-RU")+" ZIP packs":"")+"<br>"+
         "Root: <span style='word-break:break-all'>"+escapeHtml(data.root||"")+"</span><br>"+
         "Sources: "+Object.keys(c.source||{}).length;
       applyFilters();
-      setStatus("Library ready · "+state.catalog.length.toLocaleString("ru-RU")+" MIDI","ok");
+      setStatus(
+        "Library ready · "+state.catalog.length.toLocaleString("ru-RU")+" MIDI"+
+        (data.mode==="packs"?" · "+Number(data.packCount||0).toLocaleString("ru-RU")+" packs":""),
+        "ok"
+      );
     } catch(e) {
       setStatus("Library error: "+e.message+". Запусти start-midi-host.bat после git pull.","err");
       $("list").innerHTML="<div class='empty'>Нет связи с локальной Style Library API.</div>";
@@ -787,27 +793,26 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   $("kind").addEventListener("change",applyFilters);
   $("source").addEventListener("change",applyFilters);
   $("rescan").addEventListener("click",()=>loadCatalog(true));
-  $("optimize").addEventListener("click",async()=>{
+  $("repack").addEventListener("click",async()=>{
     stop({reset:true});
-    $("optimize").disabled=true;
-    setStatus("Оптимизация: кэшируем MIDI из архивов и разбираем EDM / unclassified…");
+    $("repack").disabled=true;
+    $("rescan").disabled=true;
+    setStatus("Rebuild packs: классифицируем библиотеку и собираем небольшие ZIP-паки…");
     try {
-      const r=await fetch("/api/library/optimize?genre=edm&kind=unclassified",{method:"POST"});
+      const r=await fetch("/api/library/repack",{method:"POST"});
       const data=await r.json();
-      if(!r.ok) throw new Error(data.error||"Optimize error");
+      if(!r.ok) throw new Error(data.error||"Pack rebuild error");
       await loadCatalog(false);
-      const roles=Object.entries(data.roleCounts||{})
-        .map(([k,v])=>k+" "+v).join(" · ");
       setStatus(
-        "Optimize ready · cached "+Number(data.cachedFiles||0).toLocaleString("ru-RU")+
-        " MIDI · reclassified "+Number(data.reclassified||0).toLocaleString("ru-RU")+
-        (roles?" · "+roles:""),
+        "Packs ready · "+Number(data.packs||0).toLocaleString("ru-RU")+
+        " ZIP · "+Number(data.total||0).toLocaleString("ru-RU")+" MIDI",
         "ok"
       );
     } catch(e) {
-      setStatus("Optimize error: "+e.message,"err");
+      setStatus("Pack rebuild error: "+e.message,"err");
     } finally {
-      $("optimize").disabled=false;
+      $("repack").disabled=false;
+      $("rescan").disabled=false;
     }
   });
   $("prev").addEventListener("click",()=>{state.page--;renderList();});
