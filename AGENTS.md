@@ -58,6 +58,7 @@ python scripts/local_server.py --open
 - Для drums GM percussion преобразуется в 8 внутренних drum lanes, но при импорте для каждой lane запоминается доминирующий исходный GM drum note. Поэтому SF2/HW playback сохраняет исходный тип kick/snare/hat/cymbal настолько, насколько позволяет 8-lane модель.
 - В track header хранится `Source` и есть **↻ Source**: заново загрузить исходный reference MIDI, если пользователь хочет сбросить свои правки на этой дорожке.
 - Source metadata, engine, MIDI channel, GM program и polyphonic note data сохраняются внутри проекта/варианта; исходные файлы библиотеки никогда не изменяются.
+- Piano Roll / Drum Grid поддерживают горизонтальный zoom обычным колесом мыши над сеткой: wheel up = шире, wheel down = уже/overview. Диапазон шага 4–64 px, zoom запоминается в localStorage и старается удерживать музыкальную позицию под курсором. Shift+wheel остаётся горизонтальной прокруткой.
 
 Кнопка **Sync to AI** в Chiptune пишет и пушит:
 - `projects/chiptune-current.json` — полный проект и source metadata;

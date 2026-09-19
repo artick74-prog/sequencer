@@ -257,6 +257,17 @@ body {
   opacity: 1;
   border-color: var(--accent);
 }
+.grid-zoom-badge {
+  margin-left: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 9px;
+  white-space: nowrap;
+  user-select: none;
+}
+.grid-zoom-badge strong { color: var(--accent); font-weight: normal; }
 
 /* ═══════════════════════════════════════════
    Piano Roll (мелодическая дорожка)
@@ -301,6 +312,7 @@ body {
 
 .grid-cell {
   width: var(--step-w);
+  flex: 0 0 var(--step-w);
   height: 100%;
   border-right: 1px solid rgba(42, 42, 68, 0.4);
   cursor: pointer;
@@ -374,6 +386,7 @@ body {
 
 .drum-cell {
   width: var(--step-w);
+  flex: 0 0 var(--step-w);
   height: 100%;
   border-right: 1px solid rgba(58, 32, 64, 0.5);
   cursor: pointer;
@@ -430,6 +443,7 @@ body {
 }
 .step-num {
   width: var(--step-w);
+  flex: 0 0 var(--step-w);
   text-align: center;
   font-size: 9px;
   color: var(--text-dim);
@@ -3888,6 +3902,12 @@ class UIRenderer {
     this.playheadEls = [];
     this._dragActive = false;
 
+    // Horizontal piano-roll zoom. Plain mouse wheel over the grid zooms in/out.
+    const savedStepWidth = Number(localStorage.getItem('chiptune_grid_step_width') || CONFIG.STEP_WIDTH || 32);
+    this._gridStepWidth = Math.max(4, Math.min(64, Number.isFinite(savedStepWidth) ? savedStepWidth : 32));
+    CONFIG.STEP_WIDTH = this._gridStepWidth;
+    document.documentElement.style.setProperty('--step-w', this._gridStepWidth + 'px');
+
     // document mouseup — завершение drag-выделения
     document.addEventListener('mouseup', () => {
       if (this._dragActive) {
@@ -4005,6 +4025,7 @@ class UIRenderer {
     this._updateAllDrumNotes();
     this._updateSelection();
     this._updatePasteCursor();
+    this._initHorizontalGridZoom();
   }
 
   _renderArrangeView(container) {
@@ -4484,6 +4505,13 @@ class UIRenderer {
     header.appendChild(waveSelect);
     header.appendChild(soundModeSelect);
     header.appendChild(presetSelect);
+
+    const zoomBadge = document.createElement('span');
+    zoomBadge.className = 'grid-zoom-badge';
+    zoomBadge.id = 'gridZoomBadge';
+    zoomBadge.title = 'Mouse wheel over the grid = horizontal zoom';
+    zoomBadge.innerHTML = 'ZOOM <strong>' + Math.round((CONFIG.STEP_WIDTH / 32) * 100) + '%</strong>';
+    header.appendChild(zoomBadge);
 
     const sourceMeta = this.state.trackSources?.[trackIdx];
     if (sourceMeta) {
@@ -5153,6 +5181,99 @@ class UIRenderer {
     return wrapper;
   }
 
+  /* ─── Горизонтальный zoom piano-roll / drum-grid колесом мыши ─── */
+  _initHorizontalGridZoom() {
+    const scrollWrap = document.querySelector('.piano-roll-wrapper, .drum-grid-wrapper');
+    if (!scrollWrap) return;
+
+    scrollWrap.title = 'Mouse wheel: horizontal zoom · Shift+wheel: horizontal scroll';
+
+    scrollWrap.addEventListener('wheel', (e) => {
+      // Shift+wheel keeps a conventional horizontal-scroll gesture available.
+      if (e.shiftKey) {
+        e.preventDefault();
+        scrollWrap.scrollLeft += e.deltaY;
+        return;
+      }
+
+      if (Math.abs(e.deltaY) < 0.01) return;
+      e.preventDefault();
+
+      const oldW = CONFIG.STEP_WIDTH;
+      const direction = e.deltaY < 0 ? 1 : -1;
+      const increment = oldW <= 12 ? 1 : oldW <= 32 ? 2 : 4;
+      const newW = Math.max(4, Math.min(64, oldW + direction * increment));
+      if (newW === oldW) return;
+
+      this._applyHorizontalGridZoom(newW, scrollWrap, e.clientX);
+    }, { passive: false });
+  }
+
+  _applyHorizontalGridZoom(newStepWidth, scrollWrap, pointerClientX = null) {
+    const oldW = CONFIG.STEP_WIDTH || 32;
+    const newW = Math.max(4, Math.min(64, Math.round(newStepWidth)));
+    if (!scrollWrap || newW === oldW) return;
+
+    const rect = scrollWrap.getBoundingClientRect();
+    const labels = scrollWrap.querySelector('.note-labels, .drum-labels');
+    const labelW = labels?.offsetWidth || 0;
+    const pointerX = pointerClientX == null
+      ? Math.max(0, (scrollWrap.clientWidth - labelW) / 2)
+      : Math.max(0, Math.min(scrollWrap.clientWidth - labelW, pointerClientX - rect.left - labelW));
+
+    // Keep the musical position under the cursor stable while changing zoom.
+    const anchorStep = Math.max(0, (scrollWrap.scrollLeft + pointerX) / oldW);
+
+    CONFIG.STEP_WIDTH = newW;
+    this._gridStepWidth = newW;
+    document.documentElement.style.setProperty('--step-w', newW + 'px');
+    localStorage.setItem('chiptune_grid_step_width', String(newW));
+
+    const totalWidth = this.state.steps * newW;
+    document.querySelectorAll('.piano-roll, .drum-grid').forEach(grid => {
+      grid.style.width = totalWidth + 'px';
+      grid.style.minWidth = totalWidth + 'px';
+    });
+
+    document.querySelectorAll('.bar-ruler').forEach(ruler => {
+      ruler.style.width = totalWidth + 'px';
+      ruler.style.minWidth = totalWidth + 'px';
+
+      ruler.querySelectorAll('.ruler-bar-line').forEach((line, idx) => {
+        line.style.left = (idx * 16 * newW) + 'px';
+      });
+      ruler.querySelectorAll('.ruler-bar-label').forEach((label, idx) => {
+        label.style.left = (idx * 16 * newW + 4) + 'px';
+      });
+      this._updateRuler(ruler);
+    });
+
+    document.querySelectorAll('.note-block[data-length-steps]').forEach(block => {
+      const lengthSteps = Math.max(1, Number(block.dataset.lengthSteps || 1));
+      if (lengthSteps > 1) {
+        block.style.width = Math.max(newW - 2, lengthSteps * newW - 2) + 'px';
+      } else {
+        block.style.width = '';
+      }
+    });
+
+    const badge = document.getElementById('gridZoomBadge');
+    if (badge) badge.innerHTML = 'ZOOM <strong>' + Math.round((newW / 32) * 100) + '%</strong>';
+
+    // At overview zoom levels step numbers become visually noisy.
+    document.querySelectorAll('.step-num').forEach(num => {
+      num.style.fontSize = newW < 8 ? '0px' : newW < 14 ? '7px' : '9px';
+    });
+
+    this.updatePlayhead();
+
+    requestAnimationFrame(() => {
+      const target = anchorStep * newW - pointerX;
+      const maxScroll = Math.max(0, scrollWrap.scrollWidth - scrollWrap.clientWidth);
+      scrollWrap.scrollLeft = Math.max(0, Math.min(maxScroll, target));
+    });
+  }
+
   /* ─── Создание bar ruler с локаторами ─── */
   _createBarRuler() {
     const steps = this.state.steps;
@@ -5346,6 +5467,7 @@ class UIRenderer {
       noteBlock.className = 'note-block' + (events.length > 1 ? ' poly' : '');
       noteBlock.style.background = CONFIG.TRACK_COLORS[track];
       const lengthSteps = Math.max(1, Number(event.length || 1));
+      noteBlock.dataset.lengthSteps = String(lengthSteps);
       if (lengthSteps > 1) {
         noteBlock.style.width = Math.max(CONFIG.STEP_WIDTH - 2, lengthSteps * CONFIG.STEP_WIDTH - 2) + 'px';
         noteBlock.style.zIndex = '3';
