@@ -1067,9 +1067,9 @@ select, input[type="number"], input[type="text"] {
       </div>
       <div class="loop-filters">
         <input class="wide" id="hostLoopSearch" type="search" placeholder="Search MIDI…">
-        <select id="hostLoopMaterial" title="Short reusable loops or longer constructor/performance material">
-          <option value="loop" selected>Loops</option>
-          <option value="constructor">Constructors / long phrases</option>
+        <select id="hostLoopMaterial" title="Loops up to 32 bars; material longer than 32 bars is separated as constructors">
+          <option value="loop" selected>Loops · up to 32 bars</option>
+          <option value="constructor">Constructors · over 32 bars</option>
           <option value="">All material</option>
         </select>
         <select id="hostLoopGenre"><option value="">All styles</option></select>
@@ -1661,7 +1661,7 @@ select, input[type="number"], input[type="text"] {
 
   // ─── Embedded Style Library / drag-and-drop loops ───────────────
 
-  const HOST_LOOP_PAGE_SIZE = 120;
+  const HOST_LOOP_RENDER_BATCH = 240;
   const HOST_LOOP_RATINGS_KEY = "chiptune_loop_ratings_v1";
   const HOST_LOOP_ALIASES_KEY = "chiptune_loop_aliases_v1";
   const HOST_LOOP_PREVIEW_ROUTE_KEY = "midi_host_loop_preview_route_v1";
@@ -1679,7 +1679,8 @@ select, input[type="number"], input[type="text"] {
   let hostLoopPreview = null;
   let hostLoopPreviewTimer = null;
   let hostLoopPreviewToken = 0;
-  let hostLoopRenderLimit = HOST_LOOP_PAGE_SIZE;
+  let hostLoopRenderedCount = HOST_LOOP_RENDER_BATCH;
+  let hostLoopRenderObserver = null;
   const hostLoopNoteTimers = new Set();
   const hostLoopPreviewMeta = new Map();
 
@@ -1751,11 +1752,12 @@ select, input[type="number"], input[type="text"] {
   }
 
   function hostLoopMaterialType(entry) {
+    const bars = Number(entry?.barsEstimate);
+    if (Number.isFinite(bars)) return bars > 32 ? "constructor" : "loop";
+
     const explicit = String(entry?.contentType || "").toLowerCase();
     if (explicit === "constructor" || explicit === "loop") return explicit;
     if (hostLoopRole(entry) === "arrangement") return "constructor";
-    const bars = Number(entry?.barsEstimate);
-    if (Number.isFinite(bars) && bars > 8) return "constructor";
     return "loop";
   }
 
@@ -1968,16 +1970,19 @@ select, input[type="number"], input[type="text"] {
     if (!list) return;
 
     const filtered = filteredHostLoops();
-    const shown = Math.min(filtered.length, hostLoopRenderLimit);
+    const shown = Math.min(filtered.length, hostLoopRenderedCount);
     if (count) {
       const material = document.getElementById("hostLoopMaterial")?.value ?? "loop";
       const noun = material === "constructor" ? "constructors" : material === "loop" ? "loops" : "MIDI";
-      count.textContent =
-        filtered.length.toLocaleString("ru-RU") + " " + noun +
-        (shown < filtered.length ? " · showing " + shown.toLocaleString("ru-RU") : "");
+      count.textContent = filtered.length.toLocaleString("ru-RU") + " " + noun;
     }
-    const rows = filtered.slice(0, hostLoopRenderLimit);
+    const rows = filtered.slice(0, shown);
     list.innerHTML = "";
+
+    if (hostLoopRenderObserver) {
+      hostLoopRenderObserver.disconnect();
+      hostLoopRenderObserver = null;
+    }
 
     if (!rows.length) {
       list.innerHTML = '<div class="cloud-project-empty">Nothing found.</div>';
@@ -2082,20 +2087,30 @@ select, input[type="number"], input[type="text"] {
 
     updateHostLoopProgressBars();
 
-    if (filtered.length > hostLoopRenderLimit) {
-      const more = document.createElement("button");
-      more.type = "button";
-      more.className = "btn";
-      more.style.margin = "3px auto 8px";
-      more.style.minWidth = "180px";
-      more.textContent =
-        "Load " + Math.min(HOST_LOOP_PAGE_SIZE, filtered.length - hostLoopRenderLimit) +
-        " more · " + filtered.length.toLocaleString("ru-RU") + " total";
-      more.addEventListener("click", () => {
-        hostLoopRenderLimit += HOST_LOOP_PAGE_SIZE;
+    if (shown < filtered.length) {
+      const sentinel = document.createElement("div");
+      sentinel.className = "cloud-project-empty";
+      sentinel.style.padding = "8px";
+      sentinel.textContent =
+        "Loading… " + shown.toLocaleString("ru-RU") +
+        " / " + filtered.length.toLocaleString("ru-RU");
+      list.appendChild(sentinel);
+
+      hostLoopRenderObserver = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        hostLoopRenderObserver?.disconnect();
+        hostLoopRenderObserver = null;
+        hostLoopRenderedCount = Math.min(
+          filtered.length,
+          hostLoopRenderedCount + HOST_LOOP_RENDER_BATCH
+        );
         renderHostLoopBrowser();
+      }, {
+        root: list,
+        rootMargin: "240px 0px",
+        threshold: 0.01,
       });
-      list.appendChild(more);
+      hostLoopRenderObserver.observe(sentinel);
     }
   }
 
@@ -6059,7 +6074,7 @@ select, input[type="number"], input[type="text"] {
   ].forEach((id) => {
     const el = document.getElementById(id);
     el?.addEventListener(el.tagName === "INPUT" ? "input" : "change", () => {
-      hostLoopRenderLimit = HOST_LOOP_PAGE_SIZE;
+      hostLoopRenderedCount = HOST_LOOP_RENDER_BATCH;
       renderHostLoopBrowser();
     });
   });
