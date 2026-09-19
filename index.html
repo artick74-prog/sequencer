@@ -5002,44 +5002,49 @@ class UIRenderer {
       const cell = this.melodicCells[track]?.[step]?.[midi];
       if (cell) cell.innerHTML = '';
     }
-    // Основная нота (текущая дорожка)
-    const midi = this.state.melodicPattern[track][step];
-    if (midi !== null) {
-      const cell = this.melodicCells[track]?.[step]?.[midi];
-      if (cell) {
-        const block = document.createElement('div');
-        block.className = 'note-block';
-        block.style.background = CONFIG.TRACK_COLORS[track];
-        cell.appendChild(block);
+
+    // Main notes. SF2/MIDI tracks can display multiple notes at the same step.
+    const events = normalizeMelodicCell(this.state.melodicPattern[track][step]);
+    for (const event of events) {
+      const cell = this.melodicCells[track]?.[step]?.[event.note];
+      if (!cell) continue;
+      const noteBlock = document.createElement('div');
+      noteBlock.className = 'note-block' + (events.length > 1 ? ' poly' : '');
+      noteBlock.style.background = CONFIG.TRACK_COLORS[track];
+      const lengthSteps = Math.max(1, Number(event.length || 1));
+      if (lengthSteps > 1) {
+        noteBlock.style.width = Math.max(CONFIG.STEP_WIDTH - 2, lengthSteps * CONFIG.STEP_WIDTH - 2) + 'px';
+        noteBlock.style.zIndex = '3';
       }
+      noteBlock.title = midiToName(event.note) + ' · vel ' + event.velocity +
+        ' · gate ' + Number(lengthSteps.toFixed(2)) + ' step';
+      cell.appendChild(noteBlock);
     }
-    // Ghost-ноты из других дорожек
+
+    // Ghost notes from the other two tracks.
     for (let t = 0; t < CONFIG.TRACKS; t++) {
       if (t === track) continue;
       if (this.state.isDrumTrack(t)) {
-        // Барабаны отображаются как ghost-ноты на фиксированных клавишах
         for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
           if (this.state.isDrumActive(t, step, d)) {
             const ghostMidi = CONFIG.DRUM_NOTE_MAP[d];
             const cell = this.melodicCells[track]?.[step]?.[ghostMidi];
             if (cell && !cell.querySelector('.note-block:not(.ghost)')) {
-              const block = document.createElement('div');
-              block.className = 'note-block ghost';
-              block.style.background = CONFIG.TRACK_COLORS[t];
-              cell.appendChild(block);
+              const ghost = document.createElement('div');
+              ghost.className = 'note-block ghost';
+              ghost.style.background = CONFIG.TRACK_COLORS[t];
+              cell.appendChild(ghost);
             }
           }
         }
       } else {
-        // Ghost мелодической ноты из другой мелодической дорожки
-        const ghostMidi = this.state.melodicPattern[t][step];
-        if (ghostMidi !== null) {
-          const cell = this.melodicCells[track]?.[step]?.[ghostMidi];
+        for (const ghostEvent of normalizeMelodicCell(this.state.melodicPattern[t][step])) {
+          const cell = this.melodicCells[track]?.[step]?.[ghostEvent.note];
           if (cell && !cell.querySelector('.note-block:not(.ghost)')) {
-            const block = document.createElement('div');
-            block.className = 'note-block ghost';
-            block.style.background = CONFIG.TRACK_COLORS[t];
-            cell.appendChild(block);
+            const ghost = document.createElement('div');
+            ghost.className = 'note-block ghost';
+            ghost.style.background = CONFIG.TRACK_COLORS[t];
+            cell.appendChild(ghost);
           }
         }
       }
