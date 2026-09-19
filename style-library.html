@@ -701,11 +701,40 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   }
 
-  function fillSelect(id,values,label) {
+  const STYLE_LABELS = {
+    "afrobeat":"Afrobeat",
+    "afrocuban":"Afro-Cuban",
+    "blues":"Blues",
+    "country":"Country",
+    "dance":"Dance",
+    "funk":"Funk",
+    "gospel":"Gospel",
+    "highlife":"Highlife",
+    "hiphop":"Hip-Hop",
+    "jazz":"Jazz",
+    "latin":"Latin",
+    "middleeastern":"Middle Eastern",
+    "neworleans":"New Orleans",
+    "pop":"Pop",
+    "punk":"Punk",
+    "reggae":"Reggae",
+    "rock":"Rock",
+    "soul":"Soul",
+    "tech-house":"Tech House",
+    "minimal-deep-tech":"Minimal / Deep Tech",
+    "acid":"Acid",
+    "house":"House",
+    "edm":"EDM",
+    "groove":"Groove",
+    "other":"Other"
+  };
+  function styleLabel(v) { return STYLE_LABELS[v]||String(v||""); }
+
+  function fillSelect(id,values,label,formatter=(v)=>v) {
     const el=$(id),keep=el.value;
     el.innerHTML="<option value=''>"+label+"</option>";
     for(const v of values.sort((a,b)=>a.localeCompare(b))) {
-      const o=document.createElement("option"); o.value=v; o.textContent=v; el.appendChild(o);
+      const o=document.createElement("option"); o.value=v; o.textContent=formatter(v); el.appendChild(o);
     }
     if(values.includes(keep)) el.value=keep;
   }
@@ -745,7 +774,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
           "<div><div class='name'>"+escapeHtml(e.name)+"</div><div class='small'>"+escapeHtml(e.member||e.container)+"</div></div>"+
           "<div class='small'>"+escapeHtml(e.source)+"</div>"+
           "<div class='small hide-small'>"+escapeHtml(e.kind)+"</div>"+
-          "<div class='small hide-small'>"+escapeHtml(e.genre)+"</div>"+
+          "<div class='small hide-small'>"+escapeHtml(styleLabel(e.genre))+"</div>"+
           "<div class='small hide-small'>"+Math.round((e.size||0)/1024)+" KB</div>";
         row.addEventListener("click",()=>loadEntry(e,false));
         row.querySelector("button").addEventListener("click",(ev)=>{ev.stopPropagation();loadEntry(e,true);});
@@ -773,7 +802,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
       if(!r.ok) throw new Error(data.error||"Library API error");
       state.catalog=data.entries||[];
       state.filtered=state.catalog.slice();
-      fillSelect("genre",[...new Set(state.catalog.map(e=>e.genre))],"Все стили");
+      fillSelect("genre",[...new Set(state.catalog.map(e=>e.genre))],"Все стили",styleLabel);
       fillSelect("kind",[...new Set(state.catalog.map(e=>e.kind))],"Все типы");
       fillSelect("source",[...new Set(state.catalog.map(e=>e.source))],"Все источники");
       const c=data.counts||{};
