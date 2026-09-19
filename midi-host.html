@@ -387,6 +387,11 @@ a { color: var(--accent); }
 .loop-progress.active .loop-progress-fill {
   background: var(--accent);
 }
+.track-body.clip-move-target {
+  outline: 2px solid var(--gm);
+  outline-offset: -2px;
+  background-color: rgba(232, 193, 112, .055);
+}
 .track-body.loop-drop-target {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
@@ -1062,6 +1067,11 @@ select, input[type="number"], input[type="text"] {
       </div>
       <div class="loop-filters">
         <input class="wide" id="hostLoopSearch" type="search" placeholder="Search MIDI…">
+        <select id="hostLoopMaterial" title="Short reusable loops or longer constructor/performance material">
+          <option value="loop" selected>Loops</option>
+          <option value="constructor">Constructors / long phrases</option>
+          <option value="">All material</option>
+        </select>
         <select id="hostLoopGenre"><option value="">All styles</option></select>
         <select id="hostLoopRole"><option value="">All roles</option></select>
         <select id="hostLoopFamily"><option value="">All instrument families</option></select>
@@ -1651,7 +1661,7 @@ select, input[type="number"], input[type="text"] {
 
   // ─── Embedded Style Library / drag-and-drop loops ───────────────
 
-  const HOST_LOOP_RENDER_LIMIT = 120;
+  const HOST_LOOP_PAGE_SIZE = 120;
   const HOST_LOOP_RATINGS_KEY = "chiptune_loop_ratings_v1";
   const HOST_LOOP_ALIASES_KEY = "chiptune_loop_aliases_v1";
   const HOST_LOOP_PREVIEW_ROUTE_KEY = "midi_host_loop_preview_route_v1";
@@ -1669,6 +1679,7 @@ select, input[type="number"], input[type="text"] {
   let hostLoopPreview = null;
   let hostLoopPreviewTimer = null;
   let hostLoopPreviewToken = 0;
+  let hostLoopRenderLimit = HOST_LOOP_PAGE_SIZE;
   const hostLoopNoteTimers = new Set();
   const hostLoopPreviewMeta = new Map();
 
@@ -1737,6 +1748,19 @@ select, input[type="number"], input[type="text"] {
       return "melody";
     }
     return entry.kind || "unclassified";
+  }
+
+  function hostLoopMaterialType(entry) {
+    const explicit = String(entry?.contentType || "").toLowerCase();
+    if (explicit === "constructor" || explicit === "loop") return explicit;
+    if (hostLoopRole(entry) === "arrangement") return "constructor";
+    const bars = Number(entry?.barsEstimate);
+    if (Number.isFinite(bars) && bars > 8) return "constructor";
+    return "loop";
+  }
+
+  function hostLoopMaterialLabel(entry) {
+    return hostLoopMaterialType(entry) === "constructor" ? "Constructor" : "Loop";
   }
 
   function hostLoopSetStatus(text, ok = false) {
@@ -1872,6 +1896,7 @@ select, input[type="number"], input[type="text"] {
 
   function filteredHostLoops() {
     const q = (document.getElementById("hostLoopSearch")?.value || "").trim().toLowerCase();
+    const material = document.getElementById("hostLoopMaterial")?.value ?? "loop";
     const genre = document.getElementById("hostLoopGenre")?.value || "";
     const role = document.getElementById("hostLoopRole")?.value || "";
     const family = document.getElementById("hostLoopFamily")?.value || "";
@@ -1880,6 +1905,7 @@ select, input[type="number"], input[type="text"] {
     const ratingFilter = document.getElementById("hostLoopRating")?.value || "0";
 
     return hostLoopCatalog.filter((entry) => {
+      if (material && hostLoopMaterialType(entry) !== material) return false;
       if (genre && entry.genre !== genre) return false;
       if (role && hostLoopRole(entry) !== role) return false;
       if (family && !hostLoopFamilies(entry).includes(family)) return false;
@@ -1942,8 +1968,15 @@ select, input[type="number"], input[type="text"] {
     if (!list) return;
 
     const filtered = filteredHostLoops();
-    if (count) count.textContent = filtered.length.toLocaleString("ru-RU") + " MIDI";
-    const rows = filtered.slice(0, HOST_LOOP_RENDER_LIMIT);
+    const shown = Math.min(filtered.length, hostLoopRenderLimit);
+    if (count) {
+      const material = document.getElementById("hostLoopMaterial")?.value ?? "loop";
+      const noun = material === "constructor" ? "constructors" : material === "loop" ? "loops" : "MIDI";
+      count.textContent =
+        filtered.length.toLocaleString("ru-RU") + " " + noun +
+        (shown < filtered.length ? " · showing " + shown.toLocaleString("ru-RU") : "");
+    }
+    const rows = filtered.slice(0, hostLoopRenderLimit);
     list.innerHTML = "";
 
     if (!rows.length) {
@@ -1975,8 +2008,18 @@ select, input[type="number"], input[type="text"] {
       const meta = document.createElement("div");
       meta.className = "loop-card-meta";
       const familyText = hostLoopFamilies(entry).join(", ");
+      const barsText = Number.isFinite(Number(entry.barsEstimate))
+        ? (Math.round(Number(entry.barsEstimate) * 10) / 10) + " bars"
+        : "";
       meta.textContent =
-        [hostLoopStyleLabel(entry.genre), hostLoopRole(entry), familyText, entry.source].filter(Boolean).join(" · ");
+        [
+          hostLoopStyleLabel(entry.genre),
+          hostLoopRole(entry),
+          hostLoopMaterialLabel(entry),
+          barsText,
+          familyText,
+          entry.source
+        ].filter(Boolean).join(" · ");
 
       const stars = document.createElement("div");
       stars.className = "loop-stars";
@@ -2039,12 +2082,20 @@ select, input[type="number"], input[type="text"] {
 
     updateHostLoopProgressBars();
 
-    if (filtered.length > HOST_LOOP_RENDER_LIMIT) {
-      const hint = document.createElement("div");
-      hint.className = "cloud-project-empty";
-      hint.style.padding = "9px";
-      hint.textContent = "Showing first " + HOST_LOOP_RENDER_LIMIT + " · refine filters for more.";
-      list.appendChild(hint);
+    if (filtered.length > hostLoopRenderLimit) {
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "btn";
+      more.style.margin = "3px auto 8px";
+      more.style.minWidth = "180px";
+      more.textContent =
+        "Load " + Math.min(HOST_LOOP_PAGE_SIZE, filtered.length - hostLoopRenderLimit) +
+        " more · " + filtered.length.toLocaleString("ru-RU") + " total";
+      more.addEventListener("click", () => {
+        hostLoopRenderLimit += HOST_LOOP_PAGE_SIZE;
+        renderHostLoopBrowser();
+      });
+      list.appendChild(more);
     }
   }
 
@@ -4478,8 +4529,8 @@ select, input[type="number"], input[type="text"] {
     return true;
   }
 
-  function moveHostLoopClip(clip, track, requestedStartTick) {
-    if (!state.project || !clip || !track) return false;
+  function moveHostLoopClip(clip, track, requestedStartTick, destinationTrack = track) {
+    if (!state.project || !clip || !track || !destinationTrack) return false;
     if (state.playing) stopPlayback();
 
     const ppq = state.project.ppq || 480;
@@ -4494,18 +4545,28 @@ select, input[type="number"], input[type="text"] {
     );
     const newStart = Math.max(0, Math.round(Number(requestedStartTick) / tpb) * tpb);
     const delta = newStart - oldStart;
-    if (!delta) {
+    const changingTrack = destinationTrack.id !== track.id;
+    if (!delta && !changingTrack) {
       selectHostLoopClip(clip.instanceId);
       return false;
     }
 
     const notes = hostClipOwnedNotes(clip, track);
     for (const note of notes) note.tick = Math.max(0, note.tick + delta);
-    track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    if (changingTrack) {
+      const ownedSet = new Set(notes);
+      track.notes = track.notes.filter((note) => !ownedSet.has(note));
+      destinationTrack.notes.push(...notes);
+      destinationTrack.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+    } else {
+      track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+    }
 
     clip.startTick = newStart;
     clip.endTick = newStart + clipSpan;
-    clip.targetTrackName = track.name;
+    clip.targetTrackId = destinationTrack.id;
+    clip.targetTrackName = destinationTrack.name;
     state.selectedClipId = clip.instanceId;
 
     recomputeLength(state.project);
@@ -4515,7 +4576,8 @@ select, input[type="number"], input[type="text"] {
     renderAll();
     setStatus(
       "Moved loop “" + (clip.name || clip.originalName || "MIDI loop") +
-      "” → bar " + tickToBar(newStart, ppq) +
+      "” → " + destinationTrack.name +
+      " · bar " + tickToBar(newStart, ppq) +
       " · " + notes.length + " notes · UNSAVED cloud changes",
       "ok"
     );
@@ -4568,6 +4630,7 @@ select, input[type="number"], input[type="text"] {
       const originStart = Math.max(0, Number(clip.startTick) || 0);
       const tpb = ticksPerBar(ppq);
       let previewStart = originStart;
+      let previewTrack = track;
       let moved = false;
       const noteEls = [...body.querySelectorAll(
         '.note-block[data-note-clip="' + CSS.escape(instanceId) + '"]'
@@ -4576,22 +4639,44 @@ select, input[type="number"], input[type="text"] {
       box.classList.add("moving");
       box.setPointerCapture?.(event.pointerId);
 
-      const applyPreview = (tick) => {
+      const clearTrackTarget = () => {
+        document.querySelectorAll(".track-body.clip-move-target").forEach((el) => {
+          el.classList.remove("clip-move-target");
+        });
+      };
+
+      const applyPreview = (tick, targetTrack) => {
         const dx = ((tick - originStart) / Math.max(1, length)) * totalW;
         box.style.transform = "translateX(" + dx + "px)";
         for (const el of noteEls) el.style.transform = "translateX(" + dx + "px)";
+        clearTrackTarget();
+        const targetBody = document.querySelector(
+          '.track-body[data-body="' + CSS.escape(targetTrack.id) + '"]'
+        );
+        if (targetBody && targetTrack.id !== track.id) targetBody.classList.add("clip-move-target");
         box.title =
           (clip.name || clip.originalName || "MIDI loop") +
+          " → " + targetTrack.name +
           " · bar " + tickToBar(tick, ppq) +
-          " · drag to move · striped right edge repeats · Ctrl+D duplicate · Delete removes";
+          " · drag horizontally and between tracks";
       };
 
       const onMove = (moveEvent) => {
         if (!(moveEvent.buttons & 1)) return;
         const deltaBars = Math.round((moveEvent.clientX - originX) / Math.max(1, state.barW));
         previewStart = Math.max(0, originStart + deltaBars * tpb);
-        moved = moved || previewStart !== originStart;
-        applyPreview(previewStart);
+
+        const hit = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+        const targetBody = hit?.closest?.(".track-body");
+        const targetId = targetBody?.dataset?.body || "";
+        const foundTrack = state.project?.tracks?.find((item) => item.id === targetId);
+        if (foundTrack) previewTrack = foundTrack;
+
+        moved =
+          moved ||
+          previewStart !== originStart ||
+          previewTrack.id !== track.id;
+        applyPreview(previewStart, previewTrack);
       };
 
       const finish = (upEvent) => {
@@ -4602,9 +4687,10 @@ select, input[type="number"], input[type="text"] {
         box.classList.remove("moving");
         box.style.transform = "";
         for (const el of noteEls) el.style.transform = "";
+        clearTrackTarget();
 
-        if (moved && previewStart !== originStart) {
-          moveHostLoopClip(clip, track, previewStart);
+        if (moved && (previewStart !== originStart || previewTrack.id !== track.id)) {
+          moveHostLoopClip(clip, track, previewStart, previewTrack);
         } else {
           setStatus(
             "Selected loop “" + (clip.name || clip.originalName || "MIDI loop") +
@@ -4622,6 +4708,7 @@ select, input[type="number"], input[type="text"] {
         box.classList.remove("moving");
         box.style.transform = "";
         for (const el of noteEls) el.style.transform = "";
+        clearTrackTarget();
       };
 
       box.addEventListener("pointermove", onMove);
@@ -5962,6 +6049,7 @@ select, input[type="number"], input[type="text"] {
 
   [
     "hostLoopSearch",
+    "hostLoopMaterial",
     "hostLoopGenre",
     "hostLoopRole",
     "hostLoopFamily",
@@ -5970,7 +6058,10 @@ select, input[type="number"], input[type="text"] {
     "hostLoopRating",
   ].forEach((id) => {
     const el = document.getElementById(id);
-    el?.addEventListener(el.tagName === "INPUT" ? "input" : "change", renderHostLoopBrowser);
+    el?.addEventListener(el.tagName === "INPUT" ? "input" : "change", () => {
+      hostLoopRenderLimit = HOST_LOOP_PAGE_SIZE;
+      renderHostLoopBrowser();
+    });
   });
 
   document.getElementById("btnCloudProjects").addEventListener("click", () => {
