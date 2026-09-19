@@ -2559,7 +2559,7 @@ class StateManager {
       const melodic = [];
       const drum = [];
       for (let s = this.selStart; s <= this.selEnd; s++) {
-        melodic.push(this.melodicPattern[t][s]);
+        melodic.push(cloneMelodicCell(this.melodicPattern[t][s]));
         drum.push(this.drumPattern[t][s] ? [...this.drumPattern[t][s]] : null);
       }
       data.push({ melodic, drum });
@@ -2584,7 +2584,7 @@ class StateManager {
       if (!this.clipboard.data[t]) continue;
       for (let i = 0; i < len; i++) {
         const s = target + i;
-        this.melodicPattern[t][s] = this.clipboard.data[t].melodic[i];
+        this.melodicPattern[t][s] = cloneMelodicCell(this.clipboard.data[t].melodic[i]);
         this.drumPattern[t][s] = this.clipboard.data[t].drum[i]
           ? [...this.clipboard.data[t].drum[i]]
           : new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
@@ -2640,7 +2640,7 @@ class StateManager {
     this.pushHistory();
     for (let s = this.selStart; s <= this.selEnd; s++) {
       for (let t = 0; t < CONFIG.TRACKS; t++) {
-        this.melodicPattern[t][s] = null;
+        this.melodicPattern[t][s] = [];
         this.drumPattern[t][s] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
       }
     }
@@ -2657,6 +2657,14 @@ class StateManager {
     this._notify();
   }
 
+  setTrackEngine(track, engine) {
+    if (!['chip', 'sf2', 'midi'].includes(engine)) return;
+    if (this.trackEngines[track] === engine) return;
+    this.pushHistory();
+    this.trackEngines[track] = engine;
+    this._notify();
+  }
+
   /* Import a parsed reference MIDI into one editable track and repeat it to pattern length. */
   loadMidiLoop(track, midi, entry) {
     if (!midi || !midi.ppq || !Array.isArray(midi.notes)) return false;
@@ -2667,16 +2675,18 @@ class StateManager {
     }
 
     this.pushHistory();
-    const isDrums = entry?.kind === 'drums' || midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
+    const channel10Notes = midi.notes.filter(n => n.channel === 10);
+    const isDrums = entry?.kind === 'drums' || channel10Notes.length > midi.notes.length * 0.6;
     this.trackTypes[track] = isDrums ? 'drum' : 'melodic';
 
-    for (let s = 0; s < this.steps; s++) {
-      this.melodicPattern[track][s] = null;
-      this.drumPattern[track][s] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
+    for (let step = 0; step < this.steps; step++) {
+      this.melodicPattern[track][step] = [];
+      this.drumPattern[track][step] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
     }
 
     const tickPerStep = midi.ppq / 4;
     if (isDrums) {
+      this.trackMidiChannels[track] = 10;
       const baseHits = [];
       for (const note of midi.notes) {
         const drumIdx = gmDrumToIndex(note.note);
@@ -2691,26 +2701,41 @@ class StateManager {
         }
       }
     } else {
-      const byStep = new Map();
-      for (const note of midi.notes) {
-        if (note.channel === 10) continue;
+      const melodicNotes = midi.notes.filter(n => n.channel !== 10);
+      const channelCounts = new Map();
+      for (const note of melodicNotes) {
+        channelCounts.set(note.channel, (channelCounts.get(note.channel) || 0) + 1);
+      }
+      const dominantChannel = [...channelCounts.entries()].sort((a,b) => b[1]-a[1])[0]?.[0];
+      if (dominantChannel) this.trackMidiChannels[track] = dominantChannel;
+      const encodedProgram = dominantChannel ? midi.programs?.[dominantChannel] : null;
+      if (Number.isInteger(encodedProgram)) this.trackPrograms[track] = encodedProgram;
+
+      const baseEvents = new Map();
+      for (const note of melodicNotes) {
         const step = Math.max(0, Math.min(loopSteps - 1, Math.round(note.tick / tickPerStep)));
         const pitch = foldMidiPitch(note.note);
-        const prev = byStep.get(step);
-        if (!prev) {
-          byStep.set(step, {pitch, velocity: note.velocity || 0});
-        } else if (entry?.kind === 'bass') {
-          if (pitch < prev.pitch || (pitch === prev.pitch && (note.velocity || 0) > prev.velocity)) {
-            byStep.set(step, {pitch, velocity: note.velocity || 0});
-          }
-        } else if ((note.velocity || 0) >= prev.velocity) {
-          byStep.set(step, {pitch, velocity: note.velocity || 0});
+        const length = Math.max(1, Math.min(CONFIG.MAX_STEPS, note.duration / tickPerStep));
+        if (!baseEvents.has(step)) baseEvents.set(step, []);
+        const row = baseEvents.get(step);
+        const existing = row.find(e => e.note === pitch);
+        const event = {
+          note: pitch,
+          velocity: Math.max(1, Math.min(127, note.velocity || 100)),
+          length: Math.max(1, Number(length.toFixed(3))),
+        };
+        if (!existing) row.push(event);
+        else {
+          existing.velocity = Math.max(existing.velocity, event.velocity);
+          existing.length = Math.max(existing.length, event.length);
         }
       }
+
       for (let offset = 0; offset < this.steps; offset += loopSteps) {
-        for (const [baseStep, value] of byStep) {
+        for (const [baseStep, events] of baseEvents) {
           const step = offset + baseStep;
-          if (step < this.steps) this.melodicPattern[track][step] = value.pitch;
+          if (step >= this.steps) continue;
+          this.melodicPattern[track][step] = events.map(e => ({...e}));
         }
       }
     }
@@ -2724,6 +2749,8 @@ class StateManager {
       rating: typeof getLoopRating === 'function' ? getLoopRating(entry?.id || '') : 0,
       originalSteps: loopSteps,
       originalBars: Number((loopSteps / 16).toFixed(2)),
+      polyphonic: !isDrums && [...new Set(midi.notes.filter(n => n.channel !== 10).map(n => Math.round(n.tick / tickPerStep)))]
+        .some(step => (baseEvents?.get?.(step) || []).length > 1),
       loadedAt: new Date().toISOString(),
     };
     this._notify();
@@ -2732,10 +2759,17 @@ class StateManager {
 
   setMelodicNote(track, step, midi) {
     this.pushHistory();
-    if (this.melodicPattern[track][step] === midi) {
-      this.melodicPattern[track][step] = null;
+    const cell = cloneMelodicCell(this.melodicPattern[track][step]);
+    const idx = cell.findIndex(e => e.note === midi);
+    if (this.trackEngines[track] === 'chip') {
+      this.melodicPattern[track][step] = idx >= 0 && cell.length === 1
+        ? []
+        : [{ note: midi, velocity: 100, length: 1 }];
     } else {
-      this.melodicPattern[track][step] = midi;
+      if (idx >= 0) cell.splice(idx, 1);
+      else cell.push({ note: midi, velocity: 100, length: 1 });
+      cell.sort((a,b) => a.note - b.note);
+      this.melodicPattern[track][step] = cell;
     }
     this._notify();
   }
@@ -2763,7 +2797,7 @@ class StateManager {
           if (variant.drumPattern[trackIdx]?.[s]?.[d]) count++;
     } else {
       for (let s = 0; s < steps; s++)
-        if (variant.melodicPattern[trackIdx]?.[s] !== null && variant.melodicPattern[trackIdx]?.[s] !== undefined) count++;
+        count += normalizeMelodicCell(variant.melodicPattern[trackIdx]?.[s]).length;
     }
     return count;
   }
@@ -2772,7 +2806,7 @@ class StateManager {
     this.pushHistory();
     for (let t = 0; t < CONFIG.TRACKS; t++) {
       for (let s = 0; s < this.steps; s++) {
-        this.melodicPattern[t][s] = null;
+        this.melodicPattern[t][s] = [];
         for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
           this.drumPattern[t][s][d] = false;
         }
@@ -2792,7 +2826,7 @@ class StateManager {
     this.selStart = -1; this.selEnd = -1; this.pasteCursor = -1;
     for (let t = 0; t < CONFIG.TRACKS; t++) {
       if (clamped > oldLen) {
-        this.melodicPattern[t].push(...Array(clamped - oldLen).fill(null));
+        this.melodicPattern[t].push(...Array.from({ length: clamped - oldLen }, () => []));
         this.drumPattern[t].push(...Array.from({ length: clamped - oldLen }, () =>
           new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false)));
       } else {
@@ -2806,7 +2840,7 @@ class StateManager {
     for (let t = 0; t < CONFIG.TRACKS; t++) {
       const inactLen = inactive.melodicPattern[t].length;
       if (clamped > inactLen) {
-        inactive.melodicPattern[t].push(...Array(clamped - inactLen).fill(null));
+        inactive.melodicPattern[t].push(...Array.from({ length: clamped - inactLen }, () => []));
         inactive.drumPattern[t].push(...Array.from({ length: clamped - inactLen }, () =>
           new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false)));
       } else {
@@ -2825,9 +2859,9 @@ class StateManager {
   getMelodicNotesAtStep(step) {
     const result = new Map();
     for (let t = 0; t < CONFIG.TRACKS; t++) {
-      if (!this.isDrumTrack(t) && this.melodicPattern[t][step] !== null) {
-        result.set(t, this.melodicPattern[t][step]);
-      }
+      if (this.isDrumTrack(t)) continue;
+      const events = normalizeMelodicCell(this.melodicPattern[t][step]);
+      if (events.length) result.set(t, events);
     }
     return result;
   }
