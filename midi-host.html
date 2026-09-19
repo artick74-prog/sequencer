@@ -438,8 +438,8 @@ select, input[type="number"], input[type="text"] {
     <button class="btn" id="btnLoadMid" type="button">Load MIDI</button>
     <button class="btn" id="btnLoadJson" type="button">Load JSON</button>
     <button class="btn" id="btnBindProjects" type="button" title="Grant write access to projects/ folder">Bind projects/</button>
-    <button class="btn" id="btnReload" type="button" title="Reload from projects/">Reload</button>
-    <button class="btn" id="btnSync" type="button" title="Write current + overview into projects/">Sync to Cursor</button>
+    <button class="btn" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
+    <button class="btn" id="btnSync" type="button" title="Save project, commit and push to GitHub">Sync to AI</button>
     <button class="btn" id="btnExportMid" type="button">Export MIDI</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
     <input class="file-hidden" id="fileJson" type="file" accept=".json">
@@ -470,11 +470,11 @@ select, input[type="number"], input[type="text"] {
       <label class="field" style="margin-bottom:4px"><input type="checkbox" id="chkSf2" checked> Browser audio (SF2)</label>
       <label class="field" style="margin-bottom:8px"><input type="checkbox" id="chkHw" checked> Hardware MIDI Out</label>
 
-      <h2>Cursor sync</h2>
-      <div class="sync-box" id="syncBox">Folder: <strong>not bound</strong><br>Click <em>Bind projects/</em> and choose <code>d:\Dev\Sequencer\projects</code>.</div>
+      <h2>AI sync</h2>
+      <div class="sync-box" id="syncBox">Local bridge: <strong>checking…</strong><br>Sync writes + pushes; Reload pulls automatically.</div>
       <div class="sel-actions" style="margin-top:0;margin-bottom:8px">
         <button class="btn" id="btnBindProjects2" type="button">Bind projects/</button>
-        <button class="btn" id="btnSync2" type="button">Sync to Cursor</button>
+        <button class="btn" id="btnSync2" type="button">Sync to AI</button>
       </div>
 
       <h2>Project</h2>
@@ -498,9 +498,8 @@ select, input[type="number"], input[type="text"] {
       </div>
       <div class="prompt-preview" id="promptPreview"></div>
       <p class="hint">
-        After <strong>Bind projects/</strong>, Sync / Prepare write directly into the repo.
-        Cursor reads <code>projects/current.json</code> + <code>overview.md</code>.
-        After an AI edit: <strong>Reload</strong>.
+        With the local repo server, <strong>Sync to AI</strong> writes files, commits and pushes automatically.
+        After an AI edit, <strong>Reload from AI</strong> pulls and loads <code>projects/current.json</code>.
       </p>
     </aside>
     <main class="main">
@@ -932,7 +931,7 @@ select, input[type="number"], input[type="text"] {
     sf2Engine: null,
     sf2Ready: false,
     sf2Name: "",
-    sf2Loading: false,
+    sf2Loading: false,    bridgeReady: false,
   };
 
   function useSf2Output() {
@@ -2427,13 +2426,37 @@ select, input[type="number"], input[type="text"] {
 
   function updateSyncUI() {
     const box = document.getElementById("syncBox");
-    if (state.projectsDir) {
+    if (!box) return;
+    const bind1 = document.getElementById("btnBindProjects");
+    const bind2 = document.getElementById("btnBindProjects2");
+    if (state.bridgeReady) {
+      box.className = "sync-box bound";
+      box.innerHTML = `Local bridge: <strong>connected</strong><br>Sync → save + commit + push · Reload → pull + load`;
+      if (bind1) bind1.style.display = "none";
+      if (bind2) bind2.style.display = "none";
+    } else if (state.projectsDir) {
       box.className = "sync-box bound";
       box.innerHTML = `Folder: <strong>bound</strong> (<code>projects/</code>)<br>Sync writes current.json, overview.json, overview.md`;
+      if (bind1) bind1.style.display = "";
+      if (bind2) bind2.style.display = "";
     } else {
       box.className = "sync-box";
-      box.innerHTML = `Folder: <strong>not bound</strong><br>Click <em>Bind projects/</em> → choose <code>d:\\Dev\\Sequencer\\projects</code>.`;
+      box.innerHTML = `Local bridge: <strong>not detected</strong><br>Start <code>start-midi-host.bat</code>. Fallback: Bind projects/ or file download.`;
+      if (bind1) bind1.style.display = "";
+      if (bind2) bind2.style.display = "";
     }
+  }
+
+  async function detectLocalBridge() {
+    try {
+      const res = await fetch("/api/health", { cache: "no-store" });
+      const data = res.ok ? await res.json() : null;
+      state.bridgeReady = !!data?.ok;
+    } catch {
+      state.bridgeReady = false;
+    }
+    updateSyncUI();
+    return state.bridgeReady;
   }
 
   async function ensureProjectsPermission() {
@@ -2498,6 +2521,34 @@ select, input[type="number"], input[type="text"] {
     ];
     if (sel) files.push(["selection.json", JSON.stringify(sel, null, 2)]);
 
+    if (state.bridgeReady || (await detectLocalBridge())) {
+      try {
+        const payload = {
+          projectName: data.name || "project",
+          files: Object.fromEntries(files),
+        };
+        const res = await fetch("/api/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const reply = await res.json().catch(() => ({}));
+        if (!res.ok || !reply.ok) throw new Error(reply.error || `HTTP ${res.status}`);
+        renderOverview();
+        const suffix = reply.commit ? ` · ${reply.commit}` : "";
+        setStatus(
+          reply.changed
+            ? `Synced to AI: saved, committed and pushed${suffix}`
+            : `Synced to AI: no file changes; GitHub already up to date${suffix}`,
+          "ok"
+        );
+        return true;
+      } catch (err) {
+        setStatus(`AI sync failed: ${err.message}`, "err");
+        return false;
+      }
+    }
+
     let wrote = false;
     if (state.projectsDir && (await ensureProjectsPermission())) {
       try {
@@ -2516,15 +2567,10 @@ select, input[type="number"], input[type="text"] {
 
     renderOverview();
     if (wrote) {
-      setStatus(
-        `Synced to projects/: current.json, overview.json, overview.md` +
-          (sel ? ", selection.json" : "") +
-          `. Cursor can read the full arrangement.`,
-        "ok"
-      );
+      setStatus("Synced to local projects/ folder.", "ok");
     } else {
       setStatus(
-        "Downloaded sync files — move them into projects/ (or Bind projects/ for direct write).",
+        "Local bridge unavailable — downloaded sync files. Start start-midi-host.bat for one-click sync.",
         "ok"
       );
     }
@@ -2532,8 +2578,23 @@ select, input[type="number"], input[type="text"] {
   }
 
   async function reloadCurrent() {
-    // Prefer bound folder, else fetch from server
     try {
+      if (state.bridgeReady || (await detectLocalBridge())) {
+        const res = await fetch("/api/reload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        const reply = await res.json().catch(() => ({}));
+        if (!res.ok || !reply.ok) throw new Error(reply.error || `HTTP ${res.status}`);
+        const data = reply.project;
+        if (!data?.tracks) throw new Error("JSON missing tracks[]");
+        setProject(normalizeProject(data, "current"));
+        const suffix = reply.commit ? ` · ${reply.commit}` : "";
+        setStatus(`Pulled GitHub and reloaded projects/current.json${suffix}`, "ok");
+        return;
+      }
+
       if (state.projectsDir && (await ensureProjectsPermission())) {
         const fh = await state.projectsDir.getFileHandle("current.json");
         const file = await fh.getFile();
@@ -2544,7 +2605,7 @@ select, input[type="number"], input[type="text"] {
         return;
       }
       const res = await fetch(`projects/current.json?t=${Date.now()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status} — Sync to Cursor first`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!data.tracks) throw new Error("JSON missing tracks[]");
       setProject(normalizeProject(data, "current"));
@@ -2722,6 +2783,7 @@ select, input[type="number"], input[type="text"] {
 
   updateSyncUI();
   updateSf2UI();
+  detectLocalBridge();
   restoreProjectsFolder();
   initMidi();
   fetch("projects/current.json")
