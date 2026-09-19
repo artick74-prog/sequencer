@@ -104,6 +104,70 @@ a { color: var(--accent); }
 .btn.primary { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn.active { border-color: var(--accent); color: var(--accent); }
+.cloud-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh 20px 20px;
+  background: rgba(4, 7, 10, 0.76);
+  backdrop-filter: blur(2px);
+}
+.cloud-modal-backdrop.open { display: flex; }
+.cloud-modal {
+  width: min(760px, 96vw);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #10161d;
+  box-shadow: 0 18px 70px rgba(0,0,0,.55);
+}
+.cloud-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.cloud-modal-head strong { color: var(--accent); letter-spacing: .04em; }
+.cloud-modal-head .spacer { flex: 1; }
+.cloud-project-list {
+  overflow: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cloud-project-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0d1218;
+}
+.cloud-project-card.current { border-color: var(--accent); }
+.cloud-project-name { font-size: 14px; color: #fff; font-weight: 600; }
+.cloud-project-meta {
+  margin-top: 4px;
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.cloud-project-empty {
+  padding: 22px;
+  color: var(--dim);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
 label.field {
   display: inline-flex;
   align-items: center;
@@ -550,6 +614,7 @@ select, input[type="number"], input[type="text"] {
     <button class="btn" id="btnBindProjects" type="button" title="Grant write access to projects/ folder">Bind projects/</button>
     <button class="btn" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
     <button class="btn" id="btnSync" type="button" title="Save project, commit and push to GitHub">Sync to AI</button>
+    <button class="btn" id="btnCloudProjects" type="button" title="Open a project saved in GitHub">☁ Projects</button>
     <button class="btn primary" id="btnCloudSave" type="button" title="Create/update a self-contained project folder in GitHub">☁ Save Project</button>
     <button class="btn" id="btnExportMid" type="button">Export MIDI</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
@@ -560,6 +625,21 @@ select, input[type="number"], input[type="text"] {
   <div id="sf2Placeholder" style="display:none" aria-hidden="true"></div>
 
   <div class="status" id="status">Ready. Bind projects/ once, Load MIDI, Sync to AI — then I can read the full arrangement.</div>
+
+  <div class="cloud-modal-backdrop" id="cloudProjectsModal" aria-hidden="true">
+    <div class="cloud-modal" role="dialog" aria-modal="true" aria-labelledby="cloudProjectsTitle">
+      <div class="cloud-modal-head">
+        <strong id="cloudProjectsTitle">Cloud Projects</strong>
+        <span id="cloudProjectsCount" style="color:var(--dim);font-size:11px"></span>
+        <span class="spacer"></span>
+        <button class="btn" id="btnRefreshCloudProjects" type="button">Refresh</button>
+        <button class="btn" id="btnCloseCloudProjects" type="button">Close</button>
+      </div>
+      <div class="cloud-project-list" id="cloudProjectList">
+        <div class="cloud-project-empty">Loading projects…</div>
+      </div>
+    </div>
+  </div>
 
   <div class="layout">
     <aside class="sidebar">
@@ -1844,11 +1924,11 @@ select, input[type="number"], input[type="text"] {
     };
   }
 
-  function setProject(project) {
+  function setProject(project, { restoreLocal = true, statusText = "" } = {}) {
     stopPlayback();
     state.startTick = 0;
     recomputeLength(project);
-    const restored = applyHostAutosaveToProject(project);
+    const restored = restoreLocal ? applyHostAutosaveToProject(project) : false;
     state.project = project;
     document.getElementById("projectName").value = project.name || "untitled";
     document.getElementById("tempo").value = project.tempo || 120;
@@ -1860,9 +1940,10 @@ select, input[type="number"], input[type="text"] {
     renderCloudProjectMeta();
     renderOverview();
     setStatus(
-      restored
+      statusText ||
+      (restored
         ? `Loaded “${project.name}” · local routing/settings restored automatically.`
-        : `Loaded “${project.name}” · click ruler to set cue, then Play.`,
+        : `Loaded “${project.name}” · click ruler to set cue, then Play.`),
       "ok"
     );
     scheduleHostAutosave();
@@ -2788,6 +2869,155 @@ select, input[type="number"], input[type="text"] {
     URL.revokeObjectURL(url);
   }
 
+  function formatCloudDate(value) {
+    if (!value) return "unknown date";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString();
+  }
+
+  function closeCloudProjects() {
+    const modal = document.getElementById("cloudProjectsModal");
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden", "true");
+  }
+
+  async function refreshCloudProjects() {
+    const list = document.getElementById("cloudProjectList");
+    const count = document.getElementById("cloudProjectsCount");
+    if (!list) return;
+    list.innerHTML = '<div class="cloud-project-empty">Loading projects…</div>';
+    try {
+      const response = await fetch("/api/projects?_=" + Date.now(), { cache: "no-store" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.error || ("HTTP " + response.status));
+
+      const projects = Array.isArray(data.projects) ? data.projects : [];
+      if (count) count.textContent = projects.length ? (projects.length + " project(s)") : "";
+      list.innerHTML = "";
+
+      if (!projects.length) {
+        list.innerHTML = '<div class="cloud-project-empty">No cloud projects yet. Save the current project first.</div>';
+        return;
+      }
+
+      const currentId = state.project?.cloudProject?.id || "";
+      for (const project of projects) {
+        const card = document.createElement("div");
+        card.className = "cloud-project-card" + (project.id === currentId ? " current" : "");
+        const info = document.createElement("div");
+        const name = document.createElement("div");
+        name.className = "cloud-project-name";
+        name.textContent = project.name || project.id;
+        const meta = document.createElement("div");
+        meta.className = "cloud-project-meta";
+        meta.textContent =
+          (project.tempo || 120) + " BPM · " +
+          (project.bars || "—") + " bars · " +
+          (project.trackCount || 0) + " tracks · updated " +
+          formatCloudDate(project.updatedAt);
+        info.append(name, meta);
+
+        const open = document.createElement("button");
+        open.type = "button";
+        open.className = "btn primary";
+        open.textContent = project.id === currentId ? "Reload" : "Open";
+        open.addEventListener("click", () => openCloudProject(project.id, project.name));
+
+        card.append(info, open);
+        list.appendChild(card);
+      }
+    } catch (err) {
+      list.innerHTML = '<div class="cloud-project-empty">Cloud project list error: ' +
+        escapeHtml(err.message) + '</div>';
+      if (count) count.textContent = "";
+    }
+  }
+
+  async function showCloudProjects() {
+    const modal = document.getElementById("cloudProjectsModal");
+    if (!modal) return;
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    await refreshCloudProjects();
+  }
+
+  function applyCloudSession(session) {
+    if (!session || typeof session !== "object") return;
+
+    const barW = Number(session.barWidthPx);
+    if (Number.isFinite(barW)) {
+      state.barW = Math.min(BAR_W_MAX, Math.max(BAR_W_MIN, barW));
+    }
+
+    if (typeof session.loop === "boolean") state.loop = session.loop;
+
+    const sf2 = document.getElementById("chkSf2");
+    const hw = document.getElementById("chkHw");
+    if (sf2 && typeof session.browserAudioSf2 === "boolean") sf2.checked = session.browserAudioSf2;
+    if (hw && typeof session.hardwareMidiOut === "boolean") hw.checked = session.hardwareMidiOut;
+
+    const wantedOutput = String(session.midiOutputName || "").trim();
+    if (wantedOutput && state.midiAccess) {
+      const outputs = [...state.midiAccess.outputs.values()];
+      const match = outputs.find((out) => out.name === wantedOutput) ||
+        outputs.find((out) => String(out.name || "").toLowerCase() === wantedOutput.toLowerCase());
+      if (match) {
+        state.outputId = match.id;
+        const select = document.getElementById("midiOut");
+        if (select) select.value = match.id;
+      }
+    }
+
+    document.getElementById("btnLoop")?.classList.toggle("active", state.loop);
+    updateZoomLabel();
+  }
+
+  async function openCloudProject(projectId, projectName = "") {
+    if (!projectId) return false;
+
+    const currentId = state.project?.cloudProject?.id || "";
+    if (state.project && currentId !== projectId) {
+      const ok = confirm(
+        "Open “" + (projectName || projectId) + "”?\n\n" +
+        "The current editor contents will be replaced. Save the current project to GitHub first if you want to keep its latest changes."
+      );
+      if (!ok) return false;
+    }
+
+    setStatus("Opening cloud project “" + (projectName || projectId) + "”…");
+    try {
+      const response = await fetch(
+        "/api/project/load?id=" + encodeURIComponent(projectId) + "&_=" + Date.now(),
+        { cache: "no-store" }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.error || ("HTTP " + response.status));
+
+      const project = normalizeProject(data.project, data.manifest?.name || projectName || projectId);
+      project.cloudProject = {
+        id: data.projectId || projectId,
+        path: data.projectPath || ("projects/cloud/" + projectId),
+        savedAt: data.manifest?.updatedAt || new Date().toISOString(),
+      };
+
+      applyCloudSession(data.session || {});
+      setProject(project, {
+        restoreLocal: false,
+        statusText:
+          "Opened cloud project “" + project.name + "” · " +
+          project.tracks.length + " tracks · " +
+          (data.projectPath || ("projects/cloud/" + projectId)),
+      });
+      closeCloudProjects();
+      scheduleHostAutosave();
+      return true;
+    } catch (err) {
+      setStatus("Cloud project open failed: " + err.message, "err");
+      return false;
+    }
+  }
+
   function renderCloudProjectMeta() {
     const el = document.getElementById("cloudProjectMeta");
     if (!el) return;
@@ -3269,6 +3499,22 @@ select, input[type="number"], input[type="text"] {
   for (const id of syncBtns) {
     document.getElementById(id)?.addEventListener("click", () => syncToProjects());
   }
+  document.getElementById("btnCloudProjects").addEventListener("click", () => {
+    showCloudProjects();
+  });
+  document.getElementById("btnRefreshCloudProjects").addEventListener("click", () => {
+    refreshCloudProjects();
+  });
+  document.getElementById("btnCloseCloudProjects").addEventListener("click", () => {
+    closeCloudProjects();
+  });
+  document.getElementById("cloudProjectsModal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeCloudProjects();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCloudProjects();
+  });
+
   document.getElementById("btnCloudSave").addEventListener("click", () => {
     saveProjectToCloud();
   });
@@ -3353,6 +3599,8 @@ select, input[type="number"], input[type="text"] {
     setProject: (p) => setProject(normalizeProject(p)),
     sync: () => syncToProjects(),
     saveProjectToCloud: () => saveProjectToCloud(),
+    showCloudProjects: () => showCloudProjects(),
+    openCloudProject: (id) => openCloudProject(id),
     parseGmTrackName,
     gmProgramFromTrack,
     formatGmTrackName,
