@@ -255,6 +255,18 @@ a { color: var(--accent); }
 }
 .loop-drawer-title strong { color: var(--accent); letter-spacing: .05em; }
 .loop-drawer-title .spacer { flex: 1; }
+.loop-preview-route {
+  min-width: 0;
+  width: 185px;
+  background: #0b1016;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 7px;
+  font-size: 11px;
+}
+.loop-preview-route:hover,
+.loop-preview-route:focus { border-color: var(--accent-dim); outline: none; }
 .loop-filters {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -897,6 +909,12 @@ select, input[type="number"], input[type="text"] {
       <div class="loop-drawer-title">
         <strong>♫ LOOP BROWSER</strong>
         <span class="spacer"></span>
+        <select class="loop-preview-route" id="hostLoopPreviewRoute" title="Choose where Loop Browser preview is played">
+          <option value="sf2">Preview · SoundFont</option>
+          <option value="1">Preview · CH 1 · Bass</option>
+          <option value="2">Preview · CH 2 · Acid</option>
+          <option value="10">Preview · CH 10 · Drums</option>
+        </select>
         <button class="btn" id="btnCloseLoops" type="button">Close</button>
       </div>
       <div class="loop-filters">
@@ -1483,6 +1501,7 @@ select, input[type="number"], input[type="text"] {
   const HOST_LOOP_RENDER_LIMIT = 120;
   const HOST_LOOP_RATINGS_KEY = "chiptune_loop_ratings_v1";
   const HOST_LOOP_ALIASES_KEY = "chiptune_loop_aliases_v1";
+  const HOST_LOOP_PREVIEW_ROUTE_KEY = "midi_host_loop_preview_route_v1";
   const HOST_LOOP_FAMILIES = [
     "Piano", "Chromatic Percussion", "Organ", "Guitar",
     "Bass", "Strings", "Ensemble", "Brass",
@@ -1572,6 +1591,24 @@ select, input[type="number"], input[type="text"] {
     if (!el) return;
     el.textContent = text;
     el.style.color = ok ? "var(--accent)" : "var(--dim)";
+  }
+
+  function hostLoopPreviewRoute() {
+    const value = document.getElementById("hostLoopPreviewRoute")?.value || "sf2";
+    if (value === "1" || value === "2" || value === "10") {
+      return { type: "hardware", channel: Number(value) };
+    }
+    return { type: "sf2", channel: null };
+  }
+
+  function hostLoopPreviewRouteLabel(route = hostLoopPreviewRoute()) {
+    if (route.type === "hardware") {
+      if (route.channel === 1) return "CH 1 · Bass";
+      if (route.channel === 2) return "CH 2 · Acid";
+      if (route.channel === 10) return "CH 10 · Drums";
+      return "CH " + route.channel;
+    }
+    return "SoundFont";
   }
 
   const HOST_LOOP_STYLE_LABELS = {
@@ -1749,7 +1786,9 @@ select, input[type="number"], input[type="text"] {
       preview.className = "loop-preview" + (hostLoopPreview?.entryId === entry.id ? " active" : "");
       preview.type = "button";
       preview.textContent = hostLoopPreview?.entryId === entry.id ? "■" : "▶";
-      preview.title = hostLoopPreview?.entryId === entry.id ? "Stop preview" : "Preview in browser SF2";
+      preview.title = hostLoopPreview?.entryId === entry.id
+        ? "Stop preview"
+        : "Preview → " + hostLoopPreviewRouteLabel();
 
       const info = document.createElement("div");
       info.style.minWidth = "0";
@@ -1843,8 +1882,23 @@ select, input[type="number"], input[type="text"] {
     hostLoopNoteTimers.clear();
   }
 
+  function stopHostLoopHardwarePreview(channel) {
+    const output = getOutput();
+    if (!output || !channel) return;
+    clearHardwareQueue(output);
+    const ch = (Number(channel) - 1) & 0x0f;
+    try {
+      output.send([0xb0 | ch, 123, 0]); // All Notes Off
+      output.send([0xb0 | ch, 120, 0]); // All Sound Off
+      output.send([0xb0 | ch, 64, 0]);  // Sustain Off
+    } catch {
+      /* hardware may have disconnected */
+    }
+  }
+
   function hostLoopStopPreview({ rerender = true } = {}) {
-    const hadPreview = !!hostLoopPreview;
+    const stoppedPreview = hostLoopPreview;
+    const hadPreview = !!stoppedPreview;
     hostLoopPreviewToken++;
     if (hostLoopPreviewTimer) {
       clearInterval(hostLoopPreviewTimer);
@@ -1852,7 +1906,14 @@ select, input[type="number"], input[type="text"] {
     }
     clearHostLoopNoteTimers();
     hostLoopPreview = null;
-    if (hadPreview) allNotesOffSf2();
+
+    if (hadPreview) {
+      if (stoppedPreview.route?.type === "hardware") {
+        stopHostLoopHardwarePreview(stoppedPreview.route.channel);
+      } else {
+        allNotesOffSf2();
+      }
+    }
     if (rerender && hostLoopCatalogLoaded) renderHostLoopBrowser();
   }
 
@@ -1869,6 +1930,14 @@ select, input[type="number"], input[type="text"] {
       hostLoopNoteTimers.add(offTimer);
     }, Math.max(0, onDelay));
     hostLoopNoteTimers.add(onTimer);
+  }
+
+  function scheduleHostLoopHardware(channel, note, velocity, targetTime, durationMs) {
+    const output = getOutput();
+    if (!output) throw new Error("Select MIDI Out first");
+    const ch = (Number(channel) - 1) & 0x0f;
+    output.send([0x90 | ch, note & 0x7f, Math.max(1, Math.min(127, velocity || 100))], targetTime);
+    output.send([0x80 | ch, note & 0x7f, 0], targetTime + Math.max(25, durationMs));
   }
 
   function pumpHostLoopPreview(token) {
@@ -1902,14 +1971,31 @@ select, input[type="number"], input[type="text"] {
         preview.cycleMs,
         Math.max(30, ticksToMs(item.duration, preview.tempo, preview.ppq))
       );
-      scheduleHostLoopSf2(
-        item.channel === 10 ? 9 : 0,
-        item.note,
-        item.velocity || 100,
-        target - now,
-        durationMs,
-        token
-      );
+
+      try {
+        if (preview.route.type === "hardware") {
+          scheduleHostLoopHardware(
+            preview.route.channel,
+            item.note,
+            item.velocity || 100,
+            Math.max(now, target),
+            durationMs
+          );
+        } else {
+          scheduleHostLoopSf2(
+            item.channel === 10 ? 9 : 0,
+            item.note,
+            item.velocity || 100,
+            target - now,
+            durationMs,
+            token
+          );
+        }
+      } catch (err) {
+        hostLoopStopPreview();
+        hostLoopSetStatus("Preview error: " + err.message);
+        return;
+      }
     }
   }
 
@@ -1923,10 +2009,19 @@ select, input[type="number"], input[type="text"] {
     if (state.playing) stopPlayback();
     hostLoopStopPreview();
     const token = hostLoopPreviewToken;
+    const route = hostLoopPreviewRoute();
 
     try {
-      hostLoopSetStatus("Preview loading · " + hostLoopDisplayName(entry));
-      if (!(await ensureSf2Loaded())) return;
+      hostLoopSetStatus(
+        "Preview loading → " + hostLoopPreviewRouteLabel(route) + " · " + hostLoopDisplayName(entry)
+      );
+
+      if (route.type === "sf2") {
+        if (!(await ensureSf2Loaded())) return;
+      } else if (!getOutput()) {
+        throw new Error("Select MIDI Out in MIDI Host first");
+      }
+
       const buffer = await fetchHostLoopMidi(entry);
       if (token !== hostLoopPreviewToken) return;
 
@@ -1956,12 +2051,14 @@ select, input[type="number"], input[type="text"] {
 
       if (!notes.length) throw new Error("No playable notes in this MIDI");
 
-      const synth = sf2Synth();
-      const program = hostLoopFallbackProgram(entry);
-      if (synth) {
-        synth.setPercussionPart(0, false);
-        synth.programChange(0, program);
-        synth.setPercussionPart(9, true);
+      if (route.type === "sf2") {
+        const synth = sf2Synth();
+        const program = hostLoopFallbackProgram(entry);
+        if (synth) {
+          synth.setPercussionPart(0, false);
+          synth.programChange(0, program);
+          synth.setPercussionPart(9, true);
+        }
       }
 
       const cycleMs = Math.max(100, ticksToMs(cycleTicks, tempo, ppq));
@@ -1977,13 +2074,14 @@ select, input[type="number"], input[type="text"] {
         tempo,
         cycleMs,
         cycleStart: performance.now() + 60,
+        route,
       };
 
       renderHostLoopBrowser();
       pumpHostLoopPreview(token);
       hostLoopPreviewTimer = setInterval(() => pumpHostLoopPreview(token), 20);
       hostLoopSetStatus(
-        "Looping in browser SF2 · " + hostLoopDisplayName(entry) +
+        "Looping → " + hostLoopPreviewRouteLabel(route) + " · " + hostLoopDisplayName(entry) +
         " · " + hostLoopFormatDuration(hostLoopPreviewMeta.get(entry.id)),
         true
       );
@@ -4902,6 +5000,30 @@ select, input[type="number"], input[type="text"] {
   document.getElementById("btnCloseLoops").addEventListener("click", () => {
     closeHostLoopBrowser();
   });
+
+  const hostLoopPreviewRouteSelect = document.getElementById("hostLoopPreviewRoute");
+  if (hostLoopPreviewRouteSelect) {
+    const savedRoute = localStorage.getItem(HOST_LOOP_PREVIEW_ROUTE_KEY);
+    if (["sf2", "1", "2", "10"].includes(savedRoute)) {
+      hostLoopPreviewRouteSelect.value = savedRoute;
+    }
+    hostLoopPreviewRouteSelect.addEventListener("change", async () => {
+      const activeEntryId = hostLoopPreview?.entryId || "";
+      localStorage.setItem(HOST_LOOP_PREVIEW_ROUTE_KEY, hostLoopPreviewRouteSelect.value);
+      hostLoopStopPreview({ rerender: false });
+      if (hostLoopCatalogLoaded) renderHostLoopBrowser();
+
+      if (activeEntryId) {
+        const entry = hostLoopCatalog.find((item) => item.id === activeEntryId);
+        if (entry) {
+          await previewHostLoop(entry);
+          return;
+        }
+      }
+      hostLoopSetStatus("Preview output → " + hostLoopPreviewRouteLabel(), true);
+    });
+  }
+
   [
     "hostLoopSearch",
     "hostLoopGenre",
