@@ -3880,7 +3880,7 @@ select, input[type="number"], input[type="text"] {
     row.appendChild(gutter);
 
     const ruler = document.createElement("div");
-    ruler.className = "ruler bars-ruler";
+    ruler.className = "ruler bars-ruler seekable";
     ruler.style.width = `${totalW}px`;
     ruler.style.setProperty("--bar-w", `${state.barW}px`);
     for (let b = 1; b <= bars; b++) {
