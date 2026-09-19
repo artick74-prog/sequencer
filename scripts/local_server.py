@@ -27,7 +27,7 @@ from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
-ALLOWED_FILES = {"current.json", "overview.json", "overview.md", "selection.json"}
+ALLOWED_FILES = {"current.json", "overview.json", "overview.md"}
 MAX_BODY = 32 * 1024 * 1024
 LIBRARY_ROOT = Path(
     os.environ.get("MIDI_REFERENCE_ROOT", str(ROOT.parent / "midi-reference"))
