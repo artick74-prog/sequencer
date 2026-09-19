@@ -12,19 +12,191 @@ The server binds to 127.0.0.1 only.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
+import tarfile
 import threading
 import webbrowser
+import zipfile
+from collections import Counter
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
 ALLOWED_FILES = {"current.json", "overview.json", "overview.md", "selection.json"}
 MAX_BODY = 32 * 1024 * 1024
+LIBRARY_ROOT = Path(
+    os.environ.get("MIDI_REFERENCE_ROOT", str(ROOT.parent / "midi-reference"))
+).resolve()
+LIBRARY_LOCK = threading.Lock()
+LIBRARY_ENTRIES: list[dict] = []
+LIBRARY_LOCATORS: dict[str, tuple[str, str, str | None]] = {}
+
+
+def infer_library_tags(source: str, member: str) -> tuple[str, str]:
+    text = f"{source} {member}".lower().replace("_", " ").replace("-", " ")
+
+    if "tech house" in text or "techhouse" in text:
+        genre = "tech-house"
+    elif "minimal" in text or "deep tech" in text:
+        genre = "minimal-deep-tech"
+    elif "acid" in text or "303" in text:
+        genre = "acid"
+    elif "house" in text:
+        genre = "house"
+    elif "groove" in text:
+        genre = "groove"
+    elif "nrg" in text or "edm" in text or "trance" in text:
+        genre = "edm"
+    else:
+        genre = "other"
+
+    if any(word in text for word in ("bassline", "bass line", " bass ", "/bass", "\\bass", "sub bass")):
+        kind = "bass"
+    elif any(word in text for word in ("drum", "kick", "snare", "clap", "hihat", "hi hat", "hat ", "perc")):
+        kind = "drums"
+    elif "acid" in text or "303" in text:
+        kind = "acid"
+    elif "chord" in text:
+        kind = "chords"
+    elif any(word in text for word in ("melody", "lead", "synth", "arp")):
+        kind = "melody"
+    else:
+        kind = "midi"
+    return genre, kind
+
+
+def library_source_name(path: Path) -> str:
+    name = path.name
+    low = name.lower()
+    for suffix in (".tar.gz", ".tgz", ".zip", ".tar"):
+        if low.endswith(suffix):
+            return name[: -len(suffix)]
+    return path.stem
+
+
+def build_library_catalog(force: bool = False) -> dict:
+    global LIBRARY_ENTRIES, LIBRARY_LOCATORS
+    with LIBRARY_LOCK:
+        if LIBRARY_ENTRIES and not force:
+            entries = LIBRARY_ENTRIES
+        else:
+            entries: list[dict] = []
+            locators: dict[str, tuple[str, str, str | None]] = {}
+            if LIBRARY_ROOT.exists():
+                files = sorted(p for p in LIBRARY_ROOT.rglob("*") if p.is_file())
+                archive_paths = []
+                loose_paths = []
+                for path in files:
+                    low = path.name.lower()
+                    if low.endswith((".mid", ".midi")):
+                        loose_paths.append(path)
+                    elif low.endswith((".zip", ".tar.gz", ".tgz", ".tar")):
+                        archive_paths.append(path)
+
+                for path in loose_paths:
+                    rel = path.relative_to(LIBRARY_ROOT).as_posix()
+                    source = path.parent.name or "loose"
+                    genre, kind = infer_library_tags(source, rel)
+                    key = f"file|{rel}"
+                    item_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:20]
+                    entries.append(
+                        {
+                            "id": item_id,
+                            "name": path.name,
+                            "source": source,
+                            "genre": genre,
+                            "kind": kind,
+                            "container": rel,
+                            "member": None,
+                            "size": path.stat().st_size,
+                        }
+                    )
+                    locators[item_id] = ("file", str(path), None)
+
+                for archive in archive_paths:
+                    rel = archive.relative_to(LIBRARY_ROOT).as_posix()
+                    source = library_source_name(archive)
+                    low = archive.name.lower()
+                    try:
+                        if low.endswith(".zip"):
+                            with zipfile.ZipFile(archive) as zf:
+                                members = [
+                                    (info.filename, info.file_size)
+                                    for info in zf.infolist()
+                                    if not info.is_dir()
+                                    and info.filename.lower().endswith((".mid", ".midi"))
+                                ]
+                        else:
+                            with tarfile.open(archive, "r:*") as tf:
+                                members = [
+                                    (member.name, member.size)
+                                    for member in tf.getmembers()
+                                    if member.isfile()
+                                    and member.name.lower().endswith((".mid", ".midi"))
+                                ]
+                    except (OSError, zipfile.BadZipFile, tarfile.TarError):
+                        continue
+
+                    for member, size in members:
+                        genre, kind = infer_library_tags(source, member)
+                        key = f"archive|{rel}|{member}"
+                        item_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:20]
+                        entries.append(
+                            {
+                                "id": item_id,
+                                "name": Path(member).name,
+                                "source": source,
+                                "genre": genre,
+                                "kind": kind,
+                                "container": rel,
+                                "member": member,
+                                "size": size,
+                            }
+                        )
+                        locators[item_id] = ("archive", str(archive), member)
+
+            entries.sort(key=lambda item: (item["genre"], item["kind"], item["source"], item["name"].lower()))
+            LIBRARY_ENTRIES = entries
+            LIBRARY_LOCATORS = locators
+
+        counts = {
+            "total": len(entries),
+            "genre": dict(Counter(item["genre"] for item in entries)),
+            "kind": dict(Counter(item["kind"] for item in entries)),
+            "source": dict(Counter(item["source"] for item in entries)),
+        }
+        return {
+            "root": str(LIBRARY_ROOT),
+            "entries": entries,
+            "counts": counts,
+        }
+
+
+def read_library_midi(item_id: str) -> tuple[bytes, dict]:
+    build_library_catalog()
+    locator = LIBRARY_LOCATORS.get(item_id)
+    entry = next((item for item in LIBRARY_ENTRIES if item["id"] == item_id), None)
+    if locator is None or entry is None:
+        raise FileNotFoundError("Library MIDI id not found")
+
+    mode, path_text, member = locator
+    path = Path(path_text)
+    if mode == "file":
+        return path.read_bytes(), entry
+    if path.name.lower().endswith(".zip"):
+        with zipfile.ZipFile(path) as zf:
+            return zf.read(member), entry
+    with tarfile.open(path, "r:*") as tf:
+        fh = tf.extractfile(member)
+        if fh is None:
+            raise FileNotFoundError("MIDI member not found in archive")
+        return fh.read(), entry
+
 
 
 class GitError(RuntimeError):
@@ -116,6 +288,17 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _send_bytes(self, status: int, data: bytes, content_type: str, filename: str | None = None) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        if filename:
+            safe = filename.replace('"', "_")
+            self.send_header("Content-Disposition", f'inline; filename="{safe}"')
+        self.end_headers()
+        self.wfile.write(data)
+
     def _read_json(self) -> dict:
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -132,7 +315,24 @@ class Handler(SimpleHTTPRequestHandler):
         return value
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if path == "/api/library":
+            try:
+                self._send_json(200, build_library_catalog())
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/library/midi":
+            try:
+                item_id = (parse_qs(parsed.query).get("id") or [""])[0]
+                data, entry = read_library_midi(item_id)
+                self._send_bytes(200, data, "audio/midi", entry["name"])
+            except FileNotFoundError as exc:
+                self._send_json(404, {"ok": False, "error": str(exc)})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
         if path == "/api/health":
             try:
                 self._send_json(
@@ -156,6 +356,12 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if path == "/api/reload":
             self._handle_reload()
+            return
+        if path == "/api/library/rescan":
+            try:
+                self._send_json(200, build_library_catalog(force=True))
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
             return
         self._send_json(404, {"ok": False, "error": "Unknown API endpoint"})
 
@@ -255,6 +461,7 @@ def main() -> None:
     print(f"Sequencer local bridge: {url}")
     print("Sync to AI = save + git commit + push")
     print("Reload from AI = git pull + reload current.json")
+    print(f"Style Library root = {LIBRARY_ROOT}")
     print("Press Ctrl+C to stop.")
 
     if args.open:
