@@ -29464,18 +29464,6 @@
           "velocity": 110
         },
         {
-          "tick": 15960,
-          "duration": 180,
-          "note": 48,
-          "velocity": 102
-        },
-        {
-          "tick": 16200,
-          "duration": 180,
-          "note": 52,
-          "velocity": 108
-        },
-        {
           "tick": 17040,
           "duration": 180,
           "note": 45,
@@ -29488,40 +29476,16 @@
           "velocity": 112
         },
         {
-          "tick": 17760,
-          "duration": 180,
-          "note": 48,
-          "velocity": 96
-        },
-        {
           "tick": 18120,
           "duration": 180,
           "note": 52,
           "velocity": 108
         },
         {
-          "tick": 18960,
-          "duration": 180,
-          "note": 45,
-          "velocity": 116
-        },
-        {
           "tick": 19320,
           "duration": 180,
           "note": 45,
           "velocity": 110
-        },
-        {
-          "tick": 19800,
-          "duration": 180,
-          "note": 48,
-          "velocity": 102
-        },
-        {
-          "tick": 20040,
-          "duration": 180,
-          "note": 52,
-          "velocity": 108
         },
         {
           "tick": 20880,
@@ -29534,12 +29498,6 @@
           "duration": 180,
           "note": 45,
           "velocity": 112
-        },
-        {
-          "tick": 21600,
-          "duration": 180,
-          "note": 48,
-          "velocity": 96
         },
         {
           "tick": 21960,
