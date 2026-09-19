@@ -672,6 +672,44 @@ select, input[type="number"], input[type="text"] {
   pointer-events: none;
   box-shadow: 0 0 6px var(--playhead);
 }
+.ruler-loop-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-left: 2px solid rgba(61, 220, 151, .75);
+  border-right: 2px solid rgba(61, 220, 151, .75);
+  background: rgba(61, 220, 151, .10);
+}
+.ruler-loop-range.active {
+  background: rgba(61, 220, 151, .20);
+  border-color: var(--accent);
+}
+.ruler-loop-label {
+  position: absolute;
+  right: 3px;
+  top: 2px;
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-shadow: 0 0 4px #0e1218;
+}
+.track-loop-region {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-left: 1px solid rgba(61, 220, 151, .35);
+  border-right: 1px solid rgba(61, 220, 151, .35);
+  background: rgba(61, 220, 151, .025);
+}
+.track-loop-region.active {
+  border-color: rgba(61, 220, 151, .65);
+  background: rgba(61, 220, 151, .055);
+}
 .tracks-area {
   position: relative;
 }
@@ -1514,6 +1552,12 @@ select, input[type="number"], input[type="text"] {
     sf2Loading: false,
     bridgeReady: false,
     selectedClipId: "",
+    loopStartTick: 0,
+    loopEndTick: 0,
+    loopRangeSelecting: false,
+    loopRangeAnchorBar: 1,
+    loopRangeDragRect: null,
+    resumeAfterLoopRangeSelect: false,
   };
 
   // ─── Embedded Style Library / drag-and-drop loops ───────────────
@@ -2361,6 +2405,8 @@ select, input[type="number"], input[type="text"] {
       ui: {
         barW: state.barW,
         loop: !!state.loop,
+        loopStartTick: Math.max(0, Number(state.loopStartTick) || 0),
+        loopEndTick: Math.max(0, Number(state.loopEndTick) || 0),
         outputId: state.outputId || "",
         sf2Enabled: sf2El?.checked !== false,
         hwEnabled: hwEl?.checked !== false,
@@ -2408,6 +2454,8 @@ select, input[type="number"], input[type="text"] {
       state.barW = Math.min(BAR_W_MAX, Math.max(BAR_W_MIN, barW));
     }
     state.loop = !!saved.ui.loop;
+    state.loopStartTick = Math.max(0, Number(saved.ui.loopStartTick) || 0);
+    state.loopEndTick = Math.max(0, Number(saved.ui.loopEndTick) || 0);
     state.outputId = String(saved.ui.outputId || "");
 
     const sf2El = document.getElementById("chkSf2");
@@ -2415,7 +2463,7 @@ select, input[type="number"], input[type="text"] {
     if (sf2El && typeof saved.ui.sf2Enabled === "boolean") sf2El.checked = saved.ui.sf2Enabled;
     if (hwEl && typeof saved.ui.hwEnabled === "boolean") hwEl.checked = saved.ui.hwEnabled;
 
-    document.getElementById("btnLoop")?.classList.toggle("active", state.loop);
+    updateLoopButtonUi();
     updateZoomLabel();
   }
 
@@ -2671,10 +2719,102 @@ select, input[type="number"], input[type="text"] {
     return state.startTick + msToTicks(elapsed, state.playbackTempo, state.playbackPpq);
   }
 
+  function loopRangeBounds(project = state.project) {
+    if (!project) return null;
+    const tpb = ticksPerBar(project.ppq || 480);
+    const projectLength = Math.max(tpb, state.lengthTicks || project.lengthTicks || tpb);
+    const start = Math.max(0, Math.min(projectLength - tpb, Number(state.loopStartTick) || 0));
+    const end = Math.max(0, Math.min(projectLength, Number(state.loopEndTick) || 0));
+    if (end <= start) return null;
+    return {
+      start,
+      end,
+      span: end - start,
+      startBar: Math.floor(start / tpb) + 1,
+      endBar: Math.max(1, Math.ceil(end / tpb)),
+    };
+  }
+
+  function syncProjectLoopRange() {
+    if (!state.project) return;
+    const range = loopRangeBounds(state.project);
+    state.project.loopRange = range
+      ? { startBar: range.startBar, endBar: range.endBar }
+      : null;
+  }
+
+  function setLoopRangeBars(startBar, endBar, { commit = false } = {}) {
+    if (!state.project) return null;
+    const bars = totalBars();
+    const a = Math.max(1, Math.min(bars, Math.round(Number(startBar) || 1)));
+    const b = Math.max(1, Math.min(bars, Math.round(Number(endBar) || a)));
+    const first = Math.min(a, b);
+    const last = Math.max(a, b);
+    const tpb = ticksPerBar(state.project.ppq || 480);
+    state.loopStartTick = (first - 1) * tpb;
+    state.loopEndTick = last * tpb;
+    syncProjectLoopRange();
+    updateLoopButtonUi();
+    updateLoopRangeVisuals();
+    scheduleHostAutosave();
+    if (commit) markHostProjectDirty();
+    return loopRangeBounds();
+  }
+
+  function ensureLoopRangeAtTick(tick = state.startTick || 0) {
+    let range = loopRangeBounds();
+    if (range) return range;
+    if (!state.project) return null;
+    const tpb = ticksPerBar(state.project.ppq || 480);
+    const bar = Math.max(1, Math.min(totalBars(), Math.floor(Math.max(0, tick) / tpb) + 1));
+    range = setLoopRangeBars(bar, bar);
+    return range;
+  }
+
+  function updateLoopButtonUi() {
+    const btn = document.getElementById("btnLoop");
+    if (!btn) return;
+    const range = loopRangeBounds();
+    btn.classList.toggle("active", !!state.loop);
+    btn.textContent = range ? ("Loop " + range.startBar + "–" + range.endBar) : "Loop";
+    btn.title = range
+      ? ((state.loop ? "Loop ON · " : "Loop OFF · ") +
+         "bars " + range.startBar + "–" + range.endBar +
+         " · when Loop is on, drag the bar ruler to change the range")
+      : "Enable Loop; without a range it will default to the current bar";
+  }
+
+  function updateLoopRangeVisuals() {
+    const range = loopRangeBounds();
+    const length = Math.max(1, state.lengthTicks || 1);
+    const leftPct = range ? (range.start / length) * 100 : 0;
+    const widthPct = range ? (range.span / length) * 100 : 0;
+
+    document.querySelectorAll(".ruler-loop-range, .track-loop-region").forEach((el) => {
+      if (!range) {
+        el.style.display = "none";
+        return;
+      }
+      el.style.display = "block";
+      el.style.left = leftPct + "%";
+      el.style.width = widthPct + "%";
+      el.classList.toggle("active", !!state.loop);
+    });
+    document.querySelectorAll(".ruler-loop-label").forEach((el) => {
+      el.textContent = range ? (range.startBar + "–" + range.endBar) : "";
+    });
+  }
+
   function currentTransportTick(atPerf = performance.now()) {
     const tick = absoluteTransportTick(atPerf);
     const length = state.lengthTicks || 0;
-    if (state.playing && state.loop && length > 0) return tick % length;
+    if (state.playing && state.loop) {
+      const range = loopRangeBounds();
+      if (range?.span > 0) {
+        const offset = ((tick - range.start) % range.span + range.span) % range.span;
+        return range.start + offset;
+      }
+    }
     return length > 0 ? Math.min(tick, length) : tick;
   }
 
@@ -2706,15 +2846,19 @@ select, input[type="number"], input[type="text"] {
     return wasPlaying;
   }
 
-  function buildEventQueue(project) {
+  function buildEventQueue(project, range = null) {
     const queue = [];
     for (const track of project.tracks) {
       const route = trackRoute(track);
       if (route === "none") continue;
       const ch = ((track.channel || 1) - 1) & 0x0f;
       for (const n of track.notes) {
+        const noteStart = n.tick;
+        const noteEnd = n.tick + Math.max(1, n.duration);
+        if (range && (noteStart < range.start || noteStart >= range.end)) continue;
+        const offTick = range ? Math.min(noteEnd, range.end) : noteEnd;
         queue.push({
-          tick: n.tick,
+          tick: noteStart,
           type: "on",
           note: n.note,
           velocity: n.velocity,
@@ -2724,7 +2868,7 @@ select, input[type="number"], input[type="text"] {
           trackId: track.id,
         });
         queue.push({
-          tick: n.tick + Math.max(1, n.duration),
+          tick: offTick,
           type: "off",
           note: n.note,
           velocity: 0,
@@ -2838,30 +2982,38 @@ select, input[type="number"], input[type="text"] {
     const tempo = Number(document.getElementById("tempo").value) || project.tempo || 120;
     project.tempo = tempo;
     const ppq = project.ppq || 480;
-    const length = Math.max(project.lengthTicks || 0, ppq * 4);
-    state.lengthTicks = length;
-    const queue = buildEventQueue(project);
+    const projectLength = Math.max(project.lengthTicks || 0, ppq * 4);
+    state.lengthTicks = projectLength;
+
+    const loopRange = state.loop ? ensureLoopRangeAtTick(fromTick) : null;
+    const scheduleStart = loopRange
+      ? (fromTick >= loopRange.start && fromTick < loopRange.end ? fromTick : loopRange.start)
+      : fromTick;
+    const scheduleLength = loopRange?.span || projectLength;
+    const queue = buildEventQueue(project, loopRange);
+
     const hardwareCursor = createScheduleCursor(
       queue.filter((event) => event.route === "hw" || event.route === "both"),
-      fromTick
+      scheduleStart
     );
     const sf2Cursor = createScheduleCursor(
       queue.filter((event) => event.route === "sf2" || event.route === "both"),
-      fromTick
+      scheduleStart
     );
     state.playing = true;
     state.startPerf = performance.now();
-    state.startTick = fromTick;
+    state.startTick = scheduleStart;
     state.playbackTempo = tempo;
     state.playbackPpq = ppq;
     state.playbackOutput = hw ? output : null;
     const token = ++state.playbackToken;
     document.getElementById("btnPlay").textContent = "Pause";
-    updatePlayheads(fromTick, length);
+    updatePlayheads(scheduleStart, projectLength);
     const dest = [sf2 ? "SF2" : null, hw ? `${output.name} (HW timestamp)` : null]
       .filter(Boolean)
       .join(" + ");
-    setStatus(`Playing from bar ${tickToBar(fromTick, ppq)} → ${dest}`, "ok");
+    const loopText = loopRange ? ("Loop " + loopRange.startBar + "–" + loopRange.endBar + " · ") : "";
+    setStatus(loopText + `Playing from bar ${tickToBar(scheduleStart, ppq)} → ${dest}`, "ok");
 
     if (state.timer) clearInterval(state.timer);
     const pump = () => {
@@ -2871,8 +3023,8 @@ select, input[type="number"], input[type="text"] {
         hardwareCursor,
         output,
         now + HARDWARE_LOOKAHEAD_MS,
-        fromTick,
-        length,
+        scheduleStart,
+        scheduleLength,
         tempo,
         ppq
       )) {
@@ -2883,8 +3035,8 @@ select, input[type="number"], input[type="text"] {
         scheduleSf2Window(
           sf2Cursor,
           now + SF2_LOOKAHEAD_MS,
-          fromTick,
-          length,
+          scheduleStart,
+          scheduleLength,
           tempo,
           ppq,
           token
@@ -2892,11 +3044,11 @@ select, input[type="number"], input[type="text"] {
       }
 
       const nowTick = currentTransportTick(now);
-      updatePlayheads(nowTick, length);
-      if (!state.loop && absoluteTransportTick(now) >= length) {
+      updatePlayheads(nowTick, projectLength);
+      if (!state.loop && absoluteTransportTick(now) >= projectLength) {
         stopPlayback(output);
-        state.startTick = snapToBar(length - 1);
-        updatePlayheads(state.startTick, length);
+        state.startTick = snapToBar(projectLength - 1);
+        updatePlayheads(state.startTick, projectLength);
         setStatus("Finished.", "ok");
       }
     };
@@ -3039,6 +3191,12 @@ select, input[type="number"], input[type="text"] {
       lengthTicks: data.lengthTicks || 0,
       minimumLengthTicks: Math.max(0, Number(data.minimumLengthTicks) || 0),
       markers: data.markers || [],
+      loopRange: data.loopRange && typeof data.loopRange === "object"
+        ? {
+            startBar: Math.max(1, Number(data.loopRange.startBar) || 1),
+            endBar: Math.max(1, Number(data.loopRange.endBar) || Number(data.loopRange.startBar) || 1),
+          }
+        : null,
       cloudProject: data.cloudProject && typeof data.cloudProject === "object"
         ? {...data.cloudProject}
         : null,
@@ -3096,10 +3254,16 @@ select, input[type="number"], input[type="text"] {
     state.startTick = 0;
     state.selectedClipId = "";
     recomputeLength(project);
-    const restored = restoreLocal ? applyHostAutosaveToProject(project) : false;
     state.project = project;
+    state.loopStartTick = 0;
+    state.loopEndTick = 0;
+    if (project.loopRange) {
+      setLoopRangeBars(project.loopRange.startBar, project.loopRange.endBar);
+    }
+    const restored = restoreLocal ? applyHostAutosaveToProject(project) : false;
     document.getElementById("projectName").value = project.name || "untitled";
     document.getElementById("tempo").value = project.tempo || 120;
+    updateLoopButtonUi();
     renderAll();
     updatePlayheads(0, state.lengthTicks);
     const bars = (project.lengthTicks / ticksPerBar(project.ppq)).toFixed(0);
@@ -3728,9 +3892,55 @@ select, input[type="number"], input[type="text"] {
         ruler.appendChild(n);
       }
     }
-    attachSeek(ruler);
+    const loopRegion = document.createElement("div");
+    loopRegion.className = "ruler-loop-range" + (state.loop ? " active" : "");
+    const loopLabel = document.createElement("span");
+    loopLabel.className = "ruler-loop-label";
+    loopRegion.appendChild(loopLabel);
+    ruler.appendChild(loopRegion);
+
+    const barPlayhead = document.createElement("div");
+    barPlayhead.className = "ruler-playhead";
+    ruler.appendChild(barPlayhead);
+    state.rulerPlayheadEls.push(barPlayhead);
+
+    ruler.title = state.loop
+      ? "Drag across bars to set the loop range · marker ruler above still seeks"
+      : "Click/drag to seek · Shift+drag sets a loop range";
+    ruler.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      const selectLoop = state.loop || e.shiftKey;
+      if (!selectLoop) {
+        e.preventDefault();
+        e.stopPropagation();
+        state.rulerSeeking = true;
+        const rect = ruler.getBoundingClientRect();
+        const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
+        const tick = (x / (rect.width || 1)) * length;
+        state.resumeAfterSeek = !!seekToTick(tick, { restart: false });
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = ruler.getBoundingClientRect();
+      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
+      const bar = Math.max(1, Math.min(bars, Math.floor(x / Math.max(1, state.barW)) + 1));
+
+      state.loopRangeSelecting = true;
+      state.loopRangeAnchorBar = bar;
+      state.loopRangeDragRect = { left: rect.left, width: rect.width, bars };
+      state.resumeAfterLoopRangeSelect = !!state.playing;
+      if (state.playing) stopPlayback();
+      setLoopRangeBars(bar, bar);
+      renderTracks();
+      updateLoopRangeVisuals();
+      setStatus("Loop range: " + bar + "–" + bar + " · drag across the bar ruler", "ok");
+    });
+
     row.appendChild(ruler);
     wrap.appendChild(row);
+    updateLoopRangeVisuals();
     updateZoomLabel();
     updatePlayheads(state.startTick || 0, length);
   }
@@ -4125,6 +4335,10 @@ select, input[type="number"], input[type="text"] {
         }
       });
 
+      const trackLoopRegion = document.createElement("div");
+      trackLoopRegion.className = "track-loop-region" + (state.loop ? " active" : "");
+      body.appendChild(trackLoopRegion);
+
       const notes = track.notes;
       const minN = notes.length ? notes.reduce((m, n) => Math.min(m, n.note), 127) : 60;
       const maxN = notes.length ? notes.reduce((m, n) => Math.max(m, n.note), 0) : 60;
@@ -4205,9 +4419,27 @@ select, input[type="number"], input[type="text"] {
 
       root.appendChild(el);
     }
+    updateLoopRangeVisuals();
   }
 
   document.addEventListener("mousemove", (e) => {
+    if (state.loopRangeSelecting && state.project && state.loopRangeDragRect) {
+      const rect = state.loopRangeDragRect;
+      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
+      const bar = Math.max(
+        1,
+        Math.min(rect.bars || totalBars(), Math.floor(x / Math.max(1, state.barW)) + 1)
+      );
+      const range = setLoopRangeBars(state.loopRangeAnchorBar, bar);
+      if (range) {
+        setStatus(
+          "Loop range: " + range.startBar + "–" + range.endBar +
+          " · release mouse to set",
+          "ok"
+        );
+      }
+      return;
+    }
     if (state.rulerSeeking && state.project) {
       const ruler = document.querySelector(".ruler.seekable");
       if (ruler) {
@@ -4227,6 +4459,33 @@ select, input[type="number"], input[type="text"] {
     }
   });
   document.addEventListener("mouseup", () => {
+    if (state.loopRangeSelecting) {
+      state.loopRangeSelecting = false;
+      state.loopRangeDragRect = null;
+      const range = loopRangeBounds();
+      syncProjectLoopRange();
+      markHostProjectDirty();
+      scheduleHostAutosave();
+      renderRuler();
+      renderTracks();
+
+      if (range) {
+        state.startTick = range.start;
+        updatePlayheads(range.start, state.lengthTicks || 1);
+        setStatus(
+          "Loop range set: " + range.startBar + "–" + range.endBar +
+          (state.loop ? " · Loop ON" : " · press Loop to enable"),
+          "ok"
+        );
+        if (state.resumeAfterLoopRangeSelect && state.loop) {
+          state.resumeAfterLoopRangeSelect = false;
+          runScheduler(range.start);
+        } else {
+          state.resumeAfterLoopRangeSelect = false;
+        }
+      }
+      return;
+    }
     if (state.rulerSeeking) {
       state.rulerSeeking = false;
       const tick = state.startTick || 0;
@@ -4480,6 +4739,12 @@ select, input[type="number"], input[type="text"] {
     }
 
     if (typeof session.loop === "boolean") state.loop = session.loop;
+    if (Number.isFinite(Number(session.loopStartTick))) {
+      state.loopStartTick = Math.max(0, Number(session.loopStartTick));
+    }
+    if (Number.isFinite(Number(session.loopEndTick))) {
+      state.loopEndTick = Math.max(0, Number(session.loopEndTick));
+    }
 
     const sf2 = document.getElementById("chkSf2");
     const hw = document.getElementById("chkHw");
@@ -4498,7 +4763,7 @@ select, input[type="number"], input[type="text"] {
       }
     }
 
-    document.getElementById("btnLoop")?.classList.toggle("active", state.loop);
+    updateLoopButtonUi();
     updateZoomLabel();
   }
 
@@ -4579,6 +4844,8 @@ select, input[type="number"], input[type="text"] {
       savedAt: new Date().toISOString(),
       barWidthPx: state.barW,
       loop: !!state.loop,
+      loopStartTick: Math.max(0, Number(state.loopStartTick) || 0),
+      loopEndTick: Math.max(0, Number(state.loopEndTick) || 0),
       browserAudioSf2: document.getElementById("chkSf2")?.checked !== false,
       hardwareMidiOut: document.getElementById("chkHw")?.checked !== false,
       midiOutputName: getOutput()?.name || null,
@@ -4688,6 +4955,12 @@ select, input[type="number"], input[type="text"] {
         channels: { "1": "XR20 bass", "2": "TD-3 acid", "10": "XR20 drums" },
       },
       markers: p.markers || [],
+      loopRange: loopRangeBounds(p)
+        ? {
+            startBar: loopRangeBounds(p).startBar,
+            endBar: loopRangeBounds(p).endBar,
+          }
+        : null,
       cloudProject: p.cloudProject ? {...p.cloudProject} : null,
       clips: Array.isArray(p.clips) ? p.clips.map((clip) => ({...clip})) : [],
       tracks: p.tracks.map((t) => ({
@@ -4958,16 +5231,35 @@ select, input[type="number"], input[type="text"] {
       setStatus("Cue: bar 1", "");
     }
   });
-  document.getElementById("btnLoop").addEventListener("click", (e) => {
+  document.getElementById("btnLoop").addEventListener("click", () => {
     const wasPlaying = state.playing;
     const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
     state.loop = !state.loop;
-    e.currentTarget.classList.toggle("active", state.loop);
+
+    if (state.loop) ensureLoopRangeAtTick(tick);
+    updateLoopButtonUi();
+    updateLoopRangeVisuals();
     scheduleHostAutosave();
+
     if (wasPlaying) {
       stopPlayback();
-      state.startTick = tick;
-      runScheduler(tick);
+      const range = state.loop ? loopRangeBounds() : null;
+      state.startTick = range && (tick < range.start || tick >= range.end) ? range.start : tick;
+      runScheduler(state.startTick);
+    } else if (state.loop) {
+      const range = loopRangeBounds();
+      if (range && (tick < range.start || tick >= range.end)) {
+        state.startTick = range.start;
+        updatePlayheads(range.start, state.lengthTicks || 1);
+      }
+      const activeRange = loopRangeBounds();
+      if (activeRange) {
+        setStatus(
+          "Loop ON · bars " + activeRange.startBar + "–" + activeRange.endBar +
+          " · drag the bar ruler to change the range",
+          "ok"
+        );
+      }
     }
   });
   document.getElementById("btnZoomOut").addEventListener("click", () => zoomBy(1 / 1.35));
