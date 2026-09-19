@@ -789,6 +789,7 @@ select, input[type="number"], input[type="text"] {
         <select id="hostLoopGenre"><option value="">All styles</option></select>
         <select id="hostLoopRole"><option value="">All roles</option></select>
         <select id="hostLoopFamily"><option value="">All instrument families</option></select>
+        <select id="hostLoopProgram"><option value="">All GM programs</option></select>
         <select id="hostLoopSource"><option value="">All sources</option></select>
         <select id="hostLoopRating">
           <option value="0">All ratings</option>
@@ -1498,6 +1499,20 @@ select, input[type="number"], input[type="text"] {
         new Set(hostLoopCatalog.flatMap(hostLoopFamilies)),
         "All instrument families"
       );
+      const programSelect = document.getElementById("hostLoopProgram");
+      if (programSelect) {
+        const keepProgram = programSelect.value;
+        const programs = [...new Set(hostLoopCatalog.flatMap(hostLoopPrograms))].sort((a, b) => a - b);
+        programSelect.innerHTML = '<option value="">All GM programs</option>';
+        for (const program of programs) {
+          const option = document.createElement("option");
+          option.value = String(program);
+          option.textContent = "GM " + program + " · " + gmProgramName(program);
+          programSelect.appendChild(option);
+        }
+        if (programs.map(String).includes(keepProgram)) programSelect.value = keepProgram;
+      }
+
       fillHostLoopSelect(
         document.getElementById("hostLoopSource"),
         new Set(hostLoopCatalog.map((entry) => entry.source).filter(Boolean)),
@@ -1521,6 +1536,7 @@ select, input[type="number"], input[type="text"] {
     const genre = document.getElementById("hostLoopGenre")?.value || "";
     const role = document.getElementById("hostLoopRole")?.value || "";
     const family = document.getElementById("hostLoopFamily")?.value || "";
+    const program = document.getElementById("hostLoopProgram")?.value || "";
     const source = document.getElementById("hostLoopSource")?.value || "";
     const ratingFilter = document.getElementById("hostLoopRating")?.value || "0";
 
@@ -1528,6 +1544,7 @@ select, input[type="number"], input[type="text"] {
       if (genre && entry.genre !== genre) return false;
       if (role && hostLoopRole(entry) !== role) return false;
       if (family && !hostLoopFamilies(entry).includes(family)) return false;
+      if (program && !hostLoopPrograms(entry).includes(Number(program))) return false;
       if (source && entry.source !== source) return false;
 
       const rating = hostLoopRating(entry.id);
@@ -1629,7 +1646,7 @@ select, input[type="number"], input[type="text"] {
       });
 
       card.addEventListener("dragstart", (event) => {
-        hostLoopStopPreview();
+        hostLoopStopPreview({ rerender: false });
         card.classList.add("dragging");
         event.dataTransfer.effectAllowed = "copy";
         event.dataTransfer.setData("application/x-style-library-midi", entry.id);
@@ -1677,7 +1694,7 @@ select, input[type="number"], input[type="text"] {
     hostLoopNoteTimers.clear();
   }
 
-  function hostLoopStopPreview() {
+  function hostLoopStopPreview({ rerender = true } = {}) {
     hostLoopPreviewToken++;
     if (hostLoopPreviewTimer) {
       clearInterval(hostLoopPreviewTimer);
@@ -1686,7 +1703,7 @@ select, input[type="number"], input[type="text"] {
     clearHostLoopNoteTimers();
     hostLoopPreview = null;
     allNotesOffSf2();
-    if (hostLoopCatalogLoaded) renderHostLoopBrowser();
+    if (rerender && hostLoopCatalogLoaded) renderHostLoopBrowser();
   }
 
   function scheduleHostLoopSf2(ch, note, velocity, onDelay, durationMs, token) {
@@ -1767,11 +1784,14 @@ select, input[type="number"], input[type="text"] {
       const ppq = parsed.ppq || 480;
       const tempo = Number(document.getElementById("tempo")?.value) || state.project?.tempo || parsed.tempo || 120;
       const maxTicks = ppq * 4 * 8;
-      const sourceLength = Math.max(
-        ppq * 4,
-        ...parsed.tracks.flatMap((track) => track.notes.map((note) => note.tick + note.duration))
-      );
+      let sourceLength = ppq * 4;
+      for (const track of parsed.tracks) {
+        for (const note of track.notes) {
+          sourceLength = Math.max(sourceLength, note.tick + note.duration);
+        }
+      }
       const cycleTicks = Math.min(sourceLength, maxTicks);
+      const previewAsDrums = hostLoopRole(entry) === "drums";
       const notes = parsed.tracks.flatMap((track) =>
         track.notes
           .filter((note) => note.tick < cycleTicks)
@@ -1780,7 +1800,7 @@ select, input[type="number"], input[type="text"] {
             duration: Math.min(note.duration, Math.max(1, cycleTicks - note.tick)),
             note: note.note,
             velocity: note.velocity,
-            channel: track.channel || 1,
+            channel: previewAsDrums ? 10 : (track.channel || 1),
           }))
       ).sort((a, b) => a.tick - b.tick || a.note - b.note);
 
@@ -1855,7 +1875,7 @@ select, input[type="number"], input[type="text"] {
     const ratio = rect.width > 0 ? x / rect.width : 0;
     const tpb = ticksPerBar(project.ppq);
     const rawTick = ratio * Math.max(state.lengthTicks || tpb, tpb);
-    const tick = Math.max(0, Math.round(rawTick / tpb) * tpb);
+    const tick = Math.max(0, Math.floor(rawTick / tpb) * tpb);
     return { tick, bar: tickToBar(tick, project.ppq), x };
   }
 
@@ -4362,6 +4382,7 @@ select, input[type="number"], input[type="text"] {
     "hostLoopGenre",
     "hostLoopRole",
     "hostLoopFamily",
+    "hostLoopProgram",
     "hostLoopSource",
     "hostLoopRating",
   ].forEach((id) => {
