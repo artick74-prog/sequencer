@@ -42,6 +42,8 @@ python scripts/local_server.py --open
 - Кнопка **Loops** открывает справа встроенный Loop Browser.
 - Browser читает `GET /api/library` и `GET /api/library/midi?id=...`; отдельная копия библиотеки не создаётся.
 - **Preview** слушает MIDI при текущем BPM проекта, не изменяя piano roll, и следует engine активной дорожки: CHIP / SF2 / MIDI HW.
+- Browser разделяет **Style / Role / Instrument family / GM Program**. `acid` считается стилем/жанром, а не инструментальной ролью: piano/chord MIDI из acid-набора больше не должен отображаться как role=acid. Для старых pack-index v2 UI вычисляет effective role из `classificationRoles` и `classificationPrograms`, поэтому фильтрация исправляется без немедленной перепаковки.
+- В карточке loop показывается точный `GM <program> <name>`, если MIDI содержит Program Change; если Program Change отсутствует, UI прямо пишет `GM program not encoded` и не выдумывает инструмент.
 - У каждого loop есть пользовательский рейтинг **1–5 ★**, который хранится в browser localStorage по стабильному MIDI id. Повторный клик по текущей оценке очищает её. Фильтр Rating позволяет быстро показать rated loops, 4★+ favorites или выбранный минимальный рейтинг.
 - **LOAD** загружает MIDI в активную из трёх дорожек. После загрузки это обычные ноты секвенсора, а не живая ссылка на исходный файл.
 - Короткий loop автоматически физически повторяется до длины текущего паттерна: 1 bar → 4 копии в 4-bar pattern, 2 bars → 2 копии и т.д.
@@ -59,7 +61,8 @@ python scripts/local_server.py --open
 Кнопка **Sync to AI** в Chiptune пишет и пушит:
 - `projects/chiptune-current.json` — полный проект и source metadata;
 - `projects/chiptune-overview.md` — активный pattern, его длина, engine/channel/program каждой дорожки, источники/rating и polyphonic note events с velocity/gate;
-- `projects/chiptune-loop-ratings.json` — текущие пользовательские оценки reference loops, чтобы ассистент после Sync мог учитывать favorites.
+- `projects/chiptune-loop-ratings.json` — текущие пользовательские оценки reference loops, чтобы ассистент после Sync мог учитывать favorites;
+- `projects/chiptune-loop-selection.json` — до 20 последних прослушанных loop с точными Program Change по MIDI-каналам, GM names/families, ролью и простой оценкой onset-polyphony. Это позволяет ассистенту после **Sync to AI** видеть, какие именно инструменты были в недавно прослушанных файлах.
 
 После этой кнопки ассистент может прочитать текущее состояние конструктора из GitHub и обсуждать с пользователем конкретные загруженные лупы и их правки. Не утверждать, что видно текущее состояние браузера, пока пользователь не нажал **Sync to AI** после изменений.
 

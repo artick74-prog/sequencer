@@ -32,7 +32,7 @@ from midi_classifier import classify_midi
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
-ALLOWED_FILES = {"current.json", "overview.json", "overview.md", "chiptune-current.json", "chiptune-overview.md", "chiptune-loop-ratings.json"}
+ALLOWED_FILES = {"current.json", "overview.json", "overview.md", "chiptune-current.json", "chiptune-overview.md", "chiptune-loop-ratings.json", "chiptune-loop-selection.json"}
 MAX_BODY = 32 * 1024 * 1024
 LIBRARY_ROOT = Path(
     os.environ.get("MIDI_REFERENCE_ROOT", str(ROOT.parent / "midi-reference"))
@@ -41,8 +41,8 @@ LIBRARY_LOCK = threading.Lock()
 LIBRARY_ENTRIES: list[dict] = []
 LIBRARY_LOCATORS: dict[str, tuple[str, str, str | None]] = {}
 LIBRARY_MODE: str | None = None
-CLASSIFICATION_CACHE_VERSION = 2
-CLASSIFICATION_CACHE_PATH = LIBRARY_ROOT / ".style-library-classification-v2.json"
+CLASSIFICATION_CACHE_VERSION = 3
+CLASSIFICATION_CACHE_PATH = LIBRARY_ROOT / ".style-library-classification-v3.json"
 PACK_ROOT = LIBRARY_ROOT / "packs"
 PACK_BUILD_ROOT = LIBRARY_ROOT / "packs.__building__"
 PACK_OLD_ROOT = LIBRARY_ROOT / "packs.__old__"

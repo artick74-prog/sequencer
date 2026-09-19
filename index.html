@@ -1477,7 +1477,9 @@ body {
       <div class="loop-browser-filters">
         <input class="wide" id="loopSearch" type="search" placeholder="Search MIDI...">
         <select id="loopGenre"><option value="">All styles</option></select>
-        <select id="loopKind"><option value="">All types</option></select>
+        <select id="loopKind"><option value="">All roles</option></select>
+        <select id="loopFamily"><option value="">All instrument families</option></select>
+        <select id="loopProgram"><option value="">All GM programs</option></select>
         <select id="loopSource"><option value="">All sources</option></select>
         <select id="loopRating">
           <option value="0">All ratings</option>
@@ -2786,7 +2788,11 @@ class StateManager {
       name: entry?.name || 'MIDI loop',
       source: entry?.source || '',
       genre: entry?.genre || '',
-      kind: entry?.kind || (isDrums ? 'drums' : 'melody'),
+      kind: typeof loopRole === 'function' ? loopRole(entry || {}) : (entry?.kind || (isDrums ? 'drums' : 'melody')),
+      catalogKind: entry?.kind || '',
+      classificationPrograms: Array.isArray(entry?.classificationPrograms) ? [...entry.classificationPrograms] : [],
+      instrumentFamilies: typeof loopFamilies === 'function' ? loopFamilies(entry || {}) : [],
+      instrumentLabels: typeof loopProgramLabels === 'function' ? loopProgramLabels(entry || {}) : [],
       rating: typeof getLoopRating === 'function' ? getLoopRating(entry?.id || '') : 0,
       originalSteps: loopSteps,
       originalBars: Number((loopSteps / 16).toFixed(2)),
@@ -5510,6 +5516,19 @@ document.getElementById('sf2FileInput').addEventListener('change', async (e) => 
 // Load GM program names for per-track SF2 selectors.
 loadChiptuneGmPrograms().then(() => {
   if (typeof ui !== 'undefined') ui.render();
+  if (loopCatalogLoaded) {
+    const keepProgram = loopProgramEl.value;
+    const values = [...new Set(loopCatalog.flatMap(loopPrograms))].sort((a,b) => a-b);
+    loopProgramEl.innerHTML = '<option value="">All GM programs</option>';
+    values.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = String(p);
+      opt.textContent = 'GM ' + p + ' · ' + gmProgramName(p);
+      loopProgramEl.appendChild(opt);
+    });
+    if (values.map(String).includes(keepProgram)) loopProgramEl.value = keepProgram;
+    renderLoopBrowser();
+  }
 });
 
 // ─── Autosave ───
@@ -5556,6 +5575,8 @@ const loopBrowserEl = document.getElementById('loopBrowser');
 const loopSearchEl = document.getElementById('loopSearch');
 const loopGenreEl = document.getElementById('loopGenre');
 const loopKindEl = document.getElementById('loopKind');
+const loopFamilyEl = document.getElementById('loopFamily');
+const loopProgramEl = document.getElementById('loopProgram');
 const loopSourceEl = document.getElementById('loopSource');
 const loopRatingEl = document.getElementById('loopRating');
 const loopListEl = document.getElementById('loopList');
@@ -5571,6 +5592,8 @@ let loopPreviewTimer = null;
 let loopPreviewEntryId = null;
 let loopPreviewToken = 0;
 let loopPreviewState = null;
+let lastLoopInspection = null;
+let loopInspectionHistory = [];
 const LOOP_PREVIEW_LOOKAHEAD_SEC = 0.16;
 const LOOP_PREVIEW_PUMP_MS = 20;
 
@@ -5625,6 +5648,110 @@ function fillLoopSelect(el, values, label) {
   if (values.includes(keep)) el.value = keep;
 }
 
+const LOOP_GM_FAMILIES = [
+  'Piano', 'Chromatic Percussion', 'Organ', 'Guitar',
+  'Bass', 'Strings', 'Ensemble', 'Brass',
+  'Reed', 'Pipe', 'Synth Lead', 'Synth Pad',
+  'Synth Effects', 'Ethnic', 'Percussive', 'Sound Effects'
+];
+
+function loopPrograms(entry) {
+  return [...new Set((entry.classificationPrograms || [])
+    .map(Number)
+    .filter(p => Number.isInteger(p) && p >= 0 && p <= 127))]
+    .sort((a,b) => a-b);
+}
+
+function gmFamilyForProgram(program) {
+  const p = Number(program);
+  if (!Number.isInteger(p) || p < 0 || p > 127) return '';
+  return LOOP_GM_FAMILIES[Math.floor(p / 8)] || '';
+}
+
+function loopFamilies(entry) {
+  return [...new Set(loopPrograms(entry).map(gmFamilyForProgram).filter(Boolean))];
+}
+
+function loopRole(entry) {
+  const roles = [...new Set((entry.classificationRoles || [])
+    .map(String)
+    .filter(role => role && role !== 'acid' && role !== 'unclassified'))];
+
+  if (roles.includes('drums') && roles.length === 1) return 'drums';
+  const pitched = roles.filter(role => role !== 'drums');
+  if (pitched.length > 1) return 'arrangement';
+  if (pitched.length === 1) return pitched[0];
+  if (roles.includes('drums')) return 'drums';
+
+  // Old v2 packs forced everything from an acid-named source to kind=acid.
+  // Do not repeat that mistake in the UI: Acid is a style, not an instrument role.
+  if (entry.kind === 'acid') {
+    const families = loopFamilies(entry);
+    if (families.some(f => ['Piano','Organ','Guitar','Strings','Ensemble','Synth Pad'].includes(f))) {
+      return 'chords';
+    }
+    if (families.includes('Bass')) return 'bass';
+    return 'melody';
+  }
+  return entry.kind || 'unclassified';
+}
+
+function gmProgramName(program) {
+  const p = Number(program);
+  return CHIPESEQ_GM_PROGRAMS[p] || ('Program ' + p);
+}
+
+function loopProgramLabels(entry) {
+  return loopPrograms(entry).map(p => 'GM ' + p + ' ' + gmProgramName(p));
+}
+
+function loopInstrumentSummary(entry) {
+  const labels = loopProgramLabels(entry);
+  if (labels.length) return labels.join(', ');
+  const families = loopFamilies(entry);
+  if (families.length) return families.join(', ');
+  return 'GM program not encoded';
+}
+
+function exactMidiInspection(entry, midi) {
+  const programsByChannel = {};
+  for (const [channelText, program] of Object.entries(midi.programs || {})) {
+    const channel = Number(channelText);
+    const p = Number(program);
+    if (!Number.isInteger(channel) || !Number.isInteger(p)) continue;
+    programsByChannel[channel] = {
+      program: p,
+      name: gmProgramName(p),
+      family: gmFamilyForProgram(p),
+    };
+  }
+
+  const onsetCounts = new Map();
+  for (const note of midi.notes || []) {
+    if (note.channel === 10) continue;
+    onsetCounts.set(note.tick, (onsetCounts.get(note.tick) || 0) + 1);
+  }
+  const maxOnsetPolyphony = Math.max(0, ...onsetCounts.values());
+
+  return {
+    syncedAt: new Date().toISOString(),
+    id: entry.id,
+    name: entry.name,
+    source: entry.source,
+    member: entry.member || entry.container || null,
+    genre: entry.genre,
+    role: loopRole(entry),
+    oldCatalogKind: entry.kind,
+    classificationRoles: entry.classificationRoles || [],
+    classificationPrograms: loopPrograms(entry),
+    classificationProgramLabels: loopProgramLabels(entry),
+    instrumentFamilies: loopFamilies(entry),
+    programsByChannel,
+    noteCount: midi.notes?.length || 0,
+    maxOnsetPolyphony,
+  };
+}
+
 async function ensureLoopCatalog() {
   if (loopCatalogLoaded) return loopCatalog;
   if (loopCatalogPromise) return loopCatalogPromise;
@@ -5636,7 +5763,23 @@ async function ensureLoopCatalog() {
     loopCatalog = data.entries || [];
     loopCatalogLoaded = true;
     fillLoopSelect(loopGenreEl, [...new Set(loopCatalog.map(e => e.genre).filter(Boolean))], 'All styles');
-    fillLoopSelect(loopKindEl, [...new Set(loopCatalog.map(e => e.kind).filter(Boolean))], 'All types');
+    fillLoopSelect(loopKindEl, [...new Set(loopCatalog.map(loopRole).filter(Boolean))], 'All roles');
+    fillLoopSelect(loopFamilyEl, [...new Set(loopCatalog.flatMap(loopFamilies))], 'All instrument families');
+
+    const programValues = [...new Set(loopCatalog.flatMap(loopPrograms))]
+      .sort((a,b) => a-b)
+      .map(p => String(p));
+    const keepProgram = loopProgramEl.value;
+    loopProgramEl.innerHTML = '<option value="">All GM programs</option>';
+    programValues.forEach(value => {
+      const p = Number(value);
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = 'GM ' + p + ' · ' + gmProgramName(p);
+      loopProgramEl.appendChild(opt);
+    });
+    if (programValues.includes(keepProgram)) loopProgramEl.value = keepProgram;
+
     fillLoopSelect(loopSourceEl, [...new Set(loopCatalog.map(e => e.source).filter(Boolean))], 'All sources');
     setLoopStatus(
       'Ready · ' + loopCatalog.length.toLocaleString('ru-RU') + ' MIDI' +
@@ -5657,11 +5800,15 @@ function filteredLoops() {
   const q = loopSearchEl.value.trim().toLowerCase();
   const genre = loopGenreEl.value;
   const kind = loopKindEl.value;
+  const family = loopFamilyEl.value;
+  const program = loopProgramEl.value;
   const source = loopSourceEl.value;
   const ratingFilter = loopRatingEl.value;
   return loopCatalog.filter(entry => {
     if (genre && entry.genre !== genre) return false;
-    if (kind && entry.kind !== kind) return false;
+    if (kind && loopRole(entry) !== kind) return false;
+    if (family && !loopFamilies(entry).includes(family)) return false;
+    if (program && !loopPrograms(entry).includes(Number(program))) return false;
     if (source && entry.source !== source) return false;
     const rating = getLoopRating(entry.id);
     if (ratingFilter === 'rated' && rating < 1) return false;
@@ -5673,7 +5820,8 @@ function filteredLoops() {
     if (q) {
       const hay = [
         entry.name, entry.source, entry.member, entry.container,
-        entry.genre, entry.kind, ...(entry.classificationRoles || [])
+        entry.genre, loopRole(entry), ...(entry.classificationRoles || []),
+        ...loopFamilies(entry), ...loopProgramLabels(entry)
       ].join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
@@ -5693,7 +5841,9 @@ function renderLoopBrowser() {
 
   loopListEl.innerHTML = rows.map(entry => {
     const loadable = loopIsLoadable(entry);
-    const barsHint = entry.kind === 'arrangement' ? 'multi' : entry.kind;
+    const role = loopRole(entry);
+    const roleHint = role === 'arrangement' ? 'multi' : role;
+    const instrument = loopInstrumentSummary(entry);
     const rating = getLoopRating(entry.id);
     const stars = [1,2,3,4,5].map(n =>
       `<button class="loop-star ${n <= rating ? 'on' : ''}" data-rating="${n}" title="${n} star${n > 1 ? 's' : ''}; click current rating again to clear">★</button>`
@@ -5702,7 +5852,8 @@ function renderLoopBrowser() {
       <button class="loop-preview-btn" title="Preview">▶</button>
       <div style="min-width:0">
         <div class="loop-name" title="${loopEsc(entry.member || entry.container || entry.name)}">${loopEsc(entry.name)}</div>
-        <div class="loop-meta">${loopEsc(entry.genre)} · ${loopEsc(barsHint)} · ${loopEsc(entry.source)}</div>
+        <div class="loop-meta">${loopEsc(entry.genre)} · ${loopEsc(roleHint)} · ${loopEsc(entry.source)}</div>
+        <div class="loop-meta" title="${loopEsc(instrument)}">Instrument: ${loopEsc(instrument)}</div>
         <div class="loop-stars" title="Your rating / favorite marker">${stars}<span class="loop-rating-value">${rating ? rating + '/5' : ''}</span></div>
       </div>
       <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="Load into active track">LOAD</button>
@@ -5897,7 +6048,7 @@ async function previewLoop(entry) {
     const cycleSteps = Math.max(1, Math.min(midiLoopStepCount(midi), 16 * 8));
     const cycleTicks = cycleSteps * tickPerStep;
     const cycleDurationSec = cycleSteps * stepDuration;
-    const drums = entry.kind === 'drums' ||
+    const drums = loopRole(entry) === 'drums' ||
       midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
 
     const melodic = midi.notes.filter(n => n.channel !== 10);
@@ -5918,6 +6069,11 @@ async function previewLoop(entry) {
 
     if (!notes.length) throw new Error('No playable notes in this MIDI');
 
+    lastLoopInspection = exactMidiInspection(entry, midi);
+    loopInspectionHistory = [
+      lastLoopInspection,
+      ...loopInspectionHistory.filter(item => item.id !== lastLoopInspection.id),
+    ].slice(0, 20);
     loopPreviewEntryId = entry.id;
     loopPreviewState = {
       entryId: entry.id,
@@ -5999,7 +6155,7 @@ document.getElementById('loopClose').addEventListener('click', () => {
   document.getElementById('btnLoops').classList.remove('active');
   stopLoopPreview();
 });
-[loopSearchEl, loopGenreEl, loopKindEl, loopSourceEl, loopRatingEl].forEach(el => {
+[loopSearchEl, loopGenreEl, loopKindEl, loopFamilyEl, loopProgramEl, loopSourceEl, loopRatingEl].forEach(el => {
   el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', renderLoopBrowser);
 });
 
@@ -6080,6 +6236,14 @@ document.getElementById('btnSyncAI').addEventListener('click', async () => {
         'chiptune-current.json': JSON.stringify(project, null, 2),
         'chiptune-overview.md': buildChiptuneOverview(project),
         'chiptune-loop-ratings.json': JSON.stringify(loopRatings, null, 2),
+        'chiptune-loop-selection.json': JSON.stringify({
+          syncedAt: new Date().toISOString(),
+          last: lastLoopInspection,
+          recent: loopInspectionHistory,
+          message: lastLoopInspection
+            ? 'Contains up to the 20 most recently previewed Loop Browser MIDI files.'
+            : 'No Loop Browser MIDI has been previewed since page load.'
+        }, null, 2),
       },
     };
     const response = await fetch('/api/sync', {
