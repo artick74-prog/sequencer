@@ -1196,6 +1196,161 @@ body {
   margin: 0 1px;
   pointer-events: none;
 }
+
+/* ═══════════════════════════════════════════
+   LOOP BROWSER / CONSTRUCTOR
+   ═══════════════════════════════════════════ */
+.workspace {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 114px);
+  align-items: stretch;
+}
+#tracksContainer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.loop-browser {
+  display: none;
+  flex: 0 0 410px;
+  width: 410px;
+  border-left: 1px solid var(--border);
+  background: #0e0e18;
+  min-height: calc(100vh - 114px);
+  max-height: calc(100vh - 114px);
+  overflow: hidden;
+}
+.loop-browser.open { display: flex; flex-direction: column; }
+.loop-browser-head {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.loop-browser-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.loop-target {
+  color: var(--text);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.loop-browser-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.loop-browser-filters input,
+.loop-browser-filters select {
+  width: 100%;
+  min-width: 0;
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font: inherit;
+  font-size: 10px;
+  padding: 5px 6px;
+}
+.loop-browser-filters .wide { grid-column: 1 / -1; }
+.loop-browser-status {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 10px;
+  min-height: 25px;
+}
+.loop-browser-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 6px;
+}
+.loop-item {
+  display: grid;
+  grid-template-columns: 28px 1fr 54px;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  margin-bottom: 5px;
+  padding: 6px;
+  min-width: 0;
+}
+.loop-item:hover { border-color: var(--accent-dim); }
+.loop-item .loop-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  color: var(--text);
+}
+.loop-item .loop-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.loop-preview-btn, .loop-load-btn, .loop-close-btn, .source-reload-btn {
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.loop-preview-btn { height: 26px; }
+.loop-load-btn { height: 26px; font-size: 9px; color: var(--accent); }
+.loop-load-btn:disabled { opacity: 0.3; cursor: not-allowed; color: var(--text-dim); }
+.loop-close-btn { width: 26px; height: 24px; }
+.loop-browser-foot {
+  border-top: 1px solid var(--border);
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 9px;
+  background: var(--bg-panel);
+}
+.source-chip {
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--accent);
+  font-size: 9px;
+  border-left: 1px solid var(--border);
+  padding-left: 7px;
+}
+.source-reload-btn {
+  font-size: 9px;
+  padding: 2px 5px;
+  color: var(--accent);
+}
+.sync-ok { border-color: var(--accent) !important; color: var(--accent) !important; }
+.sync-err { border-color: var(--playhead) !important; color: var(--playhead) !important; }
+@media (max-width: 980px) {
+  .loop-browser {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: min(92vw, 410px);
+    max-height: 100vh;
+    box-shadow: -10px 0 30px rgba(0,0,0,.45);
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1219,6 +1374,8 @@ body {
   <button class="btn" id="btnProject">💾 Project</button>
   <button class="btn" id="btnSettings">⚙</button>
   <button class="btn" id="btnSavePattern" style="font-size:10px">📚 Save Pattern</button>
+  <button class="btn" id="btnLoops" style="font-size:10px">♫ Loops</button>
+  <button class="btn" id="btnSyncAI" style="font-size:10px" title="Save current constructor state to GitHub so AI can inspect it">⇄ Sync to AI</button>
 
   <div class="ctrl-group">
     <label>BPM</label>
@@ -1245,7 +1402,30 @@ body {
 </div>
 
 <!-- Контейнер дорожек (заполняется динамически) -->
-<div id="tracksContainer"></div>
+<div class="workspace">
+  <div id="tracksContainer"></div>
+  <aside id="loopBrowser" class="loop-browser">
+    <div class="loop-browser-head">
+      <div class="loop-browser-title">
+        <span>♫ LOOP BROWSER</span>
+        <span class="loop-target" id="loopTarget">LOAD TO TRACK 1</span>
+        <button class="loop-close-btn" id="loopClose" title="Close">×</button>
+      </div>
+      <div class="loop-browser-filters">
+        <input class="wide" id="loopSearch" type="search" placeholder="Search MIDI...">
+        <select id="loopGenre"><option value="">All styles</option></select>
+        <select id="loopKind"><option value="">All types</option></select>
+        <select class="wide" id="loopSource"><option value="">All sources</option></select>
+      </div>
+    </div>
+    <div class="loop-browser-status" id="loopStatus">Open library to load MIDI references.</div>
+    <div class="loop-browser-list" id="loopList"></div>
+    <div class="loop-browser-foot">
+      <span id="loopCount">—</span>
+      <span>Preview → Load → edit in piano roll</span>
+    </div>
+  </aside>
+</div>
 
 <!-- Модальное окно Settings -->
 <div class="modal-overlay" id="settingsModal">
