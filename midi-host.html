@@ -908,6 +908,81 @@ select, input[type="number"], input[type="text"] {
     return new Uint8Array([...header, ...trackChunks.flat()]);
   }
 
+  function buildSingleTrackMidi(project, track) {
+    const ppq = project.ppq || 480;
+    const tempo = Number(document.getElementById("tempo")?.value) || project.tempo || 120;
+    const usPerBeat = Math.round(60000000 / tempo);
+    const events = [];
+    let order = 0;
+
+    // Format 0: one physical MTrk containing metadata + this track only.
+    // This imports into a DAW as a single MIDI track while preserving tempo,
+    // time signature, markers and the track's original MIDI channel.
+    events.push({
+      tick: 0, order: order++,
+      bytes: metaEvent(0x03, encodeLatin1(track.name || "Track")),
+    });
+    events.push({
+      tick: 0, order: order++,
+      bytes: metaEvent(0x51, [(usPerBeat >> 16) & 0xff, (usPerBeat >> 8) & 0xff, usPerBeat & 0xff]),
+    });
+    events.push({
+      tick: 0, order: order++,
+      bytes: metaEvent(0x58, [0x04, 0x02, 0x18, 0x08]),
+    });
+    for (const marker of project.markers || []) {
+      events.push({
+        tick: marker.tick,
+        order: order++,
+        bytes: metaEvent(0x06, encodeLatin1(marker.text || "")),
+      });
+    }
+
+    const ch = ((track.channel || 1) - 1) & 0x0f;
+    for (const note of track.notes || []) {
+      events.push({
+        tick: note.tick,
+        order: order++,
+        bytes: [0x90 | ch, note.note & 0x7f, note.velocity & 0x7f],
+      });
+      events.push({
+        tick: note.tick + Math.max(1, note.duration),
+        order: order++,
+        bytes: [0x80 | ch, note.note & 0x7f, 0x00],
+      });
+    }
+
+    const chunk = mtrkChunk(eventsToTrackBytes(events));
+    const header = [
+      0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06,
+      0x00, 0x00, // SMF format 0
+      0x00, 0x01, // exactly one MTrk
+      (ppq >> 8) & 0xff, ppq & 0xff,
+    ];
+    return new Uint8Array([...header, ...chunk]);
+  }
+
+  function safeMidiStem(value) {
+    return String(value || "track")
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+      .replace(/\s+/g, " ")
+      .trim() || "track";
+  }
+
+  function exportSingleTrackMidi(track) {
+    if (!state.project || !track) {
+      setStatus("Nothing to export.", "err");
+      return;
+    }
+    state.project.name = document.getElementById("projectName").value || state.project.name;
+    state.project.tempo = Number(document.getElementById("tempo").value) || state.project.tempo;
+    const projectStem = safeMidiStem(state.project.name || "project");
+    const trackStem = safeMidiStem(track.name || `ch-${track.channel || 1}`);
+    const filename = `${projectStem} - ${trackStem}.mid`;
+    download(filename, buildSingleTrackMidi(state.project, track), "audio/midi");
+    setStatus(`Exported single MIDI track: ${track.name} · ch ${track.channel}`, "ok");
+  }
+
   // ─── State / playback ────────────────────────────────────────────
 
   const state = {
@@ -2286,7 +2361,7 @@ select, input[type="number"], input[type="text"] {
           <span class="meta">${track.notes.length}n</span>
           ${gmTag}
           <label class="field"><input type="checkbox" data-mute="${track.id}" ${track.mute ? "checked" : ""}> Mute</label>
-          <button class="btn" type="button" data-preview="${track.id}">Preview</button>
+          <button class="btn" type="button" data-preview="${track.id}">Preview</button>\n          <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
         </div>
         <div class="track-body" data-body="${track.id}" style="--bar-w:${state.barW}px;width:${totalW}px"></div>
       `;
@@ -2331,6 +2406,9 @@ select, input[type="number"], input[type="text"] {
       });
       el.querySelector(`[data-preview="${track.id}"]`).addEventListener("click", () => {
         previewTrack(track);
+      });
+      el.querySelector(`[data-export-track="${track.id}"]`).addEventListener("click", () => {
+        exportSingleTrackMidi(track);
       });
 
       body.addEventListener("mousedown", (e) => {
