@@ -155,1094 +155,9 @@
   "tracks": [
     {
       "id": "t1",
-      "name": "Kick",
-      "channel": 10,
-      "role": "xr20-drums",
-      "gmProgram": null,
-      "mute": false,
-      "noteCount": 572,
-      "pitchMin": 36,
-      "pitchMax": 36,
-      "pitchMinName": "C2",
-      "pitchMaxName": "C2",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 16,
-          "avgVel": 113
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 30,
-          "avgVel": 112
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 16,
-          "avgVel": 112
-        },
-        {
-          "bars": "105-112",
-          "startBar": 105,
-          "endBar": 112,
-          "notes": 30,
-          "avgVel": 112
-        },
-        {
-          "bars": "113-120",
-          "startBar": 113,
-          "endBar": 120,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "121-128",
-          "startBar": 121,
-          "endBar": 128,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "129-136",
-          "startBar": 129,
-          "endBar": 136,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "137-144",
-          "startBar": 137,
-          "endBar": 144,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "145-152",
-          "startBar": 145,
-          "endBar": 152,
-          "notes": 32,
-          "avgVel": 112
-        },
-        {
-          "bars": "153-160",
-          "startBar": 153,
-          "endBar": 160,
-          "notes": 32,
-          "avgVel": 112
-        }
-      ]
-    },
-    {
-      "id": "t2",
-      "name": "Snare",
-      "channel": 10,
-      "role": "xr20-drums",
-      "gmProgram": null,
-      "mute": false,
-      "noteCount": 266,
-      "pitchMin": 38,
-      "pitchMax": 38,
-      "pitchMinName": "D2",
-      "pitchMaxName": "D2",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 8,
-          "avgVel": 92
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 25,
-          "avgVel": 103
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "105-112",
-          "startBar": 105,
-          "endBar": 112,
-          "notes": 25,
-          "avgVel": 102
-        },
-        {
-          "bars": "113-120",
-          "startBar": 113,
-          "endBar": 120,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "121-128",
-          "startBar": 121,
-          "endBar": 128,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "129-136",
-          "startBar": 129,
-          "endBar": 136,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "137-144",
-          "startBar": 137,
-          "endBar": 144,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "145-152",
-          "startBar": 145,
-          "endBar": 152,
-          "notes": 16,
-          "avgVel": 106
-        },
-        {
-          "bars": "153-160",
-          "startBar": 153,
-          "endBar": 160,
-          "notes": 0,
-          "avgVel": 0
-        }
-      ]
-    },
-    {
-      "id": "t3",
-      "name": "Closed Hat",
-      "channel": 10,
-      "role": "xr20-drums",
-      "gmProgram": null,
-      "mute": false,
-      "noteCount": 1456,
-      "pitchMin": 42,
-      "pitchMax": 42,
-      "pitchMinName": "F#2",
-      "pitchMaxName": "F#2",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 32,
-          "avgVel": 79
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "105-112",
-          "startBar": 105,
-          "endBar": 112,
-          "notes": 112,
-          "avgVel": 77
-        },
-        {
-          "bars": "113-120",
-          "startBar": 113,
-          "endBar": 120,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "121-128",
-          "startBar": 121,
-          "endBar": 128,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "129-136",
-          "startBar": 129,
-          "endBar": 136,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "137-144",
-          "startBar": 137,
-          "endBar": 144,
-          "notes": 96,
-          "avgVel": 77
-        },
-        {
-          "bars": "145-152",
-          "startBar": 145,
-          "endBar": 152,
-          "notes": 32,
-          "avgVel": 75
-        },
-        {
-          "bars": "153-160",
-          "startBar": 153,
-          "endBar": 160,
-          "notes": 32,
-          "avgVel": 75
-        }
-      ]
-    },
-    {
-      "id": "t4",
-      "name": "Open Hat",
-      "channel": 10,
-      "role": "xr20-drums",
-      "gmProgram": null,
-      "mute": false,
-      "noteCount": 416,
-      "pitchMin": 46,
-      "pitchMax": 46,
-      "pitchMinName": "A#2",
-      "pitchMaxName": "A#2",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "105-112",
-          "startBar": 105,
-          "endBar": 112,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "113-120",
-          "startBar": 113,
-          "endBar": 120,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "121-128",
-          "startBar": 121,
-          "endBar": 128,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "129-136",
-          "startBar": 129,
-          "endBar": 136,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "137-144",
-          "startBar": 137,
-          "endBar": 144,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "145-152",
-          "startBar": 145,
-          "endBar": 152,
-          "notes": 32,
-          "avgVel": 88
-        },
-        {
-          "bars": "153-160",
-          "startBar": 153,
-          "endBar": 160,
-          "notes": 0,
-          "avgVel": 0
-        }
-      ]
-    },
-    {
-      "id": "t5",
-      "name": "Rimshot",
-      "channel": 10,
-      "role": "xr20-drums",
-      "gmProgram": null,
-      "mute": false,
-      "noteCount": 192,
-      "pitchMin": 37,
-      "pitchMax": 37,
-      "pitchMinName": "C#2",
-      "pitchMaxName": "C#2",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "105-112",
-          "startBar": 105,
-          "endBar": 112,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "113-120",
-          "startBar": 113,
-          "endBar": 120,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "121-128",
-          "startBar": 121,
-          "endBar": 128,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "129-136",
-          "startBar": 129,
-          "endBar": 136,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "137-144",
-          "startBar": 137,
-          "endBar": 144,
-          "notes": 16,
-          "avgVel": 81
-        },
-        {
-          "bars": "145-152",
-          "startBar": 145,
-          "endBar": 152,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "153-160",
-          "startBar": 153,
-          "endBar": 160,
-          "notes": 0,
-          "avgVel": 0
-        }
-      ]
-    },
-    {
-      "id": "t6",
-      "name": "Percussion Hi",
-      "channel": 10,
-      "role": "xr20-drums",
-      "gmProgram": null,
-      "mute": false,
-      "noteCount": 264,
-      "pitchMin": 65,
-      "pitchMax": 65,
-      "pitchMinName": "F4",
-      "pitchMaxName": "F4",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "105-112",
-          "startBar": 105,
-          "endBar": 112,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "113-120",
-          "startBar": 113,
-          "endBar": 120,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "121-128",
-          "startBar": 121,
-          "endBar": 128,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "129-136",
-          "startBar": 129,
-          "endBar": 136,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "137-144",
-          "startBar": 137,
-          "endBar": 144,
-          "notes": 24,
-          "avgVel": 81
-        },
-        {
-          "bars": "145-152",
-          "startBar": 145,
-          "endBar": 152,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "153-160",
-          "startBar": 153,
-          "endBar": 160,
-          "notes": 0,
-          "avgVel": 0
-        }
-      ]
-    },
-    {
-      "id": "t7",
-      "name": "Tambourine",
-      "channel": 10,
-      "role": "xr20-drums",
-      "gmProgram": null,
-      "mute": false,
-      "noteCount": 640,
-      "pitchMin": 47,
-      "pitchMax": 47,
-      "pitchMinName": "B2",
-      "pitchMaxName": "B2",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "105-112",
-          "startBar": 105,
-          "endBar": 112,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "113-120",
-          "startBar": 113,
-          "endBar": 120,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "121-128",
-          "startBar": 121,
-          "endBar": 128,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "129-136",
-          "startBar": 129,
-          "endBar": 136,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "137-144",
-          "startBar": 137,
-          "endBar": 144,
-          "notes": 64,
-          "avgVel": 77
-        },
-        {
-          "bars": "145-152",
-          "startBar": 145,
-          "endBar": 152,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "153-160",
-          "startBar": 153,
-          "endBar": 160,
-          "notes": 0,
-          "avgVel": 0
-        }
-      ]
-    },
-    {
-      "id": "t8",
       "name": "Crash",
-      "channel": 10,
-      "role": "xr20-drums",
+      "channel": 1,
+      "role": "xr20-bass",
       "gmProgram": null,
       "mute": false,
       "noteCount": 9,
@@ -1394,7 +309,1247 @@
       ]
     },
     {
+      "id": "t2",
+      "name": "Kick",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 572,
+      "pitchMin": 36,
+      "pitchMax": 36,
+      "pitchMinName": "C2",
+      "pitchMaxName": "C2",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 16,
+          "avgVel": 113
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 30,
+          "avgVel": 112
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "97-104",
+          "startBar": 97,
+          "endBar": 104,
+          "notes": 16,
+          "avgVel": 112
+        },
+        {
+          "bars": "105-112",
+          "startBar": 105,
+          "endBar": 112,
+          "notes": 30,
+          "avgVel": 112
+        },
+        {
+          "bars": "113-120",
+          "startBar": 113,
+          "endBar": 120,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "121-128",
+          "startBar": 121,
+          "endBar": 128,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "129-136",
+          "startBar": 129,
+          "endBar": 136,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "137-144",
+          "startBar": 137,
+          "endBar": 144,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "145-152",
+          "startBar": 145,
+          "endBar": 152,
+          "notes": 32,
+          "avgVel": 112
+        },
+        {
+          "bars": "153-160",
+          "startBar": 153,
+          "endBar": 160,
+          "notes": 32,
+          "avgVel": 112
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "name": "Snare",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 266,
+      "pitchMin": 38,
+      "pitchMax": 38,
+      "pitchMinName": "D2",
+      "pitchMaxName": "D2",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 8,
+          "avgVel": 92
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 25,
+          "avgVel": 103
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "97-104",
+          "startBar": 97,
+          "endBar": 104,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "105-112",
+          "startBar": 105,
+          "endBar": 112,
+          "notes": 25,
+          "avgVel": 102
+        },
+        {
+          "bars": "113-120",
+          "startBar": 113,
+          "endBar": 120,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "121-128",
+          "startBar": 121,
+          "endBar": 128,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "129-136",
+          "startBar": 129,
+          "endBar": 136,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "137-144",
+          "startBar": 137,
+          "endBar": 144,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "145-152",
+          "startBar": 145,
+          "endBar": 152,
+          "notes": 16,
+          "avgVel": 106
+        },
+        {
+          "bars": "153-160",
+          "startBar": 153,
+          "endBar": 160,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "t4",
+      "name": "Closed Hat",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 1456,
+      "pitchMin": 42,
+      "pitchMax": 42,
+      "pitchMinName": "F#2",
+      "pitchMaxName": "F#2",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 32,
+          "avgVel": 79
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "97-104",
+          "startBar": 97,
+          "endBar": 104,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "105-112",
+          "startBar": 105,
+          "endBar": 112,
+          "notes": 112,
+          "avgVel": 77
+        },
+        {
+          "bars": "113-120",
+          "startBar": 113,
+          "endBar": 120,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "121-128",
+          "startBar": 121,
+          "endBar": 128,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "129-136",
+          "startBar": 129,
+          "endBar": 136,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "137-144",
+          "startBar": 137,
+          "endBar": 144,
+          "notes": 96,
+          "avgVel": 77
+        },
+        {
+          "bars": "145-152",
+          "startBar": 145,
+          "endBar": 152,
+          "notes": 32,
+          "avgVel": 75
+        },
+        {
+          "bars": "153-160",
+          "startBar": 153,
+          "endBar": 160,
+          "notes": 32,
+          "avgVel": 75
+        }
+      ]
+    },
+    {
+      "id": "t5",
+      "name": "Open Hat",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 416,
+      "pitchMin": 46,
+      "pitchMax": 46,
+      "pitchMinName": "A#2",
+      "pitchMaxName": "A#2",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "97-104",
+          "startBar": 97,
+          "endBar": 104,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "105-112",
+          "startBar": 105,
+          "endBar": 112,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "113-120",
+          "startBar": 113,
+          "endBar": 120,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "121-128",
+          "startBar": 121,
+          "endBar": 128,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "129-136",
+          "startBar": 129,
+          "endBar": 136,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "137-144",
+          "startBar": 137,
+          "endBar": 144,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "145-152",
+          "startBar": 145,
+          "endBar": 152,
+          "notes": 32,
+          "avgVel": 88
+        },
+        {
+          "bars": "153-160",
+          "startBar": 153,
+          "endBar": 160,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "t6",
+      "name": "Rimshot",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 192,
+      "pitchMin": 37,
+      "pitchMax": 37,
+      "pitchMinName": "C#2",
+      "pitchMaxName": "C#2",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "97-104",
+          "startBar": 97,
+          "endBar": 104,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "105-112",
+          "startBar": 105,
+          "endBar": 112,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "113-120",
+          "startBar": 113,
+          "endBar": 120,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "121-128",
+          "startBar": 121,
+          "endBar": 128,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "129-136",
+          "startBar": 129,
+          "endBar": 136,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "137-144",
+          "startBar": 137,
+          "endBar": 144,
+          "notes": 16,
+          "avgVel": 81
+        },
+        {
+          "bars": "145-152",
+          "startBar": 145,
+          "endBar": 152,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "153-160",
+          "startBar": 153,
+          "endBar": 160,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "t7",
+      "name": "Percussion Hi",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 264,
+      "pitchMin": 65,
+      "pitchMax": 65,
+      "pitchMinName": "F4",
+      "pitchMaxName": "F4",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "97-104",
+          "startBar": 97,
+          "endBar": 104,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "105-112",
+          "startBar": 105,
+          "endBar": 112,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "113-120",
+          "startBar": 113,
+          "endBar": 120,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "121-128",
+          "startBar": 121,
+          "endBar": 128,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "129-136",
+          "startBar": 129,
+          "endBar": 136,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "137-144",
+          "startBar": 137,
+          "endBar": 144,
+          "notes": 24,
+          "avgVel": 81
+        },
+        {
+          "bars": "145-152",
+          "startBar": 145,
+          "endBar": 152,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "153-160",
+          "startBar": 153,
+          "endBar": 160,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "t8",
+      "name": "Tambourine",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 640,
+      "pitchMin": 47,
+      "pitchMax": 47,
+      "pitchMinName": "B2",
+      "pitchMaxName": "B2",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "97-104",
+          "startBar": 97,
+          "endBar": 104,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "105-112",
+          "startBar": 105,
+          "endBar": 112,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "113-120",
+          "startBar": 113,
+          "endBar": 120,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "121-128",
+          "startBar": 121,
+          "endBar": 128,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "129-136",
+          "startBar": 129,
+          "endBar": 136,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "137-144",
+          "startBar": 137,
+          "endBar": 144,
+          "notes": 64,
+          "avgVel": 77
+        },
+        {
+          "bars": "145-152",
+          "startBar": 145,
+          "endBar": 152,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "153-160",
+          "startBar": 153,
+          "endBar": 160,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
       "id": "t9",
+      "name": "Acid",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 984,
+      "pitchMin": 45,
+      "pitchMax": 57,
+      "pitchMinName": "A2",
+      "pitchMaxName": "A3",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 88,
+          "avgVel": 41
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 88,
+          "avgVel": 41
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 81,
+          "avgVel": 104
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 96,
+          "avgVel": 105
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 96,
+          "avgVel": 102
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 40,
+          "avgVel": 106
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 72,
+          "avgVel": 103
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "97-104",
+          "startBar": 97,
+          "endBar": 104,
+          "notes": 32,
+          "avgVel": 99
+        },
+        {
+          "bars": "105-112",
+          "startBar": 105,
+          "endBar": 112,
+          "notes": 87,
+          "avgVel": 104
+        },
+        {
+          "bars": "113-120",
+          "startBar": 113,
+          "endBar": 120,
+          "notes": 96,
+          "avgVel": 106
+        },
+        {
+          "bars": "121-128",
+          "startBar": 121,
+          "endBar": 128,
+          "notes": 40,
+          "avgVel": 107
+        },
+        {
+          "bars": "129-136",
+          "startBar": 129,
+          "endBar": 136,
+          "notes": 96,
+          "avgVel": 104
+        },
+        {
+          "bars": "137-144",
+          "startBar": 137,
+          "endBar": 144,
+          "notes": 72,
+          "avgVel": 103
+        },
+        {
+          "bars": "145-152",
+          "startBar": 145,
+          "endBar": 152,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "153-160",
+          "startBar": 153,
+          "endBar": 160,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "t10",
       "name": "Bass",
       "channel": 1,
       "role": "xr20-bass",
@@ -1547,161 +1702,6 @@
           "avgVel": 0
         }
       ]
-    },
-    {
-      "id": "t10",
-      "name": "Acid",
-      "channel": 2,
-      "role": "td3",
-      "gmProgram": null,
-      "mute": false,
-      "noteCount": 740,
-      "pitchMin": 45,
-      "pitchMax": 55,
-      "pitchMinName": "A2",
-      "pitchMaxName": "G3",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 36,
-          "avgVel": 101
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 36,
-          "avgVel": 101
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 44,
-          "avgVel": 100
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 68,
-          "avgVel": 100
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 68,
-          "avgVel": 100
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 68,
-          "avgVel": 100
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 68,
-          "avgVel": 100
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 36,
-          "avgVel": 101
-        },
-        {
-          "bars": "105-112",
-          "startBar": 105,
-          "endBar": 112,
-          "notes": 44,
-          "avgVel": 100
-        },
-        {
-          "bars": "113-120",
-          "startBar": 113,
-          "endBar": 120,
-          "notes": 68,
-          "avgVel": 100
-        },
-        {
-          "bars": "121-128",
-          "startBar": 121,
-          "endBar": 128,
-          "notes": 68,
-          "avgVel": 100
-        },
-        {
-          "bars": "129-136",
-          "startBar": 129,
-          "endBar": 136,
-          "notes": 68,
-          "avgVel": 100
-        },
-        {
-          "bars": "137-144",
-          "startBar": 137,
-          "endBar": 144,
-          "notes": 68,
-          "avgVel": 100
-        },
-        {
-          "bars": "145-152",
-          "startBar": 145,
-          "endBar": 152,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "153-160",
-          "startBar": 153,
-          "endBar": 160,
-          "notes": 0,
-          "avgVel": 0
-        }
-      ]
     }
   ],
   "activityPer8Bars": [
@@ -1711,6 +1711,7 @@
       "endBar": 8,
       "notes": 17,
       "byTrack": {
+        "Crash": 1,
         "Kick": 16,
         "Snare": 0,
         "Closed Hat": 0,
@@ -1718,9 +1719,8 @@
         "Rimshot": 0,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 1,
-        "Bass": 0,
-        "Acid": 0
+        "Acid": 0,
+        "Bass": 0
       }
     },
     {
@@ -1729,6 +1729,7 @@
       "endBar": 16,
       "notes": 72,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 8,
         "Closed Hat": 32,
@@ -1736,9 +1737,8 @@
         "Rimshot": 0,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 0,
-        "Bass": 0,
-        "Acid": 0
+        "Acid": 0,
+        "Bass": 0
       }
     },
     {
@@ -1747,6 +1747,7 @@
       "endBar": 24,
       "notes": 233,
       "byTrack": {
+        "Crash": 1,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1754,9 +1755,8 @@
         "Rimshot": 16,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 1,
-        "Bass": 40,
-        "Acid": 0
+        "Acid": 0,
+        "Bass": 40
       }
     },
     {
@@ -1765,6 +1765,7 @@
       "endBar": 32,
       "notes": 256,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1772,17 +1773,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 0,
-        "Crash": 0,
-        "Bass": 40,
-        "Acid": 0
+        "Acid": 0,
+        "Bass": 40
       }
     },
     {
       "bars": "33-40",
       "startBar": 33,
       "endBar": 40,
-      "notes": 357,
+      "notes": 409,
       "byTrack": {
+        "Crash": 1,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1790,17 +1791,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 1,
-        "Bass": 40,
-        "Acid": 36
+        "Acid": 88,
+        "Bass": 40
       }
     },
     {
       "bars": "41-48",
       "startBar": 41,
       "endBar": 48,
-      "notes": 356,
+      "notes": 408,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1808,17 +1809,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 0,
-        "Bass": 40,
-        "Acid": 36
+        "Acid": 88,
+        "Bass": 40
       }
     },
     {
       "bars": "49-56",
       "startBar": 49,
       "endBar": 56,
-      "notes": 231,
+      "notes": 268,
       "byTrack": {
+        "Crash": 1,
         "Kick": 30,
         "Snare": 25,
         "Closed Hat": 96,
@@ -1826,17 +1827,17 @@
         "Rimshot": 0,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 1,
-        "Bass": 35,
-        "Acid": 44
+        "Acid": 81,
+        "Bass": 35
       }
     },
     {
       "bars": "57-64",
       "startBar": 57,
       "endBar": 64,
-      "notes": 389,
+      "notes": 417,
       "byTrack": {
+        "Crash": 1,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1844,17 +1845,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 1,
-        "Bass": 40,
-        "Acid": 68
+        "Acid": 96,
+        "Bass": 40
       }
     },
     {
       "bars": "65-72",
       "startBar": 65,
       "endBar": 72,
-      "notes": 388,
+      "notes": 416,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1862,17 +1863,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 0,
-        "Bass": 40,
-        "Acid": 68
+        "Acid": 96,
+        "Bass": 40
       }
     },
     {
       "bars": "73-80",
       "startBar": 73,
       "endBar": 80,
-      "notes": 388,
+      "notes": 360,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1880,17 +1881,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 0,
-        "Bass": 40,
-        "Acid": 68
+        "Acid": 40,
+        "Bass": 40
       }
     },
     {
       "bars": "81-88",
       "startBar": 81,
       "endBar": 88,
-      "notes": 388,
+      "notes": 392,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1898,9 +1899,8 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 0,
-        "Bass": 40,
-        "Acid": 68
+        "Acid": 72,
+        "Bass": 40
       }
     },
     {
@@ -1909,6 +1909,7 @@
       "endBar": 96,
       "notes": 1,
       "byTrack": {
+        "Crash": 1,
         "Kick": 0,
         "Snare": 0,
         "Closed Hat": 0,
@@ -1916,17 +1917,17 @@
         "Rimshot": 0,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 1,
-        "Bass": 0,
-        "Acid": 0
+        "Acid": 0,
+        "Bass": 0
       }
     },
     {
       "bars": "97-104",
       "startBar": 97,
       "endBar": 104,
-      "notes": 64,
+      "notes": 60,
       "byTrack": {
+        "Crash": 0,
         "Kick": 16,
         "Snare": 0,
         "Closed Hat": 0,
@@ -1934,17 +1935,17 @@
         "Rimshot": 0,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 0,
-        "Bass": 12,
-        "Acid": 36
+        "Acid": 32,
+        "Bass": 12
       }
     },
     {
       "bars": "105-112",
       "startBar": 105,
       "endBar": 112,
-      "notes": 241,
+      "notes": 284,
       "byTrack": {
+        "Crash": 1,
         "Kick": 30,
         "Snare": 25,
         "Closed Hat": 112,
@@ -1952,17 +1953,17 @@
         "Rimshot": 0,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 1,
-        "Bass": 29,
-        "Acid": 44
+        "Acid": 87,
+        "Bass": 29
       }
     },
     {
       "bars": "113-120",
       "startBar": 113,
       "endBar": 120,
-      "notes": 389,
+      "notes": 417,
       "byTrack": {
+        "Crash": 1,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1970,17 +1971,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 1,
-        "Bass": 40,
-        "Acid": 68
+        "Acid": 96,
+        "Bass": 40
       }
     },
     {
       "bars": "121-128",
       "startBar": 121,
       "endBar": 128,
-      "notes": 388,
+      "notes": 360,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -1988,17 +1989,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 0,
-        "Bass": 40,
-        "Acid": 68
+        "Acid": 40,
+        "Bass": 40
       }
     },
     {
       "bars": "129-136",
       "startBar": 129,
       "endBar": 136,
-      "notes": 388,
+      "notes": 416,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -2006,17 +2007,17 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 0,
-        "Bass": 40,
-        "Acid": 68
+        "Acid": 96,
+        "Bass": 40
       }
     },
     {
       "bars": "137-144",
       "startBar": 137,
       "endBar": 144,
-      "notes": 388,
+      "notes": 392,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 96,
@@ -2024,9 +2025,8 @@
         "Rimshot": 16,
         "Percussion Hi": 24,
         "Tambourine": 64,
-        "Crash": 0,
-        "Bass": 40,
-        "Acid": 68
+        "Acid": 72,
+        "Bass": 40
       }
     },
     {
@@ -2035,6 +2035,7 @@
       "endBar": 152,
       "notes": 153,
       "byTrack": {
+        "Crash": 1,
         "Kick": 32,
         "Snare": 16,
         "Closed Hat": 32,
@@ -2042,9 +2043,8 @@
         "Rimshot": 0,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 1,
-        "Bass": 40,
-        "Acid": 0
+        "Acid": 0,
+        "Bass": 40
       }
     },
     {
@@ -2053,6 +2053,7 @@
       "endBar": 160,
       "notes": 64,
       "byTrack": {
+        "Crash": 0,
         "Kick": 32,
         "Snare": 0,
         "Closed Hat": 32,
@@ -2060,9 +2061,8 @@
         "Rimshot": 0,
         "Percussion Hi": 0,
         "Tambourine": 0,
-        "Crash": 0,
-        "Bass": 0,
-        "Acid": 0
+        "Acid": 0,
+        "Bass": 0
       }
     }
   ],
@@ -2079,8 +2079,34 @@
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "2–16",
+              "barCount": 15,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "1",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 48,
           "hardOffNotes": 0,
           "patterns": [
@@ -2123,9 +2149,9 @@
           }
         },
         {
-          "trackId": "t2",
+          "trackId": "t3",
           "trackName": "Snare",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 8,
           "hardOffNotes": 0,
           "patterns": [
@@ -2149,9 +2175,9 @@
           "twoBarLoop": null
         },
         {
-          "trackId": "t3",
+          "trackId": "t4",
           "trackName": "Closed Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 32,
           "hardOffNotes": 0,
           "patterns": [
@@ -2176,32 +2202,6 @@
             }
           ],
           "twoBarLoop": null
-        },
-        {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "........|........|........|........",
-              "bars": "2–16",
-              "barCount": 15,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "x.......|........|........|........",
-              "bars": "1",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C#3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
         }
       ]
     },
@@ -2217,8 +2217,34 @@
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "18–32",
+              "barCount": 15,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "17",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -2255,9 +2281,9 @@
           }
         },
         {
-          "trackId": "t2",
+          "trackId": "t3",
           "trackName": "Snare",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 32,
           "hardOffNotes": 0,
           "patterns": [
@@ -2288,9 +2314,9 @@
           }
         },
         {
-          "trackId": "t3",
+          "trackId": "t4",
           "trackName": "Closed Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 192,
           "hardOffNotes": 0,
           "patterns": [
@@ -2351,9 +2377,9 @@
           }
         },
         {
-          "trackId": "t4",
+          "trackId": "t5",
           "trackName": "Open Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -2390,9 +2416,9 @@
           }
         },
         {
-          "trackId": "t5",
+          "trackId": "t6",
           "trackName": "Rimshot",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 32,
           "hardOffNotes": 0,
           "patterns": [
@@ -2433,9 +2459,9 @@
           }
         },
         {
-          "trackId": "t6",
+          "trackId": "t7",
           "trackName": "Percussion Hi",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 24,
           "hardOffNotes": 0,
           "patterns": [
@@ -2461,33 +2487,7 @@
           "twoBarLoop": null
         },
         {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "........|........|........|........",
-              "bars": "18–32",
-              "barCount": 15,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "x.......|........|........|........",
-              "bars": "17",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C#3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "t9",
+          "trackId": "t10",
           "trackName": "Bass",
           "channel": 1,
           "noteCount": 80,
@@ -2548,15 +2548,41 @@
       "startBar": 33,
       "endBar": 48,
       "heatmap32": {
-        "ascii": "x.o.o.x.|#.o.o.x.|x.o.x.x.|#.x.x.o.",
-        "max": 5,
+        "ascii": "x.o.x.x.|#.o.x.o.|x.x.o.x.|#.x.x.o.",
+        "max": 5.5,
         "barsSampled": 16
       },
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "34–48",
+              "barCount": 15,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "33",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -2593,9 +2619,9 @@
           }
         },
         {
-          "trackId": "t2",
+          "trackId": "t3",
           "trackName": "Snare",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 32,
           "hardOffNotes": 0,
           "patterns": [
@@ -2626,9 +2652,9 @@
           }
         },
         {
-          "trackId": "t3",
+          "trackId": "t4",
           "trackName": "Closed Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 192,
           "hardOffNotes": 0,
           "patterns": [
@@ -2689,9 +2715,9 @@
           }
         },
         {
-          "trackId": "t4",
+          "trackId": "t5",
           "trackName": "Open Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -2728,9 +2754,9 @@
           }
         },
         {
-          "trackId": "t5",
+          "trackId": "t6",
           "trackName": "Rimshot",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 32,
           "hardOffNotes": 0,
           "patterns": [
@@ -2771,9 +2797,9 @@
           }
         },
         {
-          "trackId": "t6",
+          "trackId": "t7",
           "trackName": "Percussion Hi",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 48,
           "hardOffNotes": 0,
           "patterns": [
@@ -2807,9 +2833,9 @@
           }
         },
         {
-          "trackId": "t7",
+          "trackId": "t8",
           "trackName": "Tambourine",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 128,
           "hardOffNotes": 0,
           "patterns": [
@@ -2858,33 +2884,67 @@
           }
         },
         {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
+          "trackId": "t9",
+          "trackName": "Acid",
+          "channel": 1,
+          "noteCount": 176,
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "........|........|........|........",
-              "bars": "34–48",
-              "barCount": 15,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "x.......|........|........|........",
-              "bars": "33",
-              "barCount": 1,
+              "ascii": "o...o.o.|o...o...|o.o...o.|X.o.o...",
+              "bars": "33–48",
+              "barCount": 16,
               "hardOffNotes": 0,
               "pitches": [
-                "C#3"
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "C3",
+                "A2",
+                "A2"
               ]
             }
           ],
-          "twoBarLoop": null
+          "twoBarLoop": {
+            "asciiA": "o...o.o.|o...o...|o.o...o.|X.o.o...",
+            "asciiB": "o...o.o.|o...o...|o.o...o.|X.o.o...",
+            "pitchesA": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "C3",
+              "A2",
+              "A2"
+            ],
+            "pitchesB": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "C3",
+              "A2",
+              "A2"
+            ],
+            "repeats": 8,
+            "bars": "33–48"
+          }
         },
         {
-          "trackId": "t9",
+          "trackId": "t10",
           "trackName": "Bass",
           "channel": 1,
           "noteCount": 80,
@@ -2937,59 +2997,6 @@
             "repeats": 8,
             "bars": "33–48"
           }
-        },
-        {
-          "trackId": "t10",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 72,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.....x.|......X.|......x.|......x.",
-              "bars": "33, 35, 37, 39, 41, 43, 45, 47",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "E3",
-                "G3",
-                "C3",
-                "E3"
-              ]
-            },
-            {
-              "ascii": "X.......|x.......|x.......|x.......",
-              "bars": "34, 36, 38, 40, 42, 44, 46, 48",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "E3",
-                "E3",
-                "D3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X.....x.|......X.|......x.|......x.",
-            "asciiB": "X.......|x.......|x.......|x.......",
-            "pitchesA": [
-              "A2",
-              "E3",
-              "G3",
-              "C3",
-              "E3"
-            ],
-            "pitchesB": [
-              "A2",
-              "E3",
-              "E3",
-              "D3"
-            ],
-            "repeats": 8,
-            "bars": "33–48"
-          }
         }
       ]
     },
@@ -2998,15 +3005,41 @@
       "startBar": 49,
       "endBar": 56,
       "heatmap32": {
-        "ascii": "x.x.o.o.|#.o.o.x.|x.o.o.x.|#.o.o.o.",
-        "max": 3.5,
+        "ascii": "x.x.o.o.|#.o.o.x.|x.o.o.x.|#.o.x.x.",
+        "max": 3.9,
         "barsSampled": 8
       },
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "50–56",
+              "barCount": 7,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "49",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 30,
           "hardOffNotes": 0,
           "patterns": [
@@ -3053,9 +3086,9 @@
           }
         },
         {
-          "trackId": "t2",
+          "trackId": "t3",
           "trackName": "Snare",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 25,
           "hardOffNotes": 0,
           "patterns": [
@@ -3115,9 +3148,9 @@
           }
         },
         {
-          "trackId": "t3",
+          "trackId": "t4",
           "trackName": "Closed Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 96,
           "hardOffNotes": 0,
           "patterns": [
@@ -3209,33 +3242,115 @@
           }
         },
         {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
+          "trackId": "t9",
+          "trackName": "Acid",
+          "channel": 1,
+          "noteCount": 81,
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "........|........|........|........",
-              "bars": "50–56",
-              "barCount": 7,
+              "ascii": "X...x.x.|X...x.x.|X...x.x.|X...x.x.",
+              "bars": "54–56",
+              "barCount": 3,
               "hardOffNotes": 0,
-              "pitches": []
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
             },
             {
-              "ascii": "x.......|........|........|........",
-              "bars": "49",
+              "ascii": "X...x.x.|....X.x.|x.....X.|x.....x.",
+              "bars": "49, 51",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "E3",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.x...x.|X.....x.|..x...X.|..x...x.",
+              "bars": "50, 52",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "C3",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X...x...|X.....x.|....x.x.|X...x.x.",
+              "bars": "53",
               "barCount": 1,
               "hardOffNotes": 0,
               "pitches": [
-                "C#3"
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
               ]
             }
           ],
-          "twoBarLoop": null
+          "twoBarLoop": {
+            "asciiA": "X...x.x.|....X.x.|x.....X.|x.....x.",
+            "asciiB": "X.x...x.|X.....x.|..x...X.|..x...x.",
+            "pitchesA": [
+              "A2",
+              "A2",
+              "A2",
+              "E3",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2"
+            ],
+            "pitchesB": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "C3",
+              "A2",
+              "A2"
+            ],
+            "repeats": 2,
+            "bars": "49–52"
+          }
         },
         {
-          "trackId": "t9",
+          "trackId": "t10",
           "trackName": "Bass",
           "channel": 1,
           "noteCount": 35,
@@ -3295,99 +3410,6 @@
             "repeats": 3,
             "bars": "49–54"
           }
-        },
-        {
-          "trackId": "t10",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 44,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.....x.|......X.|......x.|......x.",
-              "bars": "49, 51",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "E3",
-                "G3",
-                "C3",
-                "E3"
-              ]
-            },
-            {
-              "ascii": "X.......|x.......|x.......|x.......",
-              "bars": "50, 52",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "E3",
-                "E3",
-                "D3"
-              ]
-            },
-            {
-              "ascii": "X...x.x.|....x.X.|..x...x.|..X...x.",
-              "bars": "53, 55",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "C3",
-                "E3",
-                "A2",
-                "G3",
-                "E3",
-                "C3",
-                "A2",
-                "E3"
-              ]
-            },
-            {
-              "ascii": "X.x.....|x...X...|x...x...|x...X...",
-              "bars": "54",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "C3",
-                "E3",
-                "G3",
-                "E3",
-                "C3",
-                "D3",
-                "A2"
-              ]
-            },
-            {
-              "ascii": "........|........|........|........",
-              "bars": "56",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": []
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X.....x.|......X.|......x.|......x.",
-            "asciiB": "X.......|x.......|x.......|x.......",
-            "pitchesA": [
-              "A2",
-              "E3",
-              "G3",
-              "C3",
-              "E3"
-            ],
-            "pitchesB": [
-              "A2",
-              "E3",
-              "E3",
-              "D3"
-            ],
-            "repeats": 2,
-            "bars": "49–52"
-          }
         }
       ]
     },
@@ -3396,15 +3418,41 @@
       "startBar": 57,
       "endBar": 88,
       "heatmap32": {
-        "ascii": "x.x.x.x.|#.o.x.x.|x.x.x.x.|#.x.x.o.",
-        "max": 5,
+        "ascii": "x.o.o.x.|#.o.o.x.|x.o.x.x.|#.x.x.o.",
+        "max": 5.2,
         "barsSampled": 32
       },
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "58–88",
+              "barCount": 31,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "57",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 128,
           "hardOffNotes": 0,
           "patterns": [
@@ -3441,9 +3489,9 @@
           }
         },
         {
-          "trackId": "t2",
+          "trackId": "t3",
           "trackName": "Snare",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -3474,9 +3522,9 @@
           }
         },
         {
-          "trackId": "t3",
+          "trackId": "t4",
           "trackName": "Closed Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 384,
           "hardOffNotes": 0,
           "patterns": [
@@ -3537,9 +3585,9 @@
           }
         },
         {
-          "trackId": "t4",
+          "trackId": "t5",
           "trackName": "Open Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 128,
           "hardOffNotes": 0,
           "patterns": [
@@ -3576,9 +3624,9 @@
           }
         },
         {
-          "trackId": "t5",
+          "trackId": "t6",
           "trackName": "Rimshot",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -3619,9 +3667,9 @@
           }
         },
         {
-          "trackId": "t6",
+          "trackId": "t7",
           "trackName": "Percussion Hi",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 96,
           "hardOffNotes": 0,
           "patterns": [
@@ -3655,9 +3703,9 @@
           }
         },
         {
-          "trackId": "t7",
+          "trackId": "t8",
           "trackName": "Tambourine",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 256,
           "hardOffNotes": 0,
           "patterns": [
@@ -3706,33 +3754,150 @@
           }
         },
         {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
+          "trackId": "t9",
+          "trackName": "Acid",
+          "channel": 1,
+          "noteCount": 304,
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "........|........|........|........",
-              "bars": "58–88",
-              "barCount": 31,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "x.......|........|........|........",
-              "bars": "57",
-              "barCount": 1,
+              "ascii": "X...x.x.|X...x.x.|X...x.x.|X...x.x.",
+              "bars": "57–64",
+              "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
-                "C#3"
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.x...x.|X.x...x.|X.x...x.|X.x...x.",
+              "bars": "65–72",
+              "barCount": 8,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X...x.x.|....X.x.|x.....X.|x.....x.",
+              "bars": "81, 83, 85, 87",
+              "barCount": 4,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "E3",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.x...x.|X.....x.|..x...X.|..x...x.",
+              "bars": "82, 84, 86, 88",
+              "barCount": 4,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "C3",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.....x.|......X.|......x.|....x...",
+              "bars": "73, 77",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "E3",
+                "G3",
+                "C3",
+                "E3"
+              ]
+            },
+            {
+              "ascii": "..X.....|..x.....|x.......|x.....X.",
+              "bars": "74, 78",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "C3",
+                "E3",
+                "D3",
+                "A2"
               ]
             }
           ],
-          "twoBarLoop": null
+          "twoBarLoop": {
+            "asciiA": "X...x.x.|X...x.x.|X...x.x.|X...x.x.",
+            "asciiB": "X...x.x.|X...x.x.|X...x.x.|X...x.x.",
+            "pitchesA": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2"
+            ],
+            "pitchesB": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2"
+            ],
+            "repeats": 4,
+            "bars": "57–64"
+          }
         },
         {
-          "trackId": "t9",
+          "trackId": "t10",
           "trackName": "Bass",
           "channel": 1,
           "noteCount": 160,
@@ -3785,75 +3950,6 @@
             "repeats": 16,
             "bars": "57–88"
           }
-        },
-        {
-          "trackId": "t10",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 272,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X...x.x.|....x.X.|..x...x.|..X...x.",
-              "bars": "57, 59, 61, 63, 65, 67, 69, 71, 73, 75, 77, 79, 81, 83, 85, 87",
-              "barCount": 16,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "C3",
-                "E3",
-                "A2",
-                "G3",
-                "E3",
-                "C3",
-                "A2",
-                "E3"
-              ]
-            },
-            {
-              "ascii": "X.x.....|x...X...|x...x...|x...X...",
-              "bars": "58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88",
-              "barCount": 16,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "C3",
-                "E3",
-                "G3",
-                "E3",
-                "C3",
-                "D3",
-                "A2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X...x.x.|....x.X.|..x...x.|..X...x.",
-            "asciiB": "X.x.....|x...X...|x...x...|x...X...",
-            "pitchesA": [
-              "A2",
-              "C3",
-              "E3",
-              "A2",
-              "G3",
-              "E3",
-              "C3",
-              "A2",
-              "E3"
-            ],
-            "pitchesB": [
-              "A2",
-              "C3",
-              "E3",
-              "G3",
-              "E3",
-              "C3",
-              "D3",
-              "A2"
-            ],
-            "repeats": 16,
-            "bars": "57–88"
-          }
         }
       ]
     },
@@ -3862,15 +3958,41 @@
       "startBar": 89,
       "endBar": 104,
       "heatmap32": {
-        "ascii": "#.o...o.|x.....x.|x.....o.|x...o.o.",
+        "ascii": "#.o...o.|o...o.o.|o.o.....|x.o.o.o.",
         "max": 1.4,
         "barsSampled": 9
       },
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "90–104",
+              "barCount": 15,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "89",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 16,
           "hardOffNotes": 0,
           "patterns": [
@@ -3897,33 +4019,61 @@
           "twoBarLoop": null
         },
         {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
+          "trackId": "t9",
+          "trackName": "Acid",
+          "channel": 1,
+          "noteCount": 32,
           "hardOffNotes": 0,
           "patterns": [
             {
               "ascii": "........|........|........|........",
-              "bars": "90–104",
-              "barCount": 15,
+              "bars": "89–96",
+              "barCount": 8,
               "hardOffNotes": 0,
               "pitches": []
             },
             {
-              "ascii": "x.......|........|........|........",
-              "bars": "89",
-              "barCount": 1,
+              "ascii": "x.......|....x...|........|x.......",
+              "bars": "97–100",
+              "barCount": 4,
               "hardOffNotes": 0,
               "pitches": [
-                "C#3"
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.......|x.......|..X.....|..x.....",
+              "bars": "101–102",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.....x.|....X...|..x.....|X.....x.",
+              "bars": "103–104",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
               ]
             }
           ],
           "twoBarLoop": null
         },
         {
-          "trackId": "t9",
+          "trackId": "t10",
           "trackName": "Bass",
           "channel": 1,
           "noteCount": 12,
@@ -3949,48 +4099,6 @@
             }
           ],
           "twoBarLoop": null
-        },
-        {
-          "trackId": "t10",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 36,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "........|........|........|........",
-              "bars": "89–96",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "X.....x.|......X.|......x.|......x.",
-              "bars": "97, 99, 101, 103",
-              "barCount": 4,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "E3",
-                "G3",
-                "C3",
-                "E3"
-              ]
-            },
-            {
-              "ascii": "X.......|x.......|x.......|x.......",
-              "bars": "98, 100, 102, 104",
-              "barCount": 4,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "E3",
-                "E3",
-                "D3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
         }
       ]
     },
@@ -3999,15 +4107,41 @@
       "startBar": 105,
       "endBar": 112,
       "heatmap32": {
-        "ascii": "#.x.o.o.|#.o.o.x.|x.o.o.x.|#.o.x.o.",
-        "max": 3.4,
+        "ascii": "x.x.o.o.|#.x.o.x.|x.o.o.x.|#.o.x.o.",
+        "max": 4,
         "barsSampled": 8
       },
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "106–112",
+              "barCount": 7,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "105",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 30,
           "hardOffNotes": 0,
           "patterns": [
@@ -4054,9 +4188,9 @@
           }
         },
         {
-          "trackId": "t2",
+          "trackId": "t3",
           "trackName": "Snare",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 25,
           "hardOffNotes": 0,
           "patterns": [
@@ -4116,9 +4250,9 @@
           }
         },
         {
-          "trackId": "t3",
+          "trackId": "t4",
           "trackName": "Closed Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 112,
           "hardOffNotes": 0,
           "patterns": [
@@ -4190,33 +4324,141 @@
           }
         },
         {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
+          "trackId": "t9",
+          "trackName": "Acid",
+          "channel": 1,
+          "noteCount": 87,
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "........|........|........|........",
-              "bars": "106–112",
-              "barCount": 7,
+              "ascii": "X.x...x.|X.x...x.|X.x...x.|X.x...x.",
+              "bars": "109–112",
+              "barCount": 4,
               "hardOffNotes": 0,
-              "pitches": []
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
             },
             {
-              "ascii": "x.......|........|........|........",
+              "ascii": "X.x...x.|X.x...x.|X.x...x.|X.x.....",
               "bars": "105",
               "barCount": 1,
               "hardOffNotes": 0,
               "pitches": [
-                "C#3"
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.x...x.|X.x...x.|X.x.....|X.....x.",
+              "bars": "106",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.x...x.|X.x.....|X.....x.|..x...x.",
+              "bars": "107",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.x.....|X.....x.|..x...x.|X.x...x.",
+              "bars": "108",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
               ]
             }
           ],
-          "twoBarLoop": null
+          "twoBarLoop": {
+            "asciiA": "X.x...x.|X.x...x.|X.x...x.|X.x...x.",
+            "asciiB": "X.x...x.|X.x...x.|X.x...x.|X.x...x.",
+            "pitchesA": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2"
+            ],
+            "pitchesB": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2"
+            ],
+            "repeats": 2,
+            "bars": "109–112"
+          }
         },
         {
-          "trackId": "t9",
+          "trackId": "t10",
           "trackName": "Bass",
           "channel": 1,
           "noteCount": 29,
@@ -4268,99 +4510,6 @@
             }
           ],
           "twoBarLoop": null
-        },
-        {
-          "trackId": "t10",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 44,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.....x.|......X.|......x.|......x.",
-              "bars": "105, 107",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "E3",
-                "G3",
-                "C3",
-                "E3"
-              ]
-            },
-            {
-              "ascii": "X.......|x.......|x.......|x.......",
-              "bars": "106, 108",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "E3",
-                "E3",
-                "D3"
-              ]
-            },
-            {
-              "ascii": "X...x.x.|....x.X.|..x...x.|..X...x.",
-              "bars": "109, 111",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "C3",
-                "E3",
-                "A2",
-                "G3",
-                "E3",
-                "C3",
-                "A2",
-                "E3"
-              ]
-            },
-            {
-              "ascii": "X.x.....|x...X...|x...x...|x...X...",
-              "bars": "110",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "C3",
-                "E3",
-                "G3",
-                "E3",
-                "C3",
-                "D3",
-                "A2"
-              ]
-            },
-            {
-              "ascii": "........|........|........|........",
-              "bars": "112",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": []
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X.....x.|......X.|......x.|......x.",
-            "asciiB": "X.......|x.......|x.......|x.......",
-            "pitchesA": [
-              "A2",
-              "E3",
-              "G3",
-              "C3",
-              "E3"
-            ],
-            "pitchesB": [
-              "A2",
-              "E3",
-              "E3",
-              "D3"
-            ],
-            "repeats": 2,
-            "bars": "105–108"
-          }
         }
       ]
     },
@@ -4369,15 +4518,41 @@
       "startBar": 113,
       "endBar": 144,
       "heatmap32": {
-        "ascii": "x.x.x.x.|#.o.x.x.|x.x.x.x.|#.x.x.o.",
-        "max": 5,
+        "ascii": "x.o.o.x.|#.o.o.x.|x.o.x.x.|#.x.x.o.",
+        "max": 5.2,
         "barsSampled": 32
       },
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "114–144",
+              "barCount": 31,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "113",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 128,
           "hardOffNotes": 0,
           "patterns": [
@@ -4414,9 +4589,9 @@
           }
         },
         {
-          "trackId": "t2",
+          "trackId": "t3",
           "trackName": "Snare",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -4447,9 +4622,9 @@
           }
         },
         {
-          "trackId": "t3",
+          "trackId": "t4",
           "trackName": "Closed Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 384,
           "hardOffNotes": 0,
           "patterns": [
@@ -4510,9 +4685,9 @@
           }
         },
         {
-          "trackId": "t4",
+          "trackId": "t5",
           "trackName": "Open Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 128,
           "hardOffNotes": 0,
           "patterns": [
@@ -4549,9 +4724,9 @@
           }
         },
         {
-          "trackId": "t5",
+          "trackId": "t6",
           "trackName": "Rimshot",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -4592,9 +4767,9 @@
           }
         },
         {
-          "trackId": "t6",
+          "trackId": "t7",
           "trackName": "Percussion Hi",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 96,
           "hardOffNotes": 0,
           "patterns": [
@@ -4628,9 +4803,9 @@
           }
         },
         {
-          "trackId": "t7",
+          "trackId": "t8",
           "trackName": "Tambourine",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 256,
           "hardOffNotes": 0,
           "patterns": [
@@ -4679,33 +4854,150 @@
           }
         },
         {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
+          "trackId": "t9",
+          "trackName": "Acid",
+          "channel": 1,
+          "noteCount": 304,
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "........|........|........|........",
-              "bars": "114–144",
-              "barCount": 31,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "x.......|........|........|........",
-              "bars": "113",
-              "barCount": 1,
+              "ascii": "X...x.x.|X...x.x.|X...x.x.|X...x.x.",
+              "bars": "113–120",
+              "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
-                "C#3"
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.x...x.|X.x...x.|X.x...x.|X.x...x.",
+              "bars": "129–136",
+              "barCount": 8,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X...x.x.|....X.x.|x.....X.|x.....x.",
+              "bars": "137, 139, 141, 143",
+              "barCount": 4,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "E3",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.x...x.|X.....x.|..x...X.|..x...x.",
+              "bars": "138, 140, 142, 144",
+              "barCount": 4,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "A2",
+                "C3",
+                "A2",
+                "A2"
+              ]
+            },
+            {
+              "ascii": "X.....x.|......X.|......x.|....x...",
+              "bars": "121, 125",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "E3",
+                "G3",
+                "C3",
+                "E3"
+              ]
+            },
+            {
+              "ascii": "..X.....|..x.....|x.......|x.....X.",
+              "bars": "122, 126",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "A2",
+                "C3",
+                "E3",
+                "D3",
+                "A2"
               ]
             }
           ],
-          "twoBarLoop": null
+          "twoBarLoop": {
+            "asciiA": "X...x.x.|X...x.x.|X...x.x.|X...x.x.",
+            "asciiB": "X...x.x.|X...x.x.|X...x.x.|X...x.x.",
+            "pitchesA": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2"
+            ],
+            "pitchesB": [
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2",
+              "A2"
+            ],
+            "repeats": 4,
+            "bars": "113–120"
+          }
         },
         {
-          "trackId": "t9",
+          "trackId": "t10",
           "trackName": "Bass",
           "channel": 1,
           "noteCount": 160,
@@ -4758,75 +5050,6 @@
             "repeats": 16,
             "bars": "113–144"
           }
-        },
-        {
-          "trackId": "t10",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 272,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X...x.x.|....x.X.|..x...x.|..X...x.",
-              "bars": "113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137, 139, 141, 143",
-              "barCount": 16,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "C3",
-                "E3",
-                "A2",
-                "G3",
-                "E3",
-                "C3",
-                "A2",
-                "E3"
-              ]
-            },
-            {
-              "ascii": "X.x.....|x...X...|x...x...|x...X...",
-              "bars": "114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144",
-              "barCount": 16,
-              "hardOffNotes": 0,
-              "pitches": [
-                "A2",
-                "C3",
-                "E3",
-                "G3",
-                "E3",
-                "C3",
-                "D3",
-                "A2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X...x.x.|....x.X.|..x...x.|..X...x.",
-            "asciiB": "X.x.....|x...X...|x...x...|x...X...",
-            "pitchesA": [
-              "A2",
-              "C3",
-              "E3",
-              "A2",
-              "G3",
-              "E3",
-              "C3",
-              "A2",
-              "E3"
-            ],
-            "pitchesB": [
-              "A2",
-              "C3",
-              "E3",
-              "G3",
-              "E3",
-              "C3",
-              "D3",
-              "A2"
-            ],
-            "repeats": 16,
-            "bars": "113–144"
-          }
         }
       ]
     },
@@ -4842,8 +5065,34 @@
       "tracks": [
         {
           "trackId": "t1",
+          "trackName": "Crash",
+          "channel": 1,
+          "noteCount": 1,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "146–160",
+              "barCount": 15,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "145",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C#3"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "t2",
           "trackName": "Kick",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -4880,9 +5129,9 @@
           }
         },
         {
-          "trackId": "t2",
+          "trackId": "t3",
           "trackName": "Snare",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 16,
           "hardOffNotes": 0,
           "patterns": [
@@ -4920,9 +5169,9 @@
           }
         },
         {
-          "trackId": "t3",
+          "trackId": "t4",
           "trackName": "Closed Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 64,
           "hardOffNotes": 0,
           "patterns": [
@@ -4959,9 +5208,9 @@
           }
         },
         {
-          "trackId": "t4",
+          "trackId": "t5",
           "trackName": "Open Hat",
-          "channel": 10,
+          "channel": 1,
           "noteCount": 32,
           "hardOffNotes": 0,
           "patterns": [
@@ -5005,33 +5254,7 @@
           }
         },
         {
-          "trackId": "t8",
-          "trackName": "Crash",
-          "channel": 10,
-          "noteCount": 1,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "........|........|........|........",
-              "bars": "146–160",
-              "barCount": 15,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "x.......|........|........|........",
-              "bars": "145",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C#3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "t9",
+          "trackId": "t10",
           "trackName": "Bass",
           "channel": 1,
           "noteCount": 40,
