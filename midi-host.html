@@ -760,6 +760,54 @@ select, input[type="number"], input[type="text"] {
   opacity: 0.85;
   min-width: 2px;
   pointer-events: none;
+  z-index: 2;
+}
+.note-block[data-note-clip] {
+  z-index: 4;
+}
+.loop-clip-container {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  min-width: 8px;
+  border: 1px solid rgba(49, 211, 155, 0.82);
+  border-radius: 4px;
+  background: rgba(49, 211, 155, 0.055);
+  box-shadow: inset 0 0 0 1px rgba(49, 211, 155, 0.08);
+  cursor: grab;
+  z-index: 3;
+  touch-action: none;
+}
+.loop-clip-container:hover {
+  border-color: rgba(106, 239, 193, 0.98);
+  background: rgba(49, 211, 155, 0.09);
+}
+.loop-clip-container.selected {
+  border-width: 2px;
+  border-color: #72efc2;
+  background: rgba(49, 211, 155, 0.12);
+  box-shadow: 0 0 0 1px rgba(114, 239, 194, 0.15), inset 0 0 10px rgba(49, 211, 155, 0.06);
+}
+.loop-clip-container.moving {
+  cursor: grabbing;
+  border-style: dashed;
+  background: rgba(49, 211, 155, 0.16);
+}
+.loop-clip-label {
+  position: absolute;
+  left: 3px;
+  top: 2px;
+  max-width: calc(100% - 6px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(9, 14, 21, 0.78);
+  color: #a7f4d7;
+  font-size: 9px;
+  line-height: 12px;
+  pointer-events: none;
 }
 .playhead {
   position: absolute;
@@ -3616,6 +3664,213 @@ select, input[type="number"], input[type="text"] {
       ? (track.solo ? "Solo on" : "Solo off")
       : (track.mute ? "Mute on" : "Mute off");
     setStatus(`${stateName} · ${track.name}`, "ok");
+  }
+
+  function hostClipInstanceId(clip, index = 0) {
+    if (clip?.instanceId) return String(clip.instanceId);
+    return [
+      "legacy", clip?.id || "clip", clip?.targetTrackId || "track",
+      Number(clip?.startTick) || 0, Number(clip?.endTick) || 0, index
+    ].join(":");
+  }
+
+  function hostClipOwnedNotes(clip, track) {
+    const instanceId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project?.clips || []).indexOf(clip))
+    );
+    clip.instanceId = instanceId;
+    let owned = (track?.notes || []).filter((note) => note.clipId === instanceId);
+    if (owned.length) return owned;
+
+    // Legacy project migration fallback: claim unowned notes inside this clip range.
+    const start = Math.max(0, Number(clip.startTick) || 0);
+    const end = Math.max(start + 1, Number(clip.endTick) || (start + 1));
+    owned = (track?.notes || []).filter(
+      (note) => !note.clipId && note.tick >= start && note.tick < end
+    );
+    for (const note of owned) note.clipId = instanceId;
+    return owned;
+  }
+
+  function selectedHostClipContext() {
+    if (!state.project || !state.selectedClipId) return null;
+    const clip = (state.project.clips || []).find(
+      (item, index) => hostClipInstanceId(item, index) === state.selectedClipId
+    );
+    if (!clip) return null;
+    const track = state.project.tracks.find((item) => item.id === clip.targetTrackId);
+    if (!track) return null;
+    return { clip, track };
+  }
+
+  function selectHostLoopClip(instanceId) {
+    state.selectedClipId = String(instanceId || "");
+    document.querySelectorAll(".loop-clip-container.selected").forEach((el) => {
+      el.classList.remove("selected");
+    });
+    if (state.selectedClipId) {
+      document.querySelector(
+        '.loop-clip-container[data-clip-instance="' +
+        CSS.escape(state.selectedClipId) + '"]'
+      )?.classList.add("selected");
+    }
+  }
+
+  function updateHostProjectMeta() {
+    if (!state.project) return;
+    const bars = Math.max(
+      1,
+      Math.round((state.lengthTicks || ticksPerBar(state.project.ppq)) / ticksPerBar(state.project.ppq))
+    );
+    document.getElementById("projectMeta").innerHTML =
+      (state.project.tempo || 120) + " BPM · PPQ " + (state.project.ppq || 480) + " · " + bars + " bars";
+  }
+
+  function moveHostLoopClip(clip, track, requestedStartTick) {
+    if (!state.project || !clip || !track) return false;
+    if (state.playing) stopPlayback();
+
+    const ppq = state.project.ppq || 480;
+    const tpb = ticksPerBar(ppq);
+    const oldStart = Math.max(0, Number(clip.startTick) || 0);
+    const oldEnd = Math.max(oldStart + 1, Number(clip.endTick) || (oldStart + tpb));
+    const newStart = Math.max(0, Math.round(Number(requestedStartTick) / tpb) * tpb);
+    const delta = newStart - oldStart;
+    if (!delta) {
+      selectHostLoopClip(clip.instanceId);
+      return false;
+    }
+
+    const notes = hostClipOwnedNotes(clip, track);
+    for (const note of notes) note.tick = Math.max(0, note.tick + delta);
+    track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    clip.startTick = newStart;
+    clip.endTick = Math.max(newStart + 1, oldEnd + delta);
+    clip.targetTrackName = track.name;
+    state.selectedClipId = clip.instanceId;
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Moved loop “" + (clip.name || clip.originalName || "MIDI loop") +
+      "” → bar " + tickToBar(newStart, ppq) +
+      " · " + notes.length + " notes · UNSAVED cloud changes",
+      "ok"
+    );
+    return true;
+  }
+
+  function removeHostLoopClip(clip, track) {
+    if (!state.project || !clip || !track) return false;
+    if (state.playing) stopPlayback();
+
+    const instanceId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project.clips || []).indexOf(clip))
+    );
+    const owned = hostClipOwnedNotes(clip, track);
+    const ownedSet = new Set(owned);
+    track.notes = track.notes.filter((note) => !ownedSet.has(note));
+    state.project.clips = (state.project.clips || []).filter(
+      (item, index) => hostClipInstanceId(item, index) !== instanceId
+    );
+    state.selectedClipId = "";
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Deleted loop “" + (clip.name || clip.originalName || "MIDI loop") +
+      "” · " + owned.length + " notes removed · UNSAVED cloud changes",
+      "ok"
+    );
+    return true;
+  }
+
+  function attachHostLoopClipDrag(box, clip, track, body, length, totalW, ppq) {
+    const instanceId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project?.clips || []).indexOf(clip))
+    );
+    clip.instanceId = instanceId;
+
+    box.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      selectHostLoopClip(instanceId);
+
+      const originX = event.clientX;
+      const originStart = Math.max(0, Number(clip.startTick) || 0);
+      const tpb = ticksPerBar(ppq);
+      let previewStart = originStart;
+      let moved = false;
+      const noteEls = [...body.querySelectorAll(
+        '.note-block[data-note-clip="' + CSS.escape(instanceId) + '"]'
+      )];
+
+      box.classList.add("moving");
+      box.setPointerCapture?.(event.pointerId);
+
+      const applyPreview = (tick) => {
+        const dx = ((tick - originStart) / Math.max(1, length)) * totalW;
+        box.style.transform = "translateX(" + dx + "px)";
+        for (const el of noteEls) el.style.transform = "translateX(" + dx + "px)";
+        box.title =
+          (clip.name || clip.originalName || "MIDI loop") +
+          " · bar " + tickToBar(tick, ppq) +
+          " · drag to move · ←/→ one bar · Delete removes";
+      };
+
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const deltaBars = Math.round((moveEvent.clientX - originX) / Math.max(1, state.barW));
+        previewStart = Math.max(0, originStart + deltaBars * tpb);
+        moved = moved || previewStart !== originStart;
+        applyPreview(previewStart);
+      };
+
+      const finish = (upEvent) => {
+        box.removeEventListener("pointermove", onMove);
+        box.removeEventListener("pointerup", finish);
+        box.removeEventListener("pointercancel", cancel);
+        try { box.releasePointerCapture?.(upEvent.pointerId); } catch {}
+        box.classList.remove("moving");
+        box.style.transform = "";
+        for (const el of noteEls) el.style.transform = "";
+
+        if (moved && previewStart !== originStart) {
+          moveHostLoopClip(clip, track, previewStart);
+        } else {
+          setStatus(
+            "Selected loop “" + (clip.name || clip.originalName || "MIDI loop") +
+            "” · drag left/right · ←/→ = 1 bar · Delete = remove",
+            "ok"
+          );
+        }
+      };
+
+      const cancel = (cancelEvent) => {
+        box.removeEventListener("pointermove", onMove);
+        box.removeEventListener("pointerup", finish);
+        box.removeEventListener("pointercancel", cancel);
+        try { box.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
+        box.classList.remove("moving");
+        box.style.transform = "";
+        for (const el of noteEls) el.style.transform = "";
+      };
+
+      box.addEventListener("pointermove", onMove);
+      box.addEventListener("pointerup", finish);
+      box.addEventListener("pointercancel", cancel);
+    });
   }
 
   function renderTracks() {
