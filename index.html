@@ -4431,6 +4431,7 @@ class UIRenderer {
     toggleBtn.className = 'synth-toggle-btn' + (this.state.synthPanelOpen[trackIdx] ? ' active' : '');
     toggleBtn.textContent = '⚙';
     toggleBtn.title = 'Synth settings (ADSR + Filter)';
+    if (this.state.trackEngines[trackIdx] !== 'chip') toggleBtn.style.display = 'none';
     toggleBtn.addEventListener('click', () => {
       this.state.synthPanelOpen[trackIdx] = !this.state.synthPanelOpen[trackIdx];
       const panel = wrapper.querySelector('.synth-panel');
@@ -5617,7 +5618,7 @@ async function ensureLoopCatalog() {
 }
 
 function loopIsLoadable(entry) {
-  return !['chords', 'arrangement'].includes(entry.kind);
+  return true;
 }
 
 function filteredLoops() {
@@ -5672,7 +5673,7 @@ function renderLoopBrowser() {
         <div class="loop-meta">${loopEsc(entry.genre)} · ${loopEsc(barsHint)} · ${loopEsc(entry.source)}</div>
         <div class="loop-stars" title="Your rating / favorite marker">${stars}<span class="loop-rating-value">${rating ? rating + '/5' : ''}</span></div>
       </div>
-      <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="${loadable ? 'Load into active track' : 'Polyphonic arrangement/chords are preview-only in v1'}">LOAD</button>
+      <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="Load into active track">LOAD</button>
     </div>`;
   }).join('');
 
@@ -5735,41 +5736,72 @@ async function previewLoop(entry) {
     setLoopStatus('Preview loading · ' + entry.name);
     const midi = await fetchLoopMidi(entry);
     const ctx = audio.init();
+    const track = state.activeTrack;
+    const engine = state.trackEngines[track] || 'chip';
+
+    if (engine === 'sf2' && !(await audio.ensureSf2Loaded())) return;
+    if (engine === 'midi') {
+      await audio.ensureMidiAccess();
+      if (!audio.getMidiOutput()) throw new Error('No MIDI output selected');
+    }
+
     const start = ctx.currentTime + 0.06;
     const stepDuration = (60 / state.tempo) / 4;
     const tickPerStep = midi.ppq / 4;
     const maxSteps = Math.min(midiLoopStepCount(midi), 16 * 8);
     const maxTick = maxSteps * tickPerStep;
     const drums = entry.kind === 'drums' || midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
+    const melodic = midi.notes.filter(n => n.channel !== 10);
+    const channelCounts = new Map();
+    melodic.forEach(n => channelCounts.set(n.channel, (channelCounts.get(n.channel) || 0) + 1));
+    const sourceChannel = [...channelCounts.entries()].sort((a,b) => b[1]-a[1])[0]?.[0] || state.trackMidiChannels[track] || 1;
+    const channel = drums ? 10 : (state.trackMidiChannels[track] || sourceChannel || 1);
+    const sourceProgram = midi.programs?.[sourceChannel];
+    const program = Number.isInteger(sourceProgram) ? sourceProgram : (state.trackPrograms[track] || 0);
     loopPreviewEntryId = entry.id;
 
     for (const note of midi.notes) {
       if (note.tick >= maxTick) continue;
       const when = start + (note.tick / tickPerStep) * stepDuration;
+      const duration = Math.max(0.04, Math.min(6, (note.duration / tickPerStep) * stepDuration));
+
       if (drums) {
         const drumIdx = gmDrumToIndex(note.note);
-        if (drumIdx >= 0) audio.scheduleDrum(99, drumIdx, when, false);
+        if (drumIdx < 0) continue;
+        if (engine === 'sf2') {
+          audio.scheduleSf2Note(10, 0, note.note, note.velocity || 100, when, duration, true);
+        } else if (engine === 'midi') {
+          audio.scheduleMidiNote(channel, note.note, note.velocity || 100, when, duration);
+        } else {
+          audio.scheduleDrum(99, drumIdx, when, false);
+        }
       } else {
         if (note.channel === 10) continue;
-        const duration = Math.max(0.04, Math.min(2.5, (note.duration / tickPerStep) * stepDuration));
-        const track = state.activeTrack;
-        audio.scheduleNote(
-          99,
-          foldMidiPitch(note.note),
-          when,
-          duration,
-          state.trackWaves[track] || 'square',
-          state.trackAdsr[track],
-          state.trackFilter[track],
-          state.adsrTarget[track],
-          state.adsrDepth[track]
-        );
+        if (engine === 'sf2') {
+          audio.scheduleSf2Note(channel, program, note.note, note.velocity || 100, when, duration, false);
+        } else if (engine === 'midi') {
+          audio.scheduleMidiNote(channel, note.note, note.velocity || 100, when, duration);
+        } else {
+          audio.scheduleNote(
+            99,
+            foldMidiPitch(note.note),
+            when,
+            duration,
+            state.trackWaves[track] || 'square',
+            state.trackAdsr[track],
+            state.trackFilter[track],
+            state.adsrTarget[track],
+            state.adsrDepth[track]
+          );
+        }
       }
     }
 
     const previewSeconds = maxSteps * stepDuration;
+    const engineLabel = engine === 'sf2' ? ('SF2 · ' + program) : engine === 'midi' ? ('MIDI CH ' + channel) : 'CHIP';
     setLoopStatus(
-      'Preview · ' + entry.name + ' · ' + (maxSteps / 16).toFixed(2).replace(/\.00$/, '') + ' bars @ project BPM',
+      'Preview · ' + engineLabel + ' · ' + entry.name + ' · ' +
+      (maxSteps / 16).toFixed(2).replace(/\.00$/, '') + ' bars',
       true
     );
     loopPreviewTimer = setTimeout(() => {
@@ -5797,9 +5829,12 @@ async function loadLoopIntoTrack(entryId, trackIdx = state.activeTrack, isReload
     ui.render();
     const src = state.trackSources[trackIdx];
     const expanded = state.steps > beforeSteps ? ' · pattern expanded to ' + (state.steps / 16) + ' bars' : '';
+    const polyHint = src.polyphonic && state.trackEngines[trackIdx] === 'chip'
+      ? ' · POLY data loaded: switch track to SF2 or MIDI HW to hear all notes'
+      : '';
     setLoopStatus(
       'Loaded · ' + entry.name + ' · source ' + src.originalBars + ' bars → filled ' +
-      (state.steps / 16) + ' bars' + expanded,
+      (state.steps / 16) + ' bars' + expanded + polyHint,
       true
     );
   } catch (err) {
@@ -5851,7 +5886,14 @@ function buildChiptuneOverview(project) {
   for (let t = 0; t < CONFIG.TRACKS; t++) {
     const type = variant.trackTypes?.[t] || 'melodic';
     const source = variant.trackSources?.[t] || null;
+    const engine = variant.trackEngines?.[t] || 'chip';
+    const channel = variant.trackMidiChannels?.[t] || CONFIG.DEFAULT_MIDI_CHANNELS[t] || 1;
+    const program = variant.trackPrograms?.[t] ?? CONFIG.DEFAULT_GM_PROGRAMS[t] ?? 0;
     lines.push('## Track ' + (t + 1) + ' — ' + type);
+    lines.push('Engine: ' + engine.toUpperCase() +
+      (engine === 'chip' ? ' · monophonic playback' : ' · polyphonic') +
+      (engine !== 'chip' ? ' · CH ' + channel : '') +
+      (engine === 'sf2' && type !== 'drum' ? ' · GM ' + program + ' ' + (CHIPESEQ_GM_PROGRAMS[program] || '') : ''));
     lines.push('Source: ' + (source
       ? [source.genre, source.kind, source.source, source.name].filter(Boolean).join(' · ')
       : 'manual / none'));
@@ -5872,8 +5914,11 @@ function buildChiptuneOverview(project) {
     } else {
       const events = [];
       for (let step = 0; step < (variant.patternLength || CONFIG.STEPS); step++) {
-        const note = variant.melodicPattern?.[t]?.[step];
-        if (note !== null && note !== undefined) events.push((step + 1) + ':' + midiToName(note));
+        const cell = normalizeMelodicCell(variant.melodicPattern?.[t]?.[step]);
+        if (!cell.length) continue;
+        events.push((step + 1) + ':' + cell.map(note =>
+          midiToName(note.note) + '(v' + note.velocity + ',l' + Number(note.length.toFixed(2)) + ')'
+        ).join('+'));
       }
       lines.push('Notes: ' + (events.join(' ') || '—'));
     }
