@@ -46,6 +46,7 @@ python scripts/local_server.py --open
 - В карточке loop показывается точный `GM <program> <name>`, если MIDI содержит Program Change. Если Program Change отсутствует, UI теперь различает данные файла и звук прослушивания: например `MIDI: no Program Change · Preview: GM 33 Electric Bass (finger)`. Это означает, что тембр пришёл из текущей настройки SF2-дорожки, а не из самого MIDI.
 - При Preview в каждой карточке есть тонкий циклический progress bar и подпись общей длины (`bars · seconds`), чтобы сразу видеть длину loop и положение внутри текущего круга.
 - У каждого loop есть пользовательский рейтинг **1–5 ★**, который хранится в browser localStorage по стабильному MIDI id. Повторный клик по текущей оценке очищает её. Фильтр Rating позволяет быстро показать rated loops, 4★+ favorites или выбранный минимальный рейтинг.
+- У каждого loop можно задать пользовательское **display name** кнопкой ✎. Переименование не меняет исходный MIDI-файл и не трогает pack/member; alias хранится по стабильному MIDI id. При alias браузер показывает новое имя крупно и отдельной строкой `Original: ...mid`. Поиск учитывает и alias, и исходное имя.
 - **LOAD** загружает MIDI в активную из трёх дорожек. После загрузки это обычные ноты секвенсора, а не живая ссылка на исходный файл.
 - Короткий loop автоматически физически повторяется до длины текущего паттерна: 1 bar → 4 копии в 4-bar pattern, 2 bars → 2 копии и т.д.
 - Если reference loop длиннее текущего паттерна, pattern автоматически расширяется до ближайшего целого такта (в пределах текущего лимита 16 bars).
@@ -65,6 +66,7 @@ python scripts/local_server.py --open
 - `projects/chiptune-current.json` — полный проект и source metadata;
 - `projects/chiptune-overview.md` — активный pattern, его длина, engine/channel/program каждой дорожки, источники/rating и polyphonic note events с velocity/gate;
 - `projects/chiptune-loop-ratings.json` — текущие пользовательские оценки reference loops, чтобы ассистент после Sync мог учитывать favorites;
+- `projects/chiptune-loop-aliases.json` — пользовательские display names reference loops. Алиасы также живут в browser localStorage, а после Sync сохраняются в репозитории; при запуске браузер подмешивает более свежие synced aliases обратно в локальное состояние;
 - `projects/chiptune-loop-selection.json` — до 20 последних прослушанных loop с точными Program Change по MIDI-каналам, GM names/families, ролью и простой оценкой onset-polyphony. Это позволяет ассистенту после **Sync to AI** видеть, какие именно инструменты были в недавно прослушанных файлах.
 
 После этой кнопки ассистент может прочитать текущее состояние конструктора из GitHub и обсуждать с пользователем конкретные загруженные лупы и их правки. Не утверждать, что видно текущее состояние браузера, пока пользователь не нажал **Sync to AI** после изменений.
