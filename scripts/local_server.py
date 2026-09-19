@@ -982,7 +982,7 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/library/rescan":
             try:
                 # Rescan rebuilds the catalogue but reuses prior classification.
-                # Heavy content work lives in /api/library/optimize.
+                # Heavy classification/repacking lives in /api/library/repack.
                 self._send_json(200, build_library_catalog(force=True))
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
