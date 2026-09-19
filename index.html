@@ -140,7 +140,7 @@ body {
   text-align: center;
 }
 .song-block .block-del {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-dim);
   line-height: 1;
   margin-left: 2px;
@@ -1212,8 +1212,8 @@ body {
 }
 .loop-browser {
   display: none;
-  flex: 0 0 410px;
-  width: 410px;
+  flex: 0 0 500px;
+  width: 500px;
   border-left: 1px solid var(--border);
   background: #0e0e18;
   min-height: calc(100vh - 114px);
@@ -1233,13 +1233,13 @@ body {
   gap: 8px;
   margin-bottom: 8px;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: bold;
   letter-spacing: 1px;
 }
 .loop-target {
   color: var(--text);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0;
 }
 .loop-browser-filters {
@@ -1255,16 +1255,16 @@ body {
   border: 1px solid var(--border);
   color: var(--text);
   font: inherit;
-  font-size: 10px;
-  padding: 5px 6px;
+  font-size: 12px;
+  padding: 6px 7px;
 }
 .loop-browser-filters .wide { grid-column: 1 / -1; }
 .loop-browser-status {
   padding: 6px 10px;
   border-bottom: 1px solid var(--border);
   color: var(--text-dim);
-  font-size: 10px;
-  min-height: 25px;
+  font-size: 11px;
+  min-height: 28px;
 }
 .loop-browser-list {
   flex: 1 1 auto;
@@ -1273,13 +1273,13 @@ body {
 }
 .loop-item {
   display: grid;
-  grid-template-columns: 28px 1fr 54px;
+  grid-template-columns: 34px 1fr 64px;
   gap: 6px;
   align-items: center;
   border: 1px solid var(--border);
   background: var(--bg-panel);
-  margin-bottom: 5px;
-  padding: 6px;
+  margin-bottom: 6px;
+  padding: 7px;
   min-width: 0;
 }
 .loop-item:hover { border-color: var(--accent-dim); }
@@ -1287,7 +1287,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text);
 }
 .loop-item .loop-meta {
@@ -1306,8 +1306,8 @@ body {
   cursor: pointer;
   border-radius: 2px;
 }
-.loop-preview-btn { height: 26px; }
-.loop-load-btn { height: 26px; font-size: 9px; color: var(--accent); }
+.loop-preview-btn { height: 30px; font-size: 13px; }
+.loop-load-btn { height: 30px; font-size: 11px; color: var(--accent); }
 .loop-load-btn:disabled { opacity: 0.3; cursor: not-allowed; color: var(--text-dim); }
 .loop-close-btn { width: 26px; height: 24px; }
 .loop-browser-foot {
@@ -1318,8 +1318,32 @@ body {
   justify-content: space-between;
   gap: 6px;
   color: var(--text-dim);
-  font-size: 9px;
+  font-size: 10px;
   background: var(--bg-panel);
+}
+.loop-stars {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin-top: 5px;
+  min-height: 18px;
+}
+.loop-star {
+  border: 0;
+  background: transparent;
+  color: #4f5068;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 16px;
+  padding: 0 1px;
+  cursor: pointer;
+}
+.loop-star.on { color: #ffe66d; }
+.loop-star:hover { color: #fff2a8; }
+.loop-rating-value {
+  margin-left: 5px;
+  color: var(--text-dim);
+  font-size: 10px;
 }
 .source-chip {
   max-width: 280px;
@@ -1345,7 +1369,7 @@ body {
     top: 0;
     bottom: 0;
     z-index: 1000;
-    width: min(92vw, 410px);
+    width: min(94vw, 500px);
     max-height: 100vh;
     box-shadow: -10px 0 30px rgba(0,0,0,.45);
   }
@@ -1415,7 +1439,16 @@ body {
         <input class="wide" id="loopSearch" type="search" placeholder="Search MIDI...">
         <select id="loopGenre"><option value="">All styles</option></select>
         <select id="loopKind"><option value="">All types</option></select>
-        <select class="wide" id="loopSource"><option value="">All sources</option></select>
+        <select id="loopSource"><option value="">All sources</option></select>
+        <select id="loopRating">
+          <option value="0">All ratings</option>
+          <option value="rated">★ Rated only</option>
+          <option value="5">★★★★★ only</option>
+          <option value="4">★★★★+ favorites</option>
+          <option value="3">★★★+</option>
+          <option value="2">★★+</option>
+          <option value="1">★+</option>
+        </select>
       </div>
     </div>
     <div class="loop-browser-status" id="loopStatus">Open library to load MIDI references.</div>
@@ -2549,6 +2582,7 @@ class StateManager {
       source: entry?.source || '',
       genre: entry?.genre || '',
       kind: entry?.kind || (isDrums ? 'drums' : 'melody'),
+      rating: typeof getLoopRating === 'function' ? getLoopRating(entry?.id || '') : 0,
       originalSteps: loopSteps,
       originalBars: Number((loopSteps / 16).toFixed(2)),
       loadedAt: new Date().toISOString(),
@@ -4929,6 +4963,7 @@ const loopSearchEl = document.getElementById('loopSearch');
 const loopGenreEl = document.getElementById('loopGenre');
 const loopKindEl = document.getElementById('loopKind');
 const loopSourceEl = document.getElementById('loopSource');
+const loopRatingEl = document.getElementById('loopRating');
 const loopListEl = document.getElementById('loopList');
 const loopStatusEl = document.getElementById('loopStatus');
 const loopCountEl = document.getElementById('loopCount');
@@ -4940,6 +4975,28 @@ let loopCatalogLoaded = false;
 let loopCatalogPromise = null;
 let loopPreviewTimer = null;
 let loopPreviewEntryId = null;
+
+const LOOP_RATINGS_KEY = 'chiptune_loop_ratings_v1';
+let loopRatings = {};
+try {
+  loopRatings = JSON.parse(localStorage.getItem(LOOP_RATINGS_KEY) || '{}') || {};
+} catch {
+  loopRatings = {};
+}
+
+function getLoopRating(id) {
+  const row = loopRatings[id];
+  return row && Number.isFinite(Number(row.rating)) ? Math.max(0, Math.min(5, Number(row.rating))) : 0;
+}
+
+function setLoopRating(id, rating) {
+  const current = getLoopRating(id);
+  const next = current === rating ? 0 : rating;
+  if (next <= 0) delete loopRatings[id];
+  else loopRatings[id] = { rating: next, updatedAt: new Date().toISOString() };
+  localStorage.setItem(LOOP_RATINGS_KEY, JSON.stringify(loopRatings));
+  renderLoopBrowser();
+}
 
 function loopEsc(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({
@@ -5003,10 +5060,18 @@ function filteredLoops() {
   const genre = loopGenreEl.value;
   const kind = loopKindEl.value;
   const source = loopSourceEl.value;
+  const ratingFilter = loopRatingEl.value;
   return loopCatalog.filter(entry => {
     if (genre && entry.genre !== genre) return false;
     if (kind && entry.kind !== kind) return false;
     if (source && entry.source !== source) return false;
+    const rating = getLoopRating(entry.id);
+    if (ratingFilter === 'rated' && rating < 1) return false;
+    if (/^[1-5]$/.test(ratingFilter)) {
+      const minRating = Number(ratingFilter);
+      if (rating < minRating) return false;
+      if (minRating === 5 && rating !== 5) return false;
+    }
     if (q) {
       const hay = [
         entry.name, entry.source, entry.member, entry.container,
@@ -5031,11 +5096,16 @@ function renderLoopBrowser() {
   loopListEl.innerHTML = rows.map(entry => {
     const loadable = loopIsLoadable(entry);
     const barsHint = entry.kind === 'arrangement' ? 'multi' : entry.kind;
+    const rating = getLoopRating(entry.id);
+    const stars = [1,2,3,4,5].map(n =>
+      `<button class="loop-star ${n <= rating ? 'on' : ''}" data-rating="${n}" title="${n} star${n > 1 ? 's' : ''}; click current rating again to clear">★</button>`
+    ).join('');
     return `<div class="loop-item" data-id="${loopEsc(entry.id)}">
       <button class="loop-preview-btn" title="Preview">▶</button>
       <div style="min-width:0">
         <div class="loop-name" title="${loopEsc(entry.member || entry.container || entry.name)}">${loopEsc(entry.name)}</div>
         <div class="loop-meta">${loopEsc(entry.genre)} · ${loopEsc(barsHint)} · ${loopEsc(entry.source)}</div>
+        <div class="loop-stars" title="Your rating / favorite marker">${stars}<span class="loop-rating-value">${rating ? rating + '/5' : ''}</span></div>
       </div>
       <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="${loadable ? 'Load into active track' : 'Polyphonic arrangement/chords are preview-only in v1'}">LOAD</button>
     </div>`;
@@ -5046,6 +5116,13 @@ function renderLoopBrowser() {
     if (!entry) return;
     row.querySelector('.loop-preview-btn').addEventListener('click', async () => {
       await previewLoop(entry);
+    });
+    row.querySelectorAll('.loop-star').forEach(star => {
+      star.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setLoopRating(entry.id, Number(star.dataset.rating));
+      });
     });
     const loadBtn = row.querySelector('.loop-load-btn');
     if (!loadBtn.disabled) {
@@ -5182,7 +5259,7 @@ document.getElementById('loopClose').addEventListener('click', () => {
   document.getElementById('btnLoops').classList.remove('active');
   stopLoopPreview();
 });
-[loopSearchEl, loopGenreEl, loopKindEl, loopSourceEl].forEach(el => {
+[loopSearchEl, loopGenreEl, loopKindEl, loopSourceEl, loopRatingEl].forEach(el => {
   el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', renderLoopBrowser);
 });
 
@@ -5213,6 +5290,10 @@ function buildChiptuneOverview(project) {
     lines.push('Source: ' + (source
       ? [source.genre, source.kind, source.source, source.name].filter(Boolean).join(' · ')
       : 'manual / none'));
+    if (source?.id) {
+      const liveRating = getLoopRating(source.id) || source.rating || 0;
+      if (liveRating) lines.push('Rating: ' + '★'.repeat(liveRating) + ' (' + liveRating + '/5)');
+    }
     if (type === 'drum') {
       const events = [];
       for (let step = 0; step < (variant.patternLength || CONFIG.STEPS); step++) {
@@ -5248,6 +5329,7 @@ document.getElementById('btnSyncAI').addEventListener('click', async () => {
       files: {
         'chiptune-current.json': JSON.stringify(project, null, 2),
         'chiptune-overview.md': buildChiptuneOverview(project),
+        'chiptune-loop-ratings.json': JSON.stringify(loopRatings, null, 2),
       },
     };
     const response = await fetch('/api/sync', {
