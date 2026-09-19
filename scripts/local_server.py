@@ -265,7 +265,7 @@ def allocate_cloud_project_id(project_name: str) -> str:
 
 
 def safe_track_filename(index: int, name: str) -> str:
-    stem = re.sub(r'[<>:"/\\\\|?*\\x00-\\x1f]+', "_", str(name or "Track")).strip(" ._")
+    stem = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', "_", str(name or "Track")).strip(" ._")
     stem = re.sub(r"\\s+", " ", stem)[:80] or "Track"
     return f"{index:03d} - {stem}.mid"
 
@@ -284,7 +284,7 @@ def decode_midi_b64(value: str, label: str) -> bytes:
 
 def save_cloud_project(payload: dict) -> dict:
     project_name = " ".join(
-        str(payload.get("projectName") or "Project").replace("\\r", " ").replace("\\n", " ").split()
+        str(payload.get("projectName") or "Project").replace("\r", " ").replace("\n", " ").split()
     )[:120] or "Project"
 
     requested_id = str(payload.get("projectId") or "").strip()
@@ -335,7 +335,7 @@ def save_cloud_project(payload: dict) -> dict:
     def write_text(path: Path, text: str) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         temp = path.with_name(path.name + ".tmp")
-        temp.write_text(text, encoding="utf-8", newline="\\n")
+        temp.write_text(text, encoding="utf-8", newline="\n")
         os.replace(temp, path)
         written_paths.append(path)
 
@@ -366,7 +366,7 @@ def save_cloud_project(payload: dict) -> dict:
 
     write_text(root / "midi-host" / "project.json", json.dumps(project_json, ensure_ascii=False, indent=2))
     write_text(root / "midi-host" / "overview.json", json.dumps(overview_json or {}, ensure_ascii=False, indent=2))
-    write_text(root / "midi-host" / "overview.md", overview_md or "# Arrangement overview\\n")
+    write_text(root / "midi-host" / "overview.md", overview_md or "# Arrangement overview\n")
     write_text(root / "midi-host" / "session.json", json.dumps(session_json or {}, ensure_ascii=False, indent=2))
     write_bytes(root / "midi-host" / "arrangement.mid", arrangement)
 
@@ -409,7 +409,7 @@ def save_cloud_project(payload: dict) -> dict:
         "Future Chiptune Sequencer data can live in this same project folder under chiptune/.",
         "",
     ]
-    write_text(root / "README.md", "\\n".join(readme))
+    write_text(root / "README.md", "\n".join(readme))
 
     branch = current_branch()
     ensure_remote_is_safe_to_push(branch)
@@ -428,6 +428,7 @@ def save_cloud_project(payload: dict) -> dict:
         "trackCount": len(track_manifest),
         "files": [str(path.relative_to(ROOT)).replace(chr(92), "/") for path in written_paths],
     }
+
 
 def slugify_pack_part(value: str) -> str:
     text = re.sub(r"[^a-z0-9]+", "-", str(value).lower()).strip("-")
