@@ -873,12 +873,14 @@ select, input[type="number"], input[type="text"] {
   background: rgba(49, 211, 155, 0.09);
 }
 .loop-clip-container.selected {
+  z-index: 6;
   border-width: 2px;
   border-color: #72efc2;
   background: rgba(49, 211, 155, 0.12);
   box-shadow: 0 0 0 1px rgba(114, 239, 194, 0.15), inset 0 0 10px rgba(49, 211, 155, 0.06);
 }
-.loop-clip-container.moving {
+.loop-clip-container.moving,
+.loop-clip-container.repeating {
   cursor: grabbing;
   border-style: dashed;
   background: rgba(49, 211, 155, 0.16);
@@ -887,7 +889,7 @@ select, input[type="number"], input[type="text"] {
   position: absolute;
   left: 3px;
   top: 2px;
-  max-width: calc(100% - 6px);
+  max-width: calc(100% - 10px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -897,6 +899,74 @@ select, input[type="number"], input[type="text"] {
   color: #a7f4d7;
   font-size: 9px;
   line-height: 12px;
+  pointer-events: none;
+  z-index: 3;
+}
+.loop-clip-container.selected .loop-clip-label,
+.loop-clip-container:hover .loop-clip-label {
+  max-width: calc(100% - 52px);
+}
+.loop-clip-actions {
+  position: absolute;
+  right: 12px;
+  top: 2px;
+  z-index: 7;
+  display: none;
+  gap: 2px;
+}
+.loop-clip-container.selected .loop-clip-actions,
+.loop-clip-container:hover .loop-clip-actions {
+  display: flex;
+}
+.loop-clip-action {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid rgba(114, 239, 194, .45);
+  border-radius: 3px;
+  background: rgba(9, 14, 21, .88);
+  color: #b8f6de;
+  font: 700 10px/14px "Segoe UI", sans-serif;
+  text-align: center;
+  cursor: pointer;
+}
+.loop-clip-action:hover {
+  border-color: var(--accent);
+  color: #fff;
+}
+.loop-clip-action.delete:hover {
+  border-color: var(--danger);
+  color: #fff;
+  background: rgba(80, 20, 20, .9);
+}
+.loop-clip-repeat-handle {
+  position: absolute;
+  right: -1px;
+  top: 0;
+  bottom: 0;
+  width: 11px;
+  z-index: 8;
+  cursor: ew-resize;
+  border-left: 1px solid rgba(114, 239, 194, .55);
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(114, 239, 194, .95) 0 3px,
+      rgba(9, 14, 21, .88) 3px 6px
+    );
+  opacity: .75;
+}
+.loop-clip-container:hover .loop-clip-repeat-handle,
+.loop-clip-container.selected .loop-clip-repeat-handle {
+  opacity: 1;
+}
+.loop-repeat-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  z-index: 2;
+  border-left: 1px dashed rgba(114, 239, 194, .38);
   pointer-events: none;
 }
 .playhead {
@@ -1567,6 +1637,7 @@ select, input[type="number"], input[type="text"] {
     sf2Loading: false,
     bridgeReady: false,
     selectedClipId: "",
+    clipClipboard: null,
     loopStartTick: 0,
     loopEndTick: 0,
     loopRangeSelecting: false,
@@ -2302,8 +2373,7 @@ select, input[type="number"], input[type="text"] {
     if (!selected.length) selected = flattened;
     if (!selected.length) throw new Error("No notes found in source MIDI");
 
-    const clipInstanceId =
-      "clip-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+    const clipInstanceId = newHostClipInstanceId();
     let insertedEnd = startTick;
     const newNotes = selected.map((note) => {
       const tick = startTick + Math.max(0, Math.round(note.tick * scale));
@@ -2334,6 +2404,11 @@ select, input[type="number"], input[type="text"] {
       targetTrackName: targetTrack.name,
       startTick,
       endTick: insertedEnd,
+      baseLengthTicks: Math.max(
+        ticksPerBar(targetPpq),
+        Math.ceil(Math.max(1, insertedEnd - startTick) / ticksPerBar(targetPpq)) * ticksPerBar(targetPpq)
+      ),
+      repeatCount: 1,
       sourcePpq,
       noteCount: newNotes.length,
       insertedAt: new Date().toISOString(),
@@ -4150,6 +4225,255 @@ select, input[type="number"], input[type="text"] {
       (state.project.tempo || 120) + " BPM · PPQ " + (state.project.ppq || 480) + " · " + bars + " bars";
   }
 
+  function newHostClipInstanceId() {
+    return "clip-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function hostClipBaseLengthTicks(clip, ppq = state.project?.ppq || 480) {
+    const explicit = Number(clip?.baseLengthTicks);
+    if (Number.isFinite(explicit) && explicit > 0) return Math.max(1, Math.round(explicit));
+
+    const tpb = ticksPerBar(ppq);
+    const start = Math.max(0, Number(clip?.startTick) || 0);
+    const end = Math.max(start + 1, Number(clip?.endTick) || (start + tpb));
+    const raw = Math.max(1, end - start);
+    return Math.max(tpb, Math.ceil(raw / tpb) * tpb);
+  }
+
+  function hostClipRepeatCount(clip, ppq = state.project?.ppq || 480) {
+    const explicit = Number(clip?.repeatCount);
+    if (Number.isInteger(explicit) && explicit >= 1) return explicit;
+    const base = hostClipBaseLengthTicks(clip, ppq);
+    const start = Math.max(0, Number(clip?.startTick) || 0);
+    const end = Math.max(start + 1, Number(clip?.endTick) || (start + base));
+    return Math.max(1, Math.round((end - start) / Math.max(1, base)));
+  }
+
+  function ensureHostClipRepeatMeta(clip, ppq = state.project?.ppq || 480) {
+    if (!clip) return { baseLengthTicks: ticksPerBar(ppq), repeatCount: 1 };
+    const baseLengthTicks = hostClipBaseLengthTicks(clip, ppq);
+    const repeatCount = hostClipRepeatCount(clip, ppq);
+    clip.baseLengthTicks = baseLengthTicks;
+    clip.repeatCount = repeatCount;
+    return { baseLengthTicks, repeatCount };
+  }
+
+  function duplicateHostLoopClip(clip, track, requestedStartTick = null) {
+    if (!state.project || !clip || !track) return false;
+    if (state.playing) stopPlayback();
+
+    const ppq = state.project.ppq || 480;
+    const tpb = ticksPerBar(ppq);
+    const instanceId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project.clips || []).indexOf(clip))
+    );
+    const owned = hostClipOwnedNotes(clip, track);
+    const sourceStart = Math.max(0, Number(clip.startTick) || 0);
+    const sourceEnd = Math.max(sourceStart + 1, Number(clip.endTick) || (sourceStart + tpb));
+    const span = Math.max(1, sourceEnd - sourceStart);
+    const nextStartRaw = requestedStartTick == null ? sourceEnd : Number(requestedStartTick);
+    const nextStart = Math.max(0, Math.round(nextStartRaw / tpb) * tpb);
+    const nextId = newHostClipInstanceId();
+
+    const newNotes = owned.map((note) => ({
+      tick: nextStart + (note.tick - sourceStart),
+      duration: Math.max(1, note.duration | 0),
+      note: note.note | 0,
+      velocity: note.velocity | 0,
+      clipId: nextId,
+    }));
+    track.notes.push(...newNotes);
+    track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    const meta = ensureHostClipRepeatMeta(clip, ppq);
+    const copy = {
+      ...clip,
+      instanceId: nextId,
+      targetTrackId: track.id,
+      targetTrackName: track.name,
+      startTick: nextStart,
+      endTick: nextStart + span,
+      baseLengthTicks: meta.baseLengthTicks,
+      repeatCount: meta.repeatCount,
+      noteCount: newNotes.length,
+      insertedAt: new Date().toISOString(),
+    };
+    state.project.clips = Array.isArray(state.project.clips) ? state.project.clips : [];
+    state.project.clips.push(copy);
+    state.selectedClipId = nextId;
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Duplicated loop “" + (clip.name || clip.originalName || "MIDI loop") +
+      "” → bar " + tickToBar(nextStart, ppq) +
+      " · Ctrl+C/V also supported · UNSAVED cloud changes",
+      "ok"
+    );
+    return true;
+  }
+
+  function repeatHostLoopClip(clip, track, requestedRepeats) {
+    if (!state.project || !clip || !track) return false;
+    if (state.playing) stopPlayback();
+
+    const ppq = state.project.ppq || 480;
+    const instanceId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project.clips || []).indexOf(clip))
+    );
+    clip.instanceId = instanceId;
+    const { baseLengthTicks } = ensureHostClipRepeatMeta(clip, ppq);
+    const repeats = Math.max(1, Math.min(128, Math.round(Number(requestedRepeats) || 1)));
+    const start = Math.max(0, Number(clip.startTick) || 0);
+    const owned = hostClipOwnedNotes(clip, track);
+
+    let baseNotes = owned.filter(
+      (note) => note.tick >= start && note.tick < start + baseLengthTicks
+    );
+    if (!baseNotes.length) baseNotes = owned.slice();
+
+    const template = baseNotes.map((note) => ({
+      offset: Math.max(0, note.tick - start),
+      duration: Math.max(1, note.duration | 0),
+      note: note.note | 0,
+      velocity: note.velocity | 0,
+    }));
+
+    const ownedSet = new Set(owned);
+    const untouched = track.notes.filter((note) => !ownedSet.has(note));
+    const repeated = [];
+    for (let cycle = 0; cycle < repeats; cycle++) {
+      const cycleOffset = cycle * baseLengthTicks;
+      for (const note of template) {
+        repeated.push({
+          tick: start + cycleOffset + note.offset,
+          duration: note.duration,
+          note: note.note,
+          velocity: note.velocity,
+          clipId: instanceId,
+        });
+      }
+    }
+
+    track.notes = untouched.concat(repeated)
+      .sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    clip.baseLengthTicks = baseLengthTicks;
+    clip.repeatCount = repeats;
+    clip.endTick = start + baseLengthTicks * repeats;
+    clip.noteCount = repeated.length;
+    state.selectedClipId = instanceId;
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Repeated loop “" + (clip.name || clip.originalName || "MIDI loop") +
+      "” ×" + repeats +
+      " · drag the striped right edge to change repeats · UNSAVED cloud changes",
+      "ok"
+    );
+    return true;
+  }
+
+  function copyHostLoopClipToClipboard(clip, track) {
+    if (!state.project || !clip || !track) return false;
+    const owned = hostClipOwnedNotes(clip, track);
+    const start = Math.max(0, Number(clip.startTick) || 0);
+    const meta = ensureHostClipRepeatMeta(clip, state.project.ppq || 480);
+    state.clipClipboard = {
+      sourceTrackId: track.id,
+      clip: {
+        ...clip,
+        baseLengthTicks: meta.baseLengthTicks,
+        repeatCount: meta.repeatCount,
+      },
+      notes: owned.map((note) => ({
+        offset: note.tick - start,
+        duration: Math.max(1, note.duration | 0),
+        note: note.note | 0,
+        velocity: note.velocity | 0,
+      })),
+    };
+    setStatus(
+      "Copied loop “" + (clip.name || clip.originalName || "MIDI loop") +
+      "” · move red playhead and press Ctrl+V",
+      "ok"
+    );
+    return true;
+  }
+
+  function pasteHostLoopClipboard() {
+    if (!state.project || !state.clipClipboard) {
+      setStatus("No copied loop. Select a loop and press Ctrl+C first.", "err");
+      return false;
+    }
+    if (state.playing) stopPlayback();
+
+    const data = state.clipClipboard;
+    const track =
+      state.project.tracks.find((item) => item.id === data.sourceTrackId) ||
+      state.project.tracks[0];
+    if (!track) return false;
+
+    const ppq = state.project.ppq || 480;
+    const tpb = ticksPerBar(ppq);
+    const start = Math.max(0, Math.round((state.startTick || 0) / tpb) * tpb);
+    const nextId = newHostClipInstanceId();
+    const sourceClip = data.clip || {};
+    const baseLengthTicks = Math.max(1, Number(sourceClip.baseLengthTicks) || tpb);
+    const repeatCount = Math.max(1, Number(sourceClip.repeatCount) || 1);
+    const span = Math.max(
+      baseLengthTicks * repeatCount,
+      Number(sourceClip.endTick) - Number(sourceClip.startTick) || baseLengthTicks
+    );
+
+    const notes = (data.notes || []).map((note) => ({
+      tick: start + note.offset,
+      duration: note.duration,
+      note: note.note,
+      velocity: note.velocity,
+      clipId: nextId,
+    }));
+    track.notes.push(...notes);
+    track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    const pastedClip = {
+      ...sourceClip,
+      instanceId: nextId,
+      targetTrackId: track.id,
+      targetTrackName: track.name,
+      startTick: start,
+      endTick: start + span,
+      baseLengthTicks,
+      repeatCount,
+      noteCount: notes.length,
+      insertedAt: new Date().toISOString(),
+    };
+    state.project.clips = Array.isArray(state.project.clips) ? state.project.clips : [];
+    state.project.clips.push(pastedClip);
+    state.selectedClipId = nextId;
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Pasted loop → " + track.name + " @ bar " + tickToBar(start, ppq) +
+      " · UNSAVED cloud changes",
+      "ok"
+    );
+    return true;
+  }
+
   function moveHostLoopClip(clip, track, requestedStartTick) {
     if (!state.project || !clip || !track) return false;
     if (state.playing) stopPlayback();
@@ -4249,7 +4573,7 @@ select, input[type="number"], input[type="text"] {
         box.title =
           (clip.name || clip.originalName || "MIDI loop") +
           " · bar " + tickToBar(tick, ppq) +
-          " · drag to move · ←/→ one bar · Delete removes";
+          " · drag to move · striped right edge repeats · Ctrl+D duplicate · Delete removes";
       };
 
       const onMove = (moveEvent) => {
@@ -4274,7 +4598,7 @@ select, input[type="number"], input[type="text"] {
         } else {
           setStatus(
             "Selected loop “" + (clip.name || clip.originalName || "MIDI loop") +
-            "” · drag left/right · ←/→ = 1 bar · Delete = remove",
+            "” · drag = move · striped right edge = repeat · Ctrl+D = duplicate · Ctrl+C/V = copy/paste · Delete = remove",
             "ok"
           );
         }
@@ -4293,6 +4617,82 @@ select, input[type="number"], input[type="text"] {
       box.addEventListener("pointermove", onMove);
       box.addEventListener("pointerup", finish);
       box.addEventListener("pointercancel", cancel);
+    });
+  }
+
+  function attachHostLoopRepeatDrag(handle, box, label, clip, track, ppq) {
+    handle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const instanceId = hostClipInstanceId(
+        clip,
+        Math.max(0, (state.project?.clips || []).indexOf(clip))
+      );
+      clip.instanceId = instanceId;
+      selectHostLoopClip(instanceId);
+
+      const { baseLengthTicks, repeatCount } = ensureHostClipRepeatMeta(clip, ppq);
+      const baseBars = baseLengthTicks / Math.max(1, ticksPerBar(ppq));
+      const basePx = Math.max(8, baseBars * state.barW);
+      const originX = event.clientX;
+      let previewRepeats = repeatCount;
+
+      box.classList.add("repeating");
+      handle.setPointerCapture?.(event.pointerId);
+
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const deltaRepeats = Math.round((moveEvent.clientX - originX) / basePx);
+        previewRepeats = Math.max(1, Math.min(128, repeatCount + deltaRepeats));
+        const start = Math.max(0, Number(clip.startTick) || 0);
+        const previewEnd = start + baseLengthTicks * previewRepeats;
+        const previewWidthPct =
+          (Math.max(1, previewEnd - start) / Math.max(1, state.lengthTicks || 1)) * 100;
+        box.style.width = previewWidthPct + "%";
+        if (label) {
+          label.textContent =
+            "♫ " + (clip.name || clip.originalName || "Loop") +
+            (previewRepeats > 1 ? " ×" + previewRepeats : "");
+        }
+        box.title =
+          "Repeat “" + (clip.name || clip.originalName || "MIDI loop") +
+          "” ×" + previewRepeats + " · release to apply";
+      };
+
+      const finish = (upEvent) => {
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", finish);
+        handle.removeEventListener("pointercancel", cancel);
+        try { handle.releasePointerCapture?.(upEvent.pointerId); } catch {}
+        box.classList.remove("repeating");
+        box.style.width = "";
+        if (previewRepeats !== repeatCount) {
+          repeatHostLoopClip(clip, track, previewRepeats);
+        } else {
+          renderTracks();
+          setStatus(
+            "Selected loop “" + (clip.name || clip.originalName || "MIDI loop") +
+            "” · drag striped right edge to repeat it like ACID paint",
+            "ok"
+          );
+        }
+      };
+
+      const cancel = (cancelEvent) => {
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", finish);
+        handle.removeEventListener("pointercancel", cancel);
+        try { handle.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
+        box.classList.remove("repeating");
+        box.style.width = "";
+        renderTracks();
+      };
+
+      handle.addEventListener("pointermove", onMove);
+      handle.addEventListener("pointerup", finish);
+      handle.addEventListener("pointercancel", cancel);
     });
   }
 
@@ -4417,7 +4817,13 @@ select, input[type="number"], input[type="text"] {
         hostClipOwnedNotes(clip, track);
 
         const startTick = Math.max(0, Number(clip.startTick) || 0);
-        const endTick = Math.max(startTick + 1, Number(clip.endTick) || (startTick + 1));
+        const meta = ensureHostClipRepeatMeta(clip, ppq);
+        const repeatCount = meta.repeatCount;
+        const expectedEnd = startTick + meta.baseLengthTicks * repeatCount;
+        const endTick = Math.max(
+          startTick + 1,
+          Number(clip.endTick) || expectedEnd
+        );
         const left = (startTick / Math.max(1, length)) * 100;
         const width = Math.max(0.35, ((endTick - startTick) / Math.max(1, length)) * 100);
 
@@ -4430,15 +4836,62 @@ select, input[type="number"], input[type="text"] {
         box.title =
           (clip.name || clip.originalName || "MIDI loop") +
           " · bar " + tickToBar(startTick, ppq) +
-          " · drag to move · ←/→ one bar · Delete removes";
+          (repeatCount > 1 ? " · ×" + repeatCount : "") +
+          " · drag to move · striped right edge repeats · Ctrl+D duplicate · Delete removes";
+
+        for (let cycle = 1; cycle < repeatCount; cycle++) {
+          const divider = document.createElement("div");
+          divider.className = "loop-repeat-divider";
+          divider.style.left = ((cycle / repeatCount) * 100) + "%";
+          box.appendChild(divider);
+        }
 
         const label = document.createElement("span");
         label.className = "loop-clip-label";
-        label.textContent = "♫ " + (clip.name || clip.originalName || "Loop");
+        label.textContent =
+          "♫ " + (clip.name || clip.originalName || "Loop") +
+          (repeatCount > 1 ? " ×" + repeatCount : "");
         box.appendChild(label);
+
+        const actions = document.createElement("div");
+        actions.className = "loop-clip-actions";
+        const duplicateBtn = document.createElement("button");
+        duplicateBtn.type = "button";
+        duplicateBtn.className = "loop-clip-action";
+        duplicateBtn.textContent = "⧉";
+        duplicateBtn.title = "Duplicate loop to the right (Ctrl+D)";
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "loop-clip-action delete";
+        deleteBtn.textContent = "×";
+        deleteBtn.title = "Delete loop (Delete)";
+        actions.append(duplicateBtn, deleteBtn);
+        box.appendChild(actions);
+
+        const repeatHandle = document.createElement("div");
+        repeatHandle.className = "loop-clip-repeat-handle";
+        repeatHandle.title = "Drag right to repeat / left to shorten repeats (ACID-style)";
+        box.appendChild(repeatHandle);
+
+        for (const control of [duplicateBtn, deleteBtn, repeatHandle]) {
+          control.addEventListener("pointerdown", (event) => event.stopPropagation());
+        }
+        duplicateBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          selectHostLoopClip(instanceId);
+          duplicateHostLoopClip(clip, track);
+        });
+        deleteBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          selectHostLoopClip(instanceId);
+          removeHostLoopClip(clip, track);
+        });
 
         body.appendChild(box);
         attachHostLoopClipDrag(box, clip, track, body, length, totalW, ppq);
+        attachHostLoopRepeatDrag(repeatHandle, box, label, clip, track, ppq);
       }
 
       const ph = document.createElement("div");
@@ -5652,6 +6105,23 @@ select, input[type="number"], input[type="text"] {
     if (e.target.matches("input, select, textarea")) return;
 
     const clipContext = selectedHostClipContext();
+
+    if (clipContext && (e.ctrlKey || e.metaKey) && !e.altKey && String(e.key || "").toLowerCase() === "d") {
+      e.preventDefault();
+      duplicateHostLoopClip(clipContext.clip, clipContext.track);
+      return;
+    }
+    if (clipContext && (e.ctrlKey || e.metaKey) && !e.altKey && String(e.key || "").toLowerCase() === "c") {
+      e.preventDefault();
+      copyHostLoopClipToClipboard(clipContext.clip, clipContext.track);
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && String(e.key || "").toLowerCase() === "v") {
+      e.preventDefault();
+      pasteHostLoopClipboard();
+      return;
+    }
+
     if (clipContext && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
       e.preventDefault();
       const step = ticksPerBar(state.project.ppq || 480);
