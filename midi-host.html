@@ -3517,6 +3517,43 @@ select, input[type="number"], input[type="text"] {
         <div class="track-body" data-body="${track.id}" style="--bar-w:${state.barW}px;width:${totalW}px"></div>
       `;
       const body = el.querySelector(".track-body");
+      body.addEventListener("dragover", (event) => {
+        const types = Array.from(event.dataTransfer?.types || []);
+        if (!types.includes("application/x-style-library-midi")) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        clearHostLoopDropTargets();
+        const pos = hostLoopDropPosition(body, event.clientX);
+        body.classList.add("loop-drop-target");
+        body.dataset.dropLabel = "Drop @ bar " + pos.bar;
+        body.style.setProperty("--drop-x", pos.x + "px");
+      });
+      body.addEventListener("dragleave", (event) => {
+        if (event.relatedTarget && body.contains(event.relatedTarget)) return;
+        body.classList.remove("loop-drop-target");
+        body.removeAttribute("data-drop-label");
+        body.style.removeProperty("--drop-x");
+      });
+      body.addEventListener("drop", async (event) => {
+        const entryId =
+          event.dataTransfer?.getData("application/x-style-library-midi") ||
+          event.dataTransfer?.getData("text/plain") ||
+          "";
+        if (!entryId) return;
+        event.preventDefault();
+        const pos = hostLoopDropPosition(body, event.clientX);
+        clearHostLoopDropTargets();
+        try {
+          await ensureHostLoopCatalog();
+          const entry = hostLoopCatalog.find((item) => item.id === entryId);
+          if (!entry) throw new Error("Loop is no longer in the library index");
+          await insertHostLoopIntoTrack(entry, track, pos.tick);
+        } catch (err) {
+          setStatus("Loop drop failed: " + err.message, "err");
+          hostLoopSetStatus("Drop error: " + err.message);
+        }
+      });
+
       const notes = track.notes;
       const minN = notes.length ? notes.reduce((m, n) => Math.min(m, n.note), 127) : 60;
       const maxN = notes.length ? notes.reduce((m, n) => Math.max(m, n.note), 0) : 60;
