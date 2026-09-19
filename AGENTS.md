@@ -42,6 +42,7 @@ python scripts/local_server.py --open
 - Кнопка **Loops** открывает справа встроенный Loop Browser.
 - Browser читает `GET /api/library` и `GET /api/library/midi?id=...`; отдельная копия библиотеки не создаётся.
 - **Preview** слушает MIDI при текущем BPM проекта, не изменяя piano roll.
+- У каждого loop есть пользовательский рейтинг **1–5 ★**, который хранится в browser localStorage по стабильному MIDI id. Повторный клик по текущей оценке очищает её. Фильтр Rating позволяет быстро показать rated loops, 4★+ favorites или выбранный минимальный рейтинг.
 - **LOAD** загружает MIDI в активную из трёх дорожек. После загрузки это обычные ноты секвенсора, а не живая ссылка на исходный файл.
 - Короткий loop автоматически физически повторяется до длины текущего паттерна: 1 bar → 4 копии в 4-bar pattern, 2 bars → 2 копии и т.д.
 - Если reference loop длиннее текущего паттерна, pattern автоматически расширяется до ближайшего целого такта (в пределах текущего лимита 16 bars).
@@ -52,7 +53,8 @@ python scripts/local_server.py --open
 
 Кнопка **Sync to AI** в Chiptune пишет и пушит:
 - `projects/chiptune-current.json` — полный проект и source metadata;
-- `projects/chiptune-overview.md` — активный pattern, его длина, источники трёх дорожек и пошаговые note/drum events.
+- `projects/chiptune-overview.md` — активный pattern, его длина, источники трёх дорожек, rating загруженных source loops и пошаговые note/drum events;
+- `projects/chiptune-loop-ratings.json` — текущие пользовательские оценки reference loops, чтобы ассистент после Sync мог учитывать favorites.
 
 После этой кнопки ассистент может прочитать текущее состояние конструктора из GitHub и обсуждать с пользователем конкретные загруженные лупы и их правки. Не утверждать, что видно текущее состояние браузера, пока пользователь не нажал **Sync to AI** после изменений.
 
