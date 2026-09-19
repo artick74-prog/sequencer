@@ -2085,6 +2085,7 @@ class PatternLibrary {
         trackEngines: [...(vA.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
         trackMidiChannels: [...(vA.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
         trackPrograms: [...(vA.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
+        trackDrumMidiNotes: (vA.trackDrumMidiNotes || Array.from({length:CONFIG.TRACKS},()=>CONFIG.GM_DRUM_NOTE_MAP)).map(row => [...row]),
       },
       variantB: vB ? {
         melodicPattern: vB.melodicPattern.map(t => t.map(cell => cloneMelodicCell(cell))),
@@ -2101,6 +2102,7 @@ class PatternLibrary {
         trackEngines: [...(vB.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
         trackMidiChannels: [...(vB.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
         trackPrograms: [...(vB.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
+        trackDrumMidiNotes: (vB.trackDrumMidiNotes || Array.from({length:CONFIG.TRACKS},()=>CONFIG.GM_DRUM_NOTE_MAP)).map(row => [...row]),
       } : null,
     };
     list.push(entry);
@@ -2137,6 +2139,7 @@ class PatternLibrary {
       trackEngines: [...(src.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
       trackMidiChannels: [...(src.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
       trackPrograms: [...(src.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
+      trackDrumMidiNotes: (src.trackDrumMidiNotes || Array.from({length:CONFIG.TRACKS},()=>CONFIG.GM_DRUM_NOTE_MAP)).map(row => [...row]),
     });
 
     const newIdx = this.state._arrangedPatterns.length;
@@ -2191,6 +2194,7 @@ class StateManager {
       trackEngines: Array(CONFIG.TRACKS).fill('chip'),
       trackMidiChannels: CONFIG.DEFAULT_MIDI_CHANNELS.slice(),
       trackPrograms: CONFIG.DEFAULT_GM_PROGRAMS.slice(),
+      trackDrumMidiNotes: Array.from({ length: CONFIG.TRACKS }, () => CONFIG.GM_DRUM_NOTE_MAP.slice()),
     };
   }
 
@@ -2230,6 +2234,12 @@ class StateManager {
       const p = Number(d.trackPrograms?.[i] ?? CONFIG.DEFAULT_GM_PROGRAMS[i] ?? 0);
       return Math.max(0, Math.min(127, p | 0));
     });
+    d.trackDrumMidiNotes = Array.from({ length: CONFIG.TRACKS }, (_, t) =>
+      Array.from({ length: CONFIG.DRUM_INSTRUMENTS.length }, (_, dIdx) => {
+        const note = Number(d.trackDrumMidiNotes?.[t]?.[dIdx] ?? CONFIG.GM_DRUM_NOTE_MAP[dIdx] ?? 36);
+        return Math.max(0, Math.min(127, note | 0));
+      })
+    );
     return d;
   }
 
@@ -2249,6 +2259,7 @@ class StateManager {
     this.trackEngines = p.trackEngines;
     this.trackMidiChannels = p.trackMidiChannels;
     this.trackPrograms = p.trackPrograms;
+    this.trackDrumMidiNotes = p.trackDrumMidiNotes;
     this.patternLength = p.patternLength;
     this.steps = this.patternLength;
 
@@ -2397,6 +2408,7 @@ class StateManager {
     this.trackEngines = [...d.trackEngines];
     this.trackMidiChannels = [...d.trackMidiChannels];
     this.trackPrograms = [...d.trackPrograms];
+    this.trackDrumMidiNotes = d.trackDrumMidiNotes.map(row => [...row]);
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this.locatorA = Math.max(0, Math.min(this.locatorA, this.patternLength));
@@ -2423,6 +2435,7 @@ class StateManager {
     d.trackEngines = [...this.trackEngines];
     d.trackMidiChannels = [...this.trackMidiChannels];
     d.trackPrograms = [...this.trackPrograms];
+    d.trackDrumMidiNotes = this.trackDrumMidiNotes.map(row => [...row]);
   }
 
   /* Коллбэк, вызываемый при каждом изменении состояния */
@@ -2448,6 +2461,7 @@ class StateManager {
       trackEngines: [...this.trackEngines],
       trackMidiChannels: [...this.trackMidiChannels],
       trackPrograms: [...this.trackPrograms],
+      trackDrumMidiNotes: this.trackDrumMidiNotes.map(row => [...row]),
     });
   }
 
@@ -2470,6 +2484,7 @@ class StateManager {
     this.trackEngines = [...d.trackEngines];
     this.trackMidiChannels = [...d.trackMidiChannels];
     this.trackPrograms = [...d.trackPrograms];
+    this.trackDrumMidiNotes = d.trackDrumMidiNotes.map(row => [...row]);
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this._saveStateToVariant();
@@ -2706,12 +2721,19 @@ class StateManager {
     if (isDrums) {
       this.trackMidiChannels[track] = 10;
       const baseHits = [];
+      const noteCountsByLane = Array.from({ length: CONFIG.DRUM_INSTRUMENTS.length }, () => new Map());
       for (const note of midi.notes) {
         const drumIdx = gmDrumToIndex(note.note);
         if (drumIdx < 0) continue;
         const step = Math.max(0, Math.min(loopSteps - 1, Math.round(note.tick / tickPerStep)));
         baseHits.push([step, drumIdx]);
+        const counts = noteCountsByLane[drumIdx];
+        counts.set(note.note, (counts.get(note.note) || 0) + 1);
       }
+      this.trackDrumMidiNotes[track] = noteCountsByLane.map((counts, drumIdx) => {
+        if (!counts.size) return CONFIG.GM_DRUM_NOTE_MAP[drumIdx] ?? 36;
+        return [...counts.entries()].sort((a,b) => b[1] - a[1])[0][0];
+      });
       for (let offset = 0; offset < this.steps; offset += loopSteps) {
         for (const [baseStep, drumIdx] of baseHits) {
           const step = offset + baseStep;
@@ -2809,7 +2831,7 @@ class StateManager {
     if (!variant) return 0;
     const steps = variant.patternLength || CONFIG.STEPS;
     let count = 0;
-    if (this.trackTypes[trackIdx] === 'drum') {
+    if ((variant.trackTypes?.[trackIdx] || this.trackTypes[trackIdx]) === 'drum') {
       for (let s = 0; s < steps; s++)
         for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++)
           if (variant.drumPattern[trackIdx]?.[s]?.[d]) count++;
@@ -3753,7 +3775,7 @@ class Sequencer {
       return;
     }
     for (const drumIdx of drumSet) {
-      const note = CONFIG.GM_DRUM_NOTE_MAP[drumIdx] ?? 36;
+      const note = this.state.trackDrumMidiNotes?.[track]?.[drumIdx] ?? CONFIG.GM_DRUM_NOTE_MAP[drumIdx] ?? 36;
       if (engine === 'sf2') {
         this.audio.scheduleSf2Note(channel, program, note, 105, playTime, duration, true);
       } else if (engine === 'midi') {
@@ -4266,6 +4288,7 @@ class UIRenderer {
     });
     engineSelect.addEventListener('change', async () => {
       this.state.setTrackEngine(trackIdx, engineSelect.value);
+      if (engineSelect.value !== 'chip') this.state.synthPanelOpen[trackIdx] = false;
       if (engineSelect.value === 'sf2') await audio.ensureSf2Loaded();
       if (engineSelect.value === 'midi') await audio.ensureMidiAccess();
       this.render();
@@ -4521,7 +4544,7 @@ class UIRenderer {
 
     // ─── Панель синтезатора (ADSR + Filter) ───
     const synthPanel = this._createSynthPanel(trackIdx);
-    if (this.state.synthPanelOpen[trackIdx]) synthPanel.classList.add('open');
+    if (this.state.synthPanelOpen[trackIdx] && this.state.trackEngines[trackIdx] === 'chip') synthPanel.classList.add('open');
     wrapper.appendChild(synthPanel);
 
     // ─── Контент ───
