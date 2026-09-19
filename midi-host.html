@@ -418,6 +418,25 @@ select, input[type="number"], input[type="text"] {
   white-space: nowrap;
 }
 .track-head .meta { color: var(--dim); font-size: 11px; }
+.track-main-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.track-main-row .name {
+  flex: 0 1 auto;
+}
+.track-main-row .field {
+  flex: 0 1 auto;
+}
+.track-actions-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .track-mix {
   display: inline-flex;
   gap: 3px;
@@ -2440,16 +2459,21 @@ select, input[type="number"], input[type="text"] {
 
       el.innerHTML = `
         <div class="track-head">
-          <span class="name" style="color:${info.color}" title="${escapeHtml(track.name)}">${escapeHtml(track.name)}</span>
-          <label class="field">ch
-            <select data-ch="${track.id}">${chOptions}</select>
-          </label>
-          ${gmTag}
-          <span class="track-mix" aria-label="Solo and mute">
-            <button class="mix-btn solo ${track.solo ? "active" : ""}" type="button" data-solo="${track.id}" title="Solo">S</button>
-            <button class="mix-btn mute ${track.mute ? "active" : ""}" type="button" data-mute="${track.id}" title="Mute">M</button>
-          </span>
-          <button class="btn" type="button" data-preview="${track.id}">Preview</button>\n          <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
+          <div class="track-main-row">
+            <span class="name" style="color:${info.color}" title="${escapeHtml(track.name)}">${escapeHtml(track.name)}</span>
+            <label class="field">ch
+              <select data-ch="${track.id}">${chOptions}</select>
+            </label>
+            ${gmTag}
+          </div>
+          <div class="track-actions-row">
+            <span class="track-mix" aria-label="Solo and mute">
+              <button class="mix-btn solo ${track.solo ? "active" : ""}" type="button" data-solo="${track.id}" title="Solo">S</button>
+              <button class="mix-btn mute ${track.mute ? "active" : ""}" type="button" data-mute="${track.id}" title="Mute">M</button>
+            </span>
+            <button class="btn" type="button" data-preview="${track.id}">Preview</button>
+            <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
+          </div>
         </div>
         <div class="track-body" data-body="${track.id}" style="--bar-w:${state.barW}px;width:${totalW}px"></div>
       `;
