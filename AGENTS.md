@@ -208,6 +208,7 @@ ASCII в overview:
 ### Экспорт / прослушка
 
 - **Export MIDI** — отдельная Cubase-дорожка на каждый трек; имя `56 Trumpet` сохраняется; маркеры в conductor.
+- На каждой дорожке есть кнопка **MIDI**: экспортирует только эту дорожку как **SMF Format 0** с одним `MTrk`; сохраняются tempo, 4/4, markers, исходный MIDI channel, note/velocity/duration. Это удобно для быстрой проверки/редактирования одной партии в Fender Studio/Cubase.
 - **Browser audio (SF2)** в `midi-host.html`: при **Play** загружается GM SoundFont (Yamaha XG с CDN, или свой `.sf2` через **Load SF2**). Program берётся из **номера в имени** дорожки (`56 Trumpet` → preset 56). GM-треки играют только в SF2; железо (ch 1/2/10) — опционально через **Hardware MIDI Out**.
 - Финальные тембры — Kontakt / другие VST в Cubase; MIDI-дорожки те же.
 
