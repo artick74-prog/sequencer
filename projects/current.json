@@ -24091,219 +24091,207 @@
         },
         {
           "tick": 92160,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 116
+          "velocity": 34
         },
         {
           "tick": 92400,
-          "duration": 90,
+          "duration": 82,
           "note": 45,
-          "velocity": 90
+          "velocity": 38
         },
         {
           "tick": 92536,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 102
+          "velocity": 39
         },
         {
           "tick": 92880,
-          "duration": 90,
-          "note": 52,
-          "velocity": 116
-        },
-        {
-          "tick": 93016,
-          "duration": 90,
+          "duration": 86,
           "note": 45,
-          "velocity": 90
+          "velocity": 37
         },
         {
           "tick": 93120,
-          "duration": 90,
+          "duration": 76,
           "note": 45,
-          "velocity": 102
+          "velocity": 38
         },
         {
           "tick": 93496,
-          "duration": 90,
+          "duration": 150,
           "note": 45,
-          "velocity": 116
+          "velocity": 27
         },
         {
           "tick": 93600,
           "duration": 90,
-          "note": 45,
-          "velocity": 90
+          "note": 48,
+          "velocity": 118
         },
         {
-          "tick": 93976,
-          "duration": 90,
+          "tick": 93840,
+          "duration": 96,
           "note": 45,
-          "velocity": 102
+          "velocity": 29
         },
         {
           "tick": 94080,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 116
+          "velocity": 34
         },
         {
-          "tick": 94216,
-          "duration": 90,
+          "tick": 94320,
+          "duration": 82,
           "note": 45,
-          "velocity": 90
-        },
-        {
-          "tick": 94456,
-          "duration": 90,
-          "note": 45,
-          "velocity": 102
+          "velocity": 38
         },
         {
           "tick": 94560,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 116
+          "velocity": 118
         },
         {
           "tick": 94936,
-          "duration": 90,
+          "duration": 86,
           "note": 45,
-          "velocity": 90
+          "velocity": 34
         },
         {
-          "tick": 95176,
-          "duration": 90,
+          "tick": 95280,
+          "duration": 88,
           "note": 45,
-          "velocity": 102
+          "velocity": 30
         },
         {
           "tick": 95416,
+          "duration": 150,
+          "note": 45,
+          "velocity": 31
+        },
+        {
+          "tick": 95520,
           "duration": 90,
           "note": 48,
-          "velocity": 116
+          "velocity": 118
         },
         {
-          "tick": 95656,
-          "duration": 90,
+          "tick": 95760,
+          "duration": 96,
           "note": 45,
-          "velocity": 90
-        },
-        {
-          "tick": 95896,
-          "duration": 90,
-          "note": 45,
-          "velocity": 102
+          "velocity": 32
         },
         {
           "tick": 96000,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 116
+          "velocity": 118
         },
         {
           "tick": 96240,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 90
+          "velocity": 32
         },
         {
-          "tick": 96376,
-          "duration": 90,
+          "tick": 96480,
+          "duration": 88,
           "note": 45,
-          "velocity": 102
-        },
-        {
-          "tick": 96720,
-          "duration": 90,
-          "note": 52,
-          "velocity": 116
+          "velocity": 36
         },
         {
           "tick": 96856,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 90
+          "velocity": 34
         },
         {
-          "tick": 96960,
-          "duration": 90,
+          "tick": 97200,
+          "duration": 88,
           "note": 45,
-          "velocity": 102
+          "velocity": 31
         },
         {
           "tick": 97336,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 116
+          "velocity": 36
         },
         {
           "tick": 97440,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 90
+          "velocity": 118
+        },
+        {
+          "tick": 97680,
+          "duration": 88,
+          "note": 45,
+          "velocity": 34
         },
         {
           "tick": 97816,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 102
+          "velocity": 38
         },
         {
           "tick": 97920,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 116
+          "velocity": 118
         },
         {
-          "tick": 98056,
-          "duration": 90,
+          "tick": 98160,
+          "duration": 88,
           "note": 45,
-          "velocity": 90
-        },
-        {
-          "tick": 98296,
-          "duration": 90,
-          "note": 45,
-          "velocity": 102
+          "velocity": 34
         },
         {
           "tick": 98400,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 116
+          "velocity": 118
         },
         {
           "tick": 98776,
-          "duration": 90,
+          "duration": 88,
           "note": 45,
-          "velocity": 90
+          "velocity": 38
         },
         {
-          "tick": 99016,
-          "duration": 90,
+          "tick": 99120,
+          "duration": 88,
           "note": 45,
-          "velocity": 102
+          "velocity": 34
         },
         {
           "tick": 99256,
-          "duration": 90,
-          "note": 48,
-          "velocity": 116
+          "duration": 88,
+          "note": 45,
+          "velocity": 40
         },
         {
-          "tick": 99496,
-          "duration": 200,
+          "tick": 99360,
+          "duration": 88,
           "note": 45,
-          "velocity": 90
+          "velocity": 118
+        },
+        {
+          "tick": 99600,
+          "duration": 88,
+          "note": 45,
+          "velocity": 36
         },
         {
           "tick": 99736,
-          "duration": 90,
-          "note": 57,
-          "velocity": 102
+          "duration": 88,
+          "note": 45,
+          "velocity": 42
         },
         {
           "tick": 99840,
