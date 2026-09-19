@@ -47,14 +47,21 @@ body {
    ЗАГОЛОВОК
    ═══════════════════════════════════════════ */
 .header {
-  text-align: center;
-  padding: 16px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-panel);
 }
+.header-brand {
+  min-width: 260px;
+}
 .header h1 {
-  font-size: 20px;
-  letter-spacing: 4px;
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 3px;
   color: var(--accent);
   text-transform: uppercase;
   text-shadow: 0 0 10px var(--accent-dim);
@@ -63,6 +70,34 @@ body {
   font-size: 11px;
   color: var(--text-dim);
   margin-top: 2px;
+}
+.app-nav {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.app-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-grid);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+}
+.app-nav a:hover { border-color: var(--accent); color: #fff; }
+.app-nav a.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
 }
 
 /* ═══════════════════════════════════════════
@@ -1499,8 +1534,15 @@ body {
      HTML-РАЗМЕТКА
      ═══════════════════════════════════════════ -->
 <div class="header">
-  <h1>Chiptune Sequencer</h1>
-  <div class="subtitle">Piano Roll Tracker — 3 Voices — TR-909 Drums — Web Audio API · <a href="midi-host.html" style="color:var(--accent)">Hardware MIDI Host</a></div>
+  <div class="header-brand">
+    <h1>Chiptune Sequencer</h1>
+    <div class="subtitle">Piano Roll Tracker · Loop Constructor · CHIP / SF2 / MIDI HW</div>
+  </div>
+  <nav class="app-nav" aria-label="Music workspace">
+    <a class="active" href="index.html">Chiptune Sequencer</a>
+    <a href="style-library.html">Style Library</a>
+    <a href="midi-host.html">MIDI Host</a>
+  </nav>
 </div>
 
 <div class="controls" id="controls">

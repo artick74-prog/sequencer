@@ -33,7 +33,9 @@ python scripts/local_server.py --open
 Обычный `python -m http.server 8080` остаётся fallback-вариантом без Git bridge.
 
 - Chiptune: http://localhost:8080/
+- Style Library: http://localhost:8080/style-library.html
 - Hardware host: http://localhost:8080/midi-host.html
+- Все три страницы используют общую верхнюю навигационную шапку с кнопками **Chiptune Sequencer / Style Library / MIDI Host**; текущая страница подсвечивается.
 
 ### Chiptune Loop Constructor
 

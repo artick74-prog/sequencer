@@ -38,22 +38,49 @@ body {
 a { color: var(--accent); }
 .header {
   display: flex;
-  align-items: baseline;
-  gap: 16px;
+  align-items: center;
+  gap: 18px;
   flex-wrap: wrap;
-  padding: 14px 20px;
+  padding: 10px 20px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+.header-brand { min-width: 260px; }
 .header h1 {
+  margin: 0;
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--accent);
 }
-.header .sub { color: var(--dim); font-size: 12px; }
-.header .nav { margin-left: auto; font-size: 12px; }
+.header .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+.app-nav {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.app-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #1c2430;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 12px;
+}
+.app-nav a:hover { border-color: var(--accent-dim); color: #fff; }
+.app-nav a.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: #fff;
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -392,9 +419,15 @@ select, input[type="number"], input[type="text"] {
 </head>
 <body>
   <header class="header">
-    <h1>Hardware MIDI Host</h1>
-    <span class="sub">TD-3 (USB) → DIN → XR20 · Cubase tracks · Git sync</span>
-    <span class="nav"><a href="style-library.html">Style Library</a> · <a href="index.html">Chiptune Sequencer</a></span>
+    <div class="header-brand">
+      <h1>Hardware MIDI Host</h1>
+      <div class="sub">TD-3 / XR20 · Hardware playback · Arrangement / Git sync</div>
+    </div>
+    <nav class="app-nav" aria-label="Music workspace">
+      <a href="index.html">Chiptune Sequencer</a>
+      <a href="style-library.html">Style Library</a>
+      <a class="active" href="midi-host.html">MIDI Host</a>
+    </nav>
   </header>
 
   <div class="toolbar">
