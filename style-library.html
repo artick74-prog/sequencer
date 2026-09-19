@@ -619,10 +619,6 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
       state.cycleTicks=midiCycleTicks(midi);
       $("bpm").value=String(Math.round(midi.tempo||120));
 
-      if(entry.kind==="drums") $("hwChannel").value="10";
-      else if(entry.kind==="acid") $("hwChannel").value="2";
-      else $("hwChannel").value="1";
-
       renderSelected();
       updateProgressUI(0);
       renderList();
@@ -826,6 +822,15 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     state.outputId=$("midiOut").value;
     if(wasPlaying) play();
   });
+
+  const savedHwChannel=localStorage.getItem("styleLibraryHwChannel");
+  if(savedHwChannel && [...$("hwChannel").options].some(o=>o.value===savedHwChannel)) {
+    $("hwChannel").value=savedHwChannel;
+  }
+  $("hwChannel").addEventListener("change",()=>{
+    localStorage.setItem("styleLibraryHwChannel",$("hwChannel").value);
+  });
+
 
   $("bpm").addEventListener("change",()=>{
     renderSelected();
