@@ -8,7 +8,7 @@
 
 | Файл | Назначение |
 |------|------------|
-| `index.html` | Chiptune Piano Roll (Web Audio, без железа) |
+| `index.html` | Chiptune / MIDI / SoundFont Piano Roll + Loop Constructor |
 | `midi-host.html` | Hardware MIDI Host → TD-3 + XR20; GM-скетч-дорожки для прослушки/экспорта |
 | `scripts/generate_td3_acid_riffs.py` | Генератор acid-фраз в `.mid` |
 
@@ -41,19 +41,24 @@ python scripts/local_server.py --open
 
 - Кнопка **Loops** открывает справа встроенный Loop Browser.
 - Browser читает `GET /api/library` и `GET /api/library/midi?id=...`; отдельная копия библиотеки не создаётся.
-- **Preview** слушает MIDI при текущем BPM проекта, не изменяя piano roll.
+- **Preview** слушает MIDI при текущем BPM проекта, не изменяя piano roll, и следует engine активной дорожки: CHIP / SF2 / MIDI HW.
 - У каждого loop есть пользовательский рейтинг **1–5 ★**, который хранится в browser localStorage по стабильному MIDI id. Повторный клик по текущей оценке очищает её. Фильтр Rating позволяет быстро показать rated loops, 4★+ favorites или выбранный минимальный рейтинг.
 - **LOAD** загружает MIDI в активную из трёх дорожек. После загрузки это обычные ноты секвенсора, а не живая ссылка на исходный файл.
 - Короткий loop автоматически физически повторяется до длины текущего паттерна: 1 bar → 4 копии в 4-bar pattern, 2 bars → 2 копии и т.д.
 - Если reference loop длиннее текущего паттерна, pattern автоматически расширяется до ближайшего целого такта (в пределах текущего лимита 16 bars).
-- Для melodic track MIDI квантуется на 1/16; в v1 полифонические `chords` / `arrangement` доступны только для Preview, потому что одна chiptune melodic track монofоническая.
-- Для drums GM percussion преобразуется в 8 внутренних drum lanes.
+- Melodic MIDI квантуется на сетку 1/16, но одновременно звучащие ноты, velocity и длительности/gate сохраняются в polyphonic cell. Импортированные `chords` и `arrangement` можно LOAD.
+- У каждой дорожки есть engine:
+  - **CHIP** — старый chiptune-осциллятор; melodic playback остаётся монофоническим, даже если внутри дорожки хранится аккорд;
+  - **SF2** — полифонический SoundFont playback. По умолчанию используется Yamaha XG bank из `@logue/sf2synth`; кнопка **SF2…** позволяет загрузить локальный `.sf2`. Для melodic track выбирается GM Program 0–127;
+  - **MIDI HW** — полифонический Web MIDI output во внешнее устройство с выбором канала. Дефолты под текущий сетап: Track 1 → ch1, Track 2 → ch2, Track 3 → ch10.
+- TD-3 физически монофоничен: режим MIDI HW не делает сам TD-3 полифоническим. Но импортированные gate/duration и перекрытия Note On/Off сохраняются и отправляются наружу, поэтому legato/slide-жесты могут отрабатываться так, как их понимает сам TD-3.
+- Для drums GM percussion преобразуется в 8 внутренних drum lanes, но при импорте для каждой lane запоминается доминирующий исходный GM drum note. Поэтому SF2/HW playback сохраняет исходный тип kick/snare/hat/cymbal настолько, насколько позволяет 8-lane модель.
 - В track header хранится `Source` и есть **↻ Source**: заново загрузить исходный reference MIDI, если пользователь хочет сбросить свои правки на этой дорожке.
-- Source metadata сохраняется внутри проекта/варианта; исходные файлы библиотеки никогда не изменяются.
+- Source metadata, engine, MIDI channel, GM program и polyphonic note data сохраняются внутри проекта/варианта; исходные файлы библиотеки никогда не изменяются.
 
 Кнопка **Sync to AI** в Chiptune пишет и пушит:
 - `projects/chiptune-current.json` — полный проект и source metadata;
-- `projects/chiptune-overview.md` — активный pattern, его длина, источники трёх дорожек, rating загруженных source loops и пошаговые note/drum events;
+- `projects/chiptune-overview.md` — активный pattern, его длина, engine/channel/program каждой дорожки, источники/rating и polyphonic note events с velocity/gate;
 - `projects/chiptune-loop-ratings.json` — текущие пользовательские оценки reference loops, чтобы ассистент после Sync мог учитывать favorites.
 
 После этой кнопки ассистент может прочитать текущее состояние конструктора из GitHub и обсуждать с пользователем конкретные загруженные лупы и их правки. Не утверждать, что видно текущее состояние браузера, пока пользователь не нажал **Sync to AI** после изменений.
