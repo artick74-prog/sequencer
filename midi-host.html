@@ -451,10 +451,6 @@ select, input[type="number"], input[type="text"] {
   border-color: var(--danger);
   box-shadow: 0 0 7px rgba(232, 93, 93, 0.28);
 }
-.track.mix-inactive .track-head,
-.track.mix-inactive .track-body {
-  opacity: 0.42;
-}
 .track-body {
   position: relative;
   height: 72px;
@@ -610,7 +606,7 @@ select, input[type="number"], input[type="text"] {
   const BAR_W_MAX = 96;
   const HEAD_W = 280;
   const SCHEDULER_INTERVAL_MS = 20;
-  const HARDWARE_LOOKAHEAD_MS = 300;
+  const HARDWARE_LOOKAHEAD_MS = 120;
   const SF2_LOOKAHEAD_MS = 80;
 
   function midiToName(n) {
@@ -1210,7 +1206,6 @@ select, input[type="number"], input[type="text"] {
     const synth = sf2Synth();
     if (!synth || !project) return;
     for (const track of project.tracks || []) {
-      if (!trackIsAudible(track, project)) continue;
       const ch = ((track.channel || 1) - 1) & 0x0f;
       const gm = gmProgramFromTrack(track);
       if (gm != null) {
@@ -1337,13 +1332,19 @@ select, input[type="number"], input[type="text"] {
   function buildEventQueue(project) {
     const queue = [];
     for (const track of project.tracks) {
-      if (!trackIsAudible(track, project)) continue;
       const route = trackRoute(track);
       if (route === "none") continue;
       const ch = ((track.channel || 1) - 1) & 0x0f;
       for (const n of track.notes) {
         queue.push({
-          tick: n.tick, type: "on", note: n.note, velocity: n.velocity, ch, route,
+          tick: n.tick,
+          type: "on",
+          note: n.note,
+          velocity: n.velocity,
+          ch,
+          route,
+          track,
+          trackId: track.id,
         });
         queue.push({
           tick: n.tick + Math.max(1, n.duration),
@@ -1352,11 +1353,17 @@ select, input[type="number"], input[type="text"] {
           velocity: 0,
           ch,
           route,
+          track,
+          trackId: track.id,
         });
       }
     }
     queue.sort((a, b) => a.tick - b.tick || (a.type === "off" ? -1 : 1));
     return queue;
+  }
+
+  function eventIsAudible(event) {
+    return event.type === "off" || trackIsAudible(event.track, state.project);
   }
 
   function createScheduleCursor(events, fromTick) {
@@ -1400,6 +1407,7 @@ select, input[type="number"], input[type="text"] {
       const targetTime = state.startPerf + ticksToMs(item.offsetTicks, tempo, ppq);
       if (targetTime > deadline) return true;
       advanceScheduleCursor(cursor);
+      if (!eventIsAudible(item.event)) continue;
       try {
         output.send(midiMessageForEvent(item.event), targetTime);
       } catch (err) {
@@ -1412,6 +1420,7 @@ select, input[type="number"], input[type="text"] {
   function scheduleSf2Event(event, targetTime, token) {
     const send = () => {
       if (!state.playing || state.playbackToken !== token) return;
+      if (!eventIsAudible(event)) return;
       if (event.type === "on") sf2NoteOn(event.ch, event.note, event.velocity);
       else sf2NoteOff(event.ch, event.note);
     };
@@ -2328,30 +2337,76 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
+  function audibleTrackStillHoldsPitch(channelZeroBased, midiNote, tick, excludedIds) {
+    return state.project.tracks.some((other) => {
+      if (excludedIds.has(other.id) || !trackIsAudible(other, state.project)) return false;
+      const otherCh = ((other.channel || 1) - 1) & 0x0f;
+      if (otherCh !== channelZeroBased) return false;
+      return (other.notes || []).some((note) => {
+        const end = note.tick + Math.max(1, note.duration);
+        return note.note === midiNote && note.tick <= tick && tick < end;
+      });
+    });
+  }
+
+  function stopActiveNotesForTracks(tracks, tick) {
+    if (!state.project || !tracks?.length) return;
+    const out = getOutput();
+    const sf2 = useSf2Output();
+    const hw = useHwOutput();
+    const seen = new Set();
+    const excludedIds = new Set(tracks.map((track) => track.id));
+
+    for (const track of tracks) {
+      const ch = ((track.channel || 1) - 1) & 0x0f;
+      for (const note of track.notes || []) {
+        const end = note.tick + Math.max(1, note.duration);
+        if (!(note.tick <= tick && tick < end)) continue;
+        const key = `${ch}:${note.note}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        // Several split drum tracks often share channel 10. Do not send NOTE OFF
+        // if an audible sibling track is currently holding the same pitch.
+        if (audibleTrackStillHoldsPitch(ch, note.note, tick, excludedIds)) continue;
+
+        if (sf2) sf2NoteOff(ch, note.note);
+        if (hw && out) {
+          try { out.send([0x80 | ch, note.note, 0], performance.now()); } catch {}
+        }
+      }
+    }
+  }
+
   function setTrackMixState(track, mode) {
     if (!state.project || !track) return;
 
-    // Existing scheduler queues are built ahead of time, so rebuild transport
-    // immediately when S/M changes during playback.
-    const wasPlaying = state.playing;
-    const tick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
-    if (wasPlaying) stopPlayback();
+    const tick = state.playing ? currentTransportTick() : (state.startTick || 0);
+    const audibleBefore = new Map(
+      state.project.tracks.map((t) => [t.id, trackIsAudible(t, state.project)])
+    );
 
     if (mode === "solo") track.solo = !track.solo;
     else if (mode === "mute") track.mute = !track.mute;
 
-    state.startTick = tick;
+    const newlySilent = state.project.tracks.filter(
+      (t) => audibleBefore.get(t.id) && !trackIsAudible(t, state.project)
+    );
+
+    // Do not stop/restart the transport: that was the source of the audible hiccup.
+    // Only release notes that are sounding right now; future NOTE ON events are
+    // filtered by the live S/M state in the scheduler.
+    if (state.playing && newlySilent.length) {
+      stopActiveNotesForTracks(newlySilent, tick);
+    }
+
     renderTracks();
     updatePlayheads(tick, state.lengthTicks || 1);
 
-    if (wasPlaying) {
-      runScheduler(tick);
-    } else {
-      const stateName = mode === "solo"
-        ? (track.solo ? "Solo on" : "Solo off")
-        : (track.mute ? "Mute on" : "Mute off");
-      setStatus(`${stateName} · ${track.name}`, "ok");
-    }
+    const stateName = mode === "solo"
+      ? (track.solo ? "Solo on" : "Solo off")
+      : (track.mute ? "Mute on" : "Mute off");
+    setStatus(`${stateName} · ${track.name}`, "ok");
   }
 
   function renderTracks() {
@@ -2376,7 +2431,6 @@ select, input[type="number"], input[type="text"] {
       el.className = "track";
       el.dataset.trackId = track.id;
       el.style.setProperty("--head-w", `${HEAD_W}px`);
-      if (!trackIsAudible(track, project)) el.classList.add("mix-inactive");
 
       const chOptions = Array.from({ length: 16 }, (_, i) => {
         const c = i + 1;
@@ -2390,7 +2444,6 @@ select, input[type="number"], input[type="text"] {
           <label class="field">ch
             <select data-ch="${track.id}">${chOptions}</select>
           </label>
-          <span class="meta">${track.notes.length}n</span>
           ${gmTag}
           <span class="track-mix" aria-label="Solo and mute">
             <button class="mix-btn solo ${track.solo ? "active" : ""}" type="button" data-solo="${track.id}" title="Solo">S</button>
