@@ -3309,32 +3309,207 @@ class AudioEngine {
     this.ctx = null;
     this.drumSynth = null;
     this.activeNotes = new Map();
+
+    this.midiAccess = null;
+    this.outputId = localStorage.getItem('chiptune_midi_output') || '';
+    this.midiInitPromise = null;
+
+    this.sf2Engine = null;
+    this.sf2Ready = false;
+    this.sf2LoadingPromise = null;
+    this.sf2Name = 'Yamaha XG (built-in)';
+    this.sf2Timers = new Set();
+    this.sf2ChannelState = new Map();
   }
 
   init() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       this.drumSynth = new DrumSynth(this.ctx);
-      this.drumSynth.initSamples(); // рендеринг сэмплов (асинхронно)
+      this.drumSynth.initSamples();
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
     return this.ctx;
   }
 
-  /* Сыграть мелодическую ноту с ADSR + Filter */
+  /* ── Web MIDI ── */
+  async ensureMidiAccess() {
+    if (this.midiAccess) {
+      if (typeof refreshGlobalMidiOutUI === 'function') refreshGlobalMidiOutUI();
+      return this.midiAccess;
+    }
+    if (this.midiInitPromise) return this.midiInitPromise;
+    if (!navigator.requestMIDIAccess) {
+      if (typeof setEngineStatus === 'function') setEngineStatus('Web MIDI is not supported in this browser.', true);
+      return null;
+    }
+    this.midiInitPromise = navigator.requestMIDIAccess({ sysex: false })
+      .then(access => {
+        this.midiAccess = access;
+        access.onstatechange = () => {
+          if (typeof refreshGlobalMidiOutUI === 'function') refreshGlobalMidiOutUI();
+        };
+        const outputs = [...access.outputs.values()];
+        if (!outputs.some(o => o.id === this.outputId)) {
+          const prefer = outputs.find(o => /td-?3|behringer|akai|xr20/i.test(o.name)) || outputs[0];
+          this.outputId = prefer?.id || '';
+        }
+        if (this.outputId) localStorage.setItem('chiptune_midi_output', this.outputId);
+        if (typeof refreshGlobalMidiOutUI === 'function') refreshGlobalMidiOutUI();
+        return access;
+      })
+      .catch(err => {
+        if (typeof setEngineStatus === 'function') setEngineStatus('MIDI access: ' + err.message, true);
+        return null;
+      })
+      .finally(() => { this.midiInitPromise = null; });
+    return this.midiInitPromise;
+  }
+
+  getMidiOutput() {
+    if (!this.midiAccess || !this.outputId) return null;
+    return this.midiAccess.outputs.get(this.outputId) || null;
+  }
+
+  setMidiOutput(id) {
+    this.outputId = id || '';
+    if (this.outputId) localStorage.setItem('chiptune_midi_output', this.outputId);
+    else localStorage.removeItem('chiptune_midi_output');
+  }
+
+  scheduleMidiNote(channel, note, velocity, time, duration) {
+    const out = this.getMidiOutput();
+    if (!out || !this.ctx) return;
+    const ch = Math.max(0, Math.min(15, (channel || 1) - 1));
+    const delayMs = Math.max(0, (time - this.ctx.currentTime) * 1000);
+    const onAt = performance.now() + delayMs;
+    const offAt = onAt + Math.max(10, duration * 1000);
+    try {
+      out.send([0x90 | ch, note & 0x7f, Math.max(1, Math.min(127, velocity || 100))], onAt);
+      out.send([0x80 | ch, note & 0x7f, 0], offAt);
+    } catch (err) {
+      if (typeof setEngineStatus === 'function') setEngineStatus('MIDI send: ' + err.message, true);
+    }
+  }
+
+  /* ── SoundFont ── */
+  sf2Synth() {
+    return this.sf2Engine?.synth || null;
+  }
+
+  async ensureSf2Loaded() {
+    if (this.sf2Ready && this.sf2Synth()) return true;
+    if (this.sf2LoadingPromise) return this.sf2LoadingPromise;
+    if (typeof SoundFont === 'undefined') {
+      if (typeof setEngineStatus === 'function') setEngineStatus('SoundFont library is unavailable.', true);
+      return false;
+    }
+    const url = 'https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/Yamaha%20XG%20Sound%20Set.sf2';
+    this.sf2LoadingPromise = (async () => {
+      try {
+        if (!this.sf2Engine) {
+          this.sf2Engine = new SoundFont.WebMidiLink({
+            drawSynth: false,
+            placeholder: 'sf2PlaceholderChiptune',
+            url,
+            cache: true,
+          });
+          await new Promise((resolve, reject) => {
+            this.sf2Engine.setLoadCallback(resolve);
+            this.sf2Engine.setup().catch(reject);
+          });
+        }
+        await this.sf2Synth().ctx.resume();
+        this.sf2Ready = true;
+        this.sf2Name = 'Yamaha XG (built-in)';
+        this.sf2ChannelState.clear();
+        if (typeof setEngineStatus === 'function') setEngineStatus('SF2 ready · ' + this.sf2Name, false);
+        return true;
+      } catch (err) {
+        this.sf2Ready = false;
+        if (typeof setEngineStatus === 'function') setEngineStatus('SF2 load: ' + err.message, true);
+        return false;
+      } finally {
+        this.sf2LoadingPromise = null;
+      }
+    })();
+    return this.sf2LoadingPromise;
+  }
+
+  async loadSf2File(file) {
+    if (!file || typeof SoundFont === 'undefined') return false;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (!this.sf2Engine) {
+        this.sf2Engine = new SoundFont.WebMidiLink({
+          drawSynth: false,
+          placeholder: 'sf2PlaceholderChiptune',
+          cache: false,
+        });
+      }
+      await new Promise(resolve => {
+        this.sf2Engine.setLoadCallback(resolve);
+        this.sf2Engine.setupByBuffer(bytes);
+      });
+      await this.sf2Synth().ctx.resume();
+      this.sf2Ready = true;
+      this.sf2Name = file.name;
+      this.sf2ChannelState.clear();
+      if (typeof setEngineStatus === 'function') setEngineStatus('SF2 loaded · ' + file.name, false);
+      return true;
+    } catch (err) {
+      if (typeof setEngineStatus === 'function') setEngineStatus('SF2 load: ' + err.message, true);
+      return false;
+    }
+  }
+
+  configureSf2Channel(channel, program, percussion) {
+    const synth = this.sf2Synth();
+    if (!synth) return;
+    const ch = Math.max(0, Math.min(15, (channel || 1) - 1));
+    const signature = (percussion ? 'D' : 'M') + ':' + (program ?? 0);
+    if (this.sf2ChannelState.get(ch) === signature) return;
+    synth.setPercussionPart(ch, !!percussion);
+    if (!percussion) synth.programChange(ch, Math.max(0, Math.min(127, program || 0)));
+    this.sf2ChannelState.set(ch, signature);
+  }
+
+  _scheduleSf2Action(fn, time) {
+    if (!this.ctx) return;
+    const delay = Math.max(0, (time - this.ctx.currentTime) * 1000);
+    if (delay < 2) {
+      fn();
+      return;
+    }
+    const timer = setTimeout(() => {
+      this.sf2Timers.delete(timer);
+      fn();
+    }, delay);
+    this.sf2Timers.add(timer);
+  }
+
+  scheduleSf2Note(channel, program, note, velocity, time, duration, percussion = false) {
+    const synth = this.sf2Synth();
+    if (!synth) return;
+    const ch = Math.max(0, Math.min(15, (channel || 1) - 1));
+    this.configureSf2Channel(channel, program, percussion);
+    this._scheduleSf2Action(
+      () => synth.noteOn(ch, note & 0x7f, Math.max(1, Math.min(127, velocity || 100))),
+      time
+    );
+    this._scheduleSf2Action(() => synth.noteOff(ch, note & 0x7f), time + Math.max(0.01, duration));
+  }
+
+  /* ── Chiptune oscillator ── */
   scheduleNote(track, midi, time, duration, waveType, adsr, filter, adsrTarget, adsrDepth) {
     const ctx = this.ctx;
     if (!ctx) return;
 
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-
     const osc = ctx.createOscillator();
     osc.type = waveType;
     osc.frequency.setValueAtTime(freq, time);
 
-    // Фильтр (BiquadFilter)
     const filterNode = ctx.createBiquadFilter();
     const routeAmp = adsrTarget && adsrTarget.amp;
     const routeFlt = adsrTarget && adsrTarget.filter;
@@ -3360,46 +3535,37 @@ class AudioEngine {
     const adjRelease = Math.min(release, duration * 0.5);
     const decayEnd = time + adjAttack + adjDecay;
     const sustainEnd = time + duration - adjRelease;
-
     const gainNode = ctx.createGain();
 
     if (routeAmp) {
-      // ADSR управляет громкостью с глубиной depthAmp
       const centerAmp = peak;
-      const modRange = peak * depthAmp; // насколько может меняться
+      const modRange = peak * depthAmp;
       const minAmp = Math.max(0, centerAmp - modRange);
       const maxAmp = Math.min(1, centerAmp);
       gainNode.gain.setValueAtTime(minAmp, time);
       gainNode.gain.linearRampToValueAtTime(maxAmp, time + adjAttack);
       gainNode.gain.linearRampToValueAtTime(maxAmp - (maxAmp - minAmp) * (1 - sustain), decayEnd);
-      if (sustainEnd > decayEnd) {
-        gainNode.gain.setValueAtTime(maxAmp - (maxAmp - minAmp) * (1 - sustain), sustainEnd);
-      }
+      if (sustainEnd > decayEnd) gainNode.gain.setValueAtTime(maxAmp - (maxAmp - minAmp) * (1 - sustain), sustainEnd);
       gainNode.gain.linearRampToValueAtTime(minAmp, time + duration);
     } else {
       gainNode.gain.setValueAtTime(peak, time);
     }
 
     if (routeFlt) {
-      // ADSR управляет частотой среза с глубиной depthFlt
       const fMin = 20;
       const fMax = filter && filter.enabled ? filter.frequency : 8000;
       const fRange = (fMax - fMin) * depthFlt;
-      const baseFreq = fMax - fRange; // нижняя точка модуляции
-
+      const baseFreq = fMax - fRange;
       filterNode.frequency.setValueAtTime(baseFreq, time);
       filterNode.frequency.linearRampToValueAtTime(fMax, time + adjAttack);
       filterNode.frequency.linearRampToValueAtTime(baseFreq + fRange * sustain, decayEnd);
-      if (sustainEnd > decayEnd) {
-        filterNode.frequency.setValueAtTime(baseFreq + fRange * sustain, sustainEnd);
-      }
+      if (sustainEnd > decayEnd) filterNode.frequency.setValueAtTime(baseFreq + fRange * sustain, sustainEnd);
       filterNode.frequency.linearRampToValueAtTime(baseFreq, time + duration);
     }
 
     osc.connect(filterNode);
     filterNode.connect(gainNode);
     gainNode.connect(ctx.destination);
-
     osc.start(time);
     osc.stop(time + duration + 0.01);
 
@@ -3412,24 +3578,42 @@ class AudioEngine {
     });
   }
 
-  /* Сыграть барабан (синтез или сэмпл) */
   scheduleDrum(track, drumIdx, time, useSample) {
     if (!this.ctx || !this.drumSynth) return;
-    if (useSample) {
-      this.drumSynth.playSample(drumIdx, time);
-    } else {
-      this.drumSynth.play(drumIdx, time);
-    }
+    if (useSample) this.drumSynth.playSample(drumIdx, time);
+    else this.drumSynth.play(drumIdx, time);
   }
 
   stopAll() {
     const now = this.ctx ? this.ctx.currentTime : 0;
-    for (const [key, note] of this.activeNotes) {
-      try { note.oscillator.stop(now); } catch(e) {}
-      note.gainNode.gain.cancelScheduledValues(now);
-      note.gainNode.gain.setValueAtTime(0, now);
+    for (const note of this.activeNotes.values()) {
+      try { note.oscillator.stop(now); } catch {}
+      try {
+        note.gainNode.gain.cancelScheduledValues(now);
+        note.gainNode.gain.setValueAtTime(0, now);
+      } catch {}
     }
     this.activeNotes.clear();
+
+    for (const timer of this.sf2Timers) clearTimeout(timer);
+    this.sf2Timers.clear();
+    const synth = this.sf2Synth();
+    if (synth) {
+      for (let ch = 0; ch < 16; ch++) {
+        try { synth.allSoundOff(ch); } catch {}
+      }
+    }
+
+    const out = this.getMidiOutput();
+    if (out) {
+      try {
+        if (typeof out.clear === 'function') out.clear();
+        for (let ch = 0; ch < 16; ch++) {
+          out.send([0xb0 | ch, 123, 0]);
+          out.send([0xb0 | ch, 64, 0]);
+        }
+      } catch {}
+    }
   }
 
   get currentTime() {
@@ -3458,9 +3642,24 @@ class Sequencer {
     return (60 / this.state.tempo) / 4;
   }
 
-  start() {
-    if (this._running) return;
+  async start() {
+    if (this._running) return true;
     this.audio.init();
+
+    const activeEngines = new Set(
+      this.state.trackEngines.filter((engine, track) => !this.state.trackMute[track])
+    );
+    if (activeEngines.has('sf2')) {
+      const ok = await this.audio.ensureSf2Loaded();
+      if (!ok) return false;
+    }
+    if (activeEngines.has('midi')) {
+      await this.audio.ensureMidiAccess();
+      if (!this.audio.getMidiOutput() && activeEngines.size === 1) {
+        if (typeof setEngineStatus === 'function') setEngineStatus('No hardware MIDI output selected.', true);
+        return false;
+      }
+    }
 
     this._running = true;
     this.state.isPlaying = true;
@@ -3471,6 +3670,7 @@ class Sequencer {
     this.currentStep = (cs >= la && cs < lb) ? cs : la;
 
     this.timerID = setInterval(() => this._schedulerTick(), CONFIG.SCHEDULE_INTERVAL);
+    return true;
   }
 
   stop() {
@@ -3496,58 +3696,91 @@ class Sequencer {
     this.currentStep = this.state.locatorA;
   }
 
+  _scheduleMelodicTrack(track, events, playTime) {
+    const engine = this.state.trackEngines[track] || 'chip';
+    const channel = this.state.trackMidiChannels[track] || 1;
+    const program = this.state.trackPrograms[track] || 0;
+    const playable = engine === 'chip' ? events.slice(0, 1) : events;
+
+    for (const event of playable) {
+      const lengthSteps = Math.max(0.08, Number(event.length || 1));
+      const duration = this.stepDuration * lengthSteps;
+      if (engine === 'sf2') {
+        this.audio.scheduleSf2Note(channel, program, event.note, event.velocity, playTime, duration, false);
+      } else if (engine === 'midi') {
+        this.audio.scheduleMidiNote(channel, event.note, event.velocity, playTime, duration);
+      } else {
+        this.audio.scheduleNote(
+          track,
+          event.note,
+          playTime,
+          duration * 0.98,
+          this.state.trackWaves[track],
+          this.state.trackAdsr[track],
+          this.state.trackFilter[track],
+          this.state.adsrTarget[track],
+          this.state.adsrDepth[track]
+        );
+      }
+    }
+  }
+
+  _scheduleDrumTrack(track, drumSet, playTime) {
+    const engine = this.state.trackEngines[track] || 'chip';
+    const channel = this.state.trackMidiChannels[track] || 10;
+    const program = this.state.trackPrograms[track] || 0;
+    const duration = Math.max(0.05, this.stepDuration * 0.7);
+    if (engine === 'chip') {
+      const useSample = this.state.drumSoundModes[track] === 'sample';
+      for (const drumIdx of drumSet) this.audio.scheduleDrum(track, drumIdx, playTime, useSample);
+      return;
+    }
+    for (const drumIdx of drumSet) {
+      const note = CONFIG.GM_DRUM_NOTE_MAP[drumIdx] ?? 36;
+      if (engine === 'sf2') {
+        this.audio.scheduleSf2Note(channel, program, note, 105, playTime, duration, true);
+      } else if (engine === 'midi') {
+        this.audio.scheduleMidiNote(channel, note, 105, playTime, duration);
+      }
+    }
+  }
+
   _schedulerTick() {
     const ctx = this.audio.ctx;
     if (!ctx) return;
 
     while (this.nextStepTime < ctx.currentTime + CONFIG.LOOKAHEAD) {
-      // Авто-переключение на следующий паттерн, если шаг на границе локаторов
       if (this.state.songMode && this.currentStep === this.state.locatorA && this._hasScheduled && !this._didAdvance) {
         this._advancePattern();
         this._didAdvance = true;
       }
 
-      // Swing
       let swingOffset = 0;
       if (this.currentStep % 2 === 1 && this.state.swing > 0) {
         swingOffset = (this.state.swing / 100) * this.stepDuration * 0.5;
       }
-
       const playTime = this.nextStepTime + swingOffset;
-      const duration = this.stepDuration * 0.92;
 
-      // Мелодические ноты
       const melodicNotes = this.state.getMelodicNotesAtStep(this.currentStep);
-      for (const [track, midi] of melodicNotes) {
+      for (const [track, events] of melodicNotes) {
         if (this.state.trackMute[track]) continue;
-        const wave = this.state.trackWaves[track];
-        const adsr = this.state.trackAdsr[track];
-        const filter = this.state.trackFilter[track];
-        const adsrTarget = this.state.adsrTarget[track];
-        const adsrDepth = this.state.adsrDepth[track];
-        this.audio.scheduleNote(track, midi, playTime, duration, wave, adsr, filter, adsrTarget, adsrDepth);
+        this._scheduleMelodicTrack(track, events, playTime);
       }
 
-      // Барабаны (полифония: все активные инструменты на шаге)
       const drumNotes = this.state.getDrumNotesAtStep(this.currentStep);
       for (const [track, drumSet] of drumNotes) {
         if (this.state.trackMute[track]) continue;
-        const useSample = this.state.drumSoundModes[track] === 'sample';
-        for (const drumIdx of drumSet) {
-          this.audio.scheduleDrum(track, drumIdx, playTime, useSample);
-        }
+        this._scheduleDrumTrack(track, drumSet, playTime);
       }
 
-      // UI: запоминаем какой шаг сейчас играется, затем инкрементируем
       const playingStep = this.currentStep;
       const la = this.state.locatorA;
       const lb = this.state.locatorB;
-      this.currentStep = this.currentStep + 1;
+      this.currentStep += 1;
       if (la >= 0 && lb > la && this.currentStep >= lb) this.currentStep = la;
       this.state.currentStep = playingStep;
       this._hasScheduled = true;
       if (this.currentStep !== la) this._didAdvance = false;
-
       this.nextStepTime += this.stepDuration;
     }
   }
