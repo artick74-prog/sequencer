@@ -81,3 +81,24 @@ python scripts/analyze_reference_library.py --details
 - для барабанов — группы kick / snare-clap / closed hat / open hat / toms / cymbals / other percussion.
 
 Это только первый слой. Позже поверх этих данных можно строить жанровые профили и генератор новых вариантов, который использует статистику корпуса, но не копирует конкретный MIDI один в один.
+
+
+## Локальный Style Library Browser
+
+Большие скачанные паки с WAV не нужно целиком класть в GitHub. Храни их локально в `d:\Dev\midi-reference` (или укажи другой путь через `MIDI_REFERENCE_ROOT`).
+
+При запуске:
+
+```text
+start-midi-host.bat
+```
+
+открой:
+
+```text
+http://localhost:8080/style-library.html
+```
+
+Локальный bridge индексирует MIDI прямо внутри `.zip`, `.tar.gz`, `.tgz`, `.tar` и отдельные `.mid/.midi`. В браузере можно искать и фильтровать референсы, слушать их через GM SoundFont, одновременно посылать на TD-3/XR20 и открывать выбранный MIDI в Hardware MIDI Host.
+
+Это позволяет держать полную личную копию исходных паков на компьютере, а GitHub использовать для кода, манифестов, анализа и небольших референсных файлов.
