@@ -877,6 +877,7 @@ select, input[type="number"], input[type="text"] {
       </div>
     </div>
     <button class="btn" id="btnLoops" type="button" title="Browse, preview and drag MIDI loops into the arrangement">♫ Loops</button>
+    <button class="btn" id="btnUpdateApp" type="button" title="Pull the newest main commit from GitHub and restart this local bridge automatically">↓ Update</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
     <input class="file-hidden" id="fileJson" type="file" accept=".json">
     <input class="file-hidden" id="fileSf2" type="file" accept=".sf2,.SF2">
@@ -4946,6 +4947,79 @@ select, input[type="number"], input[type="text"] {
 
   document.getElementById("btnCloudSave").addEventListener("click", () => {
     saveProjectToCloud();
+  });
+
+  async function waitForUpdatedBridge(expectedCommit, timeoutMs = 15000) {
+    // The /api/update endpoint replaces this bridge process after git pull.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const deadline = Date.now() + timeoutMs;
+    let lastError = null;
+
+    while (Date.now() < deadline) {
+      try {
+        const response = await fetch("/api/health?_=" + Date.now(), { cache: "no-store" });
+        if (response.ok) {
+          const data = await response.json();
+          if (!expectedCommit || data.commit === expectedCommit) return data;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    throw new Error(lastError?.message || "Local bridge did not come back after update");
+  }
+
+  async function updateMidiHostApp() {
+    const btn = document.getElementById("btnUpdateApp");
+    if (!btn) return;
+
+    // Preserve the current unsaved working copy before the bridge restarts.
+    saveHostAutosaveNow();
+
+    btn.textContent = "↓ Pulling…";
+    btn.disabled = true;
+    setStatus("Updating MIDI Host from GitHub…", "");
+
+    try {
+      const response = await fetch("/api/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Update failed");
+
+      if (!data.changed) {
+        btn.textContent = "✓ Up to date";
+        setStatus("MIDI Host is already up to date.", "ok");
+        setTimeout(() => {
+          btn.textContent = "↓ Update";
+          btn.disabled = false;
+        }, 1800);
+        return;
+      }
+
+      btn.textContent = "↻ Restarting…";
+      setStatus("Update pulled · restarting local bridge…", "ok");
+      await waitForUpdatedBridge(data.commit);
+
+      const url = new URL(window.location.href);
+      url.searchParams.set("v", data.commit || Date.now().toString());
+      window.location.replace(url.toString());
+    } catch (err) {
+      btn.textContent = "✕ Update error";
+      btn.disabled = false;
+      setStatus("Update failed: " + err.message, "err");
+      setTimeout(() => {
+        if (!btn.disabled) btn.textContent = "↓ Update";
+      }, 2500);
+    }
+  }
+
+  document.getElementById("btnUpdateApp")?.addEventListener("click", () => {
+    updateMidiHostApp();
   });
 
   document.getElementById("btnExportMid").addEventListener("click", () => {
