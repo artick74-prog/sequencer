@@ -2337,12 +2337,25 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
+  function audibleTrackStillHoldsPitch(channelZeroBased, midiNote, tick, excludedIds) {
+    return state.project.tracks.some((other) => {
+      if (excludedIds.has(other.id) || !trackIsAudible(other, state.project)) return false;
+      const otherCh = ((other.channel || 1) - 1) & 0x0f;
+      if (otherCh !== channelZeroBased) return false;
+      return (other.notes || []).some((note) => {
+        const end = note.tick + Math.max(1, note.duration);
+        return note.note === midiNote && note.tick <= tick && tick < end;
+      });
+    });
+  }
+
   function stopActiveNotesForTracks(tracks, tick) {
     if (!state.project || !tracks?.length) return;
     const out = getOutput();
     const sf2 = useSf2Output();
     const hw = useHwOutput();
     const seen = new Set();
+    const excludedIds = new Set(tracks.map((track) => track.id));
 
     for (const track of tracks) {
       const ch = ((track.channel || 1) - 1) & 0x0f;
@@ -2352,6 +2365,11 @@ select, input[type="number"], input[type="text"] {
         const key = `${ch}:${note.note}`;
         if (seen.has(key)) continue;
         seen.add(key);
+
+        // Several split drum tracks often share channel 10. Do not send NOTE OFF
+        // if an audible sibling track is currently holding the same pitch.
+        if (audibleTrackStillHoldsPitch(ch, note.note, tick, excludedIds)) continue;
+
         if (sf2) sf2NoteOff(ch, note.note);
         if (hw && out) {
           try { out.send([0x80 | ch, note.note, 0], performance.now()); } catch {}
