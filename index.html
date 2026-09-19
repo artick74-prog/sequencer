@@ -1837,6 +1837,7 @@ class PatternLibrary {
         adsrTarget: vA.adsrTarget.map(a => ({...a})),
         adsrDepth: vA.adsrDepth.map(d => ({...d})),
         trackMute: [...vA.trackMute],
+        trackSources: (vA.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null),
       },
       variantB: vB ? {
         melodicPattern: vB.melodicPattern.map(t => t.map(s => s)),
@@ -1849,6 +1850,7 @@ class PatternLibrary {
         adsrTarget: vB.adsrTarget.map(a => ({...a})),
         adsrDepth: vB.adsrDepth.map(d => ({...d})),
         trackMute: [...vB.trackMute],
+        trackSources: (vB.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null),
       } : null,
     };
     list.push(entry);
@@ -1881,6 +1883,7 @@ class PatternLibrary {
       adsrTarget: src.adsrTarget.map(a => ({...a})),
       adsrDepth: src.adsrDepth.map(d => ({...d})),
       trackMute: [...src.trackMute],
+      trackSources: (src.trackSources || Array(CONFIG.TRACKS).fill(null)).map(s => s ? {...s} : null),
     });
 
     const newIdx = this.state._arrangedPatterns.length;
@@ -1931,6 +1934,7 @@ class StateManager {
       adsrTarget: Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false })),
       adsrDepth: Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 })),
       trackMute: [false, false, false],
+      trackSources: Array(CONFIG.TRACKS).fill(null),
     };
   }
 
@@ -1946,6 +1950,7 @@ class StateManager {
     this.adsrTarget = p.adsrTarget;
     this.adsrDepth = p.adsrDepth;
     this.trackMute = p.trackMute;
+    this.trackSources = p.trackSources;
     this.patternLength = p.patternLength;
     this.steps = this.patternLength;
 
@@ -2087,6 +2092,7 @@ class StateManager {
     this.adsrTarget = d.adsrTarget || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false }));
     this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
     this.trackMute = d.trackMute || [false, false, false];
+    this.trackSources = (d.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null);
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this.locatorA = Math.max(0, Math.min(this.locatorA, this.patternLength));
@@ -2109,6 +2115,7 @@ class StateManager {
     d.adsrTarget = this.adsrTarget.map(a => ({...a}));
     d.adsrDepth = this.adsrDepth.map(d2 => ({...d2}));
     d.trackMute = [...this.trackMute];
+    d.trackSources = this.trackSources.map(src => src ? {...src} : null);
   }
 
   /* Коллбэк, вызываемый при каждом изменении состояния */
@@ -2130,6 +2137,7 @@ class StateManager {
       adsrTarget: [...this.adsrTarget],
       adsrDepth: this.adsrDepth.map(d => ({...d})),
       trackMute: [...this.trackMute],
+      trackSources: this.trackSources.map(src => src ? {...src} : null),
     });
   }
 
@@ -2148,6 +2156,7 @@ class StateManager {
     this.adsrTarget = d.adsrTarget || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false }));
     this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
     this.trackMute = d.trackMute || [false, false, false];
+    this.trackSources = (d.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null);
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this._saveStateToVariant();
@@ -2352,6 +2361,78 @@ class StateManager {
     this._notify();
   }
 
+  /* Import a parsed reference MIDI into one editable track and repeat it to pattern length. */
+  loadMidiLoop(track, midi, entry) {
+    if (!midi || !midi.ppq || !Array.isArray(midi.notes)) return false;
+    const loopSteps = midiLoopStepCount(midi);
+    if (loopSteps > this.steps) {
+      const expanded = Math.min(CONFIG.MAX_STEPS, Math.ceil(loopSteps / 16) * 16);
+      this.setPatternLength(expanded);
+    }
+
+    this.pushHistory();
+    const isDrums = entry?.kind === 'drums' || midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
+    this.trackTypes[track] = isDrums ? 'drum' : 'melodic';
+
+    for (let s = 0; s < this.steps; s++) {
+      this.melodicPattern[track][s] = null;
+      this.drumPattern[track][s] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
+    }
+
+    const tickPerStep = midi.ppq / 4;
+    if (isDrums) {
+      const baseHits = [];
+      for (const note of midi.notes) {
+        const drumIdx = gmDrumToIndex(note.note);
+        if (drumIdx < 0) continue;
+        const step = Math.max(0, Math.min(loopSteps - 1, Math.round(note.tick / tickPerStep)));
+        baseHits.push([step, drumIdx]);
+      }
+      for (let offset = 0; offset < this.steps; offset += loopSteps) {
+        for (const [baseStep, drumIdx] of baseHits) {
+          const step = offset + baseStep;
+          if (step < this.steps) this.drumPattern[track][step][drumIdx] = true;
+        }
+      }
+    } else {
+      const byStep = new Map();
+      for (const note of midi.notes) {
+        if (note.channel === 10) continue;
+        const step = Math.max(0, Math.min(loopSteps - 1, Math.round(note.tick / tickPerStep)));
+        const pitch = foldMidiPitch(note.note);
+        const prev = byStep.get(step);
+        if (!prev) {
+          byStep.set(step, {pitch, velocity: note.velocity || 0});
+        } else if (entry?.kind === 'bass') {
+          if (pitch < prev.pitch || (pitch === prev.pitch && (note.velocity || 0) > prev.velocity)) {
+            byStep.set(step, {pitch, velocity: note.velocity || 0});
+          }
+        } else if ((note.velocity || 0) >= prev.velocity) {
+          byStep.set(step, {pitch, velocity: note.velocity || 0});
+        }
+      }
+      for (let offset = 0; offset < this.steps; offset += loopSteps) {
+        for (const [baseStep, value] of byStep) {
+          const step = offset + baseStep;
+          if (step < this.steps) this.melodicPattern[track][step] = value.pitch;
+        }
+      }
+    }
+
+    this.trackSources[track] = {
+      id: entry?.id || '',
+      name: entry?.name || 'MIDI loop',
+      source: entry?.source || '',
+      genre: entry?.genre || '',
+      kind: entry?.kind || (isDrums ? 'drums' : 'melody'),
+      originalSteps: loopSteps,
+      originalBars: Number((loopSteps / 16).toFixed(2)),
+      loadedAt: new Date().toISOString(),
+    };
+    this._notify();
+    return true;
+  }
+
   setMelodicNote(track, step, midi) {
     this.pushHistory();
     if (this.melodicPattern[track][step] === midi) {
@@ -2399,6 +2480,7 @@ class StateManager {
           this.drumPattern[t][s][d] = false;
         }
       }
+      this.trackSources[t] = null;
     }
     this._notify();
   }
@@ -2507,6 +2589,7 @@ class StateManager {
 
   /* ─── Экспорт полного проекта ─── */
   exportProject() {
+    this._saveToArranged(this._editingIdx);
     const data = {
       version: 2,
       name: this._arrangedPatterns[this._editingIdx]?.name || 'Project',
