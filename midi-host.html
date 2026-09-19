@@ -682,6 +682,21 @@ select, input[type="number"], input[type="text"] {
   border-right: 2px solid rgba(61, 220, 151, .75);
   background: rgba(61, 220, 151, .10);
 }
+.loop-locator-handle {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 8px;
+  z-index: 12;
+  pointer-events: auto;
+  cursor: ew-resize;
+  background: var(--accent);
+  border: 1px solid #9af3cf;
+  border-radius: 2px;
+  box-shadow: 0 0 5px rgba(61, 220, 151, .45);
+}
+.loop-locator-handle.start { left: -5px; }
+.loop-locator-handle.end { right: -5px; }
 .ruler-loop-range.active {
   background: rgba(61, 220, 151, .20);
   border-color: var(--accent);
@@ -1047,7 +1062,7 @@ select, input[type="number"], input[type="text"] {
         <button class="btn" id="btnZoomIn" type="button" title="Zoom in">+</button>
         <button class="btn" id="btnZoomFit" type="button" title="Fit arrangement in view">Fit</button>
         <span class="zoom-label" id="zoomLabel">40 px/bar</span>
-        <span style="color:var(--dim);font-size:12px">Click/drag ruler to seek · Ctrl+wheel zoom</span>
+        <span style="color:var(--dim);font-size:12px">Click/drag ruler: seek · Shift+drag: loop range · drag green edges: locators · Ctrl+wheel zoom</span>
       </div>
       <div class="timeline-scroll" id="timelineScroll">
         <div class="timeline-inner" id="timelineInner">
@@ -1557,6 +1572,9 @@ select, input[type="number"], input[type="text"] {
     loopRangeSelecting: false,
     loopRangeAnchorBar: 1,
     loopRangeDragRect: null,
+    loopLocatorDragging: "",
+    loopLocatorDragRect: null,
+    loopRangeResumeTick: 0,
     resumeAfterLoopRangeSelect: false,
   };
 
@@ -2780,7 +2798,7 @@ select, input[type="number"], input[type="text"] {
     btn.title = range
       ? ((state.loop ? "Loop ON · " : "Loop OFF · ") +
          "bars " + range.startBar + "–" + range.endBar +
-         " · when Loop is on, drag the bar ruler to change the range")
+         " · Shift+drag ruler or drag green locator handles to change the range")
       : "Enable Loop; without a range it will default to the current bar";
   }
 
@@ -3897,6 +3915,14 @@ select, input[type="number"], input[type="text"] {
     const loopLabel = document.createElement("span");
     loopLabel.className = "ruler-loop-label";
     loopRegion.appendChild(loopLabel);
+
+    const leftLocator = document.createElement("div");
+    leftLocator.className = "loop-locator-handle start";
+    leftLocator.title = "Loop start locator · drag without moving the playhead";
+    const rightLocator = document.createElement("div");
+    rightLocator.className = "loop-locator-handle end";
+    rightLocator.title = "Loop end locator · drag without moving the playhead";
+    loopRegion.append(leftLocator, rightLocator);
     ruler.appendChild(loopRegion);
 
     const barPlayhead = document.createElement("div");
@@ -3904,38 +3930,60 @@ select, input[type="number"], input[type="text"] {
     ruler.appendChild(barPlayhead);
     state.rulerPlayheadEls.push(barPlayhead);
 
-    ruler.title = state.loop
-      ? "Drag across bars to set the loop range · marker ruler above still seeks"
-      : "Click/drag to seek · Shift+drag sets a loop range";
+    ruler.title = "Click/drag to seek · Shift+drag sets loop range · drag green locator handles to edit loop";
+
+    function beginLocatorDrag(kind, e) {
+      if (e.button !== 0 || !state.project) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = ruler.getBoundingClientRect();
+      state.loopLocatorDragging = kind;
+      state.loopLocatorDragRect = { left: rect.left, width: rect.width, bars };
+      state.resumeAfterLoopRangeSelect = !!state.playing;
+      state.loopRangeResumeTick = state.playing ? currentTransportTick() : (state.startTick || 0);
+      if (state.playing) stopPlayback();
+      setStatus(
+        (kind === "start" ? "Loop start locator" : "Loop end locator") +
+        " · drag without moving playhead",
+        "ok"
+      );
+    }
+
+    leftLocator.addEventListener("mousedown", (e) => beginLocatorDrag("start", e));
+    rightLocator.addEventListener("mousedown", (e) => beginLocatorDrag("end", e));
+
     ruler.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return;
-      const selectLoop = state.loop || e.shiftKey;
-      if (!selectLoop) {
+
+      // Shift+drag edits loop range. Plain click/drag always edits the red playhead,
+      // even when Loop is enabled, so transport and locators stay independent.
+      if (e.shiftKey) {
         e.preventDefault();
         e.stopPropagation();
-        state.rulerSeeking = true;
         const rect = ruler.getBoundingClientRect();
         const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
-        const tick = (x / (rect.width || 1)) * length;
-        state.resumeAfterSeek = !!seekToTick(tick, { restart: false });
+        const bar = Math.max(1, Math.min(bars, Math.floor(x / Math.max(1, state.barW)) + 1));
+
+        state.loopRangeSelecting = true;
+        state.loopRangeAnchorBar = bar;
+        state.loopRangeDragRect = { left: rect.left, width: rect.width, bars };
+        state.resumeAfterLoopRangeSelect = !!state.playing;
+        state.loopRangeResumeTick = state.playing ? currentTransportTick() : (state.startTick || 0);
+        if (state.playing) stopPlayback();
+        setLoopRangeBars(bar, bar);
+        renderTracks();
+        updateLoopRangeVisuals();
+        setStatus("Loop range: " + bar + "–" + bar + " · Shift+drag across bars", "ok");
         return;
       }
 
       e.preventDefault();
       e.stopPropagation();
+      state.rulerSeeking = true;
       const rect = ruler.getBoundingClientRect();
       const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
-      const bar = Math.max(1, Math.min(bars, Math.floor(x / Math.max(1, state.barW)) + 1));
-
-      state.loopRangeSelecting = true;
-      state.loopRangeAnchorBar = bar;
-      state.loopRangeDragRect = { left: rect.left, width: rect.width, bars };
-      state.resumeAfterLoopRangeSelect = !!state.playing;
-      if (state.playing) stopPlayback();
-      setLoopRangeBars(bar, bar);
-      renderTracks();
-      updateLoopRangeVisuals();
-      setStatus("Loop range: " + bar + "–" + bar + " · drag across the bar ruler", "ok");
+      const tick = (x / (rect.width || 1)) * length;
+      state.resumeAfterSeek = !!seekToTick(tick, { restart: false });
     });
 
     row.appendChild(ruler);
@@ -4423,6 +4471,31 @@ select, input[type="number"], input[type="text"] {
   }
 
   document.addEventListener("mousemove", (e) => {
+    if (state.loopLocatorDragging && state.project && state.loopLocatorDragRect) {
+      const rect = state.loopLocatorDragRect;
+      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
+      const bar = Math.max(
+        1,
+        Math.min(rect.bars || totalBars(), Math.floor(x / Math.max(1, state.barW)) + 1)
+      );
+      const current = loopRangeBounds() || ensureLoopRangeAtTick(state.startTick || 0);
+      if (current) {
+        if (state.loopLocatorDragging === "start") {
+          setLoopRangeBars(Math.min(bar, current.endBar), current.endBar);
+        } else {
+          setLoopRangeBars(current.startBar, Math.max(bar, current.startBar));
+        }
+        const range = loopRangeBounds();
+        if (range) {
+          setStatus(
+            "Loop locators: " + range.startBar + "–" + range.endBar +
+            " · playhead stays independent",
+            "ok"
+          );
+        }
+      }
+      return;
+    }
     if (state.loopRangeSelecting && state.project && state.loopRangeDragRect) {
       const rect = state.loopRangeDragRect;
       const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
@@ -4459,6 +4532,45 @@ select, input[type="number"], input[type="text"] {
     }
   });
   document.addEventListener("mouseup", () => {
+    if (state.loopLocatorDragging) {
+      state.loopLocatorDragging = "";
+      state.loopLocatorDragRect = null;
+      const range = loopRangeBounds();
+      syncProjectLoopRange();
+      markHostProjectDirty();
+      scheduleHostAutosave();
+      renderRuler();
+      renderTracks();
+
+      const resumeTick = state.loopRangeResumeTick || 0;
+      state.loopRangeResumeTick = 0;
+      state.startTick = resumeTick;
+      updatePlayheads(resumeTick, state.lengthTicks || 1);
+
+      if (range) {
+        setStatus(
+          "Loop locators set: " + range.startBar + "–" + range.endBar +
+          " · playhead unchanged" +
+          (state.loop ? " · Loop ON" : ""),
+          "ok"
+        );
+      }
+
+      if (state.resumeAfterLoopRangeSelect && state.loop) {
+        state.resumeAfterLoopRangeSelect = false;
+        const activeRange = loopRangeBounds();
+        const restartTick = activeRange &&
+          resumeTick >= activeRange.start && resumeTick < activeRange.end
+          ? resumeTick
+          : activeRange?.start || resumeTick;
+        state.startTick = restartTick;
+        runScheduler(restartTick);
+      } else {
+        state.resumeAfterLoopRangeSelect = false;
+      }
+      return;
+    }
+
     if (state.loopRangeSelecting) {
       state.loopRangeSelecting = false;
       state.loopRangeDragRect = null;
@@ -4470,16 +4582,24 @@ select, input[type="number"], input[type="text"] {
       renderTracks();
 
       if (range) {
-        state.startTick = range.start;
-        updatePlayheads(range.start, state.lengthTicks || 1);
+        const resumeTick = state.loopRangeResumeTick || (state.startTick || 0);
+        state.loopRangeResumeTick = 0;
+        state.startTick = resumeTick;
+        updatePlayheads(resumeTick, state.lengthTicks || 1);
         setStatus(
           "Loop range set: " + range.startBar + "–" + range.endBar +
+          " · playhead unchanged" +
           (state.loop ? " · Loop ON" : " · press Loop to enable"),
           "ok"
         );
         if (state.resumeAfterLoopRangeSelect && state.loop) {
           state.resumeAfterLoopRangeSelect = false;
-          runScheduler(range.start);
+          const restartTick =
+            resumeTick >= range.start && resumeTick < range.end
+              ? resumeTick
+              : range.start;
+          state.startTick = restartTick;
+          runScheduler(restartTick);
         } else {
           state.resumeAfterLoopRangeSelect = false;
         }
@@ -5256,7 +5376,7 @@ select, input[type="number"], input[type="text"] {
       if (activeRange) {
         setStatus(
           "Loop ON · bars " + activeRange.startBar + "–" + activeRange.endBar +
-          " · drag the bar ruler to change the range",
+          " · Shift+drag ruler or drag green locator handles",
           "ok"
         );
       }
