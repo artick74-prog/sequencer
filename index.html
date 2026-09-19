@@ -3839,6 +3839,7 @@ class UIRenderer {
       if (isNaN(idx)) return;
       const preset = presets[idx];
       this.state.pushHistory();
+      this.state.trackSources[trackIdx] = null;
       if (this.state.isDrumTrack(trackIdx)) {
         // Очищаем дорожку
         for (let s = 0; s < this.state.steps; s++) {
@@ -5082,7 +5083,11 @@ function stopLoopPreview() {
 
 async function previewLoop(entry) {
   try {
-    if (sequencer.isRunning) sequencer.stop();
+    if (sequencer.isRunning) {
+      sequencer.stop();
+      ui.updatePlayButton(false);
+      ui.updatePlayhead();
+    }
     stopLoopPreview();
     setLoopStatus('Preview loading · ' + entry.name);
     const midi = await fetchLoopMidi(entry);
