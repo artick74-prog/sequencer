@@ -3804,13 +3804,13 @@ class UIRenderer {
       if (variant) {
         for (let t = 0; t < CONFIG.TRACKS; t++) {
           const steps = variant.patternLength || CONFIG.STEPS;
-          if (state.trackTypes[t] === 'drum') {
+          if ((variant.trackTypes?.[t] || state.trackTypes[t]) === 'drum') {
             for (let s = 0; s < steps; s++)
               for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++)
                 if (variant.drumPattern[t]?.[s]?.[d]) totalNotes++;
           } else {
             for (let s = 0; s < steps; s++)
-              if (variant.melodicPattern[t]?.[s] !== null) totalNotes++;
+              totalNotes += normalizeMelodicCell(variant.melodicPattern[t]?.[s]).length;
           }
         }
       }
@@ -3994,11 +3994,77 @@ class UIRenderer {
       this.render(); // перерисовка всей дорожки
     });
 
+    // Engine: chip oscillator / browser SoundFont / external MIDI hardware
+    const engineSelect = document.createElement('select');
+    engineSelect.className = 'track-engine-select';
+    [
+      { value: 'chip', label: 'CHIP' },
+      { value: 'sf2', label: 'SF2' },
+      { value: 'midi', label: 'MIDI HW' },
+    ].forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.value;
+      opt.textContent = item.label;
+      if (this.state.trackEngines[trackIdx] === item.value) opt.selected = true;
+      engineSelect.appendChild(opt);
+    });
+    engineSelect.addEventListener('change', async () => {
+      this.state.setTrackEngine(trackIdx, engineSelect.value);
+      if (engineSelect.value === 'sf2') await audio.ensureSf2Loaded();
+      if (engineSelect.value === 'midi') await audio.ensureMidiAccess();
+      this.render();
+    });
+
+    const channelSelect = document.createElement('select');
+    channelSelect.className = 'track-channel-select';
+    for (let ch = 1; ch <= 16; ch++) {
+      const opt = document.createElement('option');
+      opt.value = String(ch);
+      opt.textContent = 'CH ' + ch;
+      if (this.state.trackMidiChannels[trackIdx] === ch) opt.selected = true;
+      channelSelect.appendChild(opt);
+    }
+    channelSelect.style.display = this.state.trackEngines[trackIdx] === 'chip' ? 'none' : '';
+    channelSelect.addEventListener('change', () => {
+      this.state.trackMidiChannels[trackIdx] = Number(channelSelect.value);
+      this.state._notify();
+    });
+
+    const programSelect = document.createElement('select');
+    programSelect.className = 'track-program-select';
+    const gmNames = (typeof CHIPESEQ_GM_PROGRAMS !== 'undefined' && CHIPESEQ_GM_PROGRAMS.length === 128)
+      ? CHIPESEQ_GM_PROGRAMS
+      : Array.from({length:128}, (_,i) => 'Program ' + i);
+    gmNames.forEach((label, p) => {
+      const opt = document.createElement('option');
+      opt.value = String(p);
+      opt.textContent = p + ' ' + label;
+      if (this.state.trackPrograms[trackIdx] === p) opt.selected = true;
+      programSelect.appendChild(opt);
+    });
+    programSelect.style.display =
+      this.state.trackEngines[trackIdx] === 'sf2' && !this.state.isDrumTrack(trackIdx) ? '' : 'none';
+    programSelect.addEventListener('change', () => {
+      this.state.trackPrograms[trackIdx] = Number(programSelect.value);
+      audio.configureSf2Channel(
+        this.state.trackMidiChannels[trackIdx],
+        this.state.trackPrograms[trackIdx],
+        false
+      );
+      this.state._notify();
+    });
+
+    const engineBadge = document.createElement('span');
+    engineBadge.className = 'engine-badge';
+    engineBadge.textContent = this.state.trackEngines[trackIdx] === 'chip'
+      ? 'MONO CHIP'
+      : 'POLY';
+
     // Выбор волны (для мелодических)
     const waveSelect = document.createElement('select');
     waveSelect.dataset.track = trackIdx;
     waveSelect.dataset.control = 'wave';
-    if (this.state.isDrumTrack(trackIdx)) waveSelect.style.display = 'none';
+    if (this.state.isDrumTrack(trackIdx) || this.state.trackEngines[trackIdx] !== 'chip') waveSelect.style.display = 'none';
     CONFIG.WAVE_TYPES.forEach(wave => {
       const opt = document.createElement('option');
       opt.value = wave;
@@ -4014,7 +4080,7 @@ class UIRenderer {
     const soundModeSelect = document.createElement('select');
     soundModeSelect.dataset.track = trackIdx;
     soundModeSelect.dataset.control = 'drumMode';
-    if (!this.state.isDrumTrack(trackIdx)) soundModeSelect.style.display = 'none';
+    if (!this.state.isDrumTrack(trackIdx) || this.state.trackEngines[trackIdx] !== 'chip') soundModeSelect.style.display = 'none';
     [
       { value: 'synth', label: 'Synth' },
       { value: 'sample', label: 'Sample' },
@@ -4062,11 +4128,13 @@ class UIRenderer {
       } else {
         // Очищаем дорожку
         for (let s = 0; s < this.state.steps; s++) {
-          this.state.melodicPattern[trackIdx][s] = null;
+          this.state.melodicPattern[trackIdx][s] = [];
         }
         // Применяем пресет
         for (const [step, midi] of preset.pattern) {
-          if (step < this.state.steps) this.state.melodicPattern[trackIdx][step] = midi;
+          if (step < this.state.steps) {
+            this.state.melodicPattern[trackIdx][step] = [{ note: midi, velocity: 100, length: 1 }];
+          }
         }
       }
       // Обновляем UI
@@ -4076,6 +4144,10 @@ class UIRenderer {
     });
     header.appendChild(name);
     header.appendChild(typeSelect);
+    header.appendChild(engineSelect);
+    header.appendChild(channelSelect);
+    header.appendChild(programSelect);
+    header.appendChild(engineBadge);
     header.appendChild(waveSelect);
     header.appendChild(soundModeSelect);
     header.appendChild(presetSelect);
