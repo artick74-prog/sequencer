@@ -101,8 +101,7 @@ def classify_library_item(
 ) -> dict:
     cached = cache.get(item_id)
     if (
-        not force
-        and isinstance(cached, dict)
+        isinstance(cached, dict)
         and cached.get("fingerprint") == fingerprint
         and cached.get("kind")
     ):
