@@ -81,6 +81,11 @@ a { color: var(--accent); }
   border-color: var(--accent);
   color: #fff;
 }
+.app-nav .nav-update {
+  min-height: 30px;
+  padding: 6px 11px;
+  font-size: 12px;
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -842,6 +847,7 @@ select, input[type="number"], input[type="text"] {
       <div class="sub">TD-3 / XR20 · Hardware playback · Arrangement / Git sync</div>
     </div>
     <nav class="app-nav" aria-label="Music workspace">
+      <button class="btn nav-update" id="btnUpdateApp" type="button" title="Pull the newest main commit from GitHub and restart this local bridge automatically">↓ Update</button>
       <a href="index.html">Chiptune Sequencer</a>
       <a href="style-library.html">Style Library</a>
       <a class="active" href="midi-host.html">MIDI Host</a>
@@ -877,7 +883,6 @@ select, input[type="number"], input[type="text"] {
       </div>
     </div>
     <button class="btn" id="btnLoops" type="button" title="Browse, preview and drag MIDI loops into the arrangement">♫ Loops</button>
-    <button class="btn" id="btnUpdateApp" type="button" title="Pull the newest main commit from GitHub and restart this local bridge automatically">↓ Update</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
     <input class="file-hidden" id="fileJson" type="file" accept=".json">
     <input class="file-hidden" id="fileSf2" type="file" accept=".sf2,.SF2">
