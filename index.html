@@ -5593,6 +5593,7 @@ let loopPreviewEntryId = null;
 let loopPreviewToken = 0;
 let loopPreviewState = null;
 let lastLoopInspection = null;
+let loopInspectionHistory = [];
 const LOOP_PREVIEW_LOOKAHEAD_SEC = 0.16;
 const LOOP_PREVIEW_PUMP_MS = 20;
 
@@ -6069,6 +6070,10 @@ async function previewLoop(entry) {
     if (!notes.length) throw new Error('No playable notes in this MIDI');
 
     lastLoopInspection = exactMidiInspection(entry, midi);
+    loopInspectionHistory = [
+      lastLoopInspection,
+      ...loopInspectionHistory.filter(item => item.id !== lastLoopInspection.id),
+    ].slice(0, 20);
     loopPreviewEntryId = entry.id;
     loopPreviewState = {
       entryId: entry.id,
@@ -6231,9 +6236,13 @@ document.getElementById('btnSyncAI').addEventListener('click', async () => {
         'chiptune-current.json': JSON.stringify(project, null, 2),
         'chiptune-overview.md': buildChiptuneOverview(project),
         'chiptune-loop-ratings.json': JSON.stringify(loopRatings, null, 2),
-        'chiptune-loop-selection.json': JSON.stringify(lastLoopInspection || {
+        'chiptune-loop-selection.json': JSON.stringify({
           syncedAt: new Date().toISOString(),
-          message: 'No Loop Browser MIDI has been previewed since page load.'
+          last: lastLoopInspection,
+          recent: loopInspectionHistory,
+          message: lastLoopInspection
+            ? 'Contains up to the 20 most recently previewed Loop Browser MIDI files.'
+            : 'No Loop Browser MIDI has been previewed since page load.'
         }, null, 2),
       },
     };
