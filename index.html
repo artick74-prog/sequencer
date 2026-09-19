@@ -4953,8 +4953,9 @@ function setLoopStatus(text, ok = false) {
 }
 
 function updateLoopBrowserTarget() {
-  if (!loopTargetEl) return;
-  loopTargetEl.textContent = 'LOAD TO TRACK ' + (state.activeTrack + 1);
+  const target = document.getElementById('loopTarget');
+  if (!target) return;
+  target.textContent = 'LOAD TO TRACK ' + (state.activeTrack + 1);
 }
 
 function fillLoopSelect(el, values, label) {
