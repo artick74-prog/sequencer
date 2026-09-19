@@ -1438,6 +1438,7 @@ body {
   <button class="btn engine-mini-btn" id="btnRefreshMidiOut" type="button" title="Refresh MIDI devices">↻ MIDI</button>
   <button class="btn engine-mini-btn" id="btnLoadSf2Global" type="button" title="Load a SoundFont .sf2 file">SF2…</button>
   <input id="sf2FileInput" type="file" accept=".sf2" style="display:none">
+  <span id="engineStatus" class="engine-badge" title="CHIP / SoundFont / Hardware MIDI status">CHIP</span>
 
   <div class="ctrl-group">
     <label>BPM</label>
@@ -1497,6 +1498,8 @@ body {
     </div>
   </aside>
 </div>
+
+<div id="sf2PlaceholderChiptune" style="display:none"></div>
 
 <!-- Модальное окно Settings -->
 <div class="modal-overlay" id="settingsModal">
@@ -1714,6 +1717,20 @@ const PRESETS = {
    УТИЛИТЫ
    ═══════════════════════════════════════════════════════════ */
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+let CHIPESEQ_GM_PROGRAMS = [];
+
+async function loadChiptuneGmPrograms() {
+  try {
+    const response = await fetch('scripts/gm-instruments.json');
+    if (!response.ok) return;
+    const data = await response.json();
+    if (Array.isArray(data.programs) && data.programs.length === 128) {
+      CHIPESEQ_GM_PROGRAMS = data.programs;
+    }
+  } catch {
+    CHIPESEQ_GM_PROGRAMS = [];
+  }
+}
 
 function midiToName(midi) {
   const note = NOTE_NAMES[midi % 12];
@@ -3932,9 +3949,15 @@ class UIRenderer {
     aPlay.textContent = state.isPlaying && this.sequencer.isRunning ? '❚❚' : '▶';
     aPlay.classList.toggle('playing', state.isPlaying && this.sequencer.isRunning);
     aPlay.title = 'Play (Space)';
-    aPlay.addEventListener('click', () => {
-      if (this.sequencer.isRunning) { this.sequencer.stop(); this.updatePlayButton(false); this.updatePlayhead(); }
-      else { this.sequencer.start(); this.updatePlayButton(true); }
+    aPlay.addEventListener('click', async () => {
+      if (this.sequencer.isRunning) {
+        this.sequencer.stop();
+        this.updatePlayButton(false);
+        this.updatePlayhead();
+      } else {
+        const ok = await this.sequencer.start();
+        this.updatePlayButton(!!ok);
+      }
     });
     at.appendChild(aPlay);
     const aStop = document.createElement('button');
@@ -4446,14 +4469,14 @@ class UIRenderer {
     playBtn.id = 'btnPlay';
     playBtn.textContent = '▶';
     playBtn.title = 'Play (Space)';
-    playBtn.addEventListener('click', () => {
+    playBtn.addEventListener('click', async () => {
       if (this.sequencer.isRunning) {
         this.sequencer.stop();
         this.updatePlayButton(false);
         this.updatePlayhead();
       } else {
-        this.sequencer.start();
-        this.updatePlayButton(true);
+        const ok = await this.sequencer.start();
+        this.updatePlayButton(!!ok);
       }
     });
     transportGroup.appendChild(playBtn);
@@ -5401,6 +5424,64 @@ const audio = new AudioEngine();
 const sequencer = new Sequencer(state, audio);
 const ui = new UIRenderer(state, sequencer);
 const projectMgr = new ProjectManager(state);
+
+function setEngineStatus(message, isError = false) {
+  const el = document.getElementById('engineStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.style.color = isError ? 'var(--playhead)' : 'var(--accent)';
+  el.title = message;
+}
+
+function refreshGlobalMidiOutUI() {
+  const select = document.getElementById('globalMidiOut');
+  if (!select) return;
+  const access = audio.midiAccess;
+  const outputs = access ? [...access.outputs.values()] : [];
+  select.innerHTML = '';
+  if (!outputs.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = access ? '— no MIDI devices —' : 'MIDI OUT…';
+    select.appendChild(opt);
+    return;
+  }
+  for (const out of outputs) {
+    const opt = document.createElement('option');
+    opt.value = out.id;
+    opt.textContent = out.name;
+    select.appendChild(opt);
+  }
+  if (!outputs.some(o => o.id === audio.outputId)) {
+    const prefer = outputs.find(o => /td-?3|behringer|akai|xr20/i.test(o.name)) || outputs[0];
+    audio.setMidiOutput(prefer?.id || '');
+  }
+  select.value = audio.outputId || outputs[0].id;
+  setEngineStatus('MIDI · ' + (outputs.find(o => o.id === select.value)?.name || 'ready'), false);
+}
+
+document.getElementById('globalMidiOut').addEventListener('change', (e) => {
+  audio.setMidiOutput(e.target.value);
+  refreshGlobalMidiOutUI();
+});
+document.getElementById('btnRefreshMidiOut').addEventListener('click', async () => {
+  await audio.ensureMidiAccess();
+  refreshGlobalMidiOutUI();
+});
+document.getElementById('btnLoadSf2Global').addEventListener('click', () => {
+  document.getElementById('sf2FileInput').click();
+});
+document.getElementById('sf2FileInput').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  await audio.loadSf2File(file);
+  e.target.value = '';
+});
+
+// Load GM program names for per-track SF2 selectors.
+loadChiptuneGmPrograms().then(() => {
+  if (typeof ui !== 'undefined') ui.render();
+});
 
 // ─── Autosave ───
 state._autosaveFn = () => {
