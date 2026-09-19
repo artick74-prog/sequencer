@@ -127,7 +127,7 @@ select, input[type="number"], input[type="text"] {
   margin: 16px 0 10px;
 }
 .sidebar h2:first-child { margin-top: 0; }
-.chain, .sel-box {
+.chain {
   font-size: 12px;
   line-height: 1.55;
   color: var(--dim);
@@ -137,12 +137,11 @@ select, input[type="number"], input[type="text"] {
   border: 1px solid var(--border);
   border-radius: 6px;
 }
-.chain strong, .sel-box strong { color: var(--text); }
+.chain strong { color: var(--text); }
 .role-td3 { color: var(--td3); }
 .role-bass { color: var(--xr-bass); }
 .role-drums { color: var(--xr-drums); }
 .role-gm { color: var(--gm); }
-.sel-box.empty-sel { opacity: 0.7; }
 .sel-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .sync-box, .overview-box {
   font-size: 12px;
@@ -317,7 +316,6 @@ select, input[type="number"], input[type="text"] {
   background: var(--panel);
   overflow: visible;
 }
-.track.selected-track { outline: 1px solid var(--sel-border); outline-offset: -1px; }
 .track-head {
   flex: 0 0 var(--head-w, 280px);
   width: var(--head-w, 280px);
@@ -347,7 +345,7 @@ select, input[type="number"], input[type="text"] {
   position: relative;
   height: 72px;
   flex: 0 0 auto;
-  cursor: crosshair;
+  cursor: default;
   background:
     repeating-linear-gradient(
       90deg,
@@ -365,17 +363,6 @@ select, input[type="number"], input[type="text"] {
   opacity: 0.85;
   min-width: 2px;
   pointer-events: none;
-}
-.sel-overlay {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: var(--sel);
-  border-left: 2px solid var(--sel-border);
-  border-right: 2px solid var(--sel-border);
-  z-index: 4;
-  pointer-events: none;
-  display: none;
 }
 .playhead {
   position: absolute;
@@ -400,26 +387,13 @@ select, input[type="number"], input[type="text"] {
   line-height: 1.5;
 }
 .file-hidden { display: none; }
-.prompt-preview {
-  margin-top: 8px;
-  padding: 8px;
-  background: #0e1218;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
-  color: var(--accent);
-  white-space: pre-wrap;
-  word-break: break-word;
-  display: none;
-}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/sf2synth.iife.min.js"></script>
 </head>
 <body>
   <header class="header">
     <h1>Hardware MIDI Host</h1>
-    <span class="sub">TD-3 (USB) → DIN → XR20 · Cubase tracks · region → Cursor</span>
+    <span class="sub">TD-3 (USB) → DIN → XR20 · Cubase tracks · Git sync</span>
     <span class="nav"><a href="style-library.html">Style Library</a> · <a href="index.html">Chiptune Sequencer</a></span>
   </header>
 
@@ -448,7 +422,7 @@ select, input[type="number"], input[type="text"] {
 
   <div id="sf2Placeholder" style="display:none" aria-hidden="true"></div>
 
-  <div class="status" id="status">Ready. Bind projects/ once, Load MIDI, Sync to Cursor — then I can read the full arrangement.</div>
+  <div class="status" id="status">Ready. Bind projects/ once, Load MIDI, Sync to AI — then I can read the full arrangement.</div>
 
   <div class="layout">
     <aside class="sidebar">
@@ -486,17 +460,6 @@ select, input[type="number"], input[type="text"] {
       <h2>Arrangement overview</h2>
       <div class="overview-box" id="overviewBox">Load a MIDI to see structure (markers, density per 8 bars).</div>
 
-      <h2>Selection</h2>
-      <div class="sel-box empty-sel" id="selBox">
-        Drag on a track lane to select a region.<br>
-        <strong>No selection.</strong>
-      </div>
-      <div class="sel-actions">
-        <button class="btn primary" id="btnPrepareAi" type="button" disabled>Prepare for AI</button>
-        <button class="btn" id="btnCopyPrompt" type="button" disabled>Copy chat prompt</button>
-        <button class="btn" id="btnClearSel" type="button" disabled>Clear selection</button>
-      </div>
-      <div class="prompt-preview" id="promptPreview"></div>
       <p class="hint">
         With the local repo server, <strong>Sync to AI</strong> writes files, commits and pushes automatically.
         After an AI edit, <strong>Reload from AI</strong> pulls and loads <code>projects/current.json</code>.
@@ -1001,8 +964,6 @@ select, input[type="number"], input[type="text"] {
     sf2Timers: new Set(),
     playheadEls: [],
     rulerPlayheadEls: [],
-    selection: null,
-    drag: null,
     rulerSeeking: false,
     resumeAfterSeek: false,
     lengthTicks: 0,
@@ -1489,131 +1450,7 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
-  // ─── Selection ───────────────────────────────────────────────────
-
-  function getTrack(id) {
-    return state.project?.tracks.find((t) => t.id === id) || null;
-  }
-
-  function selectionPayload() {
-    const sel = state.selection;
-    if (!sel || !state.project) return null;
-    const track = getTrack(sel.trackId);
-    if (!track) return null;
-    const ppq = state.project.ppq || 480;
-    let a = Math.min(sel.startTick, sel.endTick);
-    let b = Math.max(sel.startTick, sel.endTick);
-    // snap to bar boundaries for cleaner AI edits
-    const tpb = ticksPerBar(ppq);
-    a = Math.floor(a / tpb) * tpb;
-    b = Math.ceil(b / tpb) * tpb;
-    if (b <= a) b = a + tpb;
-    const startBar = tickToBar(a, ppq);
-    const endBar = tickToBar(b - 1, ppq); // inclusive last bar
-    const notesInRange = track.notes.filter((n) => n.tick >= a && n.tick < b);
-    return {
-      version: 1,
-      projectFile: "projects/current.json",
-      trackId: track.id,
-      trackName: track.name,
-      channel: track.channel,
-      role: track.role,
-      startBar,
-      endBar,
-      startTick: a,
-      endTick: b,
-      barCount: endBar - startBar + 1,
-      ppq,
-      tempo: state.project.tempo || 120,
-      noteCountInRange: notesInRange.length,
-      instruction: [
-        `Rewrite ONLY track "${track.name}" (id=${track.id}, MIDI channel ${track.channel})`,
-        `between ticks [${a}, ${b}) = bars ${startBar}–${endBar} inclusive.`,
-        "Delete existing notes whose tick is in that range; write new notes in the same range.",
-        "Leave all other tracks and notes outside the range unchanged.",
-        "Save result to projects/current.json.",
-      ].join(" "),
-    };
-  }
-
-  function chatPrompt() {
-    const p = selectionPayload();
-    if (!p) return "";
-    return [
-      `Сначала прочитай projects/overview.md (или overview.json) — карта аранжировки.`,
-      `Потом projects/current.json + projects/selection.json.`,
-      `Перепиши партию на треке «${p.trackName}» (id ${p.trackId}, ch ${p.channel})`,
-      `в тактах ${p.startBar}–${p.endBar} (${p.barCount} bars, ticks ${p.startTick}–${p.endTick}).`,
-      `Учитывай соседние секции/маркеры и плотность вокруг региона.`,
-      `Оставь остальные треки и ноты вне диапазона без изменений.`,
-      `Сохрани в projects/current.json (и при желании обнови overview).`,
-    ].join(" ");
-  }
-
-  function updateSelectionUI() {
-    const box = document.getElementById("selBox");
-    const prep = document.getElementById("btnPrepareAi");
-    const copy = document.getElementById("btnCopyPrompt");
-    const clear = document.getElementById("btnClearSel");
-    const preview = document.getElementById("promptPreview");
-    const p = selectionPayload();
-    if (!p) {
-      box.className = "sel-box empty-sel";
-      box.innerHTML = 'Drag on a track lane to select a region.<br><strong>No selection.</strong>';
-      prep.disabled = true;
-      copy.disabled = true;
-      clear.disabled = true;
-      preview.style.display = "none";
-      document.querySelectorAll(".sel-overlay").forEach((el) => { el.style.display = "none"; });
-      document.querySelectorAll(".track").forEach((el) => el.classList.remove("selected-track"));
-      return;
-    }
-    box.className = "sel-box";
-    box.innerHTML =
-      `<strong>${escapeHtml(p.trackName)}</strong> · ch ${p.channel}<br>` +
-      `Bars <strong>${p.startBar}–${p.endBar}</strong> (${p.barCount})<br>` +
-      `Ticks ${p.startTick}–${p.endTick} · ${p.noteCountInRange} notes in range`;
-    prep.disabled = false;
-    copy.disabled = false;
-    clear.disabled = false;
-    preview.style.display = "block";
-    preview.textContent = chatPrompt();
-    paintSelectionOverlays();
-  }
-
-  function paintSelectionOverlays() {
-    const p = selectionPayload();
-    const length = state.lengthTicks || 1;
-    document.querySelectorAll(".track").forEach((el) => {
-      const id = el.dataset.trackId;
-      const ov = el.querySelector(".sel-overlay");
-      if (!p || id !== p.trackId) {
-        el.classList.remove("selected-track");
-        if (ov) ov.style.display = "none";
-        return;
-      }
-      el.classList.add("selected-track");
-      if (!ov) return;
-      const left = (p.startTick / length) * 100;
-      const width = ((p.endTick - p.startTick) / length) * 100;
-      ov.style.display = "block";
-      ov.style.left = `${left}%`;
-      ov.style.width = `${Math.max(0.2, width)}%`;
-    });
-  }
-
-  function clearSelection() {
-    state.selection = null;
-    updateSelectionUI();
-  }
-
-  function clientXToTick(bodyEl, clientX) {
-    const rect = bodyEl.getBoundingClientRect();
-    const length = state.lengthTicks || 1;
-    const w = bodyEl.clientWidth || rect.width || 1;
-    const px = Math.min(Math.max(0, clientX - rect.left), w);
-    return Math.round((px / w) * length);
-  }
+  // ─── Timeline / zoom ────────────────────────────────────────────
 
   function totalBars() {
     if (!state.project) return 1;
@@ -1641,7 +1478,6 @@ select, input[type="number"], input[type="text"] {
     renderTracks();
     renderMarkerGuides();
     updatePlayheads(state.startTick || 0, state.lengthTicks || 1);
-    updateSelectionUI();
     updateZoomLabel();
 
     if (scroll) {
@@ -1724,7 +1560,6 @@ select, input[type="number"], input[type="text"] {
   function setProject(project) {
     stopPlayback();
     state.startTick = 0;
-    clearSelection();
     recomputeLength(project);
     state.project = project;
     document.getElementById("projectName").value = project.name || "untitled";
@@ -2069,7 +1904,7 @@ select, input[type="number"], input[type="text"] {
       forAssistant:
         "Read overview.md ASCII patterns per section first (1/32 grid, humanize-aware). " +
         "Then current.json for exact ticks/velocity. Prefer markers/sections for form. " +
-        "When selection.json exists, edit only that region.",
+        "Use markers/sections and the user's requested bar range for targeted edits.",
     };
   }
 
@@ -2192,7 +2027,6 @@ select, input[type="number"], input[type="text"] {
     renderTracks();
     renderMarkerGuides();
     updatePlayheads(state.startTick || 0, state.lengthTicks || 1);
-    updateSelectionUI();
     renderOverview();
   }
 
@@ -2386,10 +2220,6 @@ select, input[type="number"], input[type="text"] {
         body.appendChild(block);
       }
 
-      const ov = document.createElement("div");
-      ov.className = "sel-overlay";
-      body.appendChild(ov);
-
       const ph = document.createElement("div");
       ph.className = "playhead";
       body.appendChild(ph);
@@ -2402,22 +2232,12 @@ select, input[type="number"], input[type="text"] {
         track.channel = Number(e.target.value);
         if (!isGmTrack(track)) track.role = roleForChannel(track.channel).role;
         renderTracks();
-        updateSelectionUI();
       });
       el.querySelector(`[data-preview="${track.id}"]`).addEventListener("click", () => {
         previewTrack(track);
       });
       el.querySelector(`[data-export-track="${track.id}"]`).addEventListener("click", () => {
         exportSingleTrackMidi(track);
-      });
-
-      body.addEventListener("mousedown", (e) => {
-        if (e.button !== 0) return;
-        e.preventDefault();
-        const tick = clientXToTick(body, e.clientX);
-        state.drag = { trackId: track.id, anchor: tick };
-        state.selection = { trackId: track.id, startTick: tick, endTick: tick + ticksPerBar(ppq) };
-        updateSelectionUI();
       });
 
       root.appendChild(el);
@@ -2442,16 +2262,6 @@ select, input[type="number"], input[type="text"] {
       }
       return;
     }
-    if (!state.drag || !state.project) return;
-    const body = document.querySelector(`[data-body="${state.drag.trackId}"]`);
-    if (!body) return;
-    const tick = clientXToTick(body, e.clientX);
-    state.selection = {
-      trackId: state.drag.trackId,
-      startTick: state.drag.anchor,
-      endTick: tick,
-    };
-    updateSelectionUI();
   });
   document.addEventListener("mouseup", () => {
     if (state.rulerSeeking) {
@@ -2467,10 +2277,6 @@ select, input[type="number"], input[type="text"] {
           setStatus(`Cue: bar ${tickToBar(tick, state.project.ppq)} — press Play`, "ok");
         }
       }
-    }
-    if (state.drag) {
-      state.drag = null;
-      updateSelectionUI();
     }
   });
 
@@ -2691,7 +2497,7 @@ select, input[type="number"], input[type="text"] {
     await writable.close();
   }
 
-  async function syncToProjects({ withSelection = false, alsoDownload = false } = {}) {
+  async function syncToProjects({ alsoDownload = false } = {}) {
     const data = projectToJson();
     if (!data) {
       setStatus("Nothing to sync — load a MIDI first.", "err");
@@ -2700,15 +2506,11 @@ select, input[type="number"], input[type="text"] {
     const overview = buildOverview(state.project);
     state.lastOverview = overview;
     const overviewMd = overviewToMarkdown(overview);
-    const sel = withSelection ? selectionPayload() : null;
-
     const files = [
       ["current.json", JSON.stringify(data, null, 2)],
       ["overview.json", JSON.stringify(overview, null, 2)],
       ["overview.md", overviewMd],
     ];
-    if (sel) files.push(["selection.json", JSON.stringify(sel, null, 2)]);
-
     if (state.bridgeReady || (await detectLocalBridge())) {
       try {
         const payload = {
@@ -2801,22 +2603,6 @@ select, input[type="number"], input[type="text"] {
     } catch (err) {
       setStatus(`Reload failed: ${err.message}`, "err");
     }
-  }
-
-  async function prepareForAi() {
-    const sel = selectionPayload();
-    if (!sel) {
-      setStatus("Need a selection (drag on a track).", "err");
-      return;
-    }
-    const ok = await syncToProjects({ withSelection: true });
-    if (!ok) return;
-    const prompt = chatPrompt();
-    try {
-      await navigator.clipboard.writeText(prompt);
-    } catch { /* ignore */ }
-    document.getElementById("promptPreview").style.display = "block";
-    document.getElementById("promptPreview").textContent = prompt;
   }
 
   // ─── Wire ────────────────────────────────────────────────────────
@@ -2920,21 +2706,8 @@ select, input[type="number"], input[type="text"] {
     document.getElementById(id)?.addEventListener("click", () => bindProjectsFolder());
   }
   for (const id of syncBtns) {
-    document.getElementById(id)?.addEventListener("click", () => syncToProjects({ withSelection: !!selectionPayload() }));
+    document.getElementById(id)?.addEventListener("click", () => syncToProjects());
   }
-  document.getElementById("btnPrepareAi").addEventListener("click", () => prepareForAi());
-  document.getElementById("btnCopyPrompt").addEventListener("click", async () => {
-    const prompt = chatPrompt();
-    if (!prompt) return;
-    try {
-      await navigator.clipboard.writeText(prompt);
-      setStatus("Prompt copied to clipboard.", "ok");
-    } catch {
-      setStatus(prompt, "ok");
-    }
-  });
-  document.getElementById("btnClearSel").addEventListener("click", () => clearSelection());
-
   document.getElementById("btnExportMid").addEventListener("click", () => {
     if (!state.project) { setStatus("Nothing to export.", "err"); return; }
     state.project.name = document.getElementById("projectName").value || state.project.name;
@@ -2959,8 +2732,7 @@ select, input[type="number"], input[type="text"] {
     if (e.target.matches("input, select, textarea")) return;
     if (e.code === "Space") { e.preventDefault(); togglePlay(); }
     else if (e.code === "Escape") {
-      if (state.selection) clearSelection();
-      else if (state.playing) {
+      if (state.playing) {
         const tick = snapToBar(currentTransportTick());
         stopPlayback();
         state.startTick = tick;
@@ -3005,10 +2777,9 @@ select, input[type="number"], input[type="text"] {
 
   window.MidiHost = {
     getProject: () => projectToJson(),
-    getSelection: () => selectionPayload(),
     getOverview: () => (state.project ? buildOverview(state.project) : null),
     setProject: (p) => setProject(normalizeProject(p)),
-    sync: () => syncToProjects({ withSelection: !!selectionPayload() }),
+    sync: () => syncToProjects(),
     parseGmTrackName,
     gmProgramFromTrack,
     formatGmTrackName,
