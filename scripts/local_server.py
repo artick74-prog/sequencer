@@ -244,13 +244,15 @@ def build_library_catalog(force: bool = False) -> dict:
                                     locators[item_id] = ("archive", str(archive), member)
                         else:
                             with tarfile.open(archive, "r:*") as tf:
-                                members = [
-                                    member
-                                    for member in tf.getmembers()
-                                    if member.isfile()
-                                    and member.name.lower().endswith((".mid", ".midi"))
-                                ]
-                                for tar_member in members:
+                                # Iterate sequentially: repeatedly seeking inside a large
+                                # compressed tar archive would make the first full
+                                # classification unnecessarily slow.
+                                for tar_member in tf:
+                                    if (
+                                        not tar_member.isfile()
+                                        or not tar_member.name.lower().endswith((".mid", ".midi"))
+                                    ):
+                                        continue
                                     member = tar_member.name
                                     size = tar_member.size
                                     genre, _ = infer_library_tags(source, member)
