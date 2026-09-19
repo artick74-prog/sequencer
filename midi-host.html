@@ -1421,6 +1421,7 @@ select, input[type="number"], input[type="text"] {
     sf2Name: "",
     sf2Loading: false,
     bridgeReady: false,
+    selectedClipId: "",
   };
 
   // ─── Embedded Style Library / drag-and-drop loops ───────────────
@@ -2027,6 +2028,8 @@ select, input[type="number"], input[type="text"] {
     if (!selected.length) selected = flattened;
     if (!selected.length) throw new Error("No notes found in source MIDI");
 
+    const clipInstanceId =
+      "clip-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
     let insertedEnd = startTick;
     const newNotes = selected.map((note) => {
       const tick = startTick + Math.max(0, Math.round(note.tick * scale));
@@ -2037,6 +2040,7 @@ select, input[type="number"], input[type="text"] {
         duration,
         note: Math.max(0, Math.min(127, note.note | 0)),
         velocity: Math.max(1, Math.min(127, note.velocity | 0)),
+        clipId: clipInstanceId,
       };
     });
 
@@ -2046,6 +2050,7 @@ select, input[type="number"], input[type="text"] {
     state.project.clips = Array.isArray(state.project.clips) ? state.project.clips : [];
     state.project.clips.push({
       id: entry.id,
+      instanceId: clipInstanceId,
       name: hostLoopDisplayName(entry),
       originalName: entry.name || hostLoopDisplayName(entry),
       source: entry.source || "",
@@ -2056,8 +2061,10 @@ select, input[type="number"], input[type="text"] {
       startTick,
       endTick: insertedEnd,
       sourcePpq,
+      noteCount: newNotes.length,
       insertedAt: new Date().toISOString(),
     });
+    state.selectedClipId = clipInstanceId;
 
     recomputeLength(state.project);
     renderAll();
@@ -2812,7 +2819,7 @@ select, input[type="number"], input[type="text"] {
   }
 
   function normalizeProject(data, fallbackName) {
-    return {
+    const project = {
       version: 1,
       name: data.name || fallbackName || "untitled",
       ppq: data.ppq || 480,
@@ -2840,10 +2847,36 @@ select, input[type="number"], input[type="text"] {
             duration: Math.max(1, n.duration | 0),
             note: n.note | 0,
             velocity: n.velocity | 0,
+            clipId: n.clipId ? String(n.clipId) : "",
           })),
         };
       }),
     };
+
+    // Projects saved before loop containers existed only know a clip's track/range.
+    // Give those clips a stable instance id and attach the notes in that range once,
+    // so moving/deleting the container subsequently edits only its own notes.
+    project.clips.forEach((clip, index) => {
+      if (!clip.instanceId) {
+        clip.instanceId = [
+          "legacy", clip.id || "clip", clip.targetTrackId || "track",
+          Number(clip.startTick) || 0, Number(clip.endTick) || 0, index
+        ].join(":");
+      }
+      const track = project.tracks.find((item) => item.id === clip.targetTrackId);
+      if (!track) return;
+      const alreadyOwned = track.notes.some((note) => note.clipId === clip.instanceId);
+      if (alreadyOwned) return;
+      const start = Math.max(0, Number(clip.startTick) || 0);
+      const end = Math.max(start + 1, Number(clip.endTick) || (start + 1));
+      for (const note of track.notes) {
+        if (!note.clipId && note.tick >= start && note.tick < end) {
+          note.clipId = clip.instanceId;
+        }
+      }
+    });
+
+    return project;
   }
 
   function setProject(project, { restoreLocal = true, statusText = "" } = {}) {
@@ -4216,6 +4249,7 @@ select, input[type="number"], input[type="text"] {
           duration: n.duration,
           note: n.note,
           velocity: n.velocity,
+          ...(n.clipId ? { clipId: n.clipId } : {}),
         })),
       })),
     };
