@@ -584,7 +584,10 @@ def load_pack_catalog_locked() -> dict:
     if payload.get("schema") != 1 or not isinstance(payload.get("entries"), list):
         raise ValueError("Unsupported Style Library pack index")
 
-    entries = payload["entries"]
+    # Pack indexes can outlive classifier improvements. Re-tag entries while
+    # loading so a one-click app update immediately exposes corrected styles
+    # without forcing a costly repack of the local MIDI library.
+    entries = [dict(item) for item in payload["entries"]]
     locators: dict[str, tuple[str, str, str | None]] = {}
     for item in entries:
         pack_rel = item.get("pack")
@@ -592,6 +595,11 @@ def load_pack_catalog_locked() -> dict:
         item_id = item.get("id")
         if not item_id or not pack_rel or not pack_member:
             raise ValueError("Invalid entry in Style Library pack index")
+        source = str(item.get("source") or "")
+        member = str(item.get("member") or pack_member or item.get("name") or "")
+        inferred_genre, _ = infer_library_tags(source, member)
+        if inferred_genre:
+            item["genre"] = inferred_genre
         locators[item_id] = ("pack", str((PACK_ROOT / pack_rel).resolve()), pack_member)
 
     LIBRARY_ENTRIES = entries
@@ -673,10 +681,49 @@ def classify_library_item(
     return record
 
 
+GROOVE_PRIMARY_STYLES = (
+    "afrobeat",
+    "afrocuban",
+    "blues",
+    "country",
+    "dance",
+    "funk",
+    "gospel",
+    "highlife",
+    "hiphop",
+    "jazz",
+    "latin",
+    "middleeastern",
+    "neworleans",
+    "pop",
+    "punk",
+    "reggae",
+    "rock",
+    "soul",
+)
+
+
+def groove_primary_style(source: str, member: str) -> str | None:
+    """Return the official primary GMD style encoded in the MIDI filename."""
+    source_text = source.lower()
+    if "groove-v1.0.0" not in source_text and source_text != "groove":
+        return None
+
+    # GMD filenames are e.g. 1_funk-groove1_138_beat_4-4.mid.
+    # Match whole normalized tokens so "rock" does not accidentally match
+    # unrelated words and secondary labels such as "groove1" stay untouched.
+    filename = Path(member).name.lower()
+    tokens = set(re.sub(r"[^a-z0-9]+", " ", filename).split())
+    return next((style for style in GROOVE_PRIMARY_STYLES if style in tokens), None)
+
+
 def infer_library_tags(source: str, member: str) -> tuple[str, str]:
     text = f"{source} {member}".lower().replace("_", " ").replace("-", " ")
 
-    if "tech house" in text or "techhouse" in text:
+    gmd_style = groove_primary_style(source, member)
+    if gmd_style:
+        genre = gmd_style
+    elif "tech house" in text or "techhouse" in text:
         genre = "tech-house"
     elif "minimal" in text or "deep tech" in text:
         genre = "minimal-deep-tech"
@@ -691,7 +738,9 @@ def infer_library_tags(source: str, member: str) -> tuple[str, str]:
     else:
         genre = "other"
 
-    if any(word in text for word in ("bassline", "bass line", " bass ", "/bass", "\\bass", "sub bass")):
+    if gmd_style:
+        kind = "drums"
+    elif any(word in text for word in ("bassline", "bass line", " bass ", "/bass", "\\bass", "sub bass")):
         kind = "bass"
     elif any(word in text for word in ("drum", "kick", "snare", "clap", "hihat", "hi hat", "hat ", "perc")):
         kind = "drums"
