@@ -373,10 +373,11 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     const bpm=Number($("bpm").value)||midi.tempo||120;
     const duration=ticksToMs(cycle,bpm,midi.ppq);
     const barPos=midi.ppq ? clamped/(midi.ppq*4) : 0;
-    const currentBar=Math.min(Number(bars)||rawBars(midi),barPos)+1;
+    const totalForPosition=Math.max(1,Math.ceil(rawBars(midi)));
+    const currentBar=Math.min(totalForPosition,Math.floor(barPos)+1);
     $("lengthLabel").textContent="Length "+bars+" bars · "+formatClock(duration);
     $("positionLabel").textContent=
-      "Bar "+Math.max(1,currentBar).toFixed(1)+" / "+bars+
+      "Bar "+currentBar+" / "+bars+
       " · "+formatClock(ticksToMs(clamped,bpm,midi.ppq))+" / "+formatClock(duration);
   }
 
