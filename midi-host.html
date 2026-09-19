@@ -420,7 +420,7 @@ select, input[type="number"], input[type="text"] {
   <header class="header">
     <h1>Hardware MIDI Host</h1>
     <span class="sub">TD-3 (USB) → DIN → XR20 · Cubase tracks · region → Cursor</span>
-    <span class="nav"><a href="index.html">Chiptune Sequencer</a></span>
+    <span class="nav"><a href="style-library.html">Style Library</a> · <a href="index.html">Chiptune Sequencer</a></span>
   </header>
 
   <div class="toolbar">
@@ -2984,6 +2984,25 @@ select, input[type="number"], input[type="text"] {
     }
   });
 
+  async function loadLibraryReferenceFromQuery() {
+    const params = new URLSearchParams(location.search);
+    const libraryId = params.get("library");
+    if (!libraryId) return false;
+    try {
+      setStatus("Loading MIDI from Style Library…");
+      const res = await fetch("/api/library/midi?id=" + encodeURIComponent(libraryId));
+      if (!res.ok) throw new Error(await res.text());
+      const project = parseMidi(await res.arrayBuffer());
+      project.name = params.get("name") || "library-reference";
+      setProject(project);
+      setStatus(`Loaded Style Library reference “${project.name}”.`, "ok");
+      return true;
+    } catch (err) {
+      setStatus(`Style Library load failed: ${err.message}`, "err");
+      return false;
+    }
+  }
+
   window.MidiHost = {
     getProject: () => projectToJson(),
     getSelection: () => selectionPayload(),
@@ -3003,10 +3022,13 @@ select, input[type="number"], input[type="text"] {
   detectLocalBridge();
   restoreProjectsFolder();
   initMidi();
-  fetch("projects/current.json")
-    .then((r) => (r.ok ? r.json() : null))
-    .then((data) => { if (data?.tracks) setProject(normalizeProject(data, "current")); })
-    .catch(() => {});
+  (async () => {
+    if (await loadLibraryReferenceFromQuery()) return;
+    fetch("projects/current.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data?.tracks) setProject(normalizeProject(data, "current")); })
+      .catch(() => {});
+  })();
 })();
 </script>
 </body>
