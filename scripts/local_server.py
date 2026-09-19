@@ -394,15 +394,23 @@ def save_cloud_project(payload: dict) -> dict:
     if not isinstance(track_payloads, list):
         raise ValueError("trackMidis must be an array")
 
+    library_clips = payload.get("libraryClips") or []
+    if not isinstance(library_clips, list):
+        raise ValueError("libraryClips must be an array")
+
     branch = current_branch()
     ensure_remote_is_safe_to_push(branch)
 
     tracks_dir = root / "midi-host" / "tracks"
+    clips_dir = root / "midi-host" / "clips"
     root.mkdir(parents=True, exist_ok=True)
     (root / "midi-host").mkdir(parents=True, exist_ok=True)
     if tracks_dir.exists():
         shutil.rmtree(tracks_dir)
+    if clips_dir.exists():
+        shutil.rmtree(clips_dir)
     tracks_dir.mkdir(parents=True, exist_ok=True)
+    clips_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_path = root / "manifest.json"
     created_at = None
@@ -441,6 +449,36 @@ def save_cloud_project(payload: dict) -> dict:
         write_bytes(target, midi)
         track_manifest.append({"index": i, "name": name, "file": f"midi-host/tracks/{filename}"})
 
+    clip_manifest = []
+    seen_clip_ids = set()
+    for i, clip in enumerate(library_clips, start=1):
+        if not isinstance(clip, dict):
+            continue
+        clip_id = str(clip.get("id") or "").strip()
+        if not clip_id or clip_id in seen_clip_ids:
+            continue
+        seen_clip_ids.add(clip_id)
+        try:
+            midi_data, entry = read_library_midi(clip_id)
+        except FileNotFoundError:
+            continue
+
+        clip_name = str(
+            clip.get("originalName") or clip.get("name") or entry.get("name") or f"clip-{i}"
+        )
+        filename = safe_track_filename(i, clip_name)
+        target = clips_dir / filename
+        write_bytes(target, midi_data)
+        clip_manifest.append({
+            "id": clip_id,
+            "name": str(clip.get("name") or clip_name),
+            "originalName": str(entry.get("name") or clip_name),
+            "source": str(clip.get("source") or entry.get("source") or ""),
+            "genre": str(clip.get("genre") or entry.get("genre") or ""),
+            "role": str(clip.get("role") or entry.get("kind") or ""),
+            "file": f"midi-host/clips/{filename}",
+        })
+
     project_json = dict(project_json)
     project_json["cloudProject"] = {
         "id": project_id,
@@ -468,6 +506,7 @@ def save_cloud_project(payload: dict) -> dict:
             "overviewMarkdown": "midi-host/overview.md",
             "arrangementMidi": "midi-host/arrangement.mid",
             "tracks": track_manifest,
+            "clips": clip_manifest,
         },
     }
     write_text(manifest_path, json.dumps(manifest, ensure_ascii=False, indent=2))
@@ -488,6 +527,7 @@ def save_cloud_project(payload: dict) -> dict:
         "- midi-host/session.json — editor/session settings",
         "- midi-host/arrangement.mid — complete Standard MIDI arrangement",
         "- midi-host/tracks/ — one Standard MIDI file per project track",
+        "- midi-host/clips/ — original Style Library MIDI files actually used in the project",
         "- midi-host/overview.json / overview.md — structural analysis and markers",
         "",
         "Future Chiptune Sequencer data can live in this same project folder under chiptune/.",
@@ -508,6 +548,7 @@ def save_cloud_project(payload: dict) -> dict:
         "commit": short_sha(),
         "branch": branch,
         "trackCount": len(track_manifest),
+        "clipCount": len(clip_manifest),
         "files": [str(path.relative_to(ROOT)).replace(chr(92), "/") for path in written_paths],
     }
 
