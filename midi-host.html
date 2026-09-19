@@ -168,6 +168,156 @@ a { color: var(--accent); }
   border: 1px dashed var(--border);
   border-radius: 6px;
 }
+.loop-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 900;
+  width: min(430px, 92vw);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f141b;
+  border-left: 1px solid var(--border);
+  box-shadow: -18px 0 60px rgba(0,0,0,.45);
+  transform: translateX(102%);
+  transition: transform .16s ease;
+}
+.loop-drawer.open { transform: translateX(0); }
+.loop-drawer-head {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+.loop-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.loop-drawer-title strong { color: var(--accent); letter-spacing: .05em; }
+.loop-drawer-title .spacer { flex: 1; }
+.loop-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.loop-filters .wide { grid-column: 1 / -1; }
+.loop-filters input,
+.loop-filters select {
+  width: 100%;
+  min-width: 0;
+  background: #0b1016;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 7px;
+  font-size: 12px;
+}
+.loop-drawer-status,
+.loop-drawer-foot {
+  padding: 7px 11px;
+  color: var(--dim);
+  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+}
+.loop-drawer-foot {
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.loop-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.loop-card {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0b1016;
+  cursor: grab;
+  user-select: none;
+}
+.loop-card:hover { border-color: var(--accent-dim); }
+.loop-card.dragging { opacity: .55; border-color: var(--accent); }
+.loop-preview {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #1a2230;
+  color: var(--text);
+  cursor: pointer;
+}
+.loop-preview.active { color: var(--accent); border-color: var(--accent); }
+.loop-card-name {
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.loop-card-meta {
+  margin-top: 2px;
+  color: var(--dim);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.loop-stars {
+  margin-top: 4px;
+  display: flex;
+  gap: 1px;
+  align-items: center;
+}
+.loop-star {
+  border: 0;
+  background: transparent;
+  color: #3d4654;
+  padding: 0 1px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.loop-star.on { color: #e8c170; }
+.loop-duration {
+  margin-left: 6px;
+  color: var(--dim);
+  font-size: 10px;
+}
+.track-body.loop-drop-target {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background-color: rgba(61,220,151,.055);
+}
+.track-body.loop-drop-target::after {
+  content: attr(data-drop-label);
+  position: absolute;
+  top: 4px;
+  left: var(--drop-x, 8px);
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #173c2f;
+  border: 1px solid var(--accent);
+  color: #fff;
+  font-size: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+}
 label.field {
   display: inline-flex;
   align-items: center;
@@ -614,6 +764,7 @@ select, input[type="number"], input[type="text"] {
     <button class="btn" id="btnBindProjects" type="button" title="Grant write access to projects/ folder">Bind projects/</button>
     <button class="btn" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
     <button class="btn" id="btnSync" type="button" title="Save project, commit and push to GitHub">Sync to AI</button>
+    <button class="btn" id="btnLoops" type="button" title="Browse, preview and drag MIDI loops into the arrangement">♫ Loops</button>
     <button class="btn" id="btnCloudProjects" type="button" title="Open a project saved in GitHub">☁ Projects</button>
     <button class="btn primary" id="btnCloudSave" type="button" title="Create/update a self-contained project folder in GitHub">☁ Save Project</button>
     <button class="btn" id="btnExportMid" type="button">Export MIDI</button>
@@ -625,6 +776,38 @@ select, input[type="number"], input[type="text"] {
   <div id="sf2Placeholder" style="display:none" aria-hidden="true"></div>
 
   <div class="status" id="status">Ready. Bind projects/ once, Load MIDI, Sync to AI — then I can read the full arrangement.</div>
+
+  <aside class="loop-drawer" id="hostLoopBrowser" aria-hidden="true">
+    <div class="loop-drawer-head">
+      <div class="loop-drawer-title">
+        <strong>♫ LOOP BROWSER</strong>
+        <span class="spacer"></span>
+        <button class="btn" id="btnCloseLoops" type="button">Close</button>
+      </div>
+      <div class="loop-filters">
+        <input class="wide" id="hostLoopSearch" type="search" placeholder="Search MIDI…">
+        <select id="hostLoopGenre"><option value="">All styles</option></select>
+        <select id="hostLoopRole"><option value="">All roles</option></select>
+        <select id="hostLoopFamily"><option value="">All instrument families</option></select>
+        <select id="hostLoopSource"><option value="">All sources</option></select>
+        <select id="hostLoopRating">
+          <option value="0">All ratings</option>
+          <option value="rated">★ Rated only</option>
+          <option value="5">★★★★★ only</option>
+          <option value="4">★★★★+</option>
+          <option value="3">★★★+</option>
+          <option value="2">★★+</option>
+          <option value="1">★+</option>
+        </select>
+      </div>
+    </div>
+    <div class="loop-drawer-status" id="hostLoopStatus">Open the browser to load the MIDI catalogue.</div>
+    <div class="loop-list" id="hostLoopList"></div>
+    <div class="loop-drawer-foot">
+      <span id="hostLoopCount">—</span>
+      <span>Preview · drag onto a track/bar</span>
+    </div>
+  </aside>
 
   <div class="cloud-modal-backdrop" id="cloudProjectsModal" aria-hidden="true">
     <div class="cloud-modal" role="dialog" aria-modal="true" aria-labelledby="cloudProjectsTitle">
