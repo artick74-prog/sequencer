@@ -543,6 +543,9 @@ select, input[type="number"], input[type="text"] {
   const BAR_W_MIN = 3;
   const BAR_W_MAX = 96;
   const HEAD_W = 280;
+  const SCHEDULER_INTERVAL_MS = 20;
+  const HARDWARE_LOOKAHEAD_MS = 300;
+  const SF2_LOOKAHEAD_MS = 80;
 
   function midiToName(n) {
     return NOTE_NAMES[n % 12] + (Math.floor(n / 12) - 1);
@@ -916,8 +919,11 @@ select, input[type="number"], input[type="text"] {
     startPerf: 0,
     startTick: 0,
     timer: null,
-    scheduled: new Set(),
-    activeNotes: new Map(),
+    playbackTempo: 120,
+    playbackPpq: 480,
+    playbackToken: 0,
+    playbackOutput: null,
+    sf2Timers: new Set(),
     playheadEls: [],
     rulerPlayheadEls: [],
     selection: null,
@@ -1102,30 +1108,54 @@ select, input[type="number"], input[type="text"] {
   function msToTicks(ms, tempo, ppq) {
     return (ms / (60000 / tempo)) * ppq;
   }
+  function clearHardwareQueue(output) {
+    if (!output || typeof output.clear !== "function") return;
+    try {
+      output.clear();
+    } catch {
+      /* disconnected output or browser without a usable clear() */
+    }
+  }
+  function clearSf2Timers() {
+    for (const timer of state.sf2Timers) clearTimeout(timer);
+    state.sf2Timers.clear();
+  }
   function allNotesOff(output) {
     if (output) {
-      for (let ch = 0; ch < 16; ch++) {
-        output.send([0xb0 | ch, 123, 0]);
-        output.send([0xb0 | ch, 64, 0]);
+      try {
+        for (let ch = 0; ch < 16; ch++) {
+          output.send([0xb0 | ch, 123, 0]);
+          output.send([0xb0 | ch, 64, 0]);
+        }
+      } catch {
+        /* output may have disconnected while transport was running */
       }
     }
     allNotesOffSf2();
-    state.activeNotes.clear();
   }
-  function stopPlayback() {
+  function stopPlayback(output = state.playbackOutput || getOutput()) {
     state.playing = false;
+    state.playbackToken++;
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
-    allNotesOff(getOutput());
-    state.scheduled.clear();
+    clearSf2Timers();
+    clearHardwareQueue(output);
+    allNotesOff(output);
+    state.playbackOutput = null;
     document.getElementById("btnPlay").textContent = "Play";
   }
 
-  function currentTransportTick() {
+  function absoluteTransportTick(atPerf = performance.now()) {
     if (!state.project) return 0;
     if (!state.playing) return state.startTick || 0;
-    const tempo = Number(document.getElementById("tempo").value) || state.project.tempo || 120;
-    const ppq = state.project.ppq || 480;
-    return state.startTick + msToTicks(performance.now() - state.startPerf, tempo, ppq);
+    const elapsed = Math.max(0, atPerf - state.startPerf);
+    return state.startTick + msToTicks(elapsed, state.playbackTempo, state.playbackPpq);
+  }
+
+  function currentTransportTick(atPerf = performance.now()) {
+    const tick = absoluteTransportTick(atPerf);
+    const length = state.lengthTicks || 0;
+    if (state.playing && state.loop && length > 0) return tick % length;
+    return length > 0 ? Math.min(tick, length) : tick;
   }
 
   function snapToBar(tick) {
@@ -1142,7 +1172,6 @@ select, input[type="number"], input[type="text"] {
     const wasPlaying = state.playing;
     if (wasPlaying) {
       stopPlayback();
-      allNotesOff(getOutput());
     }
     state.startTick = tick;
     updatePlayheads(tick, state.lengthTicks || 1);
@@ -1182,6 +1211,85 @@ select, input[type="number"], input[type="text"] {
     return queue;
   }
 
+  function createScheduleCursor(events, fromTick) {
+    let index = 0;
+    while (index < events.length && events[index].tick < fromTick) index++;
+    return { events, index, loopOffsetTicks: 0, done: events.length === 0 };
+  }
+
+  function peekScheduleCursor(cursor, fromTick, length, loop) {
+    if (cursor.done) return null;
+    if (cursor.index >= cursor.events.length) {
+      if (!loop) {
+        cursor.done = true;
+        return null;
+      }
+      cursor.index = 0;
+      cursor.loopOffsetTicks += length;
+    }
+    const event = cursor.events[cursor.index];
+    return {
+      event,
+      offsetTicks: event.tick - fromTick + cursor.loopOffsetTicks,
+    };
+  }
+
+  function advanceScheduleCursor(cursor) {
+    cursor.index++;
+  }
+
+  function midiMessageForEvent(event) {
+    return event.type === "on"
+      ? [0x90 | event.ch, event.note, event.velocity]
+      : [0x80 | event.ch, event.note, 0];
+  }
+
+  function scheduleHardwareWindow(cursor, output, deadline, fromTick, length, tempo, ppq) {
+    if (!output) return true;
+    while (true) {
+      const item = peekScheduleCursor(cursor, fromTick, length, state.loop);
+      if (!item) return true;
+      const targetTime = state.startPerf + ticksToMs(item.offsetTicks, tempo, ppq);
+      if (targetTime > deadline) return true;
+      advanceScheduleCursor(cursor);
+      try {
+        output.send(midiMessageForEvent(item.event), targetTime);
+      } catch (err) {
+        setStatus(`Hardware MIDI scheduling failed: ${err.message}`, "err");
+        return false;
+      }
+    }
+  }
+
+  function scheduleSf2Event(event, targetTime, token) {
+    const send = () => {
+      if (!state.playing || state.playbackToken !== token) return;
+      if (event.type === "on") sf2NoteOn(event.ch, event.note, event.velocity);
+      else sf2NoteOff(event.ch, event.note);
+    };
+    const delay = Math.max(0, targetTime - performance.now());
+    if (delay < 2) {
+      send();
+      return;
+    }
+    const timer = setTimeout(() => {
+      state.sf2Timers.delete(timer);
+      send();
+    }, delay);
+    state.sf2Timers.add(timer);
+  }
+
+  function scheduleSf2Window(cursor, deadline, fromTick, length, tempo, ppq, token) {
+    while (true) {
+      const item = peekScheduleCursor(cursor, fromTick, length, state.loop);
+      if (!item) return;
+      const targetTime = state.startPerf + ticksToMs(item.offsetTicks, tempo, ppq);
+      if (targetTime > deadline) return;
+      advanceScheduleCursor(cursor);
+      scheduleSf2Event(item.event, targetTime, token);
+    }
+  }
+
   function runScheduler(fromTick) {
     const project = state.project;
     if (!project) return;
@@ -1199,84 +1307,75 @@ select, input[type="number"], input[type="text"] {
     const length = Math.max(project.lengthTicks || 0, ppq * 4);
     state.lengthTicks = length;
     const queue = buildEventQueue(project);
-    let qi = 0;
-    while (qi < queue.length && queue[qi].tick < fromTick) qi++;
-    const lookAheadMs = 80;
+    const hardwareCursor = createScheduleCursor(
+      queue.filter((event) => event.route === "hw" || event.route === "both"),
+      fromTick
+    );
+    const sf2Cursor = createScheduleCursor(
+      queue.filter((event) => event.route === "sf2" || event.route === "both"),
+      fromTick
+    );
     state.playing = true;
     state.startPerf = performance.now();
     state.startTick = fromTick;
-    state.scheduled.clear();
+    state.playbackTempo = tempo;
+    state.playbackPpq = ppq;
+    state.playbackOutput = hw ? output : null;
+    const token = ++state.playbackToken;
     document.getElementById("btnPlay").textContent = "Pause";
     updatePlayheads(fromTick, length);
-    const dest = [sf2 ? "SF2" : null, hw ? output.name : null].filter(Boolean).join(" + ");
+    const dest = [sf2 ? "SF2" : null, hw ? `${output.name} (HW timestamp)` : null]
+      .filter(Boolean)
+      .join(" + ");
     setStatus(`Playing from bar ${tickToBar(fromTick, ppq)} → ${dest}`, "ok");
 
     if (state.timer) clearInterval(state.timer);
-    state.timer = setInterval(() => {
-      if (!state.playing) return;
-      const elapsed = performance.now() - state.startPerf;
-      const nowTick = state.startTick + msToTicks(elapsed, tempo, ppq);
-      const aheadTick = state.startTick + msToTicks(elapsed + lookAheadMs, tempo, ppq);
-      while (qi < queue.length && queue[qi].tick <= aheadTick) {
-        const ev = queue[qi++];
-        const delay = Math.max(0, ticksToMs(ev.tick - nowTick, tempo, ppq));
-        const key = `${ev.ch}:${ev.note}:${ev.type}:${ev.tick}`;
-        if (state.scheduled.has(key)) continue;
-        state.scheduled.add(key);
-        const sendAt = () => {
-          if (!state.playing) return;
-          if (ev.route === "sf2" || ev.route === "both") {
-            if (ev.type === "on") sf2NoteOn(ev.ch, ev.note, ev.velocity);
-            else sf2NoteOff(ev.ch, ev.note);
-          }
-          if (ev.route === "hw" || ev.route === "both") {
-            const out = getOutput();
-            if (!out) return;
-            if (ev.type === "on") {
-              out.send([0x90 | ev.ch, ev.note, ev.velocity]);
-              state.activeNotes.set(`${ev.ch}:${ev.note}`, ev);
-            } else {
-              out.send([0x80 | ev.ch, ev.note, 0]);
-              state.activeNotes.delete(`${ev.ch}:${ev.note}`);
-            }
-          } else if (ev.type === "on") {
-            state.activeNotes.set(`${ev.ch}:${ev.note}`, ev);
-          } else {
-            state.activeNotes.delete(`${ev.ch}:${ev.note}`);
-          }
-        };
-        if (delay < 2) sendAt();
-        else setTimeout(sendAt, delay);
+    const pump = () => {
+      if (!state.playing || state.playbackToken !== token) return;
+      const now = performance.now();
+      if (hw && !scheduleHardwareWindow(
+        hardwareCursor,
+        output,
+        now + HARDWARE_LOOKAHEAD_MS,
+        fromTick,
+        length,
+        tempo,
+        ppq
+      )) {
+        stopPlayback(output);
+        return;
       }
+      if (sf2) {
+        scheduleSf2Window(
+          sf2Cursor,
+          now + SF2_LOOKAHEAD_MS,
+          fromTick,
+          length,
+          tempo,
+          ppq,
+          token
+        );
+      }
+
+      const nowTick = currentTransportTick(now);
       updatePlayheads(nowTick, length);
-      if (nowTick >= length) {
-        if (state.loop) {
-          allNotesOff(getOutput());
-          state.startTick = 0;
-          state.startPerf = performance.now();
-          state.scheduled.clear();
-          qi = 0;
-          updatePlayheads(0, length);
-        } else {
-          stopPlayback();
-          state.startTick = snapToBar(length - 1);
-          updatePlayheads(state.startTick, length);
-          setStatus("Finished.", "ok");
-        }
+      if (!state.loop && absoluteTransportTick(now) >= length) {
+        stopPlayback(output);
+        state.startTick = snapToBar(length - 1);
+        updatePlayheads(state.startTick, length);
+        setStatus("Finished.", "ok");
       }
-    }, 20);
+    };
+    pump();
+    if (state.playing) state.timer = setInterval(pump, SCHEDULER_INTERVAL_MS);
   }
 
   async function togglePlay() {
     if (state.playing) {
       const project = state.project;
-      const tempo = Number(document.getElementById("tempo").value) || project.tempo;
       const ppq = project.ppq || 480;
-      state.startTick = state.startTick + msToTicks(performance.now() - state.startPerf, tempo, ppq);
-      state.playing = false;
-      if (state.timer) { clearInterval(state.timer); state.timer = null; }
-      allNotesOff(getOutput());
-      document.getElementById("btnPlay").textContent = "Play";
+      state.startTick = currentTransportTick();
+      stopPlayback();
       updatePlayheads(state.startTick, state.lengthTicks || 1);
       setStatus(`Paused @ bar ${tickToBar(state.startTick, ppq)}`, "");
       return;
@@ -1291,6 +1390,15 @@ select, input[type="number"], input[type="text"] {
       return;
     }
     runScheduler(state.startTick || 0);
+  }
+
+  async function restartPlaybackForRoutingChange() {
+    if (!state.playing) return;
+    const tick = currentTransportTick();
+    stopPlayback();
+    state.startTick = tick;
+    if (useSf2Output() && !(await ensureSf2Loaded())) return;
+    runScheduler(tick);
   }
 
   function updatePlayheads(tick, lengthTicks) {
@@ -2271,7 +2379,7 @@ select, input[type="number"], input[type="text"] {
     if (state.rulerSeeking) {
       state.rulerSeeking = false;
       const tick = state.startTick || 0;
-      if (state.resumeAfterSeek && getOutput()) {
+      if (state.resumeAfterSeek && (getOutput() || useSf2Output())) {
         state.resumeAfterSeek = false;
         runScheduler(tick);
       } else {
@@ -2302,8 +2410,9 @@ select, input[type="number"], input[type="text"] {
     const out = getOutput();
     if (!out) { setStatus("Select MIDI Out or enable Browser audio (SF2).", "err"); return; }
     const hwNote = track.channel === 10 ? 36 : 40;
-    out.send([0x90 | ch, hwNote, 100]);
-    setTimeout(() => out.send([0x80 | ch, hwNote, 0]), 200);
+    const now = performance.now();
+    out.send([0x90 | ch, hwNote, 100], now);
+    out.send([0x80 | ch, hwNote, 0], now + 200);
     setStatus(`Preview ch ${track.channel} → ${out.name}`, "ok");
   }
 
@@ -2658,8 +2767,15 @@ select, input[type="number"], input[type="text"] {
     }
   });
   document.getElementById("btnLoop").addEventListener("click", (e) => {
+    const wasPlaying = state.playing;
+    const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
     state.loop = !state.loop;
     e.currentTarget.classList.toggle("active", state.loop);
+    if (wasPlaying) {
+      stopPlayback();
+      state.startTick = tick;
+      runScheduler(tick);
+    }
   });
   document.getElementById("btnZoomOut").addEventListener("click", () => zoomBy(1 / 1.35));
   document.getElementById("btnZoomIn").addEventListener("click", () => zoomBy(1.35));
@@ -2672,10 +2788,24 @@ select, input[type="number"], input[type="text"] {
 
   document.getElementById("btnRefreshMidi").addEventListener("click", () => initMidi());
   document.getElementById("midiOut").addEventListener("change", (e) => {
+    const wasPlaying = state.playing;
+    const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
+    const previousOutput = state.playbackOutput || getOutput();
+    if (wasPlaying) stopPlayback(previousOutput);
     state.outputId = e.target.value;
     const out = getOutput();
-    setStatus(out ? `Output: ${out.name}` : "No output", out ? "ok" : "err");
+    if (wasPlaying) {
+      state.startTick = tick;
+      runScheduler(tick);
+    } else {
+      setStatus(out ? `Output: ${out.name}` : "No output", out ? "ok" : "err");
+    }
   });
+  for (const id of ["chkSf2", "chkHw"]) {
+    document.getElementById(id)?.addEventListener("change", () => {
+      restartPlaybackForRoutingChange();
+    });
+  }
 
   document.getElementById("btnLoadMid").addEventListener("click", () => document.getElementById("fileMid").click());
   document.getElementById("fileMid").addEventListener("change", async (e) => {
@@ -2736,7 +2866,15 @@ select, input[type="number"], input[type="text"] {
   });
 
   document.getElementById("tempo").addEventListener("change", () => {
-    if (state.project) state.project.tempo = Number(document.getElementById("tempo").value) || 120;
+    if (!state.project) return;
+    const wasPlaying = state.playing;
+    const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
+    if (wasPlaying) stopPlayback();
+    state.project.tempo = Number(document.getElementById("tempo").value) || 120;
+    if (wasPlaying) {
+      state.startTick = tick;
+      runScheduler(tick);
+    }
   });
 
   document.addEventListener("keydown", (e) => {
