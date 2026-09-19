@@ -12,6 +12,7 @@ The server binds to 127.0.0.1 only.
 from __future__ import annotations
 
 import argparse
+import base64
 import csv
 import io
 import hashlib
@@ -240,6 +241,193 @@ def build_library_inventory_report() -> dict:
         "roles": len(by_kind),
         "withoutProgram": no_program,
         "files": [rel_md, rel_csv],
+    }
+
+
+def slugify_cloud_project(value: str) -> str:
+    raw = re.sub(r"[^a-z0-9]+", "-", str(value).lower()).strip("-")
+    if raw:
+        return raw[:64]
+    digest = hashlib.sha1(str(value).encode("utf-8", errors="ignore")).hexdigest()[:8]
+    return f"project-{digest}"
+
+
+def allocate_cloud_project_id(project_name: str) -> str:
+    root = PROJECTS / "cloud"
+    root.mkdir(parents=True, exist_ok=True)
+    base = slugify_cloud_project(project_name or "project")
+    candidate = base
+    suffix = 2
+    while (root / candidate).exists():
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+    return candidate
+
+
+def safe_track_filename(index: int, name: str) -> str:
+    stem = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', "_", str(name or "Track")).strip(" ._")
+    stem = re.sub(r"\\s+", " ", stem)[:80] or "Track"
+    return f"{index:03d} - {stem}.mid"
+
+
+def decode_midi_b64(value: str, label: str) -> bytes:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{label} MIDI payload is missing")
+    try:
+        data = base64.b64decode(value, validate=True)
+    except Exception as exc:
+        raise ValueError(f"{label} MIDI payload is invalid") from exc
+    if len(data) < 14 or not data.startswith(b"MThd"):
+        raise ValueError(f"{label} is not a valid Standard MIDI file")
+    return data
+
+
+def save_cloud_project(payload: dict) -> dict:
+    project_name = " ".join(
+        str(payload.get("projectName") or "Project").replace("\r", " ").replace("\n", " ").split()
+    )[:120] or "Project"
+
+    requested_id = str(payload.get("projectId") or "").strip()
+    project_id = slugify_cloud_project(requested_id) if requested_id else allocate_cloud_project_id(project_name)
+
+    root = (PROJECTS / "cloud" / project_id).resolve()
+    cloud_root = (PROJECTS / "cloud").resolve()
+    if cloud_root not in root.parents:
+        raise ValueError("Invalid cloud project path")
+
+    project_json = payload.get("project")
+    overview_json = payload.get("overview")
+    session_json = payload.get("session")
+    overview_md = payload.get("overviewMd")
+    if not isinstance(project_json, dict) or not isinstance(project_json.get("tracks"), list):
+        raise ValueError("project must contain tracks[]")
+    if overview_json is not None and not isinstance(overview_json, dict):
+        raise ValueError("overview must be an object")
+    if session_json is not None and not isinstance(session_json, dict):
+        raise ValueError("session must be an object")
+    if overview_md is not None and not isinstance(overview_md, str):
+        raise ValueError("overviewMd must be text")
+
+    arrangement = decode_midi_b64(payload.get("arrangementMidi"), "Arrangement")
+    track_payloads = payload.get("trackMidis")
+    if not isinstance(track_payloads, list):
+        raise ValueError("trackMidis must be an array")
+
+    branch = current_branch()
+    ensure_remote_is_safe_to_push(branch)
+
+    tracks_dir = root / "midi-host" / "tracks"
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "midi-host").mkdir(parents=True, exist_ok=True)
+    if tracks_dir.exists():
+        shutil.rmtree(tracks_dir)
+    tracks_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest_path = root / "manifest.json"
+    created_at = None
+    if manifest_path.exists():
+        try:
+            previous_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            created_at = previous_manifest.get("createdAt")
+        except (OSError, ValueError, json.JSONDecodeError):
+            created_at = None
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    created_at = created_at or now
+    written_paths = []
+
+    def write_text(path: Path, text: str) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp = path.with_name(path.name + ".tmp")
+        temp.write_text(text, encoding="utf-8", newline="\n")
+        os.replace(temp, path)
+        written_paths.append(path)
+
+    def write_bytes(path: Path, data: bytes) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp = path.with_name(path.name + ".tmp")
+        temp.write_bytes(data)
+        os.replace(temp, path)
+        written_paths.append(path)
+
+    track_manifest = []
+    for i, item in enumerate(track_payloads, start=1):
+        if not isinstance(item, dict):
+            raise ValueError("trackMidis entries must be objects")
+        name = str(item.get("name") or f"Track {i}")
+        midi = decode_midi_b64(item.get("midi"), name)
+        filename = safe_track_filename(i, name)
+        target = tracks_dir / filename
+        write_bytes(target, midi)
+        track_manifest.append({"index": i, "name": name, "file": f"midi-host/tracks/{filename}"})
+
+    project_json = dict(project_json)
+    project_json["cloudProject"] = {
+        "id": project_id,
+        "path": f"projects/cloud/{project_id}",
+        "savedAt": now,
+    }
+
+    write_text(root / "midi-host" / "project.json", json.dumps(project_json, ensure_ascii=False, indent=2))
+    write_text(root / "midi-host" / "overview.json", json.dumps(overview_json or {}, ensure_ascii=False, indent=2))
+    write_text(root / "midi-host" / "overview.md", overview_md or "# Arrangement overview\n")
+    write_text(root / "midi-host" / "session.json", json.dumps(session_json or {}, ensure_ascii=False, indent=2))
+    write_bytes(root / "midi-host" / "arrangement.mid", arrangement)
+
+    manifest = {
+        "schema": 1,
+        "id": project_id,
+        "name": project_name,
+        "createdAt": created_at,
+        "updatedAt": now,
+        "editors": {"midiHost": True, "chiptune": False},
+        "files": {
+            "midiHostProject": "midi-host/project.json",
+            "session": "midi-host/session.json",
+            "overviewJson": "midi-host/overview.json",
+            "overviewMarkdown": "midi-host/overview.md",
+            "arrangementMidi": "midi-host/arrangement.mid",
+            "tracks": track_manifest,
+        },
+    }
+    write_text(manifest_path, json.dumps(manifest, ensure_ascii=False, indent=2))
+
+    readme = [
+        f"# {project_name}",
+        "",
+        "Cloud project snapshot generated by MIDI Host.",
+        "",
+        f"- Project ID: {project_id}",
+        f"- Updated: {now}",
+        f"- Tracks: {len(track_manifest)}",
+        f"- BPM: {project_json.get('tempo', 120)}",
+        f"- PPQ: {project_json.get('ppq', 480)}",
+        "",
+        "Files:",
+        "- midi-host/project.json — complete editable MIDI Host project state",
+        "- midi-host/session.json — editor/session settings",
+        "- midi-host/arrangement.mid — complete Standard MIDI arrangement",
+        "- midi-host/tracks/ — one Standard MIDI file per project track",
+        "- midi-host/overview.json / overview.md — structural analysis and markers",
+        "",
+        "Future Chiptune Sequencer data can live in this same project folder under chiptune/.",
+        "",
+    ]
+    write_text(root / "README.md", "\n".join(readme))
+
+    rel_root = str(root.relative_to(ROOT)).replace(chr(92), "/")
+    run_git("add", "--", rel_root)
+    changed = commit_staged(f"Save cloud project: {project_name}")
+    run_git("push", "origin", branch)
+
+    return {
+        "ok": True,
+        "changed": changed,
+        "projectId": project_id,
+        "projectPath": rel_root,
+        "commit": short_sha(),
+        "branch": branch,
+        "trackCount": len(track_manifest),
+        "files": [str(path.relative_to(ROOT)).replace(chr(92), "/") for path in written_paths],
     }
 
 
@@ -1185,6 +1373,14 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if path == "/api/update":
             self._handle_update()
+            return
+        if path == "/api/project/save":
+            try:
+                self._send_json(200, save_cloud_project(self._read_json()))
+            except (ValueError, GitError, OSError, json.JSONDecodeError) as exc:
+                self._send_json(409, {"ok": False, "error": str(exc)})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
             return
         if path == "/api/library/rescan":
             try:

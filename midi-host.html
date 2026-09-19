@@ -550,6 +550,7 @@ select, input[type="number"], input[type="text"] {
     <button class="btn" id="btnBindProjects" type="button" title="Grant write access to projects/ folder">Bind projects/</button>
     <button class="btn" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
     <button class="btn" id="btnSync" type="button" title="Save project, commit and push to GitHub">Sync to AI</button>
+    <button class="btn primary" id="btnCloudSave" type="button" title="Create/update a self-contained project folder in GitHub">☁ Save Project</button>
     <button class="btn" id="btnExportMid" type="button">Export MIDI</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
     <input class="file-hidden" id="fileJson" type="file" accept=".json">
@@ -578,6 +579,7 @@ select, input[type="number"], input[type="text"] {
         <input type="text" id="projectName" style="width:100%" value="untitled">
       </label>
       <div id="projectMeta" style="color:var(--dim);font-size:12px;line-height:1.5">No project loaded.</div>
+      <div id="cloudProjectMeta" style="color:var(--dim);font-size:11px;line-height:1.4;margin-top:5px">Cloud: not saved</div>
 
       <h2>Arrangement playlist</h2>
       <div class="overview-box section-playlist" id="overviewBox">
@@ -1144,6 +1146,7 @@ select, input[type="number"], input[type="text"] {
       project: {
         name: projectName,
         tempo,
+        cloudProject: state.project.cloudProject ? {...state.project.cloudProject} : null,
         tracks: state.project.tracks.map((track, index) => ({
           id: track.id || "",
           cubaseIndex: track.cubaseIndex ?? index,
@@ -1207,6 +1210,9 @@ select, input[type="number"], input[type="text"] {
 
     if (saved.project.name) project.name = saved.project.name;
     if (Number.isFinite(Number(saved.project.tempo))) project.tempo = Number(saved.project.tempo);
+    if (saved.project.cloudProject && typeof saved.project.cloudProject === "object") {
+      project.cloudProject = {...saved.project.cloudProject};
+    }
 
     const savedTracks = saved.project.tracks || [];
     for (let i = 0; i < project.tracks.length; i++) {
@@ -1813,6 +1819,9 @@ select, input[type="number"], input[type="text"] {
       tempo: data.tempo || 120,
       lengthTicks: data.lengthTicks || 0,
       markers: data.markers || [],
+      cloudProject: data.cloudProject && typeof data.cloudProject === "object"
+        ? {...data.cloudProject}
+        : null,
       tracks: (data.tracks || []).map((t, i) => {
         const channel = t.channel || 1;
         const name = t.name || roleForChannel(channel).label;
@@ -1848,6 +1857,7 @@ select, input[type="number"], input[type="text"] {
     const bars = (project.lengthTicks / ticksPerBar(project.ppq)).toFixed(0);
     document.getElementById("projectMeta").innerHTML =
       `${project.tempo || 120} BPM · PPQ ${project.ppq} · ${bars} bars`;
+    renderCloudProjectMeta();
     renderOverview();
     setStatus(
       restored
@@ -2778,6 +2788,121 @@ select, input[type="number"], input[type="text"] {
     URL.revokeObjectURL(url);
   }
 
+  function renderCloudProjectMeta() {
+    const el = document.getElementById("cloudProjectMeta");
+    if (!el) return;
+    const cloud = state.project?.cloudProject;
+    if (!cloud?.id) {
+      el.textContent = "Cloud: not saved";
+      return;
+    }
+    el.textContent = "Cloud: " + (cloud.path || ("projects/cloud/" + cloud.id));
+    el.title = cloud.savedAt ? ("Last saved: " + cloud.savedAt) : "";
+  }
+
+  function bytesToBase64(bytes) {
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  function cloudSessionJson() {
+    return {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      barWidthPx: state.barW,
+      loop: !!state.loop,
+      browserAudioSf2: document.getElementById("chkSf2")?.checked !== false,
+      hardwareMidiOut: document.getElementById("chkHw")?.checked !== false,
+      midiOutputName: getOutput()?.name || null,
+    };
+  }
+
+  async function saveProjectToCloud() {
+    const data = projectToJson();
+    if (!data) {
+      setStatus("Nothing to save — load or create a project first.", "err");
+      return false;
+    }
+    if (!(state.bridgeReady || (await detectLocalBridge()))) {
+      setStatus("Local bridge is not running. Start start-midi-host.bat first.", "err");
+      return false;
+    }
+
+    let projectName = (document.getElementById("projectName").value || data.name || "Project").trim();
+    const existingId = state.project?.cloudProject?.id || "";
+    if (!existingId) {
+      const chosen = prompt("Project name for GitHub cloud storage:", projectName);
+      if (chosen === null) return false;
+      projectName = chosen.trim() || projectName || "Project";
+      document.getElementById("projectName").value = projectName;
+      state.project.name = projectName;
+      data.name = projectName;
+    }
+
+    const overview = buildOverview(state.project);
+    const overviewMd = overviewToMarkdown(overview);
+    const arrangementMidi = bytesToBase64(buildMidi(state.project));
+    const trackMidis = state.project.tracks.map((track) => ({
+      name: track.name || ("Track " + ((track.cubaseIndex ?? 0) + 1)),
+      midi: bytesToBase64(buildSingleTrackMidi(state.project, track)),
+    }));
+
+    const btn = document.getElementById("btnCloudSave");
+    const oldText = btn?.textContent || "☁ Save Project";
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "☁ Saving…";
+    }
+    setStatus("Saving complete project folder to GitHub…");
+
+    try {
+      const response = await fetch("/api/project/save", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          projectId: existingId || null,
+          projectName,
+          project: data,
+          overview,
+          overviewMd,
+          session: cloudSessionJson(),
+          arrangementMidi,
+          trackMidis,
+        }),
+      });
+      const reply = await response.json().catch(() => ({}));
+      if (!response.ok || !reply.ok) throw new Error(reply.error || ("HTTP " + response.status));
+
+      state.project.cloudProject = {
+        id: reply.projectId,
+        path: reply.projectPath,
+        savedAt: new Date().toISOString(),
+      };
+      scheduleHostAutosave();
+      renderCloudProjectMeta();
+
+      const suffix = reply.commit ? (" · " + reply.commit) : "";
+      setStatus(
+        "Project saved to GitHub: " + reply.projectPath +
+        " · " + reply.trackCount + " track MIDI files" + suffix,
+        "ok"
+      );
+      return true;
+    } catch (err) {
+      setStatus("Cloud save failed: " + err.message, "err");
+      return false;
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
+  }
+
   function projectToJson() {
     const p = state.project;
     if (!p) return null;
@@ -2795,6 +2920,7 @@ select, input[type="number"], input[type="text"] {
         channels: { "1": "XR20 bass", "2": "TD-3 acid", "10": "XR20 drums" },
       },
       markers: p.markers || [],
+      cloudProject: p.cloudProject ? {...p.cloudProject} : null,
       tracks: p.tracks.map((t) => ({
         id: t.id,
         name: t.name,
@@ -3143,6 +3269,10 @@ select, input[type="number"], input[type="text"] {
   for (const id of syncBtns) {
     document.getElementById(id)?.addEventListener("click", () => syncToProjects());
   }
+  document.getElementById("btnCloudSave").addEventListener("click", () => {
+    saveProjectToCloud();
+  });
+
   document.getElementById("btnExportMid").addEventListener("click", () => {
     if (!state.project) { setStatus("Nothing to export.", "err"); return; }
     state.project.name = document.getElementById("projectName").value || state.project.name;
@@ -3222,6 +3352,7 @@ select, input[type="number"], input[type="text"] {
     getOverview: () => (state.project ? buildOverview(state.project) : null),
     setProject: (p) => setProject(normalizeProject(p)),
     sync: () => syncToProjects(),
+    saveProjectToCloud: () => saveProjectToCloud(),
     parseGmTrackName,
     gmProgramFromTrack,
     formatGmTrackName,
