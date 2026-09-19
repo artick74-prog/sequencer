@@ -146,7 +146,6 @@ def name_kind(source: str, member: str) -> tuple[str | None, float, str]:
     checks = (
         ("bass", ("bassline", "bass line", " bass ", "/bass", "\\bass", "sub bass"), 0.99),
         ("drums", ("drum", "kick", "snare", "clap", "hihat", "hi hat", "hat ", "perc"), 0.99),
-        ("acid", ("acid", "303"), 0.99),
         ("chords", ("chord", "pad ", "stabs", "stab "), 0.97),
         ("melody", ("melody", "lead", "synth", "arp", "riff"), 0.94),
     )
@@ -325,16 +324,6 @@ def classify_midi(data: bytes, source: str = "", member: str = "") -> dict:
 
     if hinted_kind is not None and hinted_kind != "acid":
         roles = sorted(set(roles) | {hinted_kind})
-
-    if hinted_kind == "acid":
-        return {
-            "kind": "acid",
-            "confidence": hinted_confidence,
-            "method": hinted_method,
-            "reason": "explicit acid/303 token in name/path",
-            "roles": sorted(set(roles) | {"acid"}),
-            "programs": all_programs,
-        }
 
     if drum_ratio >= 0.80 and not melodic_notes:
         return {
