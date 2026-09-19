@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Local bridge for Hardware MIDI Host.
 
-Serves the repository on localhost and gives midi-host.html two same-origin API
-endpoints:
+Serves the repository on localhost and gives the local UI same-origin API endpoints:
   POST /api/sync   -> write project files, commit, push
   POST /api/reload -> git pull --ff-only, return projects/current.json
+  POST /api/update -> one-click git pull of main + local bridge restart
 
 The server binds to 127.0.0.1 only.
 """
@@ -18,6 +18,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tarfile
 import threading
 import webbrowser
@@ -995,6 +996,9 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/reload":
             self._handle_reload()
             return
+        if path == "/api/update":
+            self._handle_update()
+            return
         if path == "/api/library/rescan":
             try:
                 # Rescan rebuilds the catalogue but reuses prior classification.
@@ -1072,6 +1076,72 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as exc:
             self._send_json(500, {"ok": False, "error": str(exc)})
 
+    def _handle_update(self) -> None:
+        try:
+            if has_tracked_worktree_changes():
+                raise GitError(
+                    "There are uncommitted tracked files. Sync/commit/revert them before Update."
+                )
+
+            branch = current_branch()
+            if branch != "main":
+                raise GitError(
+                    f"One-click Update is only allowed on main; current branch is {branch!r}."
+                )
+
+            old_full = run_git("rev-parse", "HEAD").stdout.strip()
+            old_short = short_sha()
+            run_git("fetch", "origin", "main")
+            remote_full = run_git("rev-parse", "origin/main").stdout.strip()
+
+            if old_full == remote_full:
+                self._send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "changed": False,
+                        "commit": old_short,
+                        "branch": branch,
+                        "message": "Already up to date.",
+                        "restart": False,
+                        "files": [],
+                    },
+                )
+                return
+
+            run_git("pull", "--ff-only", "origin", "main")
+            new_full = run_git("rev-parse", "HEAD").stdout.strip()
+            new_short = short_sha()
+            changed_files = [
+                line.strip()
+                for line in run_git("diff", "--name-only", old_full, new_full).stdout.splitlines()
+                if line.strip()
+            ]
+
+            self._send_json(
+                200,
+                {
+                    "ok": True,
+                    "changed": old_full != new_full,
+                    "oldCommit": old_short,
+                    "commit": new_short,
+                    "branch": branch,
+                    "message": f"Updated {old_short} → {new_short}",
+                    "restart": old_full != new_full,
+                    "files": changed_files,
+                },
+            )
+
+            if old_full != new_full:
+                # The pulled commit may update this server itself. Shut down cleanly;
+                # main() will exec the freshly pulled local_server.py on the same port.
+                setattr(self.server, "restart_requested", True)
+                threading.Thread(target=self.server.shutdown, daemon=True).start()
+        except (GitError, OSError) as exc:
+            self._send_json(409, {"ok": False, "error": str(exc)})
+        except Exception as exc:
+            self._send_json(500, {"ok": False, "error": str(exc)})
+
     def _handle_reload(self) -> None:
         try:
             if has_tracked_worktree_changes():
@@ -1134,12 +1204,26 @@ def main() -> None:
     if args.open:
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
 
+    restart_requested = False
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nStopped.")
     finally:
+        restart_requested = bool(getattr(server, "restart_requested", False))
         server.server_close()
+
+    if restart_requested:
+        print("Update pulled. Restarting local bridge on the same port...")
+        os.execv(
+            sys.executable,
+            [
+                sys.executable,
+                str(Path(__file__).resolve()),
+                "--port",
+                str(args.port),
+            ],
+        )
 
 
 if __name__ == "__main__":
