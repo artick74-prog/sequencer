@@ -519,6 +519,14 @@ def build_style_packs(max_files: int = PACK_MAX_FILES) -> dict:
 
     index_entries: list[dict] = []
     pack_rows: list[dict] = []
+    total_pack_estimate = sum(
+        max(1, (len(group) + max_files - 1) // max_files)
+        for group in grouped.values()
+    )
+    print(
+        f"Style Library: {len(entries)} MIDI classified; "
+        f"building {total_pack_estimate} categorized ZIP packs..."
+    )
 
     try:
         for (genre, kind, source), group in sorted(grouped.items()):
@@ -562,6 +570,9 @@ def build_style_packs(max_files: int = PACK_MAX_FILES) -> dict:
                     "source": source,
                     "files": len(chunk),
                 })
+                built = len(pack_rows)
+                if built == 1 or built % 10 == 0 or built == total_pack_estimate:
+                    print(f"Style Library packs: {built}/{total_pack_estimate}")
 
         index_entries.sort(
             key=lambda item: (
