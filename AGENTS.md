@@ -88,6 +88,8 @@ python scripts/local_server.py --open
 - У каждого MIDI Host track вместо checkbox Mute используются DAW-style кнопки **S / M**. **S** поддерживает multi-solo: если хотя бы один track solo, звучат только solo tracks, кроме отдельно muted; **M** всегда глушит конкретную дорожку.
 - S/M теперь работают без stop/restart transport: scheduler хранит общую очередь и проверяет актуальное solo/mute состояние прямо перед NOTE ON. SF2 timers тоже проверяют состояние в момент фактической отправки; Hardware MIDI использует короткий 120 ms lookahead. При переходе дорожки в silent уже звучащие её ноты получают NOTE OFF без глобального All Notes Off, поэтому остальные дорожки не должны спотыкаться.
 - Muted/non-solo tracks больше не становятся полупрозрачными: состояние видно только по цвету кнопок S/M. Счётчики вида `264n` / `968n` из track header удалены.
+- MIDI Host имеет локальный **autosave** в browser localStorage (`midi-host-autosave-v1`). Для текущего проекта автоматически сохраняются routing каждой track (channel/role), Solo/Mute, project name и tempo; из UI — zoom, Loop, выбранный MIDI Out и Browser Audio / Hardware MIDI toggles. Сохранение вызывается при каждом изменении и ещё раз на `beforeunload`.
+- После refresh / one-click Update / обычного перезапуска браузера `projects/current.json` загружается как источник нот/маркеров, а локальные routing/settings автоматически накладываются обратно, если signature проекта совпадает (PPQ, length, track ids/names/note counts, markers). Это предотвращает сброс всех дорожек обратно на channel 1 при обновлении интерфейса.
 
 
 Плеер Standard MIDI для живого сетапа + цикл правок через GitHub. Браузер и ассистент синхронизируются через папку `projects/`.
