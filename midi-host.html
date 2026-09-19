@@ -4271,8 +4271,13 @@ select, input[type="number"], input[type="text"] {
     const owned = hostClipOwnedNotes(clip, track);
     const sourceStart = Math.max(0, Number(clip.startTick) || 0);
     const sourceEnd = Math.max(sourceStart + 1, Number(clip.endTick) || (sourceStart + tpb));
-    const span = Math.max(1, sourceEnd - sourceStart);
-    const nextStartRaw = requestedStartTick == null ? sourceEnd : Number(requestedStartTick);
+    const meta = ensureHostClipRepeatMeta(clip, ppq);
+    const span = Math.max(
+      1,
+      sourceEnd - sourceStart,
+      meta.baseLengthTicks * meta.repeatCount
+    );
+    const nextStartRaw = requestedStartTick == null ? sourceStart + span : Number(requestedStartTick);
     const nextStart = Math.max(0, Math.round(nextStartRaw / tpb) * tpb);
     const nextId = newHostClipInstanceId();
 
@@ -4286,7 +4291,6 @@ select, input[type="number"], input[type="text"] {
     track.notes.push(...newNotes);
     track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
 
-    const meta = ensureHostClipRepeatMeta(clip, ppq);
     const copy = {
       ...clip,
       instanceId: nextId,
@@ -4482,6 +4486,12 @@ select, input[type="number"], input[type="text"] {
     const tpb = ticksPerBar(ppq);
     const oldStart = Math.max(0, Number(clip.startTick) || 0);
     const oldEnd = Math.max(oldStart + 1, Number(clip.endTick) || (oldStart + tpb));
+    const meta = ensureHostClipRepeatMeta(clip, ppq);
+    const clipSpan = Math.max(
+      1,
+      oldEnd - oldStart,
+      meta.baseLengthTicks * meta.repeatCount
+    );
     const newStart = Math.max(0, Math.round(Number(requestedStartTick) / tpb) * tpb);
     const delta = newStart - oldStart;
     if (!delta) {
@@ -4494,7 +4504,7 @@ select, input[type="number"], input[type="text"] {
     track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
 
     clip.startTick = newStart;
-    clip.endTick = Math.max(newStart + 1, oldEnd + delta);
+    clip.endTick = newStart + clipSpan;
     clip.targetTrackName = track.name;
     state.selectedClipId = clip.instanceId;
 
@@ -4822,7 +4832,8 @@ select, input[type="number"], input[type="text"] {
         const expectedEnd = startTick + meta.baseLengthTicks * repeatCount;
         const endTick = Math.max(
           startTick + 1,
-          Number(clip.endTick) || expectedEnd
+          Number(clip.endTick) || 0,
+          expectedEnd
         );
         const left = (startTick / Math.max(1, length)) * 100;
         const width = Math.max(0.35, ((endTick - startTick) / Math.max(1, length)) * 100);
