@@ -1361,6 +1361,610 @@ select, input[type="number"], input[type="text"] {
     bridgeReady: false,
   };
 
+  // ─── Embedded Style Library / drag-and-drop loops ───────────────
+
+  const HOST_LOOP_RENDER_LIMIT = 120;
+  const HOST_LOOP_RATINGS_KEY = "chiptune_loop_ratings_v1";
+  const HOST_LOOP_ALIASES_KEY = "chiptune_loop_aliases_v1";
+  const HOST_LOOP_FAMILIES = [
+    "Piano", "Chromatic Percussion", "Organ", "Guitar",
+    "Bass", "Strings", "Ensemble", "Brass",
+    "Reed", "Pipe", "Synth Lead", "Synth Pad",
+    "Synth Effects", "Ethnic", "Percussive", "Sound Effects",
+  ];
+  let hostLoopCatalog = [];
+  let hostLoopCatalogLoaded = false;
+  let hostLoopCatalogPromise = null;
+  let hostLoopRatings = {};
+  let hostLoopAliases = {};
+  let hostLoopPreview = null;
+  let hostLoopPreviewTimer = null;
+  let hostLoopPreviewToken = 0;
+  const hostLoopNoteTimers = new Set();
+  const hostLoopPreviewMeta = new Map();
+
+  try { hostLoopRatings = JSON.parse(localStorage.getItem(HOST_LOOP_RATINGS_KEY) || "{}") || {}; }
+  catch { hostLoopRatings = {}; }
+  try { hostLoopAliases = JSON.parse(localStorage.getItem(HOST_LOOP_ALIASES_KEY) || "{}") || {}; }
+  catch { hostLoopAliases = {}; }
+
+  function hostLoopAlias(id) {
+    const row = hostLoopAliases[id];
+    if (typeof row === "string") return row.trim();
+    return row && typeof row.name === "string" ? row.name.trim() : "";
+  }
+
+  function hostLoopDisplayName(entry) {
+    return hostLoopAlias(entry.id) || entry.name || "MIDI loop";
+  }
+
+  function hostLoopRating(id) {
+    const row = hostLoopRatings[id];
+    const n = Number(row?.rating);
+    return Number.isFinite(n) ? Math.max(0, Math.min(5, n)) : 0;
+  }
+
+  function setHostLoopRating(id, rating) {
+    const current = hostLoopRating(id);
+    const next = current === rating ? 0 : rating;
+    if (next <= 0) delete hostLoopRatings[id];
+    else hostLoopRatings[id] = { rating: next, updatedAt: new Date().toISOString() };
+    localStorage.setItem(HOST_LOOP_RATINGS_KEY, JSON.stringify(hostLoopRatings));
+    renderHostLoopBrowser();
+  }
+
+  function hostLoopPrograms(entry) {
+    return [...new Set((entry.classificationPrograms || [])
+      .map(Number)
+      .filter((p) => Number.isInteger(p) && p >= 0 && p <= 127))]
+      .sort((a, b) => a - b);
+  }
+
+  function hostLoopFamilyForProgram(program) {
+    const p = Number(program);
+    if (!Number.isInteger(p) || p < 0 || p > 127) return "";
+    return HOST_LOOP_FAMILIES[Math.floor(p / 8)] || "";
+  }
+
+  function hostLoopFamilies(entry) {
+    return [...new Set(hostLoopPrograms(entry).map(hostLoopFamilyForProgram).filter(Boolean))];
+  }
+
+  function hostLoopRole(entry) {
+    const roles = [...new Set((entry.classificationRoles || [])
+      .map(String)
+      .filter((role) => role && role !== "acid" && role !== "unclassified"))];
+    if (roles.includes("drums") && roles.length === 1) return "drums";
+    const pitched = roles.filter((role) => role !== "drums");
+    if (pitched.length > 1) return "arrangement";
+    if (pitched.length === 1) return pitched[0];
+    if (roles.includes("drums")) return "drums";
+    if (entry.kind === "acid") {
+      const families = hostLoopFamilies(entry);
+      if (families.includes("Bass")) return "bass";
+      if (families.some((family) => ["Piano","Organ","Guitar","Strings","Ensemble","Synth Pad"].includes(family))) {
+        return "chords";
+      }
+      return "melody";
+    }
+    return entry.kind || "unclassified";
+  }
+
+  function hostLoopSetStatus(text, ok = false) {
+    const el = document.getElementById("hostLoopStatus");
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = ok ? "var(--accent)" : "var(--dim)";
+  }
+
+  function fillHostLoopSelect(el, values, label) {
+    if (!el) return;
+    const keep = el.value;
+    el.innerHTML = '<option value="">' + escapeHtml(label) + '</option>';
+    [...values].sort((a, b) => String(a).localeCompare(String(b))).forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      el.appendChild(option);
+    });
+    if ([...values].includes(keep)) el.value = keep;
+  }
+
+  async function ensureHostLoopCatalog() {
+    if (hostLoopCatalogLoaded) return hostLoopCatalog;
+    if (hostLoopCatalogPromise) return hostLoopCatalogPromise;
+
+    hostLoopSetStatus("Loading MIDI library index…");
+    hostLoopCatalogPromise = (async () => {
+      const response = await fetch("/api/library?_=" + Date.now(), { cache: "no-store" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Library API error");
+
+      hostLoopCatalog = Array.isArray(data.entries) ? data.entries : [];
+      hostLoopCatalogLoaded = true;
+
+      fillHostLoopSelect(
+        document.getElementById("hostLoopGenre"),
+        new Set(hostLoopCatalog.map((entry) => entry.genre).filter(Boolean)),
+        "All styles"
+      );
+      fillHostLoopSelect(
+        document.getElementById("hostLoopRole"),
+        new Set(hostLoopCatalog.map(hostLoopRole).filter(Boolean)),
+        "All roles"
+      );
+      fillHostLoopSelect(
+        document.getElementById("hostLoopFamily"),
+        new Set(hostLoopCatalog.flatMap(hostLoopFamilies)),
+        "All instrument families"
+      );
+      fillHostLoopSelect(
+        document.getElementById("hostLoopSource"),
+        new Set(hostLoopCatalog.map((entry) => entry.source).filter(Boolean)),
+        "All sources"
+      );
+
+      hostLoopSetStatus(
+        "Ready · " + hostLoopCatalog.length.toLocaleString("ru-RU") + " MIDI" +
+        (data.mode === "packs" ? " · " + Number(data.packCount || 0) + " packs" : ""),
+        true
+      );
+      renderHostLoopBrowser();
+      return hostLoopCatalog;
+    })().finally(() => { hostLoopCatalogPromise = null; });
+
+    return hostLoopCatalogPromise;
+  }
+
+  function filteredHostLoops() {
+    const q = (document.getElementById("hostLoopSearch")?.value || "").trim().toLowerCase();
+    const genre = document.getElementById("hostLoopGenre")?.value || "";
+    const role = document.getElementById("hostLoopRole")?.value || "";
+    const family = document.getElementById("hostLoopFamily")?.value || "";
+    const source = document.getElementById("hostLoopSource")?.value || "";
+    const ratingFilter = document.getElementById("hostLoopRating")?.value || "0";
+
+    return hostLoopCatalog.filter((entry) => {
+      if (genre && entry.genre !== genre) return false;
+      if (role && hostLoopRole(entry) !== role) return false;
+      if (family && !hostLoopFamilies(entry).includes(family)) return false;
+      if (source && entry.source !== source) return false;
+
+      const rating = hostLoopRating(entry.id);
+      if (ratingFilter === "rated" && rating < 1) return false;
+      if (/^[1-5]$/.test(ratingFilter)) {
+        const min = Number(ratingFilter);
+        if (rating < min) return false;
+        if (min === 5 && rating !== 5) return false;
+      }
+
+      if (q) {
+        const hay = [
+          hostLoopDisplayName(entry), entry.name, entry.source, entry.member, entry.container,
+          entry.genre, hostLoopRole(entry), ...hostLoopFamilies(entry),
+          ...(entry.classificationRoles || []),
+        ].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function hostLoopFormatDuration(meta) {
+    if (!meta) return "";
+    const bars = Math.round(meta.bars * 100) / 100;
+    const seconds = meta.seconds < 10 ? meta.seconds.toFixed(1) + "s" : Math.round(meta.seconds) + "s";
+    return bars + " bars · " + seconds;
+  }
+
+  function renderHostLoopBrowser() {
+    if (!hostLoopCatalogLoaded) return;
+    const list = document.getElementById("hostLoopList");
+    const count = document.getElementById("hostLoopCount");
+    if (!list) return;
+
+    const filtered = filteredHostLoops();
+    if (count) count.textContent = filtered.length.toLocaleString("ru-RU") + " MIDI";
+    const rows = filtered.slice(0, HOST_LOOP_RENDER_LIMIT);
+    list.innerHTML = "";
+
+    if (!rows.length) {
+      list.innerHTML = '<div class="cloud-project-empty">Nothing found.</div>';
+      return;
+    }
+
+    for (const entry of rows) {
+      const card = document.createElement("div");
+      card.className = "loop-card";
+      card.draggable = true;
+      card.dataset.loopId = entry.id;
+
+      const preview = document.createElement("button");
+      preview.className = "loop-preview" + (hostLoopPreview?.entryId === entry.id ? " active" : "");
+      preview.type = "button";
+      preview.textContent = hostLoopPreview?.entryId === entry.id ? "■" : "▶";
+      preview.title = hostLoopPreview?.entryId === entry.id ? "Stop preview" : "Preview in browser SF2";
+
+      const info = document.createElement("div");
+      info.style.minWidth = "0";
+      const name = document.createElement("div");
+      name.className = "loop-card-name";
+      name.textContent = hostLoopDisplayName(entry);
+      name.title = entry.name || hostLoopDisplayName(entry);
+
+      const meta = document.createElement("div");
+      meta.className = "loop-card-meta";
+      const familyText = hostLoopFamilies(entry).join(", ");
+      meta.textContent =
+        [entry.genre, hostLoopRole(entry), familyText, entry.source].filter(Boolean).join(" · ");
+
+      const stars = document.createElement("div");
+      stars.className = "loop-stars";
+      const rating = hostLoopRating(entry.id);
+      for (let n = 1; n <= 5; n++) {
+        const star = document.createElement("button");
+        star.type = "button";
+        star.className = "loop-star" + (n <= rating ? " on" : "");
+        star.textContent = "★";
+        star.title = n + " star";
+        star.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setHostLoopRating(entry.id, n);
+        });
+        stars.appendChild(star);
+      }
+      const duration = document.createElement("span");
+      duration.className = "loop-duration";
+      duration.textContent = hostLoopFormatDuration(hostLoopPreviewMeta.get(entry.id));
+      stars.appendChild(duration);
+
+      info.append(name, meta, stars);
+      card.append(preview, info);
+
+      preview.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        await previewHostLoop(entry);
+      });
+
+      card.addEventListener("dragstart", (event) => {
+        hostLoopStopPreview();
+        card.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "copy";
+        event.dataTransfer.setData("application/x-style-library-midi", entry.id);
+        event.dataTransfer.setData("text/plain", entry.id);
+        hostLoopSetStatus("Drag “" + hostLoopDisplayName(entry) + "” onto a track and bar.", true);
+      });
+      card.addEventListener("dragend", () => {
+        card.classList.remove("dragging");
+        clearHostLoopDropTargets();
+      });
+
+      list.appendChild(card);
+    }
+
+    if (filtered.length > HOST_LOOP_RENDER_LIMIT) {
+      const hint = document.createElement("div");
+      hint.className = "cloud-project-empty";
+      hint.style.padding = "9px";
+      hint.textContent = "Showing first " + HOST_LOOP_RENDER_LIMIT + " · refine filters for more.";
+      list.appendChild(hint);
+    }
+  }
+
+  async function fetchHostLoopMidi(entry) {
+    const response = await fetch("/api/library/midi?id=" + encodeURIComponent(entry.id));
+    if (!response.ok) {
+      let message = "MIDI load failed";
+      try { message = (await response.json()).error || message; } catch {}
+      throw new Error(message);
+    }
+    return response.arrayBuffer();
+  }
+
+  function hostLoopFallbackProgram(entry) {
+    const explicit = hostLoopPrograms(entry);
+    if (explicit.length) return explicit[0];
+    const role = hostLoopRole(entry);
+    if (role === "bass") return 33;
+    if (role === "melody") return 81;
+    return 0;
+  }
+
+  function clearHostLoopNoteTimers() {
+    for (const timer of hostLoopNoteTimers) clearTimeout(timer);
+    hostLoopNoteTimers.clear();
+  }
+
+  function hostLoopStopPreview() {
+    hostLoopPreviewToken++;
+    if (hostLoopPreviewTimer) {
+      clearInterval(hostLoopPreviewTimer);
+      hostLoopPreviewTimer = null;
+    }
+    clearHostLoopNoteTimers();
+    hostLoopPreview = null;
+    allNotesOffSf2();
+    if (hostLoopCatalogLoaded) renderHostLoopBrowser();
+  }
+
+  function scheduleHostLoopSf2(ch, note, velocity, onDelay, durationMs, token) {
+    const onTimer = setTimeout(() => {
+      hostLoopNoteTimers.delete(onTimer);
+      if (token !== hostLoopPreviewToken || !hostLoopPreview) return;
+      sf2NoteOn(ch, note, velocity);
+      const offTimer = setTimeout(() => {
+        hostLoopNoteTimers.delete(offTimer);
+        if (token !== hostLoopPreviewToken) return;
+        sf2NoteOff(ch, note);
+      }, Math.max(25, durationMs));
+      hostLoopNoteTimers.add(offTimer);
+    }, Math.max(0, onDelay));
+    hostLoopNoteTimers.add(onTimer);
+  }
+
+  function pumpHostLoopPreview(token) {
+    const preview = hostLoopPreview;
+    if (!preview || token !== hostLoopPreviewToken) return;
+
+    const now = performance.now();
+    const deadline = now + 90;
+
+    if (preview.cycleStart + preview.cycleMs < now - 50) {
+      const skipped = Math.max(1, Math.floor((now - preview.cycleStart) / preview.cycleMs));
+      preview.cycleStart += skipped * preview.cycleMs;
+      preview.noteIndex = 0;
+    }
+
+    let guard = 0;
+    while (guard++ < 4096) {
+      if (preview.noteIndex >= preview.notes.length) {
+        preview.cycleStart += preview.cycleMs;
+        preview.noteIndex = 0;
+        continue;
+      }
+
+      const item = preview.notes[preview.noteIndex];
+      const target = preview.cycleStart + ticksToMs(item.tick, preview.tempo, preview.ppq);
+      if (target > deadline) break;
+      preview.noteIndex++;
+
+      if (target < now - 35) continue;
+      const durationMs = Math.min(
+        preview.cycleMs,
+        Math.max(30, ticksToMs(item.duration, preview.tempo, preview.ppq))
+      );
+      scheduleHostLoopSf2(
+        item.channel === 10 ? 9 : 0,
+        item.note,
+        item.velocity || 100,
+        target - now,
+        durationMs,
+        token
+      );
+    }
+  }
+
+  async function previewHostLoop(entry) {
+    if (hostLoopPreview?.entryId === entry.id) {
+      hostLoopStopPreview();
+      hostLoopSetStatus("Preview stopped · " + hostLoopDisplayName(entry));
+      return;
+    }
+
+    if (state.playing) stopPlayback();
+    hostLoopStopPreview();
+    const token = hostLoopPreviewToken;
+
+    try {
+      hostLoopSetStatus("Preview loading · " + hostLoopDisplayName(entry));
+      if (!(await ensureSf2Loaded())) return;
+      const buffer = await fetchHostLoopMidi(entry);
+      if (token !== hostLoopPreviewToken) return;
+
+      const parsed = parseMidi(buffer);
+      const ppq = parsed.ppq || 480;
+      const tempo = Number(document.getElementById("tempo")?.value) || state.project?.tempo || parsed.tempo || 120;
+      const maxTicks = ppq * 4 * 8;
+      const sourceLength = Math.max(
+        ppq * 4,
+        ...parsed.tracks.flatMap((track) => track.notes.map((note) => note.tick + note.duration))
+      );
+      const cycleTicks = Math.min(sourceLength, maxTicks);
+      const notes = parsed.tracks.flatMap((track) =>
+        track.notes
+          .filter((note) => note.tick < cycleTicks)
+          .map((note) => ({
+            tick: note.tick,
+            duration: Math.min(note.duration, Math.max(1, cycleTicks - note.tick)),
+            note: note.note,
+            velocity: note.velocity,
+            channel: track.channel || 1,
+          }))
+      ).sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+      if (!notes.length) throw new Error("No playable notes in this MIDI");
+
+      const synth = sf2Synth();
+      const program = hostLoopFallbackProgram(entry);
+      if (synth) {
+        synth.setPercussionPart(0, false);
+        synth.programChange(0, program);
+        synth.setPercussionPart(9, true);
+      }
+
+      const cycleMs = Math.max(100, ticksToMs(cycleTicks, tempo, ppq));
+      hostLoopPreviewMeta.set(entry.id, {
+        bars: cycleTicks / (ppq * 4),
+        seconds: cycleMs / 1000,
+      });
+      hostLoopPreview = {
+        entryId: entry.id,
+        notes,
+        noteIndex: 0,
+        ppq,
+        tempo,
+        cycleMs,
+        cycleStart: performance.now() + 60,
+      };
+
+      renderHostLoopBrowser();
+      pumpHostLoopPreview(token);
+      hostLoopPreviewTimer = setInterval(() => pumpHostLoopPreview(token), 20);
+      hostLoopSetStatus(
+        "Looping in browser SF2 · " + hostLoopDisplayName(entry) +
+        " · " + hostLoopFormatDuration(hostLoopPreviewMeta.get(entry.id)),
+        true
+      );
+    } catch (err) {
+      hostLoopStopPreview();
+      hostLoopSetStatus("Preview error: " + err.message);
+    }
+  }
+
+  function openHostLoopBrowser() {
+    const drawer = document.getElementById("hostLoopBrowser");
+    drawer?.classList.add("open");
+    drawer?.setAttribute("aria-hidden", "false");
+    document.getElementById("btnLoops")?.classList.add("active");
+    ensureHostLoopCatalog().catch((err) => hostLoopSetStatus("Library error: " + err.message));
+  }
+
+  function closeHostLoopBrowser() {
+    hostLoopStopPreview();
+    const drawer = document.getElementById("hostLoopBrowser");
+    drawer?.classList.remove("open");
+    drawer?.setAttribute("aria-hidden", "true");
+    document.getElementById("btnLoops")?.classList.remove("active");
+  }
+
+  function clearHostLoopDropTargets() {
+    document.querySelectorAll(".track-body.loop-drop-target").forEach((body) => {
+      body.classList.remove("loop-drop-target");
+      body.removeAttribute("data-drop-label");
+      body.style.removeProperty("--drop-x");
+    });
+  }
+
+  function hostLoopDropPosition(body, clientX) {
+    const project = state.project;
+    if (!project) return { tick: 0, bar: 1, x: 0 };
+    const rect = body.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+    const ratio = rect.width > 0 ? x / rect.width : 0;
+    const tpb = ticksPerBar(project.ppq);
+    const rawTick = ratio * Math.max(state.lengthTicks || tpb, tpb);
+    const tick = Math.max(0, Math.round(rawTick / tpb) * tpb);
+    return { tick, bar: tickToBar(tick, project.ppq), x };
+  }
+
+  function markHostProjectDirty() {
+    if (!state.project) return;
+    if (state.project.cloudProject?.id) {
+      state.project.cloudProject = { ...state.project.cloudProject, dirty: true };
+    }
+    renderCloudProjectMeta();
+  }
+
+  function hostLoopUsedLibraryClips() {
+    const clips = state.project?.clips || [];
+    const seen = new Set();
+    const out = [];
+    for (const clip of clips) {
+      if (!clip?.id || seen.has(clip.id)) continue;
+      seen.add(clip.id);
+      out.push({
+        id: clip.id,
+        name: clip.name || clip.originalName || "MIDI loop",
+        originalName: clip.originalName || clip.name || "MIDI loop",
+        source: clip.source || "",
+        genre: clip.genre || "",
+        role: clip.role || "",
+      });
+    }
+    return out;
+  }
+
+  async function insertHostLoopIntoTrack(entry, targetTrack, startTick) {
+    if (!state.project || !targetTrack) return;
+    if (state.playing) stopPlayback();
+    hostLoopStopPreview();
+
+    hostLoopSetStatus(
+      "Loading “" + hostLoopDisplayName(entry) + "” → " + targetTrack.name +
+      " @ bar " + tickToBar(startTick, state.project.ppq)
+    );
+
+    const buffer = await fetchHostLoopMidi(entry);
+    const parsed = parseMidi(buffer);
+    const sourcePpq = parsed.ppq || 480;
+    const targetPpq = state.project.ppq || 480;
+    const scale = targetPpq / sourcePpq;
+    const flattened = parsed.tracks.flatMap((track) =>
+      track.notes.map((note) => ({ ...note, channel: track.channel || 1 }))
+    );
+
+    const targetIsDrums = targetTrack.channel === 10 || targetTrack.role === "xr20-drums";
+    let selected = targetIsDrums
+      ? flattened.filter((note) => note.channel === 10)
+      : flattened.filter((note) => note.channel !== 10);
+    if (!selected.length) selected = flattened;
+    if (!selected.length) throw new Error("No notes found in source MIDI");
+
+    let insertedEnd = startTick;
+    const newNotes = selected.map((note) => {
+      const tick = startTick + Math.max(0, Math.round(note.tick * scale));
+      const duration = Math.max(1, Math.round(note.duration * scale));
+      insertedEnd = Math.max(insertedEnd, tick + duration);
+      return {
+        tick,
+        duration,
+        note: Math.max(0, Math.min(127, note.note | 0)),
+        velocity: Math.max(1, Math.min(127, note.velocity | 0)),
+      };
+    });
+
+    targetTrack.notes.push(...newNotes);
+    targetTrack.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    state.project.clips = Array.isArray(state.project.clips) ? state.project.clips : [];
+    state.project.clips.push({
+      id: entry.id,
+      name: hostLoopDisplayName(entry),
+      originalName: entry.name || hostLoopDisplayName(entry),
+      source: entry.source || "",
+      genre: entry.genre || "",
+      role: hostLoopRole(entry),
+      targetTrackId: targetTrack.id,
+      targetTrackName: targetTrack.name,
+      startTick,
+      endTick: insertedEnd,
+      sourcePpq,
+      insertedAt: new Date().toISOString(),
+    });
+
+    recomputeLength(state.project);
+    renderAll();
+    const bars = Math.max(1, Math.round(state.lengthTicks / ticksPerBar(targetPpq)));
+    document.getElementById("projectMeta").innerHTML =
+      (state.project.tempo || 120) + " BPM · PPQ " + targetPpq + " · " + bars + " bars";
+    markHostProjectDirty();
+    scheduleHostAutosave();
+
+    setStatus(
+      "Inserted loop “" + hostLoopDisplayName(entry) + "” → " + targetTrack.name +
+      " @ bar " + tickToBar(startTick, targetPpq) +
+      " · " + newNotes.length + " notes · UNSAVED cloud changes",
+      "ok"
+    );
+    hostLoopSetStatus(
+      "Inserted · " + hostLoopDisplayName(entry) + " → " + targetTrack.name +
+      " @ bar " + tickToBar(startTick, targetPpq),
+      true
+    );
+  }
+
   const HOST_AUTOSAVE_KEY = "midi-host-autosave-v1";
   let hostAutosaveTimer = null;
 
