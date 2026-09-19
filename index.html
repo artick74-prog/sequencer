@@ -1655,6 +1655,129 @@ function isC(midi) {
   return midi % 12 === 0;
 }
 
+/* ─── MIDI reference parser used by the embedded Loop Browser ─── */
+function readReferenceVLQ(bytes, i) {
+  let value = 0;
+  for (let n = 0; n < 4; n++) {
+    const b = bytes[i++];
+    value = (value << 7) | (b & 0x7f);
+    if ((b & 0x80) === 0) return [value, i];
+  }
+  throw new Error('Invalid MIDI VLQ');
+}
+
+function parseReferenceMidi(buffer) {
+  const b = new Uint8Array(buffer);
+  const u16 = i => (b[i] << 8) | b[i + 1];
+  const u32 = i => ((b[i] << 24) >>> 0) + (b[i + 1] << 16) + (b[i + 2] << 8) + b[i + 3];
+  if (String.fromCharCode(...b.slice(0, 4)) !== 'MThd') throw new Error('Not a MIDI file');
+  const headerLen = u32(4);
+  const nTracks = u16(10);
+  const ppq = u16(12);
+  if (ppq & 0x8000) throw new Error('SMPTE MIDI is not supported');
+
+  let off = 8 + headerLen;
+  let tempo = 120;
+  let endTick = 0;
+  const notes = [];
+
+  for (let t = 0; t < nTracks; t++) {
+    if (String.fromCharCode(...b.slice(off, off + 4)) !== 'MTrk') throw new Error('Missing MTrk');
+    const end = off + 8 + u32(off + 4);
+    let i = off + 8, tick = 0, running = 0;
+    const open = new Map();
+
+    while (i < end) {
+      let delta; [delta, i] = readReferenceVLQ(b, i);
+      tick += delta;
+      endTick = Math.max(endTick, tick);
+
+      let status = b[i];
+      if (status < 0x80) {
+        if (!running) throw new Error('Bad running status');
+        status = running;
+      } else {
+        i++;
+        running = status < 0xf0 ? status : 0;
+      }
+
+      if (status === 0xff) {
+        const type = b[i++];
+        let len; [len, i] = readReferenceVLQ(b, i);
+        if (type === 0x51 && len === 3) {
+          const us = (b[i] << 16) | (b[i + 1] << 8) | b[i + 2];
+          if (us) tempo = 60000000 / us;
+        }
+        i += len;
+        continue;
+      }
+      if (status === 0xf0 || status === 0xf7) {
+        let len; [len, i] = readReferenceVLQ(b, i);
+        i += len;
+        continue;
+      }
+
+      const type = status & 0xf0;
+      const channel = (status & 0x0f) + 1;
+      if (type === 0x80 || type === 0x90) {
+        const note = b[i++], velocity = b[i++], key = (channel << 8) | note;
+        if (type === 0x90 && velocity > 0) {
+          if (!open.has(key)) open.set(key, []);
+          open.get(key).push({ tick, velocity });
+        } else {
+          const q = open.get(key);
+          if (q?.length) {
+            const on = q.shift();
+            notes.push({
+              tick: on.tick,
+              duration: Math.max(1, tick - on.tick),
+              note,
+              velocity: on.velocity,
+              channel,
+            });
+          }
+        }
+      } else if (type === 0xa0 || type === 0xb0 || type === 0xe0) {
+        i += 2;
+      } else if (type === 0xc0 || type === 0xd0) {
+        i += 1;
+      } else {
+        throw new Error('Unsupported MIDI status 0x' + status.toString(16));
+      }
+    }
+    off = end;
+  }
+
+  notes.sort((a, b2) => a.tick - b2.tick || a.note - b2.note);
+  return { ppq, tempo, endTick, notes };
+}
+
+function midiLoopStepCount(midi) {
+  const tickPerStep = midi.ppq / 4;
+  let maxTick = Math.max(midi.endTick || 0, tickPerStep);
+  for (const n of midi.notes || []) maxTick = Math.max(maxTick, n.tick + n.duration);
+  return Math.max(1, Math.round(maxTick / tickPerStep));
+}
+
+function foldMidiPitch(note) {
+  let pitch = Number(note) || 60;
+  while (pitch < CONFIG.NOTE_MIN) pitch += 12;
+  while (pitch > CONFIG.NOTE_MAX) pitch -= 12;
+  return Math.max(CONFIG.NOTE_MIN, Math.min(CONFIG.NOTE_MAX, pitch));
+}
+
+function gmDrumToIndex(note) {
+  if (note === 35 || note === 36) return 0; // kick
+  if (note === 38 || note === 40) return 1; // snare
+  if (note === 39) return 2;                // clap
+  if (note === 42 || note === 44) return 3; // closed/pedal hat
+  if (note === 46) return 4;                // open hat
+  if ([41, 43, 45].includes(note)) return 5; // low/mid tom
+  if ([47, 48, 50].includes(note)) return 6; // high tom
+  if ([49, 51, 52, 53, 55, 57, 59].includes(note)) return 7; // cymbals
+  return -1;
+}
+
 /* Генератор белого шума (используется для синтезатора барабанов) */
 function createNoiseBuffer(ctx, duration) {
   const len = Math.ceil(ctx.sampleRate * duration);
