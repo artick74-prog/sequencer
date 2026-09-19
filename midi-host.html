@@ -2930,6 +2930,7 @@ select, input[type="number"], input[type="text"] {
   function setProject(project, { restoreLocal = true, statusText = "" } = {}) {
     stopPlayback();
     state.startTick = 0;
+    state.selectedClipId = "";
     recomputeLength(project);
     const restored = restoreLocal ? applyHostAutosaveToProject(project) : false;
     state.project = project;
