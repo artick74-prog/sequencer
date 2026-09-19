@@ -197,14 +197,24 @@ d:\Dev\midi-reference
 
 Путь можно переопределить переменной окружения `MIDI_REFERENCE_ROOT`.
 
+Архитектура библиотеки двухслойная:
+- исходные MIDI/ZIP/TAR.GZ остаются нетронутыми как raw corpus;
+- производная папка `<MIDI_REFERENCE_ROOT>/packs/` содержит небольшие ZIP-паки, сгруппированные как **style → role/type → source**, максимум примерно 1000 MIDI на ZIP;
+- `packs/library-index.json` хранит готовый индекс: id, source, genre, kind, roles, GM programs, pack/member и classification metadata;
+- Style Library при наличии индекса читает именно packs, поэтому для построения списка не сканирует большой TAR.GZ, а preview достаёт один маленький member из ZIP;
+- при первом старте после внедрения pack-архитектуры, если индекса ещё нет, сервер автоматически один раз классифицирует raw corpus и строит packs. Исходные архивы не удаляются;
+- **Rebuild packs** пересобирает производный слой после добавления новых источников или изменения классификатора.
+
 API bridge:
-- `GET /api/library` — индекс всех найденных MIDI;
-- `GET /api/library/midi?id=...` — получить один MIDI из файла/архива;
-- `POST /api/library/rescan` — пересканировать папку.
+- `GET /api/library` — готовый индекс; предпочитает pack-index, при его отсутствии работает с raw;
+- `GET /api/library/midi?id=...` — получить один MIDI из pack ZIP либо raw fallback;
+- `POST /api/library/rescan` — перечитать текущий индекс;
+- `POST /api/library/repack` — заново классифицировать raw corpus и атомарно пересобрать categorized ZIP packs;
+- старый `POST /api/library/optimize` сохранён как fallback/диагностический endpoint.
 
 Browser умеет фильтровать по source/style/type, слушать выбранный MIDI через GM SoundFont и одновременно отправлять его в Hardware MIDI. Для preview hardware обычно: bass → ch1 XR20, acid → ch2 TD-3, drums → ch10 XR20. Кнопка **Open in Host** открывает выбранный MIDI как проект в `midi-host.html`.
 
-Классификация role/type теперь использует не только имя/путь, но и содержимое MIDI: канал 10, регистр, полифонию и General MIDI Program Change. Многоканальные файлы с несколькими ролями могут получать тип `arrangement` и список ролей/GM-программ; неоднозначные остаются `unclassified`. Кнопка **Optimize cache** один раз последовательно читает архивы, кладёт маленькие MIDI в локальный preview-кэш вне библиотеки и повторно разбирает EDM/unclassified. После прогрева preview из больших TAR.GZ не должен каждый раз заново искать маленький MIDI внутри сжатого архива.
+Классификация role/type использует имя/путь и содержимое MIDI: канал 10, регистр, полифонию и General MIDI Program Change. Многоканальные файлы с несколькими ролями могут получать тип `arrangement` и список ролей/GM-программ; неоднозначные остаются `unclassified`.
 
 Playback в Style Library использует короткий lookahead scheduler вместо создания таймеров на весь MIDI сразу. При быстром переключении файлов старый fetch отменяется, старые MIDI-события очищаются, а загрузка SoundFont переиспользуется одной общей promise. В инспекторе выбранного файла показываются длина в тактах/времени и транспортная полоса с текущей позицией.
 
