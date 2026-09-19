@@ -36,6 +36,7 @@ python scripts/local_server.py --open
 - Style Library: http://localhost:8080/style-library.html
 - Hardware host: http://localhost:8080/midi-host.html
 - Все три страницы используют общую верхнюю навигационную шапку с кнопками **Chiptune Sequencer / Style Library / MIDI Host**; текущая страница подсвечивается.
+- В Style Library есть кнопка **Library report**. Она строит инвентаризацию всей локальной MIDI-библиотеки из текущего pack/raw index и пушит в GitHub два файла: `reference-library/library-inventory.md` (читаемая сводка для Obsidian) и `reference-library/library-inventory.csv` (полный построчный каталог всех MIDI). В сводке есть counts по source/style/role/classification method, GM families/programs и разбивка по каждому source. Исходные MIDI при этом не копируются в GitHub.
 
 ### Chiptune Loop Constructor
 
