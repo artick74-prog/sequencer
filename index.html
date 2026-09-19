@@ -3406,6 +3406,7 @@ class UIRenderer {
       console.error('UI Render error:', err);
       container.innerHTML = `<div style="color:red;padding:16px;font-family:monospace;">UI Render error: ${err.message}<br><pre>${err.stack}</pre></div>`;
     }
+    if (typeof updateLoopBrowserTarget === 'function') updateLoopBrowserTarget();
   }
 
   _renderEditView(container) {
@@ -3868,6 +3869,24 @@ class UIRenderer {
     header.appendChild(waveSelect);
     header.appendChild(soundModeSelect);
     header.appendChild(presetSelect);
+
+    const sourceMeta = this.state.trackSources?.[trackIdx];
+    if (sourceMeta) {
+      const chip = document.createElement('span');
+      chip.className = 'source-chip';
+      chip.title = [sourceMeta.genre, sourceMeta.kind, sourceMeta.source, sourceMeta.name].filter(Boolean).join(' · ');
+      chip.textContent = 'Source: ' + (sourceMeta.name || sourceMeta.source || 'MIDI');
+      header.appendChild(chip);
+
+      const reloadBtn = document.createElement('button');
+      reloadBtn.className = 'source-reload-btn';
+      reloadBtn.textContent = '↻ Source';
+      reloadBtn.title = 'Reload original loop into this track';
+      reloadBtn.addEventListener('click', async () => {
+        await loadLoopIntoTrack(sourceMeta.id, trackIdx, true);
+      });
+      header.appendChild(reloadBtn);
+    }
 
     // Кнопка раскрытия панели синтезатора
     const toggleBtn = document.createElement('button');
