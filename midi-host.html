@@ -194,11 +194,61 @@ select, input[type="number"], input[type="text"] {
 .audio-box.ready { border-color: #6a5a30; }
 .audio-box label.field { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .overview-box {
-  max-height: 220px;
+  max-height: 360px;
   overflow: auto;
+  font-size: 12px;
+}
+.section-playlist {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px;
+}
+.section-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr 48px;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #0e1218;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.section-item:hover {
+  border-color: var(--accent-dim);
+  background: #151b24;
+}
+.section-item.active {
+  border-color: var(--accent);
+  background: rgba(61, 220, 151, 0.09);
+}
+.section-item .section-bar {
+  color: var(--accent);
   font-family: ui-monospace, Consolas, monospace;
   font-size: 11px;
-  white-space: pre-wrap;
+}
+.section-item .section-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.section-item .section-range {
+  color: var(--dim);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10px;
+  text-align: right;
+}
+.section-empty {
+  color: var(--dim);
+  line-height: 1.5;
+  padding: 6px 4px;
 }
 .main {
   padding: 12px 16px 12px;
@@ -459,13 +509,6 @@ select, input[type="number"], input[type="text"] {
 
   <div class="layout">
     <aside class="sidebar">
-      <h2>Signal chain</h2>
-      <div class="chain">
-        PC USB → <strong class="role-td3">TD-3</strong> (ch <strong>2</strong>)<br>
-        DIN Out → <strong>XR20</strong><br>
-        <span class="role-bass">ch 1 bass</span> · <span class="role-drums">ch 10 drums</span>
-      </div>
-
       <h2>Browser audio (SF2)</h2>
       <div class="audio-box" id="audioBox">
         SoundFont: <strong id="sf2Name">not loaded</strong><br>
@@ -477,26 +520,16 @@ select, input[type="number"], input[type="text"] {
       <label class="field" style="margin-bottom:4px"><input type="checkbox" id="chkSf2" checked> Browser audio (SF2)</label>
       <label class="field" style="margin-bottom:8px"><input type="checkbox" id="chkHw" checked> Hardware MIDI Out</label>
 
-      <h2>AI sync</h2>
-      <div class="sync-box" id="syncBox">Local bridge: <strong>checking…</strong><br>Sync writes + pushes; Reload pulls automatically.</div>
-      <div class="sel-actions" style="margin-top:0;margin-bottom:8px">
-        <button class="btn" id="btnBindProjects2" type="button">Bind projects/</button>
-        <button class="btn" id="btnSync2" type="button">Sync to AI</button>
-      </div>
-
       <h2>Project</h2>
       <label class="field" style="margin-bottom:8px;width:100%">Name
         <input type="text" id="projectName" style="width:100%" value="untitled">
       </label>
       <div id="projectMeta" style="color:var(--dim);font-size:12px;line-height:1.5">No project loaded.</div>
 
-      <h2>Arrangement overview</h2>
-      <div class="overview-box" id="overviewBox">Load a MIDI to see structure (markers, density per 8 bars).</div>
-
-      <p class="hint">
-        With the local repo server, <strong>Sync to AI</strong> writes files, commits and pushes automatically.
-        After an AI edit, <strong>Reload from AI</strong> pulls and loads <code>projects/current.json</code>.
-      </p>
+      <h2>Arrangement playlist</h2>
+      <div class="overview-box section-playlist" id="overviewBox">
+        Load a MIDI with markers to jump between sections.
+      </div>
     </aside>
     <main class="main">
       <div class="zoom-bar">
@@ -1481,6 +1514,7 @@ select, input[type="number"], input[type="text"] {
     for (const el of state.rulerPlayheadEls) {
       el.style.left = leftPct;
     }
+    updateSectionPlaylistActive(tick);
   }
 
   // ─── Timeline / zoom ────────────────────────────────────────────
@@ -1599,10 +1633,9 @@ select, input[type="number"], input[type="text"] {
     document.getElementById("tempo").value = project.tempo || 120;
     renderAll();
     updatePlayheads(0, state.lengthTicks);
-    const noteCount = project.tracks.reduce((s, t) => s + t.notes.length, 0);
     const bars = (project.lengthTicks / ticksPerBar(project.ppq)).toFixed(0);
     document.getElementById("projectMeta").innerHTML =
-      `PPQ ${project.ppq} · <strong>${project.tracks.length}</strong> Cubase tracks · ${noteCount} notes · ${bars} bars`;
+      `${project.tempo || 120} BPM · PPQ ${project.ppq} · ${bars} bars`;
     renderOverview();
     setStatus(`Loaded “${project.name}” · click ruler to set cue, then Play.`, "ok");
   }
@@ -2027,32 +2060,90 @@ select, input[type="number"], input[type="text"] {
     return lines.join("\n");
   }
 
+  function scrollTimelineToTick(tick) {
+    const scroll = document.getElementById("timelineScroll");
+    if (!scroll || !state.project) return;
+    const length = state.lengthTicks || 1;
+    const bodyX = (Math.max(0, tick) / length) * timelineWidth();
+    const target = HEAD_W + bodyX - Math.max(40, scroll.clientWidth * 0.28);
+    const maxScroll = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+    scroll.scrollLeft = Math.max(0, Math.min(maxScroll, target));
+  }
+
+  function updateSectionPlaylistActive(tick) {
+    const box = document.getElementById("overviewBox");
+    if (!box || !state.project) return;
+    const markers = normalizedMarkers(state.project);
+    if (!markers.length) return;
+    let activeIndex = 0;
+    for (let i = 0; i < markers.length; i++) {
+      if (markers[i].tick <= tick) activeIndex = i;
+      else break;
+    }
+    box.querySelectorAll(".section-item").forEach((el, i) => {
+      el.classList.toggle("active", i === activeIndex);
+    });
+  }
+
+  async function playFromSection(tick, name) {
+    if (!state.project) return;
+
+    if (state.playing) stopPlayback();
+    state.startTick = snapToBar(tick);
+    updatePlayheads(state.startTick, state.lengthTicks || 1);
+    updateSectionPlaylistActive(state.startTick);
+    scrollTimelineToTick(state.startTick);
+
+    if (useSf2Output() && !(await ensureSf2Loaded())) return;
+    if (!useSf2Output() && !useHwOutput()) {
+      setStatus("Enable Browser audio (SF2) or Hardware MIDI Out first.", "err");
+      return;
+    }
+
+    runScheduler(state.startTick);
+    setStatus(
+      `Section: ${name} · bar ${tickToBar(state.startTick, state.project.ppq)}`,
+      "ok"
+    );
+  }
+
   function renderOverview() {
     const box = document.getElementById("overviewBox");
+    box.innerHTML = "";
     if (!state.project) {
-      box.textContent = "Load a MIDI to see structure.";
+      box.innerHTML = '<div class="section-empty">Load a MIDI with markers to build the playlist.</div>';
       state.lastOverview = null;
       return;
     }
+
     const ov = buildOverview(state.project);
     state.lastOverview = ov;
-    const short = [];
-    short.push(`${ov.totalBars} bars @ ${ov.tempo} BPM`);
-    if (ov.markers.length) {
-      short.push("Markers:");
-      for (const m of ov.markers.slice(0, 12)) short.push(`  ${m.bar}: ${m.text}`);
-      if (ov.markers.length > 12) short.push(`  …+${ov.markers.length - 12} more`);
-    } else {
-      short.push("No Cubase markers — using density map:");
-      for (const a of ov.activityPer8Bars.slice(0, 10)) {
-        short.push(`  ${a.bars}: ${a.notes} notes`);
-      }
-      if (ov.activityPer8Bars.length > 10) short.push(`  …+${ov.activityPer8Bars.length - 10} chunks`);
+    const markers = normalizedMarkers(state.project);
+
+    if (!markers.length) {
+      box.innerHTML =
+        '<div class="section-empty">No section markers in this project. Add Cubase markers to build a clickable playlist.</div>';
+      return;
     }
-    short.push("");
-    short.push("Tracks:");
-    for (const t of ov.tracks) short.push(`  ${t.name} ch${t.channel} (${t.noteCount})`);
-    box.textContent = short.join("\n");
+
+    for (let i = 0; i < markers.length; i++) {
+      const marker = markers[i];
+      const next = markers[i + 1];
+      const endBar = next ? Math.max(marker.bar, next.bar - 1) : ov.totalBars;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "section-item";
+      btn.title = `Play from ${marker.text} · bar ${marker.bar}`;
+      btn.innerHTML =
+        `<span class="section-bar">${marker.bar}</span>` +
+        `<span class="section-name">${escapeHtml(marker.text)}</span>` +
+        `<span class="section-range">${marker.bar}–${endBar}</span>`;
+      btn.addEventListener("click", () => playFromSection(marker.tick, marker.text));
+      box.appendChild(btn);
+    }
+
+    updateSectionPlaylistActive(state.startTick || 0);
   }
 
   function renderAll() {
@@ -2453,22 +2544,27 @@ select, input[type="number"], input[type="text"] {
 
   function updateSyncUI() {
     const box = document.getElementById("syncBox");
-    if (!box) return;
     const bind1 = document.getElementById("btnBindProjects");
     const bind2 = document.getElementById("btnBindProjects2");
     if (state.bridgeReady) {
-      box.className = "sync-box bound";
-      box.innerHTML = `Local bridge: <strong>connected</strong><br>Sync → save + commit + push · Reload → pull + load`;
+      if (box) {
+        box.className = "sync-box bound";
+        box.innerHTML = `Local bridge: <strong>connected</strong><br>Sync → save + commit + push · Reload → pull + load`;
+      }
       if (bind1) bind1.style.display = "none";
       if (bind2) bind2.style.display = "none";
     } else if (state.projectsDir) {
-      box.className = "sync-box bound";
-      box.innerHTML = `Folder: <strong>bound</strong> (<code>projects/</code>)<br>Sync writes current.json, overview.json, overview.md`;
+      if (box) {
+        box.className = "sync-box bound";
+        box.innerHTML = `Folder: <strong>bound</strong> (<code>projects/</code>)<br>Sync writes current.json, overview.json, overview.md`;
+      }
       if (bind1) bind1.style.display = "";
       if (bind2) bind2.style.display = "";
     } else {
-      box.className = "sync-box";
-      box.innerHTML = `Local bridge: <strong>not detected</strong><br>Start <code>start-midi-host.bat</code>. Fallback: Bind projects/ or file download.`;
+      if (box) {
+        box.className = "sync-box";
+        box.innerHTML = `Local bridge: <strong>not detected</strong><br>Start <code>start-midi-host.bat</code>. Fallback: Bind projects/ or file download.`;
+      }
       if (bind1) bind1.style.display = "";
       if (bind2) bind2.style.display = "";
     }

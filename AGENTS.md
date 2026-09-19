@@ -77,6 +77,16 @@ python scripts/local_server.py --open
 
 ## Hardware MIDI Host (`midi-host.html`)
 
+### Sidebar / arrangement playlist
+
+- Левый sidebar очищен от постоянного **Signal chain**, дублирующего **AI sync** блока и длинной служебной подсказки. Эти данные остаются в коде/проектных метаданных, но не занимают рабочее пространство.
+- В sidebar остаются Browser audio / SoundFont и Hardware MIDI Out переключатели, краткая карточка Project и **Arrangement playlist**.
+- Arrangement playlist строится из Cubase/MIDI markers. Каждый пункт показывает start bar, section name и диапазон тактов до следующего marker.
+- Обычный клик по пункту playlist: останавливает текущий transport при необходимости, переносит playhead на marker, прокручивает timeline к этой позиции и сразу запускает playback от выбранной секции через активные SF2/HW routes.
+- Во время воспроизведения текущая секция в playlist подсвечивается автоматически.
+- Track/note/event counts и density map больше не показываются в sidebar; подробный `buildOverview()` остаётся для Sync to AI / overview files.
+
+
 Плеер Standard MIDI для живого сетапа + цикл правок через GitHub. Браузер и ассистент синхронизируются через папку `projects/`.
 
 ### Цепочка
