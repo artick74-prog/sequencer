@@ -104,6 +104,59 @@ a { color: var(--accent); }
 .btn.primary { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn.active { border-color: var(--accent); color: var(--accent); }
+.file-menu-wrap {
+  position: relative;
+  z-index: 80;
+}
+.file-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  width: 230px;
+  display: none;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #10161d;
+  box-shadow: 0 14px 45px rgba(0,0,0,.5);
+}
+.file-menu.open { display: block; }
+.file-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.file-menu-item:hover {
+  background: #1a2330;
+  color: #fff;
+}
+.file-menu-item:disabled {
+  opacity: .45;
+  cursor: default;
+}
+.file-menu-item::after {
+  content: attr(data-shortcut);
+  margin-left: auto;
+  color: var(--dim);
+  font-size: 10px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.file-menu-separator {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--border);
+}
 .cloud-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -759,15 +812,23 @@ select, input[type="number"], input[type="text"] {
     </label>
     <button class="btn" id="btnRefreshMidi" type="button">Refresh</button>
     <span style="flex:1"></span>
-    <button class="btn" id="btnLoadMid" type="button">Load MIDI</button>
-    <button class="btn" id="btnLoadJson" type="button">Load JSON</button>
-    <button class="btn" id="btnBindProjects" type="button" title="Grant write access to projects/ folder">Bind projects/</button>
-    <button class="btn" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
-    <button class="btn" id="btnSync" type="button" title="Save project, commit and push to GitHub">Sync to AI</button>
+    <div class="file-menu-wrap" id="fileMenuWrap">
+      <button class="btn" id="btnFileMenu" type="button" aria-haspopup="true" aria-expanded="false">File ▾</button>
+      <div class="file-menu" id="fileMenu" role="menu" aria-hidden="true">
+        <button class="file-menu-item" id="btnNewProject" type="button" data-shortcut="Ctrl+N">New Project</button>
+        <button class="file-menu-item" id="btnCloudProjects" type="button" data-shortcut="Ctrl+O">Open Project…</button>
+        <button class="file-menu-item" id="btnCloudSave" type="button" data-shortcut="Ctrl+S">Save Project</button>
+        <div class="file-menu-separator"></div>
+        <button class="file-menu-item" id="btnLoadMid" type="button">Import MIDI…</button>
+        <button class="file-menu-item" id="btnLoadJson" type="button">Import JSON…</button>
+        <button class="file-menu-item" id="btnExportMid" type="button">Export MIDI…</button>
+        <div class="file-menu-separator"></div>
+        <button class="file-menu-item" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
+        <button class="file-menu-item" id="btnSync" type="button" title="Save current.json / overview and push for AI review">Sync to AI</button>
+        <button class="file-menu-item" id="btnBindProjects" type="button" title="Grant fallback write access to projects/ folder">Bind projects/</button>
+      </div>
+    </div>
     <button class="btn" id="btnLoops" type="button" title="Browse, preview and drag MIDI loops into the arrangement">♫ Loops</button>
-    <button class="btn" id="btnCloudProjects" type="button" title="Open a project saved in GitHub">☁ Projects</button>
-    <button class="btn primary" id="btnCloudSave" type="button" title="Create/update a self-contained project folder in GitHub">☁ Save Project</button>
-    <button class="btn" id="btnExportMid" type="button">Export MIDI</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
     <input class="file-hidden" id="fileJson" type="file" accept=".json">
     <input class="file-hidden" id="fileSf2" type="file" accept=".sf2,.SF2">
@@ -2709,9 +2770,11 @@ select, input[type="number"], input[type="text"] {
     for (const t of project.tracks) {
       for (const n of t.notes) lengthTicks = Math.max(lengthTicks, n.tick + n.duration);
     }
-    // pad to whole bars
+    // pad to whole bars; a newly-created project keeps its starter timeline visible
+    // even before any notes are dropped into it.
     const tpb = ticksPerBar(project.ppq);
-    project.lengthTicks = Math.max(tpb, Math.ceil(lengthTicks / tpb) * tpb);
+    const minimum = Math.max(tpb, Number(project.minimumLengthTicks) || 0);
+    project.lengthTicks = Math.max(minimum, Math.ceil(lengthTicks / tpb) * tpb);
     state.lengthTicks = project.lengthTicks;
   }
 
@@ -2722,6 +2785,7 @@ select, input[type="number"], input[type="text"] {
       ppq: data.ppq || 480,
       tempo: data.tempo || 120,
       lengthTicks: data.lengthTicks || 0,
+      minimumLengthTicks: Math.max(0, Number(data.minimumLengthTicks) || 0),
       markers: data.markers || [],
       cloudProject: data.cloudProject && typeof data.cloudProject === "object"
         ? {...data.cloudProject}
@@ -3731,6 +3795,89 @@ select, input[type="number"], input[type="text"] {
     URL.revokeObjectURL(url);
   }
 
+  function setFileMenuOpen(open) {
+    const menu = document.getElementById("fileMenu");
+    const button = document.getElementById("btnFileMenu");
+    if (!menu || !button) return;
+    menu.classList.toggle("open", !!open);
+    menu.setAttribute("aria-hidden", open ? "false" : "true");
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function closeFileMenu() {
+    setFileMenuOpen(false);
+  }
+
+  function currentProjectHasUnsavedWork() {
+    const project = state.project;
+    if (!project) return false;
+    if (project.cloudProject?.dirty) return true;
+    if (project.cloudProject?.id) return false;
+    if ((project.clips || []).length) return true;
+    return (project.tracks || []).some((track) => (track.notes || []).length > 0);
+  }
+
+  function buildNewProjectTemplate(name) {
+    const ppq = 480;
+    const minimumBars = 32;
+    const tempo = Number(document.getElementById("tempo")?.value) || 120;
+    const gm29 = GM_PROGRAMS?.[29] || "Overdriven Guitar";
+    const gm4 = GM_PROGRAMS?.[4] || "Electric Piano 1";
+
+    return normalizeProject({
+      version: 1,
+      name: name || "New Project",
+      ppq,
+      tempo,
+      minimumLengthTicks: minimumBars * ticksPerBar(ppq),
+      lengthTicks: minimumBars * ticksPerBar(ppq),
+      markers: [{ tick: 0, text: "Start" }],
+      cloudProject: null,
+      clips: [],
+      tracks: [
+        { id: "bass", name: "Bass", channel: 1, role: "xr20-bass", notes: [] },
+        { id: "acid", name: "Acid", channel: 2, role: "td3", notes: [] },
+        { id: "guitar", name: formatGmTrackName(29, gm29), channel: 3, role: "gm", notes: [] },
+        { id: "keys", name: formatGmTrackName(4, gm4), channel: 4, role: "gm", notes: [] },
+        { id: "drums", name: "Drums", channel: 10, role: "xr20-drums", notes: [] },
+      ],
+    });
+  }
+
+  function createNewProject() {
+    closeFileMenu();
+
+    if (currentProjectHasUnsavedWork()) {
+      const proceed = confirm(
+        "Start a new project?\n\n" +
+        "The current project has changes that are not saved to its GitHub project folder."
+      );
+      if (!proceed) return false;
+    }
+
+    const proposed = "New Project";
+    const chosen = prompt("New project name:", proposed);
+    if (chosen === null) return false;
+    const name = chosen.trim() || proposed;
+
+    closeCloudProjects();
+    closeHostLoopBrowser();
+    const project = buildNewProjectTemplate(name);
+    setProject(project, {
+      restoreLocal: false,
+      statusText:
+        "New project “" + name + "” · 32 bars · starter tracks: Bass, Acid, Guitar, Keys, Drums.",
+    });
+    state.barW = BAR_W_DEFAULT;
+    setZoom(state.barW, { anchorRatio: 0 });
+    markHostProjectDirty();
+    // A new project is intentionally not tied to the previous cloud folder.
+    project.cloudProject = null;
+    renderCloudProjectMeta();
+    saveHostAutosaveNow();
+    return true;
+  }
+
   function formatCloudDate(value) {
     if (!value) return "unknown date";
     const date = new Date(value);
@@ -4015,6 +4162,7 @@ select, input[type="number"], input[type="text"] {
       ppq: p.ppq,
       tempo: p.tempo,
       lengthTicks: p.lengthTicks,
+      minimumLengthTicks: Math.max(0, Number(p.minimumLengthTicks) || 0),
       hardware: {
         output: "TD-3 USB (thru to XR20 DIN)",
         channels: { "1": "XR20 bass", "2": "TD-3 acid", "10": "XR20 drums" },
@@ -4333,6 +4481,19 @@ select, input[type="number"], input[type="text"] {
     });
   }
 
+  document.getElementById("btnFileMenu").addEventListener("click", (event) => {
+    event.stopPropagation();
+    const open = !document.getElementById("fileMenu")?.classList.contains("open");
+    setFileMenuOpen(open);
+  });
+  document.getElementById("fileMenu").addEventListener("click", (event) => {
+    if (event.target.closest(".file-menu-item")) closeFileMenu();
+  });
+  document.addEventListener("click", (event) => {
+    if (!document.getElementById("fileMenuWrap")?.contains(event.target)) closeFileMenu();
+  });
+  document.getElementById("btnNewProject").addEventListener("click", () => createNewProject());
+
   document.getElementById("btnLoadMid").addEventListener("click", () => document.getElementById("fileMid").click());
   document.getElementById("fileMid").addEventListener("change", async (e) => {
     const file = e.target.files?.[0];
@@ -4405,8 +4566,24 @@ select, input[type="number"], input[type="text"] {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      closeFileMenu();
       closeCloudProjects();
       closeHostLoopBrowser();
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      const key = String(e.key || "").toLowerCase();
+      if (key === "n") {
+        e.preventDefault();
+        createNewProject();
+      } else if (key === "o") {
+        e.preventDefault();
+        closeFileMenu();
+        showCloudProjects();
+      } else if (key === "s") {
+        e.preventDefault();
+        closeFileMenu();
+        saveProjectToCloud();
+      }
     }
   });
 
@@ -4496,6 +4673,11 @@ select, input[type="number"], input[type="text"] {
     saveProjectToCloud: () => saveProjectToCloud(),
     showCloudProjects: () => showCloudProjects(),
     openCloudProject: (id) => openCloudProject(id),
+    newProject: (name = "New Project") => {
+      const project = buildNewProjectTemplate(name);
+      setProject(project, { restoreLocal: false });
+      return project;
+    },
     openLoops: () => openHostLoopBrowser(),
     insertLibraryLoop: (id, trackId, startTick = 0) => {
       const entry = hostLoopCatalog.find((item) => item.id === id);
