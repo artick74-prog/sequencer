@@ -44,6 +44,11 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
 .pager{display:flex;gap:8px;align-items:center;padding:8px 14px;border-top:1px solid var(--border);background:var(--panel)}
 .pager span{color:var(--dim);font-size:12px}
 .badge{display:inline-block;padding:2px 6px;border:1px solid var(--border);border-radius:999px;color:var(--gold);font-size:11px}
+.transport-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px;margin:8px 0 12px}
+.transport-line{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:7px}
+.transport-line strong{color:#fff}.transport-line span{color:var(--dim);font-family:ui-monospace,Consolas,monospace}
+#progress{width:100%;padding:0;accent-color:var(--accent);cursor:pointer}
+#progress:disabled{opacity:.35;cursor:default}
 .empty{padding:40px;color:var(--dim);text-align:center}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{max-height:48vh;border-right:0;border-bottom:1px solid var(--border)}.item{grid-template-columns:42px 1fr 100px}.item .hide-small{display:none}}
 </style>
@@ -72,6 +77,13 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   <aside class="sidebar">
     <h2>Selected MIDI</h2>
     <div class="card" id="selectedCard">Ничего не выбрано.</div>
+    <div class="transport-card">
+      <div class="transport-line">
+        <strong id="lengthLabel">Length —</strong>
+        <span id="positionLabel">Bar — / —</span>
+      </div>
+      <input id="progress" type="range" min="0" max="1000" step="1" value="0" disabled>
+    </div>
 
     <h2>Playback</h2>
     <div class="card">
@@ -130,8 +142,15 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   const state = {
     catalog: [], filtered: [], page: 0, selected: null, midi: null,
     midiAccess: null, outputId: "", sf2Engine: null, sf2Ready: false,
-    timers: new Set(), loopTimer: null, playToken: 0, playing: false,
-    gmPrograms: null,
+    sf2Promise: null,
+    timers: new Set(), schedulerTimer: null, progressFrame: null,
+    playToken: 0, playing: false, gmPrograms: null,
+    loadSeq: 0, loadController: null,
+    events: [], eventIndex: 0,
+    cycleTicks: 0, cycleStartTick: 0, cycleStartPerf: 0,
+    transportStartTick: 0, transportStartPerf: 0,
+    playbackBpm: 120, playbackPpq: 480,
+    playConfig: null, seekTick: 0, resumeAfterSeek: false,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -255,26 +274,128 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
 
   async function ensureSf2() {
     if(state.sf2Ready && state.sf2Engine?.synth) return true;
-    if(typeof SoundFont==="undefined") { setStatus("SF2 library не загрузилась.", "err"); return false; }
-    try {
-      state.sf2Engine=new SoundFont.WebMidiLink({drawSynth:false,placeholder:"sf2Placeholder",url:DEFAULT_SF2_URL,cache:true});
-      await new Promise((resolve,reject)=>{
-        state.sf2Engine.setLoadCallback(resolve);
-        state.sf2Engine.setup().catch(reject);
-      });
-      await state.sf2Engine.synth.ctx.resume();
-      state.sf2Ready=true;
-      return true;
-    } catch(e) { setStatus("SF2: "+e.message,"err"); return false; }
+    if(typeof SoundFont==="undefined") {
+      setStatus("SF2 library не загрузилась.", "err");
+      return false;
+    }
+    if(state.sf2Promise) return state.sf2Promise;
+
+    state.sf2Promise=(async()=>{
+      try {
+        if(!state.sf2Engine) {
+          state.sf2Engine=new SoundFont.WebMidiLink({
+            drawSynth:false,
+            placeholder:"sf2Placeholder",
+            url:DEFAULT_SF2_URL,
+            cache:true,
+          });
+          await new Promise((resolve,reject)=>{
+            state.sf2Engine.setLoadCallback(resolve);
+            state.sf2Engine.setup().catch(reject);
+          });
+        }
+        await state.sf2Engine.synth.ctx.resume();
+        state.sf2Ready=true;
+        return true;
+      } catch(e) {
+        state.sf2Ready=false;
+        setStatus("SF2: "+e.message,"err");
+        return false;
+      } finally {
+        state.sf2Promise=null;
+      }
+    })();
+    return state.sf2Promise;
   }
 
-  function stop() {
-    state.playing=false; state.playToken++;
+  function midiCycleTicks(midi=state.midi) {
+    if(!midi) return 0;
+    let maxEnd=Math.max(midi.endTick||0,midi.ppq||480);
+    for(const n of midi.notes||[]) maxEnd=Math.max(maxEnd,n.tick+n.duration);
+    return maxEnd;
+  }
+
+  function rawBars(midi=state.midi) {
+    const ticks=midiCycleTicks(midi);
+    return midi?.ppq ? ticks/(midi.ppq*4) : 0;
+  }
+
+  function displayBars(midi=state.midi) {
+    const bars=rawBars(midi);
+    if(!bars) return "—";
+    const nearest=Math.round(bars);
+    if(nearest>=1 && Math.abs(bars-nearest)<=0.12) return String(nearest);
+    return bars.toFixed(2).replace(/\.00$/,"");
+  }
+
+  function formatClock(ms) {
+    if(!Number.isFinite(ms) || ms<0) return "—";
+    const total=Math.max(0,Math.round(ms/1000));
+    const m=Math.floor(total/60);
+    const sec=String(total%60).padStart(2,"0");
+    return m+":"+sec;
+  }
+
+  function ticksToMs(ticks,bpm=state.playbackBpm,ppq=state.playbackPpq) {
+    return (ticks/ppq)*(60000/bpm);
+  }
+
+  function msToTicks(ms,bpm=state.playbackBpm,ppq=state.playbackPpq) {
+    return (ms/(60000/bpm))*ppq;
+  }
+
+  function currentPlaybackTick(now=performance.now()) {
+    if(!state.playing) return Math.max(0,Math.min(state.seekTick,state.cycleTicks||0));
+    const elapsed=Math.max(0,now-state.transportStartPerf);
+    let tick=state.transportStartTick+msToTicks(elapsed);
+    if($("loopOn").checked && state.cycleTicks>0) tick%=state.cycleTicks;
+    return Math.max(0,Math.min(tick,state.cycleTicks||tick));
+  }
+
+  function updateProgressUI(tick=state.seekTick) {
+    const p=$("progress");
+    const midi=state.midi;
+    if(!midi) {
+      p.disabled=true; p.value="0";
+      $("lengthLabel").textContent="Length —";
+      $("positionLabel").textContent="Bar — / —";
+      return;
+    }
+
+    const cycle=midiCycleTicks(midi);
+    state.cycleTicks=cycle;
+    const clamped=Math.max(0,Math.min(Number(tick)||0,cycle));
+    const ratio=cycle>0 ? clamped/cycle : 0;
+    p.disabled=false;
+    p.value=String(Math.round(ratio*1000));
+
+    const bars=displayBars(midi);
+    const bpm=Number($("bpm").value)||midi.tempo||120;
+    const duration=ticksToMs(cycle,bpm,midi.ppq);
+    const barPos=midi.ppq ? clamped/(midi.ppq*4) : 0;
+    const currentBar=Math.min(Number(bars)||rawBars(midi),barPos)+1;
+    $("lengthLabel").textContent="Length "+bars+" bars · "+formatClock(duration);
+    $("positionLabel").textContent=
+      "Bar "+Math.max(1,currentBar).toFixed(1)+" / "+bars+
+      " · "+formatClock(ticksToMs(clamped,bpm,midi.ppq))+" / "+formatClock(duration);
+  }
+
+  function clearScheduledAudio() {
     for(const t of state.timers) clearTimeout(t);
     state.timers.clear();
-    if(state.loopTimer) { clearTimeout(state.loopTimer); state.loopTimer=null; }
+    if(state.schedulerTimer) {
+      clearInterval(state.schedulerTimer);
+      state.schedulerTimer=null;
+    }
+    if(state.progressFrame) {
+      cancelAnimationFrame(state.progressFrame);
+      state.progressFrame=null;
+    }
+
     const synth=state.sf2Engine?.synth;
-    if(synth) for(let ch=0;ch<16;ch++) synth.allSoundOff(ch);
+    if(synth) {
+      try { for(let ch=0;ch<16;ch++) synth.allSoundOff(ch); } catch {}
+    }
     const out=getOutput();
     if(out) {
       try {
@@ -282,27 +403,155 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
         for(let ch=0;ch<16;ch++) out.send([0xb0|ch,123,0]);
       } catch {}
     }
+  }
+
+  function stop({reset=true,position=null}={}) {
+    const pos=position!=null ? position : (state.playing ? currentPlaybackTick() : state.seekTick);
+    state.playing=false;
+    state.playToken++;
+    clearScheduledAudio();
+    state.seekTick=reset ? 0 : Math.max(0,Math.min(pos,state.cycleTicks||pos||0));
     $("play").textContent="Play";
+    updateProgressUI(state.seekTick);
   }
 
   function scheduleTimeout(fn,delay,token) {
-    const t=setTimeout(()=>{ state.timers.delete(t); if(state.playToken===token && state.playing) fn(); },Math.max(0,delay));
+    const t=setTimeout(()=>{
+      state.timers.delete(t);
+      if(state.playToken===token && state.playing) fn();
+    },Math.max(0,delay));
     state.timers.add(t);
   }
 
+  function buildEvents(midi,transpose,drums) {
+    const events=[];
+    for(const n of midi.notes) {
+      const note=Math.max(0,Math.min(127,n.note+(drums?0:transpose)));
+      events.push({tick:n.tick,type:"on",note,velocity:n.velocity,order:1});
+      events.push({tick:n.tick+n.duration,type:"off",note,velocity:0,order:0});
+    }
+    events.sort((a,b)=>a.tick-b.tick || a.order-b.order || a.note-b.note);
+    return events;
+  }
+
+  function firstEventAtOrAfter(tick) {
+    let lo=0,hi=state.events.length;
+    while(lo<hi) {
+      const mid=(lo+hi)>>1;
+      if(state.events[mid].tick<tick) lo=mid+1;
+      else hi=mid;
+    }
+    return lo;
+  }
+
+  function scheduleSf2Event(event,targetTime,token) {
+    const synth=state.sf2Engine?.synth;
+    if(!synth) return;
+    const send=()=>{
+      if(!state.playing || state.playToken!==token) return;
+      const ch=state.playConfig.gmCh;
+      if(event.type==="on") synth.noteOn(ch,event.note,event.velocity);
+      else synth.noteOff(ch,event.note);
+    };
+    const delay=targetTime-performance.now();
+    if(delay<=2) send();
+    else scheduleTimeout(send,delay,token);
+  }
+
+  function scheduleHardwareEvent(event,targetTime) {
+    const out=state.playConfig.out;
+    if(!out) return;
+    const ch=state.playConfig.hwCh;
+    try {
+      out.send(
+        event.type==="on"
+          ? [0x90|ch,event.note,event.velocity]
+          : [0x80|ch,event.note,0],
+        targetTime
+      );
+    } catch(e) {
+      setStatus("Hardware MIDI: "+e.message,"err");
+    }
+  }
+
+  function schedulerPump(token) {
+    if(!state.playing || state.playToken!==token) return;
+    const now=performance.now();
+    const deadline=now+120;
+
+    while(state.playing && state.playToken===token) {
+      if(state.eventIndex<state.events.length) {
+        const ev=state.events[state.eventIndex];
+        if(ev.tick<state.cycleStartTick) {
+          state.eventIndex++;
+          continue;
+        }
+        const target=state.cycleStartPerf+
+          ticksToMs(ev.tick-state.cycleStartTick,state.playbackBpm,state.playbackPpq);
+        if(target>deadline) break;
+        state.eventIndex++;
+        if(state.playConfig.gmOn) scheduleSf2Event(ev,target,token);
+        if(state.playConfig.hwOn) scheduleHardwareEvent(ev,target);
+        continue;
+      }
+
+      const cycleEnd=state.cycleStartPerf+
+        ticksToMs(state.cycleTicks-state.cycleStartTick,state.playbackBpm,state.playbackPpq);
+
+      if($("loopOn").checked) {
+        if(cycleEnd>deadline) break;
+        state.cycleStartPerf=cycleEnd;
+        state.cycleStartTick=0;
+        state.eventIndex=0;
+        continue;
+      }
+
+      if(now>=cycleEnd+30) {
+        state.seekTick=state.cycleTicks;
+        stop({reset:false,position:state.cycleTicks});
+      }
+      break;
+    }
+  }
+
+  function progressFrame(token) {
+    if(!state.playing || state.playToken!==token) return;
+    const tick=currentPlaybackTick();
+    state.seekTick=tick;
+    updateProgressUI(tick);
+    state.progressFrame=requestAnimationFrame(()=>progressFrame(token));
+  }
+
   async function play() {
-    if(!state.selected) { setStatus("Сначала выбери MIDI.","err"); return; }
+    if(!state.selected) {
+      setStatus("Сначала выбери MIDI.","err");
+      return;
+    }
     if(!state.midi && !(await loadEntry(state.selected,false))) return;
-    stop();
+
+    // Cancel the previous transport before any async SoundFont work.
+    stop({reset:false});
+    const token=state.playToken;
+    const selectedId=state.selected.id;
+    const midi=state.midi;
 
     const gmOn=$("gmOn").checked;
     const hwOn=$("hwOn").checked;
-    if(!gmOn && !hwOn) { setStatus("Включи GM и/или Hardware MIDI.","err"); return; }
+    if(!gmOn && !hwOn) {
+      setStatus("Включи GM и/или Hardware MIDI.","err");
+      return;
+    }
     if(gmOn && !(await ensureSf2())) return;
-    const out=hwOn ? getOutput() : null;
-    if(hwOn && !out) { setStatus("Hardware MIDI включён, но MIDI Out не выбран.","err"); return; }
 
-    const midi=state.midi;
+    // A newer selection/play request won while SF2 was loading.
+    if(token!==state.playToken || state.selected?.id!==selectedId || state.midi!==midi) return;
+
+    const out=hwOn ? getOutput() : null;
+    if(hwOn && !out) {
+      setStatus("Hardware MIDI включён, но MIDI Out не выбран.","err");
+      return;
+    }
+
     const bpm=Number($("bpm").value)||midi.tempo||120;
     const transpose=Number($("transpose").value)||0;
     const hwCh=(Number($("hwChannel").value)||1)-1;
@@ -316,59 +565,87 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
       if(!drums) synth.programChange(gmCh,program);
     }
 
-    const msPerTick=(60000/bpm)/midi.ppq;
-    const maxEnd=Math.max(midi.endTick,...midi.notes.map(n=>n.tick+n.duration),midi.ppq);
-    const cycleMs=Math.max(100,maxEnd*msPerTick);
-    const token=++state.playToken;
-    state.playing=true; $("play").textContent="Playing…";
+    state.playbackBpm=bpm;
+    state.playbackPpq=midi.ppq;
+    state.cycleTicks=midiCycleTicks(midi);
+    if(state.seekTick>=state.cycleTicks) state.seekTick=0;
+    state.events=buildEvents(midi,transpose,drums);
+    state.cycleStartTick=state.seekTick;
+    state.transportStartTick=state.seekTick;
+    state.cycleStartPerf=performance.now()+35;
+    state.transportStartPerf=state.cycleStartPerf;
+    state.eventIndex=firstEventAtOrAfter(state.cycleStartTick);
+    state.playConfig={gmOn,hwOn,out,hwCh,gmCh};
+    state.playing=true;
+    $("play").textContent="Playing…";
 
-    const cycle=async()=>{
-      if(!state.playing || state.playToken!==token) return;
-      const base=performance.now()+35;
-      for(const n of midi.notes) {
-        const note=Math.max(0,Math.min(127,n.note+(drums?0:transpose)));
-        const onDelay=n.tick*msPerTick+35;
-        const offDelay=(n.tick+n.duration)*msPerTick+35;
-        if(gmOn && synth) {
-          scheduleTimeout(()=>synth.noteOn(gmCh,note,n.velocity),onDelay,token);
-          scheduleTimeout(()=>synth.noteOff(gmCh,note),offDelay,token);
-        }
-        if(hwOn && out) {
-          try {
-            out.send([0x90|hwCh,note,n.velocity],base+n.tick*msPerTick);
-            out.send([0x80|hwCh,note,0],base+(n.tick+n.duration)*msPerTick);
-          } catch(e) { setStatus("Hardware MIDI: "+e.message,"err"); }
-        }
-      }
-      if($("loopOn").checked) {
-        state.loopTimer=setTimeout(cycle,cycleMs+35);
-      } else {
-        state.loopTimer=setTimeout(()=>stop(),cycleMs+80);
-      }
-    };
-    cycle();
-    setStatus("Play · "+state.selected.name+" · "+Math.round(bpm)+" BPM"+(drums?" · drums":""),"ok");
+    schedulerPump(token);
+    state.schedulerTimer=setInterval(()=>schedulerPump(token),20);
+    state.progressFrame=requestAnimationFrame(()=>progressFrame(token));
+
+    setStatus(
+      "Play · "+state.selected.name+" · "+Math.round(bpm)+" BPM · "+
+      displayBars(midi)+" bars"+(drums?" · drums":""),
+      "ok"
+    );
   }
 
   async function loadEntry(entry, autoplay=false) {
-    stop();
+    const seq=++state.loadSeq;
+    if(state.loadController) state.loadController.abort();
+    const controller=new AbortController();
+    state.loadController=controller;
+
+    stop({reset:true});
     state.selected=entry;
+    state.midi=null;
     renderSelected();
+    renderList();
     setStatus("Loading "+entry.name+"…");
+
     try {
-      const r=await fetch("/api/library/midi?id="+encodeURIComponent(entry.id));
+      const r=await fetch(
+        "/api/library/midi?id="+encodeURIComponent(entry.id),
+        {signal:controller.signal}
+      );
       if(!r.ok) throw new Error(await r.text());
-      state.midi=parseMidi(await r.arrayBuffer());
-      $("bpm").value=String(Math.round(state.midi.tempo||120));
+      const midi=parseMidi(await r.arrayBuffer());
+
+      if(seq!==state.loadSeq || controller.signal.aborted) return false;
+      state.midi=midi;
+      state.seekTick=0;
+      state.cycleTicks=midiCycleTicks(midi);
+      $("bpm").value=String(Math.round(midi.tempo||120));
+
       if(entry.kind==="drums") $("hwChannel").value="10";
       else if(entry.kind==="acid") $("hwChannel").value="2";
       else $("hwChannel").value="1";
+
       renderSelected();
-      if(autoplay) await play();
-      else setStatus("Loaded "+entry.name,"ok");
+      updateProgressUI(0);
+      renderList();
+
+      if(autoplay && seq===state.loadSeq && state.selected?.id===entry.id) {
+        await play();
+      } else {
+        setStatus(
+          "Loaded "+entry.name+" · "+displayBars(midi)+" bars · "+
+          midi.notes.length+" notes",
+          "ok"
+        );
+      }
       return true;
     } catch(e) {
-      state.midi=null; setStatus("MIDI load error: "+e.message,"err"); renderSelected(); return false;
+      if(e.name==="AbortError") return false;
+      if(seq!==state.loadSeq) return false;
+      state.midi=null;
+      state.seekTick=0;
+      setStatus("MIDI load error: "+e.message,"err");
+      renderSelected();
+      updateProgressUI(0);
+      return false;
+    } finally {
+      if(seq===state.loadSeq) state.loadController=null;
     }
   }
 
@@ -382,8 +659,13 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
       "<div style='color:var(--dim);word-break:break-all'>"+escapeHtml(e.member||e.container)+"</div>",
     ];
     if(m) {
-      const bars=m.endTick&&m.ppq ? (m.endTick/(m.ppq*4)).toFixed(2) : "—";
-      bits.push("<div>PPQ "+m.ppq+" · "+m.notes.length+" notes · "+Math.round(m.tempo)+" BPM · ~"+bars+" bars</div>");
+      const bars=displayBars(m);
+      const cycle=midiCycleTicks(m);
+      const duration=ticksToMs(cycle,Number($("bpm").value)||m.tempo||120,m.ppq);
+      bits.push(
+        "<div><strong>"+bars+" bars</strong> · "+m.notes.length+" notes · "+
+        Math.round(m.tempo)+" BPM · PPQ "+m.ppq+" · "+formatClock(duration)+"</div>"
+      );
     }
     $("selectedCard").innerHTML=bits.join("");
   }
@@ -450,7 +732,13 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   }
 
   async function loadCatalog(force=false) {
-    stop(); setStatus(force?"Пересканирование библиотеки…":"Индексирование библиотеки…");
+    state.loadSeq++;
+    if(state.loadController) {
+      state.loadController.abort();
+      state.loadController=null;
+    }
+    stop({reset:true});
+    setStatus(force?"Пересканирование библиотеки…":"Индексирование библиотеки…");
     try {
       const r=await fetch("/api/library"+(force?"/rescan":""),
         force?{method:"POST"}:undefined);
@@ -482,13 +770,49 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   $("prev").addEventListener("click",()=>{state.page--;renderList();});
   $("next").addEventListener("click",()=>{state.page++;renderList();});
   $("play").addEventListener("click",play);
-  $("stop").addEventListener("click",stop);
-  $("midiOut").addEventListener("change",()=>{state.outputId=$("midiOut").value;});
+  $("stop").addEventListener("click",()=>stop({reset:true}));
+  $("midiOut").addEventListener("change",()=>{
+    const wasPlaying=state.playing;
+    const tick=wasPlaying ? currentPlaybackTick() : state.seekTick;
+    stop({reset:false,position:tick});
+    state.outputId=$("midiOut").value;
+    if(wasPlaying) play();
+  });
+
+  $("bpm").addEventListener("change",()=>{
+    renderSelected();
+    updateProgressUI(state.seekTick);
+    if(state.playing) {
+      const tick=currentPlaybackTick();
+      stop({reset:false,position:tick});
+      play();
+    }
+  });
+
+  $("progress").addEventListener("pointerdown",()=>{
+    state.resumeAfterSeek=state.playing;
+    if(state.playing) {
+      const tick=currentPlaybackTick();
+      stop({reset:false,position:tick});
+    }
+  });
+  $("progress").addEventListener("input",()=>{
+    if(!state.midi) return;
+    state.seekTick=(Number($("progress").value)/1000)*midiCycleTicks(state.midi);
+    updateProgressUI(state.seekTick);
+  });
+  $("progress").addEventListener("change",()=>{
+    if(state.resumeAfterSeek) {
+      state.resumeAfterSeek=false;
+      play();
+    }
+  });
   $("openHost").addEventListener("click",()=>{
     if(!state.selected) { setStatus("Сначала выбери MIDI.","err"); return; }
     location.href="midi-host.html?library="+encodeURIComponent(state.selected.id)+"&name="+encodeURIComponent(state.selected.name);
   });
 
+  updateProgressUI(0);
   loadPrograms();
   initMidi();
   loadCatalog(false);
