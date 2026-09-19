@@ -313,6 +313,9 @@ def save_cloud_project(payload: dict) -> dict:
     if not isinstance(track_payloads, list):
         raise ValueError("trackMidis must be an array")
 
+    branch = current_branch()
+    ensure_remote_is_safe_to_push(branch)
+
     tracks_dir = root / "midi-host" / "tracks"
     root.mkdir(parents=True, exist_ok=True)
     (root / "midi-host").mkdir(parents=True, exist_ok=True)
@@ -411,8 +414,6 @@ def save_cloud_project(payload: dict) -> dict:
     ]
     write_text(root / "README.md", "\n".join(readme))
 
-    branch = current_branch()
-    ensure_remote_is_safe_to_push(branch)
     rel_root = str(root.relative_to(ROOT)).replace(chr(92), "/")
     run_git("add", "--", rel_root)
     changed = commit_staged(f"Save cloud project: {project_name}")
