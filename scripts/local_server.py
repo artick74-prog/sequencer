@@ -912,6 +912,11 @@ def commit_staged(message: str) -> bool:
 class Handler(SimpleHTTPRequestHandler):
     server_version = "SequencerLocalBridge/1.0"
 
+    def end_headers(self) -> None:
+        # Local UI files change frequently during development; never serve a stale HTML/JS page.
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def _send_json(self, status: int, payload: dict) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
