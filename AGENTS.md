@@ -188,6 +188,25 @@ python scripts/analyze_reference_library.py --source nrgcp --limit 500
 
 Результат: `reference-library/analysis/summary.json`. С `--details` также создаётся `files.jsonl`.
 
+### Style Library Browser
+
+`style-library.html` — локальный браузер MIDI-референсов. Он работает через `scripts/local_server.py` и читает большую локальную библиотеку **напрямую из MIDI-файлов, ZIP и TAR.GZ**, без обязательной распаковки и без загрузки больших WAV-паков в GitHub.
+
+По умолчанию локальная библиотека берётся из соседней папки:
+
+```text
+d:\Dev\midi-reference
+```
+
+Путь можно переопределить переменной окружения `MIDI_REFERENCE_ROOT`.
+
+API bridge:
+- `GET /api/library` — индекс всех найденных MIDI;
+- `GET /api/library/midi?id=...` — получить один MIDI из файла/архива;
+- `POST /api/library/rescan` — пересканировать папку.
+
+Browser умеет фильтровать по source/style/type, слушать выбранный MIDI через GM SoundFont и одновременно отправлять его в Hardware MIDI. Для preview hardware обычно: bass → ch1 XR20, acid → ch2 TD-3, drums → ch10 XR20. Кнопка **Open in Host** открывает выбранный MIDI как проект в `midi-host.html`.
+
 Правило использования:
 - извлекать закономерности: onset pattern, плотность, интервалы, velocity, длительности, groove;
 - не переносить конкретный MIDI-паттерн в проект один-в-один;
