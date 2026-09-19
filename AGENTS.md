@@ -85,6 +85,7 @@ python scripts/local_server.py --open
 - Обычный клик по пункту playlist: останавливает текущий transport при необходимости, переносит playhead на marker, прокручивает timeline к этой позиции и сразу запускает playback от выбранной секции через активные SF2/HW routes.
 - Во время воспроизведения текущая секция в playlist подсвечивается автоматически.
 - Track/note/event counts и density map больше не показываются в sidebar; подробный `buildOverview()` остаётся для Sync to AI / overview files.
+- У каждого MIDI Host track вместо checkbox Mute используются DAW-style кнопки **S / M**. **S** поддерживает multi-solo: если хотя бы один track solo, звучат только solo tracks, кроме отдельно muted; **M** всегда глушит конкретную дорожку. При изменении S/M во время playback scheduler немедленно очищает уже поставленные SF2/Hardware MIDI события и перезапускается с текущей позиции, поэтому состояние слышно сразу, а не только после следующего Play.
 
 
 Плеер Standard MIDI для живого сетапа + цикл правок через GitHub. Браузер и ассистент синхронизируются через папку `projects/`.
