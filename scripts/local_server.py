@@ -39,6 +39,33 @@ LIBRARY_ENTRIES: list[dict] = []
 LIBRARY_LOCATORS: dict[str, tuple[str, str, str | None]] = {}
 CLASSIFICATION_CACHE_VERSION = 1
 CLASSIFICATION_CACHE_PATH = LIBRARY_ROOT / ".style-library-classification-v1.json"
+MIDI_CACHE_DIR = Path(os.environ.get("LOCALAPPDATA", str(LIBRARY_ROOT.parent))) / "SequencerStyleLibrary" / "midi-v1"
+try:
+    GM_PROGRAM_NAMES = json.loads((ROOT / "scripts" / "gm-instruments.json").read_text(encoding="utf-8")).get("programs", [])
+except (OSError, ValueError, json.JSONDecodeError):
+    GM_PROGRAM_NAMES = []
+
+
+def midi_cache_path(item_id: str) -> Path:
+    return MIDI_CACHE_DIR / item_id[:2] / f"{item_id}.bin"
+
+
+def read_cached_midi(item_id: str) -> bytes | None:
+    try:
+        return midi_cache_path(item_id).read_bytes()
+    except OSError:
+        return None
+
+
+def write_cached_midi(item_id: str, data: bytes) -> None:
+    try:
+        target = midi_cache_path(item_id)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temp = target.with_suffix(".tmp")
+        temp.write_bytes(data)
+        os.replace(temp, target)
+    except OSError:
+        pass
 
 
 def load_classification_cache() -> dict[str, dict]:
@@ -78,14 +105,15 @@ def classify_library_item(
 ) -> dict:
     cached = cache.get(item_id)
     if (
-        not force
-        and isinstance(cached, dict)
+        isinstance(cached, dict)
         and cached.get("fingerprint") == fingerprint
         and cached.get("kind")
     ):
         return cached
 
-    result = classify_midi(data_loader(), source=source, member=member)
+    data = data_loader()
+    result = classify_midi(data, source=source, member=member)
+    write_cached_midi(item_id, data)
     record = {"fingerprint": fingerprint, **result}
     cache[item_id] = record
     return record
@@ -185,6 +213,8 @@ def build_library_catalog(force: bool = False) -> dict:
                             "classificationConfidence": classification.get("confidence", 0.0),
                             "classificationMethod": classification.get("method", "content"),
                             "classificationReason": classification.get("reason", ""),
+                            "classificationRoles": classification.get("roles", []),
+                            "classificationPrograms": classification.get("programs", []),
                             "container": rel,
                             "member": None,
                             "size": stat.st_size,
@@ -236,6 +266,8 @@ def build_library_catalog(force: bool = False) -> dict:
                                             "classificationConfidence": classification.get("confidence", 0.0),
                                             "classificationMethod": classification.get("method", "content"),
                                             "classificationReason": classification.get("reason", ""),
+                                            "classificationRoles": classification.get("roles", []),
+                                            "classificationPrograms": classification.get("programs", []),
                                             "container": rel,
                                             "member": member,
                                             "size": size,
@@ -291,6 +323,8 @@ def build_library_catalog(force: bool = False) -> dict:
                                             "classificationConfidence": classification.get("confidence", 0.0),
                                             "classificationMethod": classification.get("method", "content"),
                                             "classificationReason": classification.get("reason", ""),
+                                            "classificationRoles": classification.get("roles", []),
+                                            "classificationPrograms": classification.get("programs", []),
                                             "container": rel,
                                             "member": member,
                                             "size": size,
@@ -341,14 +375,195 @@ def read_library_midi(item_id: str) -> tuple[bytes, dict]:
     path = Path(path_text)
     if mode == "file":
         return path.read_bytes(), entry
+
+    cached = read_cached_midi(item_id)
+    if cached is not None:
+        return cached, entry
+
     if path.name.lower().endswith(".zip"):
         with zipfile.ZipFile(path) as zf:
-            return zf.read(member), entry
-    with tarfile.open(path, "r:*") as tf:
-        fh = tf.extractfile(member)
-        if fh is None:
-            raise FileNotFoundError("MIDI member not found in archive")
-        return fh.read(), entry
+            data = zf.read(member)
+    else:
+        with tarfile.open(path, "r:*") as tf:
+            fh = tf.extractfile(member)
+            if fh is None:
+                raise FileNotFoundError("MIDI member not found in archive")
+            data = fh.read()
+
+    write_cached_midi(item_id, data)
+    return data, entry
+
+
+def optimize_library(genre: str = "edm", kind: str = "unclassified") -> dict:
+    """Warm archive MIDI cache and reclassify the requested unresolved subset."""
+    global LIBRARY_ENTRIES
+    build_library_catalog()
+
+    targets = {
+        item["id"]
+        for item in LIBRARY_ENTRIES
+        if (not genre or item.get("genre") == genre)
+        and (not kind or item.get("kind") == kind)
+    }
+    classification_cache = load_classification_cache()
+    entry_by_id = {item["id"]: item for item in LIBRARY_ENTRIES}
+    locator_to_id = {
+        (path_text, member): item_id
+        for item_id, (mode, path_text, member) in LIBRARY_LOCATORS.items()
+        if mode == "archive"
+    }
+
+    archive_paths = sorted({
+        path_text
+        for mode, path_text, _ in LIBRARY_LOCATORS.values()
+        if mode == "archive"
+    })
+
+    cached_files = 0
+    cached_bytes = 0
+    reclassified = 0
+    program_counts: Counter[int] = Counter()
+    role_counts: Counter[str] = Counter()
+
+    for path_text in archive_paths:
+        archive = Path(path_text)
+        low = archive.name.lower()
+        if low.endswith(".zip"):
+            with zipfile.ZipFile(archive) as zf:
+                for info in zf.infolist():
+                    if info.is_dir() or not info.filename.lower().endswith((".mid", ".midi")):
+                        continue
+                    item_id = locator_to_id.get((path_text, info.filename))
+                    if not item_id:
+                        continue
+                    data = read_cached_midi(item_id)
+                    if data is None:
+                        data = zf.read(info)
+                        write_cached_midi(item_id, data)
+                    cached_files += 1
+                    cached_bytes += len(data)
+
+                    if item_id in targets:
+                        entry = entry_by_id[item_id]
+                        result = classify_midi(
+                            data,
+                            source=entry.get("source", ""),
+                            member=entry.get("member") or entry.get("container", ""),
+                        )
+                        old = classification_cache.get(item_id, {})
+                        classification_cache[item_id] = {
+                            "fingerprint": old.get("fingerprint", ""),
+                            **result,
+                        }
+                        entry["kind"] = result["kind"]
+                        entry["classificationConfidence"] = result.get("confidence", 0.0)
+                        entry["classificationMethod"] = result.get("method", "content")
+                        entry["classificationReason"] = result.get("reason", "")
+                        entry["classificationRoles"] = result.get("roles", [])
+                        entry["classificationPrograms"] = result.get("programs", [])
+                        program_counts.update(result.get("programs", []))
+                        role_counts.update(result.get("roles", []))
+                        reclassified += 1
+        else:
+            with tarfile.open(archive, "r:*") as tf:
+                for member_info in tf:
+                    if (
+                        not member_info.isfile()
+                        or not member_info.name.lower().endswith((".mid", ".midi"))
+                    ):
+                        continue
+                    item_id = locator_to_id.get((path_text, member_info.name))
+                    if not item_id:
+                        continue
+                    data = read_cached_midi(item_id)
+                    if data is None:
+                        fh = tf.extractfile(member_info)
+                        if fh is None:
+                            continue
+                        data = fh.read()
+                        write_cached_midi(item_id, data)
+                    cached_files += 1
+                    cached_bytes += len(data)
+
+                    if item_id in targets:
+                        entry = entry_by_id[item_id]
+                        result = classify_midi(
+                            data,
+                            source=entry.get("source", ""),
+                            member=entry.get("member") or entry.get("container", ""),
+                        )
+                        old = classification_cache.get(item_id, {})
+                        classification_cache[item_id] = {
+                            "fingerprint": old.get("fingerprint", ""),
+                            **result,
+                        }
+                        entry["kind"] = result["kind"]
+                        entry["classificationConfidence"] = result.get("confidence", 0.0)
+                        entry["classificationMethod"] = result.get("method", "content")
+                        entry["classificationReason"] = result.get("reason", "")
+                        entry["classificationRoles"] = result.get("roles", [])
+                        entry["classificationPrograms"] = result.get("programs", [])
+                        program_counts.update(result.get("programs", []))
+                        role_counts.update(result.get("roles", []))
+                        reclassified += 1
+
+    # Loose files are already fast to read, but reclassify selected targets too.
+    for item_id in targets:
+        locator = LIBRARY_LOCATORS.get(item_id)
+        if not locator or locator[0] != "file":
+            continue
+        entry = entry_by_id[item_id]
+        data = Path(locator[1]).read_bytes()
+        result = classify_midi(
+            data,
+            source=entry.get("source", ""),
+            member=entry.get("container", ""),
+        )
+        old = classification_cache.get(item_id, {})
+        classification_cache[item_id] = {
+            "fingerprint": old.get("fingerprint", ""),
+            **result,
+        }
+        entry["kind"] = result["kind"]
+        entry["classificationConfidence"] = result.get("confidence", 0.0)
+        entry["classificationMethod"] = result.get("method", "content")
+        entry["classificationReason"] = result.get("reason", "")
+        entry["classificationRoles"] = result.get("roles", [])
+        entry["classificationPrograms"] = result.get("programs", [])
+        program_counts.update(result.get("programs", []))
+        role_counts.update(result.get("roles", []))
+        reclassified += 1
+
+    save_classification_cache(classification_cache)
+    LIBRARY_ENTRIES.sort(
+        key=lambda item: (
+            item["genre"],
+            item["kind"],
+            item["source"],
+            item["name"].lower(),
+        )
+    )
+
+    counts = {
+        "total": len(LIBRARY_ENTRIES),
+        "genre": dict(Counter(item["genre"] for item in LIBRARY_ENTRIES)),
+        "kind": dict(Counter(item["kind"] for item in LIBRARY_ENTRIES)),
+    }
+    return {
+        "ok": True,
+        "cachedFiles": cached_files,
+        "cachedBytes": cached_bytes,
+        "reclassified": reclassified,
+        "targetGenre": genre,
+        "targetKind": kind,
+        "roleCounts": dict(role_counts),
+        "programCounts": {str(key): value for key, value in sorted(program_counts.items())},
+        "instrumentCounts": {
+            f"{key} {GM_PROGRAM_NAMES[key] if key < len(GM_PROGRAM_NAMES) else 'Program '+str(key)}": value
+            for key, value in sorted(program_counts.items())
+        },
+        "counts": counts,
+    }
 
 
 
@@ -512,7 +727,19 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if path == "/api/library/rescan":
             try:
+                # Rescan rebuilds the catalogue but reuses prior classification.
+                # Heavy content work lives in /api/library/optimize.
                 self._send_json(200, build_library_catalog(force=True))
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/library/optimize":
+            try:
+                parsed = urlparse(self.path)
+                query = parse_qs(parsed.query)
+                genre = (query.get("genre") or ["edm"])[0]
+                kind = (query.get("kind") or ["unclassified"])[0]
+                self._send_json(200, optimize_library(genre=genre, kind=kind))
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return
