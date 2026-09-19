@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "retrieved": "2026-09-19",
+  "sources": [
+    {
+      "id": "acidvoice",
+      "name": "AcidVoice TB-303 MIDI patterns",
+      "kind": "individual-midi",
+      "files": [
+        "raw/acidvoice/pattern07.mid",
+        "raw/acidvoice/pattern14.mid",
+        "raw/acidvoice/pattern19.mid",
+        "raw/acidvoice/pattern23.mid"
+      ],
+      "source_page": "https://www.acidvoice.com/midi_pattern_tb_303_x0xb0x.htm",
+      "download_urls": [
+        "https://www.acidvoice.com/images/patterns/pattern07.mid",
+        "https://www.acidvoice.com/images/patterns/pattern14.mid",
+        "https://www.acidvoice.com/images/patterns/pattern19.mid",
+        "https://www.acidvoice.com/images/patterns/pattern23.mid"
+      ],
+      "purpose": "303 rhythm, pitch movement, velocity/accent and note-length reference"
+    },
+    {
+      "id": "groove",
+      "name": "Groove MIDI Dataset",
+      "kind": "zip-midi-corpus",
+      "file": "raw/groove/groove-v1.0.0-midionly.zip",
+      "source_page": "https://magenta.withgoogle.com/datasets/groove",
+      "download_url": "https://storage.googleapis.com/magentadata/datasets/groove/groove-v1.0.0-midionly.zip",
+      "sha256": "651cbc524ffb891be1a3e46d89dc82a1cecb09a57c748c7b45b844c4841dcc1e",
+      "license": "CC BY 4.0",
+      "purpose": "drum groove, velocity and microtiming reference"
+    },
+    {
+      "id": "nrgcp",
+      "name": "NRG-CP MIDI Dataset",
+      "kind": "tar-gz-midi-corpus",
+      "file": "raw/nrgcp/nrgcp_midi_dataset.tar.gz",
+      "source_page": "https://github.com/patchbanks/WaivOps-NRG-CP",
+      "download_url": "https://zenodo.org/records/15304989/files/nrgcp_midi_dataset.tar.gz?download=1",
+      "md5": "7443fe30674ef149aa4c23580044f597",
+      "license": "see source",
+      "purpose": "dance/trance/house/EDM harmonic-rhythmic pattern reference"
+    }
+  ]
+}
