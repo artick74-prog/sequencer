@@ -3976,8 +3976,42 @@ select, input[type="number"], input[type="text"] {
         block.style.top = `${top}px`;
         block.style.height = "12px";
         block.style.background = info.color;
+        if (n.clipId) block.dataset.noteClip = n.clipId;
         block.title = `${midiToName(n.note)} vel ${n.velocity} @ bar ${tickToBar(n.tick, ppq)}`;
         body.appendChild(block);
+      }
+
+      const trackClips = (project.clips || []).filter((clip) => clip.targetTrackId === track.id);
+      for (let clipIndex = 0; clipIndex < trackClips.length; clipIndex++) {
+        const clip = trackClips[clipIndex];
+        const globalClipIndex = Math.max(0, (project.clips || []).indexOf(clip));
+        const instanceId = hostClipInstanceId(clip, globalClipIndex);
+        clip.instanceId = instanceId;
+        hostClipOwnedNotes(clip, track);
+
+        const startTick = Math.max(0, Number(clip.startTick) || 0);
+        const endTick = Math.max(startTick + 1, Number(clip.endTick) || (startTick + 1));
+        const left = (startTick / Math.max(1, length)) * 100;
+        const width = Math.max(0.35, ((endTick - startTick) / Math.max(1, length)) * 100);
+
+        const box = document.createElement("div");
+        box.className =
+          "loop-clip-container" + (state.selectedClipId === instanceId ? " selected" : "");
+        box.dataset.clipInstance = instanceId;
+        box.style.left = `${left}%`;
+        box.style.width = `${width}%`;
+        box.title =
+          (clip.name || clip.originalName || "MIDI loop") +
+          " · bar " + tickToBar(startTick, ppq) +
+          " · drag to move · ←/→ one bar · Delete removes";
+
+        const label = document.createElement("span");
+        label.className = "loop-clip-label";
+        label.textContent = "♫ " + (clip.name || clip.originalName || "Loop");
+        box.appendChild(label);
+
+        body.appendChild(box);
+        attachHostLoopClipDrag(box, clip, track, body, length, totalW, ppq);
       }
 
       const ph = document.createElement("div");
@@ -4942,6 +4976,25 @@ select, input[type="number"], input[type="text"] {
 
   document.addEventListener("keydown", (e) => {
     if (e.target.matches("input, select, textarea")) return;
+
+    const clipContext = selectedHostClipContext();
+    if (clipContext && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+      e.preventDefault();
+      const step = ticksPerBar(state.project.ppq || 480);
+      const direction = e.key === "ArrowLeft" ? -1 : 1;
+      moveHostLoopClip(
+        clipContext.clip,
+        clipContext.track,
+        Math.max(0, (Number(clipContext.clip.startTick) || 0) + direction * step)
+      );
+      return;
+    }
+    if (clipContext && (e.key === "Delete" || e.key === "Backspace")) {
+      e.preventDefault();
+      removeHostLoopClip(clipContext.clip, clipContext.track);
+      return;
+    }
+
     if (e.code === "Space") { e.preventDefault(); togglePlay(); }
     else if (e.code === "Escape") {
       if (state.playing) {
