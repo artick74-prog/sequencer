@@ -78,6 +78,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   <select id="source"><option value="">Все источники</option></select>
   <button id="rescan">Rescan</button>
   <button id="repack">Rebuild packs</button>
+  <button id="report" title="Build Markdown summary + full CSV catalogue and push them to GitHub">Library report</button>
   <span style="flex:1"></span>
   <span id="countLabel" style="color:var(--dim);font-size:12px">—</span>
 </div>
@@ -799,6 +800,29 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   $("kind").addEventListener("change",applyFilters);
   $("source").addEventListener("change",applyFilters);
   $("rescan").addEventListener("click",()=>loadCatalog(true));
+  $("report").addEventListener("click",async()=>{
+    stop({reset:true});
+    $("report").disabled=true;
+    $("rescan").disabled=true;
+    $("repack").disabled=true;
+    setStatus("Library report: собираем полный каталог и отправляем его в GitHub…");
+    try {
+      const r=await fetch("/api/library/report",{method:"POST"});
+      const data=await r.json();
+      if(!r.ok) throw new Error(data.error||"Report error");
+      setStatus(
+        "Library report ready · "+Number(data.total||0).toLocaleString("ru-RU")+
+        " MIDI · "+Number(data.sources||0).toLocaleString("ru-RU")+" sources · GitHub "+(data.commit||""),
+        "ok"
+      );
+    } catch(e) {
+      setStatus("Library report error: "+e.message,"err");
+    } finally {
+      $("report").disabled=false;
+      $("rescan").disabled=false;
+      $("repack").disabled=false;
+    }
+  });
   $("repack").addEventListener("click",async()=>{
     stop({reset:true});
     $("repack").disabled=true;

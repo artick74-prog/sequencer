@@ -12,6 +12,8 @@ The server binds to 127.0.0.1 only.
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import hashlib
 import json
 import os
@@ -54,6 +56,191 @@ try:
     GM_PROGRAM_NAMES = json.loads((ROOT / "scripts" / "gm-instruments.json").read_text(encoding="utf-8")).get("programs", [])
 except (OSError, ValueError, json.JSONDecodeError):
     GM_PROGRAM_NAMES = []
+
+GM_FAMILY_NAMES = [
+    "Piano", "Chromatic Percussion", "Organ", "Guitar",
+    "Bass", "Strings", "Ensemble", "Brass",
+    "Reed", "Pipe", "Synth Lead", "Synth Pad",
+    "Synth Effects", "Ethnic", "Percussive", "Sound Effects",
+]
+LIBRARY_REPORT_MD = ROOT / "reference-library" / "library-inventory.md"
+LIBRARY_REPORT_CSV = ROOT / "reference-library" / "library-inventory.csv"
+
+
+def gm_program_label(program: int) -> str:
+    if 0 <= program < len(GM_PROGRAM_NAMES):
+        return str(GM_PROGRAM_NAMES[program])
+    return f"Program {program}"
+
+
+def gm_family_label(program: int) -> str:
+    if 0 <= program <= 127:
+        return GM_FAMILY_NAMES[program // 8]
+    return "Unknown"
+
+
+def markdown_count_table(counter: Counter, first_col: str) -> list[str]:
+    lines = [f"| {first_col} | Count |", "|---|---:|"]
+    for key, count in counter.most_common():
+        lines.append(f"| {str(key).replace('|', '/')} | {count:,} |")
+    if len(lines) == 2:
+        lines.append("| — | 0 |")
+    return lines
+
+
+def build_library_inventory_report() -> dict:
+    payload = build_library_catalog()
+    entries = list(payload.get("entries") or [])
+    total = len(entries)
+
+    by_source = Counter(str(item.get("source") or "unknown") for item in entries)
+    by_genre = Counter(str(item.get("genre") or "unknown") for item in entries)
+    by_kind = Counter(str(item.get("kind") or "unclassified") for item in entries)
+    by_method = Counter(str(item.get("classificationMethod") or "unknown") for item in entries)
+    by_family = Counter()
+    by_program = Counter()
+    no_program = 0
+
+    for item in entries:
+        programs = []
+        for raw in item.get("classificationPrograms") or []:
+            try:
+                program = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if 0 <= program <= 127:
+                programs.append(program)
+        programs = sorted(set(programs))
+        if not programs:
+            no_program += 1
+            continue
+        for program in programs:
+            by_family[gm_family_label(program)] += 1
+            by_program[f"GM {program} · {gm_program_label(program)}"] += 1
+
+    source_roles = defaultdict(Counter)
+    source_genres = defaultdict(Counter)
+    for item in entries:
+        source = str(item.get("source") or "unknown")
+        source_roles[source][str(item.get("kind") or "unclassified")] += 1
+        source_genres[source][str(item.get("genre") or "unknown")] += 1
+
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    md = [
+        "# MIDI Library Inventory",
+        "",
+        f"Generated: {now}",
+        f"Library root: {LIBRARY_ROOT}",
+        f"Mode: **{payload.get('mode') or 'raw'}**",
+        f"ZIP packs: **{int(payload.get('packCount') or 0):,}**",
+        f"Total MIDI: **{total:,}**",
+        "",
+        "Generated from the local Style Library index. Original MIDI files stay local.",
+        "",
+        "## Sources",
+        "",
+    ]
+    md.extend(markdown_count_table(by_source, "Source"))
+    md.extend(["", "## Styles / genres", ""])
+    md.extend(markdown_count_table(by_genre, "Style"))
+    md.extend(["", "## Musical roles", ""])
+    md.extend(markdown_count_table(by_kind, "Role"))
+    md.extend(["", "## Classification methods", ""])
+    md.extend(markdown_count_table(by_method, "Method"))
+    md.extend(["", "## GM instrument families", ""])
+    md.extend(markdown_count_table(by_family, "Family"))
+    md.extend([
+        "",
+        f"MIDI without encoded GM Program Change in the catalogue: **{no_program:,}**",
+        "",
+        "## GM programs",
+        "",
+    ])
+    md.extend(markdown_count_table(by_program, "Program"))
+
+    md.extend(["", "## Source breakdown", ""])
+    for source, count in by_source.most_common():
+        roles = ", ".join(f"{k}: {v:,}" for k, v in source_roles[source].most_common())
+        genres = ", ".join(f"{k}: {v:,}" for k, v in source_genres[source].most_common())
+        md.extend([
+            f"### {source}",
+            "",
+            f"- MIDI: **{count:,}**",
+            f"- Roles: {roles or '—'}",
+            f"- Styles: {genres or '—'}",
+            "",
+        ])
+
+    md.extend([
+        "## Full catalogue",
+        "",
+        "The exhaustive row-by-row list is stored next to this note as library-inventory.csv.",
+        "CSV columns: id, name, source, genre, role, GM programs, instrument families, container, member, pack.",
+        "",
+    ])
+
+    LIBRARY_REPORT_MD.parent.mkdir(parents=True, exist_ok=True)
+    LIBRARY_REPORT_MD.write_text("\n".join(md), encoding="utf-8", newline="\n")
+
+    csv_buffer = io.StringIO(newline="")
+    writer = csv.writer(csv_buffer)
+    writer.writerow([
+        "id", "name", "source", "genre", "role",
+        "gm_programs", "instrument_families",
+        "container", "member", "pack",
+    ])
+    for item in sorted(
+        entries,
+        key=lambda x: (
+            str(x.get("source") or ""),
+            str(x.get("genre") or ""),
+            str(x.get("kind") or ""),
+            str(x.get("name") or ""),
+        ),
+    ):
+        programs = []
+        for raw in item.get("classificationPrograms") or []:
+            try:
+                p = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if 0 <= p <= 127:
+                programs.append(p)
+        programs = sorted(set(programs))
+        writer.writerow([
+            item.get("id") or "",
+            item.get("name") or "",
+            item.get("source") or "",
+            item.get("genre") or "",
+            item.get("kind") or "",
+            "; ".join(f"GM {p} {gm_program_label(p)}" for p in programs),
+            "; ".join(sorted({gm_family_label(p) for p in programs})),
+            item.get("container") or "",
+            item.get("member") or "",
+            item.get("pack") or "",
+        ])
+    LIBRARY_REPORT_CSV.write_text(csv_buffer.getvalue(), encoding="utf-8", newline="")
+
+    branch = current_branch()
+    ensure_remote_is_safe_to_push(branch)
+    rel_md = str(LIBRARY_REPORT_MD.relative_to(ROOT)).replace(chr(92), "/")
+    rel_csv = str(LIBRARY_REPORT_CSV.relative_to(ROOT)).replace(chr(92), "/")
+    run_git("add", "--", rel_md, rel_csv)
+    changed = commit_staged("Update MIDI library inventory")
+    run_git("push", "origin", branch)
+
+    return {
+        "ok": True,
+        "changed": changed,
+        "commit": short_sha(),
+        "branch": branch,
+        "total": total,
+        "sources": len(by_source),
+        "genres": len(by_genre),
+        "roles": len(by_kind),
+        "withoutProgram": no_program,
+        "files": [rel_md, rel_csv],
+    }
 
 
 def slugify_pack_part(value: str) -> str:
@@ -1020,6 +1207,14 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/library/repack":
             try:
                 self._send_json(200, build_style_packs())
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/library/report":
+            try:
+                self._send_json(200, build_library_inventory_report())
+            except (ValueError, GitError, OSError, json.JSONDecodeError) as exc:
+                self._send_json(409, {"ok": False, "error": str(exc)})
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return
