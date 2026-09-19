@@ -25,6 +25,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from midi_classifier import classify_midi
+
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
 ALLOWED_FILES = {"current.json", "overview.json", "overview.md"}
@@ -35,6 +37,58 @@ LIBRARY_ROOT = Path(
 LIBRARY_LOCK = threading.Lock()
 LIBRARY_ENTRIES: list[dict] = []
 LIBRARY_LOCATORS: dict[str, tuple[str, str, str | None]] = {}
+CLASSIFICATION_CACHE_VERSION = 1
+CLASSIFICATION_CACHE_PATH = LIBRARY_ROOT / ".style-library-classification-v1.json"
+
+
+def load_classification_cache() -> dict[str, dict]:
+    try:
+        payload = json.loads(CLASSIFICATION_CACHE_PATH.read_text(encoding="utf-8"))
+        if payload.get("version") != CLASSIFICATION_CACHE_VERSION:
+            return {}
+        entries = payload.get("entries")
+        return entries if isinstance(entries, dict) else {}
+    except (OSError, ValueError, json.JSONDecodeError):
+        return {}
+
+
+def save_classification_cache(entries: dict[str, dict]) -> None:
+    try:
+        payload = {"version": CLASSIFICATION_CACHE_VERSION, "entries": entries}
+        temp = CLASSIFICATION_CACHE_PATH.with_suffix(".tmp")
+        temp.write_text(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        os.replace(temp, CLASSIFICATION_CACHE_PATH)
+    except OSError:
+        # The library may live on a read-only volume. Classification still works;
+        # only the persistent speed-up is lost.
+        pass
+
+
+def classify_library_item(
+    item_id: str,
+    fingerprint: str,
+    source: str,
+    member: str,
+    data_loader,
+    cache: dict[str, dict],
+    force: bool,
+) -> dict:
+    cached = cache.get(item_id)
+    if (
+        not force
+        and isinstance(cached, dict)
+        and cached.get("fingerprint") == fingerprint
+        and cached.get("kind")
+    ):
+        return cached
+
+    result = classify_midi(data_loader(), source=source, member=member)
+    record = {"fingerprint": fingerprint, **result}
+    cache[item_id] = record
+    return record
 
 
 def infer_library_tags(source: str, member: str) -> tuple[str, str]:
@@ -87,6 +141,9 @@ def build_library_catalog(force: bool = False) -> dict:
         else:
             entries: list[dict] = []
             locators: dict[str, tuple[str, str, str | None]] = {}
+            classification_cache = load_classification_cache()
+            cache_changed = False
+
             if LIBRARY_ROOT.exists():
                 files = sorted(p for p in LIBRARY_ROOT.rglob("*") if p.is_file())
                 archive_paths = []
@@ -101,19 +158,36 @@ def build_library_catalog(force: bool = False) -> dict:
                 for path in loose_paths:
                     rel = path.relative_to(LIBRARY_ROOT).as_posix()
                     source = path.parent.name or "loose"
-                    genre, kind = infer_library_tags(source, rel)
+                    genre, _ = infer_library_tags(source, rel)
                     key = f"file|{rel}"
                     item_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:20]
+                    stat = path.stat()
+                    fingerprint = f"file:{stat.st_size}:{stat.st_mtime_ns}"
+                    previous = classification_cache.get(item_id)
+                    classification = classify_library_item(
+                        item_id,
+                        fingerprint,
+                        source,
+                        rel,
+                        path.read_bytes,
+                        classification_cache,
+                        force,
+                    )
+                    if classification is not previous:
+                        cache_changed = True
                     entries.append(
                         {
                             "id": item_id,
                             "name": path.name,
                             "source": source,
                             "genre": genre,
-                            "kind": kind,
+                            "kind": classification["kind"],
+                            "classificationConfidence": classification.get("confidence", 0.0),
+                            "classificationMethod": classification.get("method", "content"),
+                            "classificationReason": classification.get("reason", ""),
                             "container": rel,
                             "member": None,
-                            "size": path.stat().st_size,
+                            "size": stat.st_size,
                         }
                     )
                     locators[item_id] = ("file", str(path), None)
@@ -122,45 +196,119 @@ def build_library_catalog(force: bool = False) -> dict:
                     rel = archive.relative_to(LIBRARY_ROOT).as_posix()
                     source = library_source_name(archive)
                     low = archive.name.lower()
+                    archive_stat = archive.stat()
+                    archive_fingerprint = f"{archive_stat.st_size}:{archive_stat.st_mtime_ns}"
                     try:
                         if low.endswith(".zip"):
                             with zipfile.ZipFile(archive) as zf:
                                 members = [
-                                    (info.filename, info.file_size)
+                                    info
                                     for info in zf.infolist()
                                     if not info.is_dir()
                                     and info.filename.lower().endswith((".mid", ".midi"))
                                 ]
+                                for info in members:
+                                    member = info.filename
+                                    size = info.file_size
+                                    genre, _ = infer_library_tags(source, member)
+                                    key = f"archive|{rel}|{member}"
+                                    item_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:20]
+                                    fingerprint = f"zip:{archive_fingerprint}:{size}:{info.CRC}"
+                                    previous = classification_cache.get(item_id)
+                                    classification = classify_library_item(
+                                        item_id,
+                                        fingerprint,
+                                        source,
+                                        member,
+                                        lambda info=info: zf.read(info),
+                                        classification_cache,
+                                        force,
+                                    )
+                                    if classification is not previous:
+                                        cache_changed = True
+                                    entries.append(
+                                        {
+                                            "id": item_id,
+                                            "name": Path(member).name,
+                                            "source": source,
+                                            "genre": genre,
+                                            "kind": classification["kind"],
+                                            "classificationConfidence": classification.get("confidence", 0.0),
+                                            "classificationMethod": classification.get("method", "content"),
+                                            "classificationReason": classification.get("reason", ""),
+                                            "container": rel,
+                                            "member": member,
+                                            "size": size,
+                                        }
+                                    )
+                                    locators[item_id] = ("archive", str(archive), member)
                         else:
                             with tarfile.open(archive, "r:*") as tf:
                                 members = [
-                                    (member.name, member.size)
+                                    member
                                     for member in tf.getmembers()
                                     if member.isfile()
                                     and member.name.lower().endswith((".mid", ".midi"))
                                 ]
-                    except (OSError, zipfile.BadZipFile, tarfile.TarError):
+                                for tar_member in members:
+                                    member = tar_member.name
+                                    size = tar_member.size
+                                    genre, _ = infer_library_tags(source, member)
+                                    key = f"archive|{rel}|{member}"
+                                    item_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:20]
+                                    fingerprint = (
+                                        f"tar:{archive_fingerprint}:{size}:"
+                                        f"{tar_member.mtime}:{tar_member.offset_data}"
+                                    )
+                                    previous = classification_cache.get(item_id)
+
+                                    def load_tar_member(tm=tar_member):
+                                        fh = tf.extractfile(tm)
+                                        if fh is None:
+                                            raise FileNotFoundError("MIDI member not found in archive")
+                                        return fh.read()
+
+                                    classification = classify_library_item(
+                                        item_id,
+                                        fingerprint,
+                                        source,
+                                        member,
+                                        load_tar_member,
+                                        classification_cache,
+                                        force,
+                                    )
+                                    if classification is not previous:
+                                        cache_changed = True
+                                    entries.append(
+                                        {
+                                            "id": item_id,
+                                            "name": Path(member).name,
+                                            "source": source,
+                                            "genre": genre,
+                                            "kind": classification["kind"],
+                                            "classificationConfidence": classification.get("confidence", 0.0),
+                                            "classificationMethod": classification.get("method", "content"),
+                                            "classificationReason": classification.get("reason", ""),
+                                            "container": rel,
+                                            "member": member,
+                                            "size": size,
+                                        }
+                                    )
+                                    locators[item_id] = ("archive", str(archive), member)
+                    except (OSError, zipfile.BadZipFile, tarfile.TarError, ValueError):
                         continue
 
-                    for member, size in members:
-                        genre, kind = infer_library_tags(source, member)
-                        key = f"archive|{rel}|{member}"
-                        item_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:20]
-                        entries.append(
-                            {
-                                "id": item_id,
-                                "name": Path(member).name,
-                                "source": source,
-                                "genre": genre,
-                                "kind": kind,
-                                "container": rel,
-                                "member": member,
-                                "size": size,
-                            }
-                        )
-                        locators[item_id] = ("archive", str(archive), member)
+            if cache_changed:
+                save_classification_cache(classification_cache)
 
-            entries.sort(key=lambda item: (item["genre"], item["kind"], item["source"], item["name"].lower()))
+            entries.sort(
+                key=lambda item: (
+                    item["genre"],
+                    item["kind"],
+                    item["source"],
+                    item["name"].lower(),
+                )
+            )
             LIBRARY_ENTRIES = entries
             LIBRARY_LOCATORS = locators
 
@@ -169,6 +317,9 @@ def build_library_catalog(force: bool = False) -> dict:
             "genre": dict(Counter(item["genre"] for item in entries)),
             "kind": dict(Counter(item["kind"] for item in entries)),
             "source": dict(Counter(item["source"] for item in entries)),
+            "classificationMethod": dict(
+                Counter(item.get("classificationMethod", "unknown") for item in entries)
+            ),
         }
         return {
             "root": str(LIBRARY_ROOT),
