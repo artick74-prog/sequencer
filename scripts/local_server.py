@@ -32,7 +32,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from midi_classifier import classify_midi
+from midi_classifier import classify_midi, parse_midi
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
@@ -578,6 +578,85 @@ def catalog_payload(entries: list[dict], mode: str, pack_count: int = 0) -> dict
     }
 
 
+def library_material_type(item: dict) -> str:
+    """Separate short reusable loops from longer musical constructors/phrases."""
+    explicit = str(item.get("contentType") or "").strip().lower()
+    if explicit in {"loop", "constructor"}:
+        return explicit
+    if str(item.get("kind") or "").lower() == "arrangement":
+        return "constructor"
+    bars = item.get("barsEstimate")
+    try:
+        if bars is not None and float(bars) > 8.0:
+            return "constructor"
+    except (TypeError, ValueError):
+        pass
+    return "loop"
+
+
+def midi_bars_estimate(data: bytes, member: str = "") -> float | None:
+    """Estimate musical length in bars from note ends; GMD time signature is in filename."""
+    try:
+        parsed = parse_midi(data)
+    except Exception:
+        return None
+
+    ppq = int(parsed.get("ppq") or 0)
+    notes = parsed.get("notes") or []
+    if ppq <= 0 or not notes:
+        return None
+
+    max_tick = max(int(start) + max(1, int(duration)) for start, duration, *_ in notes)
+    numerator = 4
+    denominator = 4
+    match = re.search(r"_(\d+)-(\d+)\.(?:mid|midi)$", str(member), re.IGNORECASE)
+    if match:
+        try:
+            numerator = max(1, int(match.group(1)))
+            denominator = max(1, int(match.group(2)))
+        except ValueError:
+            numerator, denominator = 4, 4
+
+    ticks_per_bar = ppq * numerator * 4 / denominator
+    if ticks_per_bar <= 0:
+        return None
+    return round(max_tick / ticks_per_bar, 3)
+
+
+def enrich_pack_material_types(entries: list[dict], locators: dict[str, tuple[str, str, str | None]]) -> None:
+    """Read only the 1,150 Groove Dataset files once and split long performances from loops."""
+    by_pack: defaultdict[str, list[dict]] = defaultdict(list)
+    for item in entries:
+        source = str(item.get("source") or "").lower()
+        if "groove-v1.0.0" in source or source == "groove":
+            locator = locators.get(str(item.get("id") or ""))
+            if locator and locator[0] == "pack":
+                by_pack[locator[1]].append(item)
+        else:
+            item["contentType"] = library_material_type(item)
+
+    for pack_path, items in by_pack.items():
+        try:
+            with zipfile.ZipFile(pack_path) as zf:
+                for item in items:
+                    locator = locators.get(str(item.get("id") or ""))
+                    member = locator[2] if locator else None
+                    if not member:
+                        item["contentType"] = library_material_type(item)
+                        continue
+                    try:
+                        data = zf.read(member)
+                        bars = midi_bars_estimate(data, str(item.get("member") or member))
+                    except (KeyError, OSError, ValueError):
+                        bars = None
+                    if bars is not None:
+                        item["barsEstimate"] = bars
+                    item["contentType"] = library_material_type(item)
+        except (OSError, ValueError, zipfile.BadZipFile):
+            for item in items:
+                item["contentType"] = library_material_type(item)
+
+
 def load_pack_catalog_locked() -> dict:
     global LIBRARY_ENTRIES, LIBRARY_LOCATORS, LIBRARY_MODE
     payload = json.loads(PACK_INDEX_PATH.read_text(encoding="utf-8"))
@@ -601,6 +680,8 @@ def load_pack_catalog_locked() -> dict:
         if inferred_genre:
             item["genre"] = inferred_genre
         locators[item_id] = ("pack", str((PACK_ROOT / pack_rel).resolve()), pack_member)
+
+    enrich_pack_material_types(entries, locators)
 
     LIBRARY_ENTRIES = entries
     LIBRARY_LOCATORS = locators
