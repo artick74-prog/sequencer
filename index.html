@@ -1198,6 +1198,37 @@ body {
 }
 
 /* ═══════════════════════════════════════════
+   TRACK ENGINE / HARDWARE / SOUNDFONT
+   ═══════════════════════════════════════════ */
+.engine-global-select,
+.track-engine-select,
+.track-channel-select,
+.track-program-select {
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  border-radius: 3px;
+  padding: 4px 6px;
+}
+.engine-global-select { max-width: 180px; }
+.engine-mini-btn { font-size: 10px !important; padding: 5px 8px !important; }
+.track-engine-select { color: var(--accent); }
+.track-channel-select { width: 72px; }
+.track-program-select { max-width: 190px; }
+.engine-badge {
+  font-size: 9px;
+  color: var(--text-dim);
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.note-block.poly {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+}
+
+/* ═══════════════════════════════════════════
    LOOP BROWSER / CONSTRUCTOR
    ═══════════════════════════════════════════ */
 .workspace {
@@ -1376,6 +1407,7 @@ body {
 }
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/sf2synth.iife.min.js"></script>
 </head>
 <body>
 
@@ -1400,6 +1432,12 @@ body {
   <button class="btn" id="btnSavePattern" style="font-size:10px">📚 Save Pattern</button>
   <button class="btn" id="btnLoops" style="font-size:10px">♫ Loops</button>
   <button class="btn" id="btnSyncAI" style="font-size:10px" title="Save current constructor state to GitHub so AI can inspect it">⇄ Sync to AI</button>
+  <select id="globalMidiOut" class="engine-global-select" title="Hardware MIDI output">
+    <option value="">MIDI OUT…</option>
+  </select>
+  <button class="btn engine-mini-btn" id="btnRefreshMidiOut" type="button" title="Refresh MIDI devices">↻ MIDI</button>
+  <button class="btn engine-mini-btn" id="btnLoadSf2Global" type="button" title="Load a SoundFont .sf2 file">SF2…</button>
+  <input id="sf2FileInput" type="file" accept=".sf2" style="display:none">
 
   <div class="ctrl-group">
     <label>BPM</label>
@@ -1548,6 +1586,9 @@ const CONFIG = {
   ],
   DRUM_NOTE_MAP: [48, 50, 52, 53, 55, 57, 59, 60],
   //                    C3   D3   E3   F3   G3   A3   B3   C4
+  GM_DRUM_NOTE_MAP: [36, 38, 39, 42, 46, 45, 50, 49],
+  DEFAULT_MIDI_CHANNELS: [1, 2, 10],
+  DEFAULT_GM_PROGRAMS: [33, 81, 0],
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -1713,6 +1754,7 @@ function parseReferenceMidi(buffer) {
   let tempo = 120;
   let endTick = 0;
   const notes = [];
+  const programs = {};
 
   for (let t = 0; t < nTracks; t++) {
     if (String.fromCharCode(...b.slice(off, off + 4)) !== 'MTrk') throw new Error('Missing MTrk');
@@ -1772,7 +1814,9 @@ function parseReferenceMidi(buffer) {
         }
       } else if (type === 0xa0 || type === 0xb0 || type === 0xe0) {
         i += 2;
-      } else if (type === 0xc0 || type === 0xd0) {
+      } else if (type === 0xc0) {
+        programs[channel] = b[i++];
+      } else if (type === 0xd0) {
         i += 1;
       } else {
         throw new Error('Unsupported MIDI status 0x' + status.toString(16));
@@ -1782,7 +1826,7 @@ function parseReferenceMidi(buffer) {
   }
 
   notes.sort((a, b2) => a.tick - b2.tick || a.note - b2.note);
-  return { ppq, tempo, endTick, notes };
+  return { ppq, tempo, endTick, notes, programs };
 }
 
 function midiLoopStepCount(midi) {
@@ -1809,6 +1853,32 @@ function gmDrumToIndex(note) {
   if ([47, 48, 50].includes(note)) return 6; // high tom
   if ([49, 51, 52, 53, 55, 57, 59].includes(note)) return 7; // cymbals
   return -1;
+}
+
+function normalizeMelodicEvent(value) {
+  if (typeof value === 'number') return { note: value, velocity: 100, length: 1 };
+  if (!value || typeof value !== 'object') return null;
+  const note = Number(value.note ?? value.midi);
+  if (!Number.isFinite(note)) return null;
+  return {
+    note: Math.max(0, Math.min(127, Math.round(note))),
+    velocity: Math.max(1, Math.min(127, Math.round(Number(value.velocity ?? 100)))),
+    length: Math.max(1, Number(value.length ?? 1)),
+  };
+}
+
+function normalizeMelodicCell(cell) {
+  if (cell == null) return [];
+  const values = Array.isArray(cell) ? cell : [cell];
+  return values.map(normalizeMelodicEvent).filter(Boolean);
+}
+
+function cloneMelodicCell(cell) {
+  return normalizeMelodicCell(cell).map(e => ({...e}));
+}
+
+function primaryMelodicNote(cell) {
+  return normalizeMelodicCell(cell)[0]?.note ?? null;
 }
 
 /* Генератор белого шума (используется для синтезатора барабанов) */
