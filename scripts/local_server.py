@@ -23,7 +23,7 @@ import threading
 import webbrowser
 import zipfile
 from datetime import datetime, timezone
-from collections import Counter
+from collections import Counter, defaultdict
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
