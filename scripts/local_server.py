@@ -32,7 +32,7 @@ from midi_classifier import classify_midi
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
-ALLOWED_FILES = {"current.json", "overview.json", "overview.md"}
+ALLOWED_FILES = {"current.json", "overview.json", "overview.md", "chiptune-current.json", "chiptune-overview.md"}
 MAX_BODY = 32 * 1024 * 1024
 LIBRARY_ROOT = Path(
     os.environ.get("MIDI_REFERENCE_ROOT", str(ROOT.parent / "midi-reference"))
@@ -911,6 +911,11 @@ def commit_staged(message: str) -> bool:
 
 class Handler(SimpleHTTPRequestHandler):
     server_version = "SequencerLocalBridge/1.0"
+
+    def end_headers(self) -> None:
+        # Local UI files change frequently during development; never serve a stale HTML/JS page.
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
 
     def _send_json(self, status: int, payload: dict) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")

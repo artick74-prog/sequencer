@@ -1196,6 +1196,161 @@ body {
   margin: 0 1px;
   pointer-events: none;
 }
+
+/* ═══════════════════════════════════════════
+   LOOP BROWSER / CONSTRUCTOR
+   ═══════════════════════════════════════════ */
+.workspace {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 114px);
+  align-items: stretch;
+}
+#tracksContainer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.loop-browser {
+  display: none;
+  flex: 0 0 410px;
+  width: 410px;
+  border-left: 1px solid var(--border);
+  background: #0e0e18;
+  min-height: calc(100vh - 114px);
+  max-height: calc(100vh - 114px);
+  overflow: hidden;
+}
+.loop-browser.open { display: flex; flex-direction: column; }
+.loop-browser-head {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.loop-browser-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.loop-target {
+  color: var(--text);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.loop-browser-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.loop-browser-filters input,
+.loop-browser-filters select {
+  width: 100%;
+  min-width: 0;
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font: inherit;
+  font-size: 10px;
+  padding: 5px 6px;
+}
+.loop-browser-filters .wide { grid-column: 1 / -1; }
+.loop-browser-status {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 10px;
+  min-height: 25px;
+}
+.loop-browser-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 6px;
+}
+.loop-item {
+  display: grid;
+  grid-template-columns: 28px 1fr 54px;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  margin-bottom: 5px;
+  padding: 6px;
+  min-width: 0;
+}
+.loop-item:hover { border-color: var(--accent-dim); }
+.loop-item .loop-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  color: var(--text);
+}
+.loop-item .loop-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.loop-preview-btn, .loop-load-btn, .loop-close-btn, .source-reload-btn {
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.loop-preview-btn { height: 26px; }
+.loop-load-btn { height: 26px; font-size: 9px; color: var(--accent); }
+.loop-load-btn:disabled { opacity: 0.3; cursor: not-allowed; color: var(--text-dim); }
+.loop-close-btn { width: 26px; height: 24px; }
+.loop-browser-foot {
+  border-top: 1px solid var(--border);
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 9px;
+  background: var(--bg-panel);
+}
+.source-chip {
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--accent);
+  font-size: 9px;
+  border-left: 1px solid var(--border);
+  padding-left: 7px;
+}
+.source-reload-btn {
+  font-size: 9px;
+  padding: 2px 5px;
+  color: var(--accent);
+}
+.sync-ok { border-color: var(--accent) !important; color: var(--accent) !important; }
+.sync-err { border-color: var(--playhead) !important; color: var(--playhead) !important; }
+@media (max-width: 980px) {
+  .loop-browser {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: min(92vw, 410px);
+    max-height: 100vh;
+    box-shadow: -10px 0 30px rgba(0,0,0,.45);
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1219,6 +1374,8 @@ body {
   <button class="btn" id="btnProject">💾 Project</button>
   <button class="btn" id="btnSettings">⚙</button>
   <button class="btn" id="btnSavePattern" style="font-size:10px">📚 Save Pattern</button>
+  <button class="btn" id="btnLoops" style="font-size:10px">♫ Loops</button>
+  <button class="btn" id="btnSyncAI" style="font-size:10px" title="Save current constructor state to GitHub so AI can inspect it">⇄ Sync to AI</button>
 
   <div class="ctrl-group">
     <label>BPM</label>
@@ -1245,7 +1402,30 @@ body {
 </div>
 
 <!-- Контейнер дорожек (заполняется динамически) -->
-<div id="tracksContainer"></div>
+<div class="workspace">
+  <div id="tracksContainer"></div>
+  <aside id="loopBrowser" class="loop-browser">
+    <div class="loop-browser-head">
+      <div class="loop-browser-title">
+        <span>♫ LOOP BROWSER</span>
+        <span class="loop-target" id="loopTarget">LOAD TO TRACK 1</span>
+        <button class="loop-close-btn" id="loopClose" title="Close">×</button>
+      </div>
+      <div class="loop-browser-filters">
+        <input class="wide" id="loopSearch" type="search" placeholder="Search MIDI...">
+        <select id="loopGenre"><option value="">All styles</option></select>
+        <select id="loopKind"><option value="">All types</option></select>
+        <select class="wide" id="loopSource"><option value="">All sources</option></select>
+      </div>
+    </div>
+    <div class="loop-browser-status" id="loopStatus">Open library to load MIDI references.</div>
+    <div class="loop-browser-list" id="loopList"></div>
+    <div class="loop-browser-foot">
+      <span id="loopCount">—</span>
+      <span>Preview → Load → edit in piano roll</span>
+    </div>
+  </aside>
+</div>
 
 <!-- Модальное окно Settings -->
 <div class="modal-overlay" id="settingsModal">
@@ -1475,6 +1655,129 @@ function isC(midi) {
   return midi % 12 === 0;
 }
 
+/* ─── MIDI reference parser used by the embedded Loop Browser ─── */
+function readReferenceVLQ(bytes, i) {
+  let value = 0;
+  for (let n = 0; n < 4; n++) {
+    const b = bytes[i++];
+    value = (value << 7) | (b & 0x7f);
+    if ((b & 0x80) === 0) return [value, i];
+  }
+  throw new Error('Invalid MIDI VLQ');
+}
+
+function parseReferenceMidi(buffer) {
+  const b = new Uint8Array(buffer);
+  const u16 = i => (b[i] << 8) | b[i + 1];
+  const u32 = i => ((b[i] << 24) >>> 0) + (b[i + 1] << 16) + (b[i + 2] << 8) + b[i + 3];
+  if (String.fromCharCode(...b.slice(0, 4)) !== 'MThd') throw new Error('Not a MIDI file');
+  const headerLen = u32(4);
+  const nTracks = u16(10);
+  const ppq = u16(12);
+  if (ppq & 0x8000) throw new Error('SMPTE MIDI is not supported');
+
+  let off = 8 + headerLen;
+  let tempo = 120;
+  let endTick = 0;
+  const notes = [];
+
+  for (let t = 0; t < nTracks; t++) {
+    if (String.fromCharCode(...b.slice(off, off + 4)) !== 'MTrk') throw new Error('Missing MTrk');
+    const end = off + 8 + u32(off + 4);
+    let i = off + 8, tick = 0, running = 0;
+    const open = new Map();
+
+    while (i < end) {
+      let delta; [delta, i] = readReferenceVLQ(b, i);
+      tick += delta;
+      endTick = Math.max(endTick, tick);
+
+      let status = b[i];
+      if (status < 0x80) {
+        if (!running) throw new Error('Bad running status');
+        status = running;
+      } else {
+        i++;
+        running = status < 0xf0 ? status : 0;
+      }
+
+      if (status === 0xff) {
+        const type = b[i++];
+        let len; [len, i] = readReferenceVLQ(b, i);
+        if (type === 0x51 && len === 3) {
+          const us = (b[i] << 16) | (b[i + 1] << 8) | b[i + 2];
+          if (us) tempo = 60000000 / us;
+        }
+        i += len;
+        continue;
+      }
+      if (status === 0xf0 || status === 0xf7) {
+        let len; [len, i] = readReferenceVLQ(b, i);
+        i += len;
+        continue;
+      }
+
+      const type = status & 0xf0;
+      const channel = (status & 0x0f) + 1;
+      if (type === 0x80 || type === 0x90) {
+        const note = b[i++], velocity = b[i++], key = (channel << 8) | note;
+        if (type === 0x90 && velocity > 0) {
+          if (!open.has(key)) open.set(key, []);
+          open.get(key).push({ tick, velocity });
+        } else {
+          const q = open.get(key);
+          if (q?.length) {
+            const on = q.shift();
+            notes.push({
+              tick: on.tick,
+              duration: Math.max(1, tick - on.tick),
+              note,
+              velocity: on.velocity,
+              channel,
+            });
+          }
+        }
+      } else if (type === 0xa0 || type === 0xb0 || type === 0xe0) {
+        i += 2;
+      } else if (type === 0xc0 || type === 0xd0) {
+        i += 1;
+      } else {
+        throw new Error('Unsupported MIDI status 0x' + status.toString(16));
+      }
+    }
+    off = end;
+  }
+
+  notes.sort((a, b2) => a.tick - b2.tick || a.note - b2.note);
+  return { ppq, tempo, endTick, notes };
+}
+
+function midiLoopStepCount(midi) {
+  const tickPerStep = midi.ppq / 4;
+  let maxTick = Math.max(midi.endTick || 0, tickPerStep);
+  for (const n of midi.notes || []) maxTick = Math.max(maxTick, n.tick + n.duration);
+  return Math.max(1, Math.round(maxTick / tickPerStep));
+}
+
+function foldMidiPitch(note) {
+  let pitch = Number(note) || 60;
+  while (pitch < CONFIG.NOTE_MIN) pitch += 12;
+  while (pitch > CONFIG.NOTE_MAX) pitch -= 12;
+  return Math.max(CONFIG.NOTE_MIN, Math.min(CONFIG.NOTE_MAX, pitch));
+}
+
+function gmDrumToIndex(note) {
+  if (note === 35 || note === 36) return 0; // kick
+  if (note === 38 || note === 40) return 1; // snare
+  if (note === 39) return 2;                // clap
+  if (note === 42 || note === 44) return 3; // closed/pedal hat
+  if (note === 46) return 4;                // open hat
+  if ([41, 43, 45].includes(note)) return 5; // low/mid tom
+  if ([47, 48, 50].includes(note)) return 6; // high tom
+  if ([49, 51, 52, 53, 55, 57, 59].includes(note)) return 7; // cymbals
+  return -1;
+}
+
 /* Генератор белого шума (используется для синтезатора барабанов) */
 function createNoiseBuffer(ctx, duration) {
   const len = Math.ceil(ctx.sampleRate * duration);
@@ -1636,6 +1939,7 @@ class PatternLibrary {
 
   /* Сохранить текущий паттерн в библиотеку */
   savePattern(name, style) {
+    this.state._saveToArranged(this.state._editingIdx);
     const list = this.getAll();
     const ap = this.state._arrangedPatterns[this.state._editingIdx];
     const vA = ap._variantA;
@@ -1657,6 +1961,7 @@ class PatternLibrary {
         adsrTarget: vA.adsrTarget.map(a => ({...a})),
         adsrDepth: vA.adsrDepth.map(d => ({...d})),
         trackMute: [...vA.trackMute],
+        trackSources: (vA.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null),
       },
       variantB: vB ? {
         melodicPattern: vB.melodicPattern.map(t => t.map(s => s)),
@@ -1669,6 +1974,7 @@ class PatternLibrary {
         adsrTarget: vB.adsrTarget.map(a => ({...a})),
         adsrDepth: vB.adsrDepth.map(d => ({...d})),
         trackMute: [...vB.trackMute],
+        trackSources: (vB.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null),
       } : null,
     };
     list.push(entry);
@@ -1701,6 +2007,7 @@ class PatternLibrary {
       adsrTarget: src.adsrTarget.map(a => ({...a})),
       adsrDepth: src.adsrDepth.map(d => ({...d})),
       trackMute: [...src.trackMute],
+      trackSources: (src.trackSources || Array(CONFIG.TRACKS).fill(null)).map(s => s ? {...s} : null),
     });
 
     const newIdx = this.state._arrangedPatterns.length;
@@ -1751,6 +2058,7 @@ class StateManager {
       adsrTarget: Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false })),
       adsrDepth: Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 })),
       trackMute: [false, false, false],
+      trackSources: Array(CONFIG.TRACKS).fill(null),
     };
   }
 
@@ -1766,6 +2074,7 @@ class StateManager {
     this.adsrTarget = p.adsrTarget;
     this.adsrDepth = p.adsrDepth;
     this.trackMute = p.trackMute;
+    this.trackSources = p.trackSources;
     this.patternLength = p.patternLength;
     this.steps = this.patternLength;
 
@@ -1907,6 +2216,7 @@ class StateManager {
     this.adsrTarget = d.adsrTarget || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false }));
     this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
     this.trackMute = d.trackMute || [false, false, false];
+    this.trackSources = (d.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null);
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this.locatorA = Math.max(0, Math.min(this.locatorA, this.patternLength));
@@ -1929,6 +2239,7 @@ class StateManager {
     d.adsrTarget = this.adsrTarget.map(a => ({...a}));
     d.adsrDepth = this.adsrDepth.map(d2 => ({...d2}));
     d.trackMute = [...this.trackMute];
+    d.trackSources = this.trackSources.map(src => src ? {...src} : null);
   }
 
   /* Коллбэк, вызываемый при каждом изменении состояния */
@@ -1950,6 +2261,7 @@ class StateManager {
       adsrTarget: [...this.adsrTarget],
       adsrDepth: this.adsrDepth.map(d => ({...d})),
       trackMute: [...this.trackMute],
+      trackSources: this.trackSources.map(src => src ? {...src} : null),
     });
   }
 
@@ -1968,6 +2280,7 @@ class StateManager {
     this.adsrTarget = d.adsrTarget || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: true, filter: false }));
     this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
     this.trackMute = d.trackMute || [false, false, false];
+    this.trackSources = (d.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null);
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this._saveStateToVariant();
@@ -2172,6 +2485,78 @@ class StateManager {
     this._notify();
   }
 
+  /* Import a parsed reference MIDI into one editable track and repeat it to pattern length. */
+  loadMidiLoop(track, midi, entry) {
+    if (!midi || !midi.ppq || !Array.isArray(midi.notes)) return false;
+    const loopSteps = midiLoopStepCount(midi);
+    if (loopSteps > this.steps) {
+      const expanded = Math.min(CONFIG.MAX_STEPS, Math.ceil(loopSteps / 16) * 16);
+      this.setPatternLength(expanded);
+    }
+
+    this.pushHistory();
+    const isDrums = entry?.kind === 'drums' || midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
+    this.trackTypes[track] = isDrums ? 'drum' : 'melodic';
+
+    for (let s = 0; s < this.steps; s++) {
+      this.melodicPattern[track][s] = null;
+      this.drumPattern[track][s] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
+    }
+
+    const tickPerStep = midi.ppq / 4;
+    if (isDrums) {
+      const baseHits = [];
+      for (const note of midi.notes) {
+        const drumIdx = gmDrumToIndex(note.note);
+        if (drumIdx < 0) continue;
+        const step = Math.max(0, Math.min(loopSteps - 1, Math.round(note.tick / tickPerStep)));
+        baseHits.push([step, drumIdx]);
+      }
+      for (let offset = 0; offset < this.steps; offset += loopSteps) {
+        for (const [baseStep, drumIdx] of baseHits) {
+          const step = offset + baseStep;
+          if (step < this.steps) this.drumPattern[track][step][drumIdx] = true;
+        }
+      }
+    } else {
+      const byStep = new Map();
+      for (const note of midi.notes) {
+        if (note.channel === 10) continue;
+        const step = Math.max(0, Math.min(loopSteps - 1, Math.round(note.tick / tickPerStep)));
+        const pitch = foldMidiPitch(note.note);
+        const prev = byStep.get(step);
+        if (!prev) {
+          byStep.set(step, {pitch, velocity: note.velocity || 0});
+        } else if (entry?.kind === 'bass') {
+          if (pitch < prev.pitch || (pitch === prev.pitch && (note.velocity || 0) > prev.velocity)) {
+            byStep.set(step, {pitch, velocity: note.velocity || 0});
+          }
+        } else if ((note.velocity || 0) >= prev.velocity) {
+          byStep.set(step, {pitch, velocity: note.velocity || 0});
+        }
+      }
+      for (let offset = 0; offset < this.steps; offset += loopSteps) {
+        for (const [baseStep, value] of byStep) {
+          const step = offset + baseStep;
+          if (step < this.steps) this.melodicPattern[track][step] = value.pitch;
+        }
+      }
+    }
+
+    this.trackSources[track] = {
+      id: entry?.id || '',
+      name: entry?.name || 'MIDI loop',
+      source: entry?.source || '',
+      genre: entry?.genre || '',
+      kind: entry?.kind || (isDrums ? 'drums' : 'melody'),
+      originalSteps: loopSteps,
+      originalBars: Number((loopSteps / 16).toFixed(2)),
+      loadedAt: new Date().toISOString(),
+    };
+    this._notify();
+    return true;
+  }
+
   setMelodicNote(track, step, midi) {
     this.pushHistory();
     if (this.melodicPattern[track][step] === midi) {
@@ -2219,6 +2604,7 @@ class StateManager {
           this.drumPattern[t][s][d] = false;
         }
       }
+      this.trackSources[t] = null;
     }
     this._notify();
   }
@@ -2327,6 +2713,7 @@ class StateManager {
 
   /* ─── Экспорт полного проекта ─── */
   exportProject() {
+    this._saveToArranged(this._editingIdx);
     const data = {
       version: 2,
       name: this._arrangedPatterns[this._editingIdx]?.name || 'Project',
@@ -3020,6 +3407,7 @@ class UIRenderer {
       console.error('UI Render error:', err);
       container.innerHTML = `<div style="color:red;padding:16px;font-family:monospace;">UI Render error: ${err.message}<br><pre>${err.stack}</pre></div>`;
     }
+    if (typeof updateLoopBrowserTarget === 'function') updateLoopBrowserTarget();
   }
 
   _renderEditView(container) {
@@ -3451,6 +3839,7 @@ class UIRenderer {
       if (isNaN(idx)) return;
       const preset = presets[idx];
       this.state.pushHistory();
+      this.state.trackSources[trackIdx] = null;
       if (this.state.isDrumTrack(trackIdx)) {
         // Очищаем дорожку
         for (let s = 0; s < this.state.steps; s++) {
@@ -3482,6 +3871,24 @@ class UIRenderer {
     header.appendChild(waveSelect);
     header.appendChild(soundModeSelect);
     header.appendChild(presetSelect);
+
+    const sourceMeta = this.state.trackSources?.[trackIdx];
+    if (sourceMeta) {
+      const chip = document.createElement('span');
+      chip.className = 'source-chip';
+      chip.title = [sourceMeta.genre, sourceMeta.kind, sourceMeta.source, sourceMeta.name].filter(Boolean).join(' · ');
+      chip.textContent = 'Source: ' + (sourceMeta.name || sourceMeta.source || 'MIDI');
+      header.appendChild(chip);
+
+      const reloadBtn = document.createElement('button');
+      reloadBtn.className = 'source-reload-btn';
+      reloadBtn.textContent = '↻ Source';
+      reloadBtn.title = 'Reload original loop into this track';
+      reloadBtn.addEventListener('click', async () => {
+        await loadLoopIntoTrack(sourceMeta.id, trackIdx, true);
+      });
+      header.appendChild(reloadBtn);
+    }
 
     // Кнопка раскрытия панели синтезатора
     const toggleBtn = document.createElement('button');
@@ -4512,6 +4919,357 @@ try {
 } catch {}
 
 ui.render();
+
+/* ═══════════════════════════════════════════════════════════
+   EMBEDDED LOOP BROWSER
+   Reference Library → preview → load to active track → edit
+   ═══════════════════════════════════════════════════════════ */
+const loopBrowserEl = document.getElementById('loopBrowser');
+const loopSearchEl = document.getElementById('loopSearch');
+const loopGenreEl = document.getElementById('loopGenre');
+const loopKindEl = document.getElementById('loopKind');
+const loopSourceEl = document.getElementById('loopSource');
+const loopListEl = document.getElementById('loopList');
+const loopStatusEl = document.getElementById('loopStatus');
+const loopCountEl = document.getElementById('loopCount');
+const loopTargetEl = document.getElementById('loopTarget');
+const LOOP_RENDER_LIMIT = 100;
+
+let loopCatalog = [];
+let loopCatalogLoaded = false;
+let loopCatalogPromise = null;
+let loopPreviewTimer = null;
+let loopPreviewEntryId = null;
+
+function loopEsc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function setLoopStatus(text, ok = false) {
+  loopStatusEl.textContent = text;
+  loopStatusEl.style.color = ok ? 'var(--accent)' : 'var(--text-dim)';
+}
+
+function updateLoopBrowserTarget() {
+  if (!loopTargetEl) return;
+  loopTargetEl.textContent = 'LOAD TO TRACK ' + (state.activeTrack + 1);
+}
+
+function fillLoopSelect(el, values, label) {
+  const keep = el.value;
+  el.innerHTML = '<option value="">' + label + '</option>';
+  values.sort((a, b) => a.localeCompare(b)).forEach(value => {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = value;
+    el.appendChild(opt);
+  });
+  if (values.includes(keep)) el.value = keep;
+}
+
+async function ensureLoopCatalog() {
+  if (loopCatalogLoaded) return loopCatalog;
+  if (loopCatalogPromise) return loopCatalogPromise;
+  setLoopStatus('Loading MIDI library index…');
+  loopCatalogPromise = (async () => {
+    const response = await fetch('/api/library');
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Library API error');
+    loopCatalog = data.entries || [];
+    loopCatalogLoaded = true;
+    fillLoopSelect(loopGenreEl, [...new Set(loopCatalog.map(e => e.genre).filter(Boolean))], 'All styles');
+    fillLoopSelect(loopKindEl, [...new Set(loopCatalog.map(e => e.kind).filter(Boolean))], 'All types');
+    fillLoopSelect(loopSourceEl, [...new Set(loopCatalog.map(e => e.source).filter(Boolean))], 'All sources');
+    setLoopStatus(
+      'Ready · ' + loopCatalog.length.toLocaleString('ru-RU') + ' MIDI' +
+      (data.mode === 'packs' ? ' · ' + Number(data.packCount || 0) + ' packs' : ''),
+      true
+    );
+    renderLoopBrowser();
+    return loopCatalog;
+  })().finally(() => { loopCatalogPromise = null; });
+  return loopCatalogPromise;
+}
+
+function loopIsLoadable(entry) {
+  return !['chords', 'arrangement'].includes(entry.kind);
+}
+
+function filteredLoops() {
+  const q = loopSearchEl.value.trim().toLowerCase();
+  const genre = loopGenreEl.value;
+  const kind = loopKindEl.value;
+  const source = loopSourceEl.value;
+  return loopCatalog.filter(entry => {
+    if (genre && entry.genre !== genre) return false;
+    if (kind && entry.kind !== kind) return false;
+    if (source && entry.source !== source) return false;
+    if (q) {
+      const hay = [
+        entry.name, entry.source, entry.member, entry.container,
+        entry.genre, entry.kind, ...(entry.classificationRoles || [])
+      ].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderLoopBrowser() {
+  if (!loopCatalogLoaded) return;
+  const filtered = filteredLoops();
+  const rows = filtered.slice(0, LOOP_RENDER_LIMIT);
+  loopCountEl.textContent = filtered.length.toLocaleString('ru-RU') + ' MIDI';
+  if (!rows.length) {
+    loopListEl.innerHTML = '<div style="padding:12px;color:var(--text-dim);font-size:10px">Nothing found.</div>';
+    return;
+  }
+
+  loopListEl.innerHTML = rows.map(entry => {
+    const loadable = loopIsLoadable(entry);
+    const barsHint = entry.kind === 'arrangement' ? 'multi' : entry.kind;
+    return `<div class="loop-item" data-id="${loopEsc(entry.id)}">
+      <button class="loop-preview-btn" title="Preview">▶</button>
+      <div style="min-width:0">
+        <div class="loop-name" title="${loopEsc(entry.member || entry.container || entry.name)}">${loopEsc(entry.name)}</div>
+        <div class="loop-meta">${loopEsc(entry.genre)} · ${loopEsc(barsHint)} · ${loopEsc(entry.source)}</div>
+      </div>
+      <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="${loadable ? 'Load into active track' : 'Polyphonic arrangement/chords are preview-only in v1'}">LOAD</button>
+    </div>`;
+  }).join('');
+
+  loopListEl.querySelectorAll('.loop-item').forEach(row => {
+    const entry = loopCatalog.find(e => e.id === row.dataset.id);
+    if (!entry) return;
+    row.querySelector('.loop-preview-btn').addEventListener('click', async () => {
+      await previewLoop(entry);
+    });
+    const loadBtn = row.querySelector('.loop-load-btn');
+    if (!loadBtn.disabled) {
+      loadBtn.addEventListener('click', async () => {
+        await loadLoopIntoTrack(entry.id, state.activeTrack, false);
+      });
+    }
+  });
+
+  if (filtered.length > LOOP_RENDER_LIMIT) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'padding:8px;color:var(--text-dim);font-size:9px;text-align:center';
+    hint.textContent = 'Showing first ' + LOOP_RENDER_LIMIT + ' · refine search/filters for more';
+    loopListEl.appendChild(hint);
+  }
+}
+
+async function fetchLoopMidi(entry) {
+  const response = await fetch('/api/library/midi?id=' + encodeURIComponent(entry.id));
+  if (!response.ok) {
+    let message = 'MIDI load failed';
+    try { message = (await response.json()).error || message; } catch {}
+    throw new Error(message);
+  }
+  return parseReferenceMidi(await response.arrayBuffer());
+}
+
+function stopLoopPreview() {
+  if (loopPreviewTimer) {
+    clearTimeout(loopPreviewTimer);
+    loopPreviewTimer = null;
+  }
+  loopPreviewEntryId = null;
+  audio.stopAll();
+}
+
+async function previewLoop(entry) {
+  try {
+    if (sequencer.isRunning) {
+      sequencer.stop();
+      ui.updatePlayButton(false);
+      ui.updatePlayhead();
+    }
+    stopLoopPreview();
+    setLoopStatus('Preview loading · ' + entry.name);
+    const midi = await fetchLoopMidi(entry);
+    const ctx = audio.init();
+    const start = ctx.currentTime + 0.06;
+    const stepDuration = (60 / state.tempo) / 4;
+    const tickPerStep = midi.ppq / 4;
+    const maxSteps = Math.min(midiLoopStepCount(midi), 16 * 8);
+    const maxTick = maxSteps * tickPerStep;
+    const drums = entry.kind === 'drums' || midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
+    loopPreviewEntryId = entry.id;
+
+    for (const note of midi.notes) {
+      if (note.tick >= maxTick) continue;
+      const when = start + (note.tick / tickPerStep) * stepDuration;
+      if (drums) {
+        const drumIdx = gmDrumToIndex(note.note);
+        if (drumIdx >= 0) audio.scheduleDrum(99, drumIdx, when, false);
+      } else {
+        if (note.channel === 10) continue;
+        const duration = Math.max(0.04, Math.min(2.5, (note.duration / tickPerStep) * stepDuration));
+        const track = state.activeTrack;
+        audio.scheduleNote(
+          99,
+          foldMidiPitch(note.note),
+          when,
+          duration,
+          state.trackWaves[track] || 'square',
+          state.trackAdsr[track],
+          state.trackFilter[track],
+          state.adsrTarget[track],
+          state.adsrDepth[track]
+        );
+      }
+    }
+
+    const previewSeconds = maxSteps * stepDuration;
+    setLoopStatus(
+      'Preview · ' + entry.name + ' · ' + (maxSteps / 16).toFixed(2).replace(/\.00$/, '') + ' bars @ project BPM',
+      true
+    );
+    loopPreviewTimer = setTimeout(() => {
+      if (loopPreviewEntryId === entry.id) {
+        loopPreviewEntryId = null;
+        setLoopStatus('Ready · choose another loop or LOAD to Track ' + (state.activeTrack + 1), true);
+      }
+    }, Math.max(250, previewSeconds * 1000 + 100));
+  } catch (err) {
+    setLoopStatus('Preview error: ' + err.message);
+  }
+}
+
+async function loadLoopIntoTrack(entryId, trackIdx = state.activeTrack, isReload = false) {
+  try {
+    await ensureLoopCatalog();
+    const entry = loopCatalog.find(e => e.id === entryId);
+    if (!entry) throw new Error('Source MIDI is no longer in the library index');
+    stopLoopPreview();
+    setLoopStatus((isReload ? 'Reloading' : 'Loading') + ' · ' + entry.name + ' → Track ' + (trackIdx + 1));
+    const midi = await fetchLoopMidi(entry);
+    const beforeSteps = state.steps;
+    state.loadMidiLoop(trackIdx, midi, entry);
+    state.activeTrack = trackIdx;
+    ui.render();
+    const src = state.trackSources[trackIdx];
+    const expanded = state.steps > beforeSteps ? ' · pattern expanded to ' + (state.steps / 16) + ' bars' : '';
+    setLoopStatus(
+      'Loaded · ' + entry.name + ' · source ' + src.originalBars + ' bars → filled ' +
+      (state.steps / 16) + ' bars' + expanded,
+      true
+    );
+  } catch (err) {
+    setLoopStatus('Load error: ' + err.message);
+  }
+}
+
+document.getElementById('btnLoops').addEventListener('click', async () => {
+  const open = !loopBrowserEl.classList.contains('open');
+  loopBrowserEl.classList.toggle('open', open);
+  document.getElementById('btnLoops').classList.toggle('active', open);
+  updateLoopBrowserTarget();
+  if (open) {
+    try { await ensureLoopCatalog(); }
+    catch (err) { setLoopStatus('Library error: ' + err.message); }
+  } else {
+    stopLoopPreview();
+  }
+});
+document.getElementById('loopClose').addEventListener('click', () => {
+  loopBrowserEl.classList.remove('open');
+  document.getElementById('btnLoops').classList.remove('active');
+  stopLoopPreview();
+});
+[loopSearchEl, loopGenreEl, loopKindEl, loopSourceEl].forEach(el => {
+  el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', renderLoopBrowser);
+});
+
+/* ─── Sync current constructor state to GitHub for AI review ─── */
+function buildChiptuneOverview(project) {
+  const ap = project._arrangedPatterns?.[project._editingIdx] || null;
+  const variant = ap ? (ap._activeVariant === 'b' ? ap._variantB : ap._variantA) : null;
+  const lines = [
+    '# Chiptune Constructor Snapshot',
+    '',
+    '- Synced: ' + new Date().toISOString(),
+    '- Project: ' + (project.name || 'Project'),
+    '- BPM: ' + project.tempo,
+    '- Swing: ' + project.swing + '%',
+    '- Active pattern: ' + ((project._editingIdx ?? 0) + 1) + ' / ' + (project._arrangedPatterns?.length || 0),
+    '- Pattern name: ' + (ap?.name || '—'),
+    '- Variant: ' + ((ap?._activeVariant || 'a').toUpperCase()),
+    '- Length: ' + ((variant?.patternLength || CONFIG.STEPS) / 16) + ' bars',
+    '- Active track: ' + (state.activeTrack + 1),
+    ''
+  ];
+  if (!variant) return lines.join('\n');
+
+  for (let t = 0; t < CONFIG.TRACKS; t++) {
+    const type = variant.trackTypes?.[t] || 'melodic';
+    const source = variant.trackSources?.[t] || null;
+    lines.push('## Track ' + (t + 1) + ' — ' + type);
+    lines.push('Source: ' + (source
+      ? [source.genre, source.kind, source.source, source.name].filter(Boolean).join(' · ')
+      : 'manual / none'));
+    if (type === 'drum') {
+      const events = [];
+      for (let step = 0; step < (variant.patternLength || CONFIG.STEPS); step++) {
+        const active = [];
+        for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
+          if (variant.drumPattern?.[t]?.[step]?.[d]) active.push(CONFIG.DRUM_INSTRUMENTS[d].name);
+        }
+        if (active.length) events.push((step + 1) + ':' + active.join('+'));
+      }
+      lines.push('Events: ' + (events.join(' ') || '—'));
+    } else {
+      const events = [];
+      for (let step = 0; step < (variant.patternLength || CONFIG.STEPS); step++) {
+        const note = variant.melodicPattern?.[t]?.[step];
+        if (note !== null && note !== undefined) events.push((step + 1) + ':' + midiToName(note));
+      }
+      lines.push('Notes: ' + (events.join(' ') || '—'));
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+document.getElementById('btnSyncAI').addEventListener('click', async () => {
+  const btn = document.getElementById('btnSyncAI');
+  btn.classList.remove('sync-ok', 'sync-err');
+  btn.textContent = '⇄ Syncing…';
+  btn.disabled = true;
+  try {
+    const project = state.exportProject();
+    const payload = {
+      projectName: 'Chiptune Constructor · ' + (project.name || 'Project'),
+      files: {
+        'chiptune-current.json': JSON.stringify(project, null, 2),
+        'chiptune-overview.md': buildChiptuneOverview(project),
+      },
+    };
+    const response = await fetch('/api/sync', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Sync failed');
+    btn.textContent = '✓ Synced ' + (data.commit || '');
+    btn.classList.add('sync-ok');
+    setTimeout(() => {
+      btn.textContent = '⇄ Sync to AI';
+      btn.classList.remove('sync-ok');
+      btn.disabled = false;
+    }, 1800);
+  } catch (err) {
+    btn.textContent = '✕ Sync error';
+    btn.classList.add('sync-err');
+    btn.disabled = false;
+    alert('Sync to AI: ' + err.message);
+  }
+});
 
 // ─── Project Manager UI ───
 const projectModal = document.getElementById('projectModal');
