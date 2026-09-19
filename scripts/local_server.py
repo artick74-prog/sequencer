@@ -585,7 +585,7 @@ def build_style_packs(max_files: int = PACK_MAX_FILES) -> dict:
         )
 
         if PACK_OLD_ROOT.exists():
-            shutil.rmtree(PACK_OLD_ROOT)
+            shutil.rmtree(PACK_OLD_ROOT, ignore_errors=True)
         if PACK_ROOT.exists():
             PACK_ROOT.rename(PACK_OLD_ROOT)
         try:
@@ -595,7 +595,7 @@ def build_style_packs(max_files: int = PACK_MAX_FILES) -> dict:
                 PACK_OLD_ROOT.rename(PACK_ROOT)
             raise
         if PACK_OLD_ROOT.exists():
-            shutil.rmtree(PACK_OLD_ROOT)
+            shutil.rmtree(PACK_OLD_ROOT, ignore_errors=True)
 
         with LIBRARY_LOCK:
             result = load_pack_catalog_locked()
