@@ -33,7 +33,7 @@ from midi_classifier import classify_midi
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
-ALLOWED_FILES = {"current.json", "overview.json", "overview.md", "chiptune-current.json", "chiptune-overview.md", "chiptune-loop-ratings.json", "chiptune-loop-selection.json"}
+ALLOWED_FILES = {"current.json", "overview.json", "overview.md", "chiptune-current.json", "chiptune-overview.md", "chiptune-loop-ratings.json", "chiptune-loop-aliases.json", "chiptune-loop-selection.json"}
 MAX_BODY = 32 * 1024 * 1024
 LIBRARY_ROOT = Path(
     os.environ.get("MIDI_REFERENCE_ROOT", str(ROOT.parent / "midi-reference"))

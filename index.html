@@ -1335,6 +1335,36 @@ body {
   font-size: 14px;
   color: var(--text);
 }
+.loop-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.loop-name-row .loop-name { flex: 1 1 auto; min-width: 0; }
+.loop-rename-btn {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  background: var(--bg-grid);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 18px;
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.loop-rename-btn:hover { color: var(--accent); border-color: var(--accent); }
+.loop-original-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-dim);
+  font-size: 10px;
+  margin-top: 2px;
+}
 .loop-item .loop-meta {
   white-space: nowrap;
   overflow: hidden;
@@ -2841,6 +2871,8 @@ class StateManager {
     this.trackSources[track] = {
       id: entry?.id || '',
       name: entry?.name || 'MIDI loop',
+      customName: typeof getLoopAlias === 'function' ? (getLoopAlias(entry?.id || '') || null) : null,
+      displayName: typeof loopDisplayName === 'function' ? loopDisplayName(entry || {}) : (entry?.name || 'MIDI loop'),
       source: entry?.source || '',
       genre: entry?.genre || '',
       kind: typeof loopRole === 'function' ? loopRole(entry || {}) : (entry?.kind || (isDrums ? 'drums' : 'melody')),
@@ -4519,7 +4551,7 @@ class UIRenderer {
       const chip = document.createElement('span');
       chip.className = 'source-chip';
       chip.title = [sourceMeta.genre, sourceMeta.kind, sourceMeta.source, sourceMeta.name].filter(Boolean).join(' · ');
-      chip.textContent = 'Source: ' + (sourceMeta.name || sourceMeta.source || 'MIDI');
+      chip.textContent = 'Source: ' + (sourceMeta.displayName || sourceMeta.customName || sourceMeta.name || sourceMeta.source || 'MIDI');
       header.appendChild(chip);
 
       const reloadBtn = document.createElement('button');
@@ -5772,6 +5804,60 @@ try {
   loopRatings = {};
 }
 
+const LOOP_ALIASES_KEY = 'chiptune_loop_aliases_v1';
+let loopAliases = {};
+let loopAliasesLoaded = false;
+try {
+  loopAliases = JSON.parse(localStorage.getItem(LOOP_ALIASES_KEY) || '{}') || {};
+} catch {
+  loopAliases = {};
+}
+
+function getLoopAlias(id) {
+  const row = loopAliases[id];
+  if (typeof row === 'string') return row.trim();
+  return row && typeof row.name === 'string' ? row.name.trim() : '';
+}
+
+function setLoopAlias(id, name) {
+  const clean = String(name || '').trim();
+  if (!clean) delete loopAliases[id];
+  else loopAliases[id] = { name: clean, updatedAt: new Date().toISOString() };
+  localStorage.setItem(LOOP_ALIASES_KEY, JSON.stringify(loopAliases));
+  renderLoopBrowser();
+}
+
+function loopDisplayName(entry) {
+  return getLoopAlias(entry.id) || entry.name;
+}
+
+function aliasTimestamp(row) {
+  if (!row || typeof row === 'string') return 0;
+  const ts = Date.parse(row.updatedAt || '');
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+async function loadLoopAliasesFromProject() {
+  if (loopAliasesLoaded) return;
+  loopAliasesLoaded = true;
+  try {
+    const response = await fetch('/projects/chiptune-loop-aliases.json?_=' + Date.now(), { cache: 'no-store' });
+    if (!response.ok) return;
+    const remote = await response.json();
+    if (!remote || typeof remote !== 'object' || Array.isArray(remote)) return;
+
+    for (const [id, remoteRow] of Object.entries(remote)) {
+      const localRow = loopAliases[id];
+      if (!localRow || aliasTimestamp(remoteRow) > aliasTimestamp(localRow)) {
+        loopAliases[id] = remoteRow;
+      }
+    }
+    localStorage.setItem(LOOP_ALIASES_KEY, JSON.stringify(loopAliases));
+  } catch {
+    // First use / no synced alias file yet.
+  }
+}
+
 function getLoopRating(id) {
   const row = loopRatings[id];
   return row && Number.isFinite(Number(row.rating)) ? Math.max(0, Math.min(5, Number(row.rating))) : 0;
@@ -5927,6 +6013,8 @@ function exactMidiInspection(entry, midi) {
     syncedAt: new Date().toISOString(),
     id: entry.id,
     name: entry.name,
+    customName: getLoopAlias(entry.id) || null,
+    displayName: loopDisplayName(entry),
     source: entry.source,
     member: entry.member || entry.container || null,
     genre: entry.genre,
@@ -5947,6 +6035,7 @@ async function ensureLoopCatalog() {
   if (loopCatalogPromise) return loopCatalogPromise;
   setLoopStatus('Loading MIDI library index…');
   loopCatalogPromise = (async () => {
+    await loadLoopAliasesFromProject();
     const response = await fetch('/api/library');
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Library API error');
@@ -6009,7 +6098,7 @@ function filteredLoops() {
     }
     if (q) {
       const hay = [
-        entry.name, entry.source, entry.member, entry.container,
+        loopDisplayName(entry), getLoopAlias(entry.id), entry.name, entry.source, entry.member, entry.container,
         entry.genre, loopRole(entry), ...(entry.classificationRoles || []),
         ...loopFamilies(entry), ...loopProgramLabels(entry)
       ].join(' ').toLowerCase();
@@ -6035,13 +6124,19 @@ function renderLoopBrowser() {
     const roleHint = role === 'arrangement' ? 'multi' : role;
     const instrument = loopInstrumentSummary(entry);
     const rating = getLoopRating(entry.id);
+    const alias = getLoopAlias(entry.id);
+    const displayName = alias || entry.name;
     const stars = [1,2,3,4,5].map(n =>
       `<button class="loop-star ${n <= rating ? 'on' : ''}" data-rating="${n}" title="${n} star${n > 1 ? 's' : ''}; click current rating again to clear">★</button>`
     ).join('');
     return `<div class="loop-item" data-id="${loopEsc(entry.id)}">
       <button class="loop-preview-btn" title="Preview">▶</button>
       <div style="min-width:0">
-        <div class="loop-name" title="${loopEsc(entry.member || entry.container || entry.name)}">${loopEsc(entry.name)}</div>
+        <div class="loop-name-row">
+          <div class="loop-name" title="${loopEsc(alias ? ('Custom name: ' + alias + ' · Original: ' + entry.name) : (entry.member || entry.container || entry.name))}">${loopEsc(displayName)}</div>
+          <button class="loop-rename-btn" title="Rename display name; original MIDI file stays untouched">✎</button>
+        </div>
+        ${alias ? '<div class="loop-original-name" title="' + loopEsc(entry.name) + '">Original: ' + loopEsc(entry.name) + '</div>' : ''}
         <div class="loop-meta">${loopEsc(entry.genre)} · ${loopEsc(roleHint)} · ${loopEsc(entry.source)}</div>
         <div class="loop-meta" title="${loopEsc(instrument)}">Instrument: ${loopEsc(instrument)}</div>
         <div class="loop-stars" title="Your rating / favorite marker">${stars}<span class="loop-rating-value">${rating ? rating + '/5' : ''}</span></div>
@@ -6060,6 +6155,19 @@ function renderLoopBrowser() {
     row.querySelector('.loop-preview-btn').addEventListener('click', async () => {
       await previewLoop(entry);
     });
+
+    row.querySelector('.loop-rename-btn').addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const current = getLoopAlias(entry.id);
+      const next = prompt(
+        'Display name for this loop.\nLeave empty to restore the original filename:',
+        current || entry.name.replace(/\.mid$/i, '')
+      );
+      if (next === null) return;
+      setLoopAlias(entry.id, next);
+    });
+
     row.querySelectorAll('.loop-star').forEach(star => {
       star.addEventListener('click', (event) => {
         event.preventDefault();
@@ -6467,6 +6575,7 @@ document.getElementById('btnSyncAI').addEventListener('click', async () => {
         'chiptune-current.json': JSON.stringify(project, null, 2),
         'chiptune-overview.md': buildChiptuneOverview(project),
         'chiptune-loop-ratings.json': JSON.stringify(loopRatings, null, 2),
+        'chiptune-loop-aliases.json': JSON.stringify(loopAliases, null, 2),
         'chiptune-loop-selection.json': JSON.stringify({
           syncedAt: new Date().toISOString(),
           last: lastLoopInspection,
