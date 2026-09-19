@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "id": "tech-house-1",
+  "name": "Tech-House 1",
+  "createdAt": "2026-09-19T22:20:02+00:00",
+  "updatedAt": "2026-09-19T22:20:02+00:00",
+  "editors": {
+    "midiHost": true,
+    "chiptune": false
+  },
+  "files": {
+    "midiHostProject": "midi-host/project.json",
+    "session": "midi-host/session.json",
+    "overviewJson": "midi-host/overview.json",
+    "overviewMarkdown": "midi-host/overview.md",
+    "arrangementMidi": "midi-host/arrangement.mid",
+    "tracks": [
+      {
+        "index": 1,
+        "name": "Crash",
+        "file": "midi-host/tracks/001 - Crash.mid"
+      },
+      {
+        "index": 2,
+        "name": "Kick",
+        "file": "midi-host/tracks/002 - Kick.mid"
+      },
+      {
+        "index": 3,
+        "name": "Snare",
+        "file": "midi-host/tracks/003 - Snare.mid"
+      },
+      {
+        "index": 4,
+        "name": "Closed Hat",
+        "file": "midi-host/tracks/004 - Closed Hat.mid"
+      },
+      {
+        "index": 5,
+        "name": "Open Hat",
+        "file": "midi-host/tracks/005 - Open Hat.mid"
+      },
+      {
+        "index": 6,
+        "name": "Rimshot",
+        "file": "midi-host/tracks/006 - Rimshot.mid"
+      },
+      {
+        "index": 7,
+        "name": "Percussion Hi",
+        "file": "midi-host/tracks/007 - Percussion Hi.mid"
+      },
+      {
+        "index": 8,
+        "name": "Tambourine",
+        "file": "midi-host/tracks/008 - Tambourine.mid"
+      },
+      {
+        "index": 9,
+        "name": "Acid",
+        "file": "midi-host/tracks/009 - Acid.mid"
+      },
+      {
+        "index": 10,
+        "name": "Bass",
+        "file": "midi-host/tracks/010 - Bass.mid"
+      }
+    ]
+  }
+}
