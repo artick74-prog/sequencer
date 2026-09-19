@@ -1695,6 +1695,7 @@ select, input[type="number"], input[type="text"] {
   }
 
   function hostLoopStopPreview({ rerender = true } = {}) {
+    const hadPreview = !!hostLoopPreview;
     hostLoopPreviewToken++;
     if (hostLoopPreviewTimer) {
       clearInterval(hostLoopPreviewTimer);
@@ -1702,7 +1703,7 @@ select, input[type="number"], input[type="text"] {
     }
     clearHostLoopNoteTimers();
     hostLoopPreview = null;
-    allNotesOffSf2();
+    if (hadPreview) allNotesOffSf2();
     if (rerender && hostLoopCatalogLoaded) renderHostLoopBrowser();
   }
 
