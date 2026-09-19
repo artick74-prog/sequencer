@@ -43,7 +43,7 @@ MIDI_CACHE_DIR = LIBRARY_ROOT / ".style-library-midi-cache-v1"
 
 
 def midi_cache_path(item_id: str) -> Path:
-    return MIDI_CACHE_DIR / item_id[:2] / f"{item_id}.mid"
+    return MIDI_CACHE_DIR / item_id[:2] / f"{item_id}.bin"
 
 
 def read_cached_midi(item_id: str) -> bytes | None:
