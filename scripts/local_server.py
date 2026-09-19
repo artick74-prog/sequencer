@@ -282,6 +282,87 @@ def decode_midi_b64(value: str, label: str) -> bytes:
     return data
 
 
+def list_cloud_projects() -> dict:
+    root = PROJECTS / "cloud"
+    projects = []
+    if root.exists():
+        for folder in root.iterdir():
+            if not folder.is_dir():
+                continue
+            manifest_path = folder / "manifest.json"
+            project_path = folder / "midi-host" / "project.json"
+            if not manifest_path.exists() or not project_path.exists():
+                continue
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                project = json.loads(project_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError, json.JSONDecodeError):
+                continue
+
+            ppq = int(project.get("ppq") or 480)
+            length_ticks = int(project.get("lengthTicks") or 0)
+            bars = 0
+            if ppq > 0 and length_ticks > 0:
+                bars = max(1, round(length_ticks / (ppq * 4)))
+
+            tracks = project.get("tracks") if isinstance(project.get("tracks"), list) else []
+            projects.append({
+                "id": str(manifest.get("id") or folder.name),
+                "name": str(manifest.get("name") or project.get("name") or folder.name),
+                "path": f"projects/cloud/{folder.name}",
+                "createdAt": manifest.get("createdAt"),
+                "updatedAt": manifest.get("updatedAt"),
+                "tempo": project.get("tempo") or 120,
+                "ppq": ppq,
+                "bars": bars,
+                "trackCount": len(tracks),
+                "editors": manifest.get("editors") or {},
+            })
+
+    projects.sort(key=lambda item: str(item.get("updatedAt") or ""), reverse=True)
+    return {"ok": True, "projects": projects, "count": len(projects)}
+
+
+def load_cloud_project(project_id: str) -> dict:
+    project_id = str(project_id or "").strip()
+    if not project_id:
+        raise ValueError("Project id is required")
+
+    safe_id = slugify_cloud_project(project_id)
+    if safe_id != project_id:
+        raise ValueError("Invalid project id")
+
+    root = (PROJECTS / "cloud" / safe_id).resolve()
+    cloud_root = (PROJECTS / "cloud").resolve()
+    if cloud_root not in root.parents:
+        raise ValueError("Invalid cloud project path")
+
+    manifest_path = root / "manifest.json"
+    project_path = root / "midi-host" / "project.json"
+    session_path = root / "midi-host" / "session.json"
+
+    if not manifest_path.exists() or not project_path.exists():
+        raise FileNotFoundError(f"Cloud project not found: {project_id}")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    project = json.loads(project_path.read_text(encoding="utf-8"))
+    session = {}
+    if session_path.exists():
+        session = json.loads(session_path.read_text(encoding="utf-8"))
+
+    if not isinstance(project, dict) or not isinstance(project.get("tracks"), list):
+        raise ValueError("Cloud project JSON is invalid")
+
+    return {
+        "ok": True,
+        "projectId": safe_id,
+        "projectPath": f"projects/cloud/{safe_id}",
+        "manifest": manifest if isinstance(manifest, dict) else {},
+        "project": project,
+        "session": session if isinstance(session, dict) else {},
+    }
+
+
 def save_cloud_project(payload: dict) -> dict:
     project_name = " ".join(
         str(payload.get("projectName") or "Project").replace("\r", " ").replace("\n", " ").split()
@@ -1331,6 +1412,23 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/api/projects":
+            try:
+                self._send_json(200, list_cloud_projects())
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/project/load":
+            try:
+                project_id = (parse_qs(parsed.query).get("id") or [""])[0]
+                self._send_json(200, load_cloud_project(project_id))
+            except FileNotFoundError as exc:
+                self._send_json(404, {"ok": False, "error": str(exc)})
+            except (ValueError, OSError, json.JSONDecodeError) as exc:
+                self._send_json(409, {"ok": False, "error": str(exc)})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
         if path == "/api/library":
             try:
                 self._send_json(200, build_library_catalog())
