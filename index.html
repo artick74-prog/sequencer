@@ -1939,6 +1939,7 @@ class PatternLibrary {
 
   /* Сохранить текущий паттерн в библиотеку */
   savePattern(name, style) {
+    this.state._saveToArranged(this.state._editingIdx);
     const list = this.getAll();
     const ap = this.state._arrangedPatterns[this.state._editingIdx];
     const vA = ap._variantA;
