@@ -2685,6 +2685,7 @@ class StateManager {
     }
 
     const tickPerStep = midi.ppq / 4;
+    let polyphonic = false;
     if (isDrums) {
       this.trackMidiChannels[track] = 10;
       const baseHits = [];
@@ -2731,6 +2732,7 @@ class StateManager {
         }
       }
 
+      polyphonic = [...baseEvents.values()].some(events => events.length > 1);
       for (let offset = 0; offset < this.steps; offset += loopSteps) {
         for (const [baseStep, events] of baseEvents) {
           const step = offset + baseStep;
@@ -2749,8 +2751,7 @@ class StateManager {
       rating: typeof getLoopRating === 'function' ? getLoopRating(entry?.id || '') : 0,
       originalSteps: loopSteps,
       originalBars: Number((loopSteps / 16).toFixed(2)),
-      polyphonic: !isDrums && [...new Set(midi.notes.filter(n => n.channel !== 10).map(n => Math.round(n.tick / tickPerStep)))]
-        .some(step => (baseEvents?.get?.(step) || []).length > 1),
+      polyphonic,
       loadedAt: new Date().toISOString(),
     };
     this._notify();
