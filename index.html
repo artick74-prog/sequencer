@@ -2054,7 +2054,7 @@ class PatternLibrary {
       savedAt: new Date().toISOString(),
       patternLength: vA.patternLength,
       variantA: {
-        melodicPattern: vA.melodicPattern.map(t => t.map(s => s)),
+        melodicPattern: vA.melodicPattern.map(t => t.map(cell => cloneMelodicCell(cell))),
         drumPattern: vA.drumPattern.map(t => t.map(s => [...s])),
         trackTypes: [...vA.trackTypes],
         trackWaves: [...vA.trackWaves],
@@ -2065,9 +2065,12 @@ class PatternLibrary {
         adsrDepth: vA.adsrDepth.map(d => ({...d})),
         trackMute: [...vA.trackMute],
         trackSources: (vA.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null),
+        trackEngines: [...(vA.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
+        trackMidiChannels: [...(vA.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
+        trackPrograms: [...(vA.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
       },
       variantB: vB ? {
-        melodicPattern: vB.melodicPattern.map(t => t.map(s => s)),
+        melodicPattern: vB.melodicPattern.map(t => t.map(cell => cloneMelodicCell(cell))),
         drumPattern: vB.drumPattern.map(t => t.map(s => [...s])),
         trackTypes: [...vB.trackTypes],
         trackWaves: [...vB.trackWaves],
@@ -2078,6 +2081,9 @@ class PatternLibrary {
         adsrDepth: vB.adsrDepth.map(d => ({...d})),
         trackMute: [...vB.trackMute],
         trackSources: (vB.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null),
+        trackEngines: [...(vB.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
+        trackMidiChannels: [...(vB.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
+        trackPrograms: [...(vB.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
       } : null,
     };
     list.push(entry);
@@ -2100,7 +2106,7 @@ class PatternLibrary {
 
     const makeVariant = (src) => ({
       patternLength: entry.patternLength,
-      melodicPattern: src.melodicPattern,
+      melodicPattern: src.melodicPattern.map(t => t.map(cell => cloneMelodicCell(cell))),
       drumPattern: src.drumPattern.map(t => t.map(s => [...s])),
       trackTypes: [...src.trackTypes],
       trackWaves: [...src.trackWaves],
@@ -2111,6 +2117,9 @@ class PatternLibrary {
       adsrDepth: src.adsrDepth.map(d => ({...d})),
       trackMute: [...src.trackMute],
       trackSources: (src.trackSources || Array(CONFIG.TRACKS).fill(null)).map(s => s ? {...s} : null),
+      trackEngines: [...(src.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
+      trackMidiChannels: [...(src.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
+      trackPrograms: [...(src.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
     });
 
     const newIdx = this.state._arrangedPatterns.length;
@@ -2145,7 +2154,7 @@ class StateManager {
     return {
       patternLength: len,
       melodicPattern: Array.from({ length: CONFIG.TRACKS }, () =>
-        Array(len).fill(null)),
+        Array.from({ length: len }, () => [])),
       drumPattern: Array.from({ length: CONFIG.TRACKS }, () =>
         Array.from({ length: len }, () =>
           new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false))),
@@ -2162,7 +2171,49 @@ class StateManager {
       adsrDepth: Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 })),
       trackMute: [false, false, false],
       trackSources: Array(CONFIG.TRACKS).fill(null),
+      trackEngines: Array(CONFIG.TRACKS).fill('chip'),
+      trackMidiChannels: CONFIG.DEFAULT_MIDI_CHANNELS.slice(),
+      trackPrograms: CONFIG.DEFAULT_GM_PROGRAMS.slice(),
     };
+  }
+
+  static _normalizePattern(pattern, fallbackLen = CONFIG.STEPS) {
+    const d = pattern || {};
+    const len = Math.max(1, Number(d.patternLength || fallbackLen) | 0);
+    d.patternLength = len;
+
+    const melodic = Array.isArray(d.melodicPattern) ? d.melodicPattern : [];
+    d.melodicPattern = Array.from({ length: CONFIG.TRACKS }, (_, t) =>
+      Array.from({ length: len }, (_, step) => cloneMelodicCell(melodic[t]?.[step]))
+    );
+
+    const drums = Array.isArray(d.drumPattern) ? d.drumPattern : [];
+    d.drumPattern = Array.from({ length: CONFIG.TRACKS }, (_, t) =>
+      Array.from({ length: len }, (_, step) => {
+        const src = drums[t]?.[step];
+        return Array.from({ length: CONFIG.DRUM_INSTRUMENTS.length }, (_, i) => !!src?.[i]);
+      })
+    );
+
+    d.trackTypes = Array.from({ length: CONFIG.TRACKS }, (_, i) => d.trackTypes?.[i] || CONFIG.TRACK_TYPES[i] || 'melodic');
+    d.trackWaves = Array.from({ length: CONFIG.TRACKS }, (_, i) => d.trackWaves?.[i] || CONFIG.WAVE_TYPES[i] || 'square');
+    d.drumSoundModes = Array.from({ length: CONFIG.TRACKS }, (_, i) => d.drumSoundModes?.[i] || 'synth');
+    d.trackAdsr = Array.from({ length: CONFIG.TRACKS }, (_, i) => ({ attack:0.01, decay:0.1, sustain:0.7, release:0.08, ...(d.trackAdsr?.[i] || {}) }));
+    d.trackFilter = Array.from({ length: CONFIG.TRACKS }, (_, i) => ({ enabled:true, type:'lowpass', frequency:8000, q:1, ...(d.trackFilter?.[i] || {}) }));
+    d.adsrTarget = Array.from({ length: CONFIG.TRACKS }, (_, i) => ({ amp:true, filter:false, ...(d.adsrTarget?.[i] || {}) }));
+    d.adsrDepth = Array.from({ length: CONFIG.TRACKS }, (_, i) => ({ amp:1, filter:1, ...(d.adsrDepth?.[i] || {}) }));
+    d.trackMute = Array.from({ length: CONFIG.TRACKS }, (_, i) => !!d.trackMute?.[i]);
+    d.trackSources = Array.from({ length: CONFIG.TRACKS }, (_, i) => d.trackSources?.[i] ? {...d.trackSources[i]} : null);
+    d.trackEngines = Array.from({ length: CONFIG.TRACKS }, (_, i) => ['chip','sf2','midi'].includes(d.trackEngines?.[i]) ? d.trackEngines[i] : 'chip');
+    d.trackMidiChannels = Array.from({ length: CONFIG.TRACKS }, (_, i) => {
+      const ch = Number(d.trackMidiChannels?.[i] ?? CONFIG.DEFAULT_MIDI_CHANNELS[i] ?? 1);
+      return Math.max(1, Math.min(16, ch | 0));
+    });
+    d.trackPrograms = Array.from({ length: CONFIG.TRACKS }, (_, i) => {
+      const p = Number(d.trackPrograms?.[i] ?? CONFIG.DEFAULT_GM_PROGRAMS[i] ?? 0);
+      return Math.max(0, Math.min(127, p | 0));
+    });
+    return d;
   }
 
   constructor() {
@@ -2178,6 +2229,9 @@ class StateManager {
     this.adsrDepth = p.adsrDepth;
     this.trackMute = p.trackMute;
     this.trackSources = p.trackSources;
+    this.trackEngines = p.trackEngines;
+    this.trackMidiChannels = p.trackMidiChannels;
+    this.trackPrograms = p.trackPrograms;
     this.patternLength = p.patternLength;
     this.steps = this.patternLength;
 
@@ -2271,8 +2325,11 @@ class StateManager {
 
   /* Загрузить данные в редактор */
   _loadPatternData(data) {
-    this._patternA = data._variantA;
-    this._patternB = data._variantB || JSON.parse(JSON.stringify(data._variantA));
+    this._patternA = StateManager._normalizePattern(data._variantA);
+    this._patternB = StateManager._normalizePattern(
+      data._variantB || JSON.parse(JSON.stringify(data._variantA)),
+      this._patternA.patternLength
+    );
     this._activeVariant = data._activeVariant || 'a';
     this._undoStackA = data._undoStackA || [];
     this._redoStackA = data._redoStackA || [];
@@ -2308,7 +2365,7 @@ class StateManager {
 
   /* Скопировать активный вариант из _patternA/B в state */
   _loadVariantToState() {
-    const d = this._getCurrentData();
+    const d = StateManager._normalizePattern(this._getCurrentData());
     this.melodicPattern = d.melodicPattern;
     this.drumPattern = d.drumPattern;
     this.trackTypes = d.trackTypes;
@@ -2320,6 +2377,9 @@ class StateManager {
     this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
     this.trackMute = d.trackMute || [false, false, false];
     this.trackSources = (d.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null);
+    this.trackEngines = [...d.trackEngines];
+    this.trackMidiChannels = [...d.trackMidiChannels];
+    this.trackPrograms = [...d.trackPrograms];
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this.locatorA = Math.max(0, Math.min(this.locatorA, this.patternLength));
@@ -2343,6 +2403,9 @@ class StateManager {
     d.adsrDepth = this.adsrDepth.map(d2 => ({...d2}));
     d.trackMute = [...this.trackMute];
     d.trackSources = this.trackSources.map(src => src ? {...src} : null);
+    d.trackEngines = [...this.trackEngines];
+    d.trackMidiChannels = [...this.trackMidiChannels];
+    d.trackPrograms = [...this.trackPrograms];
   }
 
   /* Коллбэк, вызываемый при каждом изменении состояния */
@@ -2365,12 +2428,15 @@ class StateManager {
       adsrDepth: this.adsrDepth.map(d => ({...d})),
       trackMute: [...this.trackMute],
       trackSources: this.trackSources.map(src => src ? {...src} : null),
+      trackEngines: [...this.trackEngines],
+      trackMidiChannels: [...this.trackMidiChannels],
+      trackPrograms: [...this.trackPrograms],
     });
   }
 
   /* Восстановить из снапшота */
   _restore(json) {
-    const d = JSON.parse(json);
+    const d = StateManager._normalizePattern(JSON.parse(json));
     this.melodicPattern = d.melodicPattern;
     this.drumPattern = d.drumPattern;
     this.trackTypes = d.trackTypes;
@@ -2384,6 +2450,9 @@ class StateManager {
     this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
     this.trackMute = d.trackMute || [false, false, false];
     this.trackSources = (d.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null);
+    this.trackEngines = [...d.trackEngines];
+    this.trackMidiChannels = [...d.trackMidiChannels];
+    this.trackPrograms = [...d.trackPrograms];
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this._saveStateToVariant();
@@ -2853,8 +2922,8 @@ class StateManager {
       locatorA: ap.locatorA ?? 0,
       locatorB: ap.locatorB ?? (ap._variantA?.patternLength || CONFIG.STEPS),
       _activeVariant: ap._activeVariant || 'a',
-      _variantA: JSON.parse(JSON.stringify(ap._variantA)),
-      _variantB: ap._variantB ? JSON.parse(JSON.stringify(ap._variantB)) : null,
+      _variantA: StateManager._normalizePattern(JSON.parse(JSON.stringify(ap._variantA))),
+      _variantB: ap._variantB ? StateManager._normalizePattern(JSON.parse(JSON.stringify(ap._variantB)), ap._variantA?.patternLength || CONFIG.STEPS) : null,
       _undoStackA: [], _redoStackA: [],
       _undoStackB: [], _redoStackB: [],
     }));
