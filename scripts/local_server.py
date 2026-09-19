@@ -15,11 +15,14 @@ import argparse
 import hashlib
 import json
 import os
+import re
+import shutil
 import subprocess
 import tarfile
 import threading
 import webbrowser
 import zipfile
+from datetime import datetime, timezone
 from collections import Counter
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -37,13 +40,66 @@ LIBRARY_ROOT = Path(
 LIBRARY_LOCK = threading.Lock()
 LIBRARY_ENTRIES: list[dict] = []
 LIBRARY_LOCATORS: dict[str, tuple[str, str, str | None]] = {}
-CLASSIFICATION_CACHE_VERSION = 1
-CLASSIFICATION_CACHE_PATH = LIBRARY_ROOT / ".style-library-classification-v1.json"
+LIBRARY_MODE: str | None = None
+CLASSIFICATION_CACHE_VERSION = 2
+CLASSIFICATION_CACHE_PATH = LIBRARY_ROOT / ".style-library-classification-v2.json"
+PACK_ROOT = LIBRARY_ROOT / "packs"
+PACK_BUILD_ROOT = LIBRARY_ROOT / "packs.__building__"
+PACK_OLD_ROOT = LIBRARY_ROOT / "packs.__old__"
+PACK_INDEX_PATH = PACK_ROOT / "library-index.json"
+PACK_MAX_FILES = max(100, int(os.environ.get("STYLE_PACK_MAX_FILES", "1000")))
 MIDI_CACHE_DIR = Path(os.environ.get("LOCALAPPDATA", str(LIBRARY_ROOT.parent))) / "SequencerStyleLibrary" / "midi-v1"
 try:
     GM_PROGRAM_NAMES = json.loads((ROOT / "scripts" / "gm-instruments.json").read_text(encoding="utf-8")).get("programs", [])
 except (OSError, ValueError, json.JSONDecodeError):
     GM_PROGRAM_NAMES = []
+
+
+def slugify_pack_part(value: str) -> str:
+    text = re.sub(r"[^a-z0-9]+", "-", str(value).lower()).strip("-")
+    return text or "other"
+
+
+def catalog_payload(entries: list[dict], mode: str, pack_count: int = 0) -> dict:
+    counts = {
+        "total": len(entries),
+        "genre": dict(Counter(item["genre"] for item in entries)),
+        "kind": dict(Counter(item["kind"] for item in entries)),
+        "source": dict(Counter(item["source"] for item in entries)),
+        "classificationMethod": dict(
+            Counter(item.get("classificationMethod", "unknown") for item in entries)
+        ),
+    }
+    return {
+        "root": str(LIBRARY_ROOT),
+        "mode": mode,
+        "packRoot": str(PACK_ROOT) if mode == "packs" else None,
+        "packCount": pack_count,
+        "entries": entries,
+        "counts": counts,
+    }
+
+
+def load_pack_catalog_locked() -> dict:
+    global LIBRARY_ENTRIES, LIBRARY_LOCATORS, LIBRARY_MODE
+    payload = json.loads(PACK_INDEX_PATH.read_text(encoding="utf-8"))
+    if payload.get("schema") != 1 or not isinstance(payload.get("entries"), list):
+        raise ValueError("Unsupported Style Library pack index")
+
+    entries = payload["entries"]
+    locators: dict[str, tuple[str, str, str | None]] = {}
+    for item in entries:
+        pack_rel = item.get("pack")
+        pack_member = item.get("packMember")
+        item_id = item.get("id")
+        if not item_id or not pack_rel or not pack_member:
+            raise ValueError("Invalid entry in Style Library pack index")
+        locators[item_id] = ("pack", str((PACK_ROOT / pack_rel).resolve()), pack_member)
+
+    LIBRARY_ENTRIES = entries
+    LIBRARY_LOCATORS = locators
+    LIBRARY_MODE = "packs"
+    return catalog_payload(entries, "packs", len(payload.get("packs") or []))
 
 
 def midi_cache_path(item_id: str) -> Path:
@@ -161,10 +217,23 @@ def library_source_name(path: Path) -> str:
     return path.stem
 
 
-def build_library_catalog(force: bool = False) -> dict:
-    global LIBRARY_ENTRIES, LIBRARY_LOCATORS
+def build_library_catalog(force: bool = False, prefer_packs: bool = True) -> dict:
+    global LIBRARY_ENTRIES, LIBRARY_LOCATORS, LIBRARY_MODE
     with LIBRARY_LOCK:
-        if LIBRARY_ENTRIES and not force:
+        if prefer_packs and PACK_INDEX_PATH.exists():
+            if LIBRARY_MODE == "packs" and LIBRARY_ENTRIES and not force:
+                return catalog_payload(
+                    LIBRARY_ENTRIES,
+                    "packs",
+                    len({item.get("pack") for item in LIBRARY_ENTRIES if item.get("pack")}),
+                )
+            try:
+                return load_pack_catalog_locked()
+            except (OSError, ValueError, json.JSONDecodeError):
+                # Fall back to raw sources if the derived pack index is damaged.
+                pass
+
+        if LIBRARY_MODE == "raw" and LIBRARY_ENTRIES and not force:
             entries = LIBRARY_ENTRIES
         else:
             entries: list[dict] = []
@@ -173,7 +242,11 @@ def build_library_catalog(force: bool = False) -> dict:
             cache_changed = False
 
             if LIBRARY_ROOT.exists():
-                files = sorted(p for p in LIBRARY_ROOT.rglob("*") if p.is_file())
+                excluded_roots = {PACK_ROOT, PACK_BUILD_ROOT, PACK_OLD_ROOT}
+                files = sorted(
+                    p for p in LIBRARY_ROOT.rglob("*")
+                    if p.is_file() and not any(root == p or root in p.parents for root in excluded_roots)
+                )
                 archive_paths = []
                 loose_paths = []
                 for path in files:
@@ -347,21 +420,205 @@ def build_library_catalog(force: bool = False) -> dict:
             )
             LIBRARY_ENTRIES = entries
             LIBRARY_LOCATORS = locators
+            LIBRARY_MODE = "raw"
 
-        counts = {
-            "total": len(entries),
-            "genre": dict(Counter(item["genre"] for item in entries)),
-            "kind": dict(Counter(item["kind"] for item in entries)),
-            "source": dict(Counter(item["source"] for item in entries)),
-            "classificationMethod": dict(
-                Counter(item.get("classificationMethod", "unknown") for item in entries)
-            ),
+        return catalog_payload(entries, "raw")
+
+
+def warm_raw_archive_cache() -> dict:
+    """Sequentially cache archive MIDI so pack writing never seeks through tar.gz per file."""
+    locator_to_id = {
+        (path_text, member): item_id
+        for item_id, (mode, path_text, member) in LIBRARY_LOCATORS.items()
+        if mode == "archive"
+    }
+    archive_paths = sorted({
+        path_text
+        for mode, path_text, _ in LIBRARY_LOCATORS.values()
+        if mode == "archive"
+    })
+    cached_files = 0
+    cached_bytes = 0
+
+    for path_text in archive_paths:
+        archive = Path(path_text)
+        if archive.name.lower().endswith(".zip"):
+            with zipfile.ZipFile(archive) as zf:
+                for info in zf.infolist():
+                    if info.is_dir() or not info.filename.lower().endswith((".mid", ".midi")):
+                        continue
+                    item_id = locator_to_id.get((path_text, info.filename))
+                    if not item_id:
+                        continue
+                    data = read_cached_midi(item_id)
+                    if data is None:
+                        data = zf.read(info)
+                        write_cached_midi(item_id, data)
+                    cached_files += 1
+                    cached_bytes += len(data)
+        else:
+            with tarfile.open(archive, "r:*") as tf:
+                for member_info in tf:
+                    if (
+                        not member_info.isfile()
+                        or not member_info.name.lower().endswith((".mid", ".midi"))
+                    ):
+                        continue
+                    item_id = locator_to_id.get((path_text, member_info.name))
+                    if not item_id:
+                        continue
+                    data = read_cached_midi(item_id)
+                    if data is None:
+                        fh = tf.extractfile(member_info)
+                        if fh is None:
+                            continue
+                        data = fh.read()
+                        write_cached_midi(item_id, data)
+                    cached_files += 1
+                    cached_bytes += len(data)
+
+    return {"files": cached_files, "bytes": cached_bytes}
+
+
+def source_bytes_for_pack(item_id: str, locator: tuple[str, str, str | None]) -> bytes:
+    mode, path_text, member = locator
+    if mode == "file":
+        return Path(path_text).read_bytes()
+
+    cached = read_cached_midi(item_id)
+    if cached is not None:
+        return cached
+
+    path = Path(path_text)
+    if mode == "pack" or path.name.lower().endswith(".zip"):
+        with zipfile.ZipFile(path) as zf:
+            return zf.read(member)
+    with tarfile.open(path, "r:*") as tf:
+        fh = tf.extractfile(member)
+        if fh is None:
+            raise FileNotFoundError("MIDI member not found in archive")
+        return fh.read()
+
+
+def build_style_packs(max_files: int = PACK_MAX_FILES) -> dict:
+    """Rebuild derived ZIP packs grouped by genre / role / source."""
+    global LIBRARY_ENTRIES, LIBRARY_LOCATORS, LIBRARY_MODE
+
+    raw = build_library_catalog(force=True, prefer_packs=False)
+    if not raw["entries"]:
+        raise FileNotFoundError(f"No MIDI files found under {LIBRARY_ROOT}")
+
+    # build_library_catalog walks TAR.GZ sequentially when classification is new.
+    # This second pass only fills any missing cache files and is still sequential.
+    warm = warm_raw_archive_cache()
+
+    entries = [dict(item) for item in LIBRARY_ENTRIES]
+    locators = dict(LIBRARY_LOCATORS)
+
+    if PACK_BUILD_ROOT.exists():
+        shutil.rmtree(PACK_BUILD_ROOT)
+    PACK_BUILD_ROOT.mkdir(parents=True, exist_ok=True)
+
+    grouped: defaultdict[tuple[str, str, str], list[dict]] = defaultdict(list)
+    for item in entries:
+        grouped[(item["genre"], item["kind"], item["source"])].append(item)
+
+    index_entries: list[dict] = []
+    pack_rows: list[dict] = []
+
+    try:
+        for (genre, kind, source), group in sorted(grouped.items()):
+            group.sort(key=lambda item: (item["name"].lower(), item["id"]))
+            genre_slug = slugify_pack_part(genre)
+            kind_slug = slugify_pack_part(kind)
+            source_slug = slugify_pack_part(source)
+            total_parts = max(1, (len(group) + max_files - 1) // max_files)
+
+            for part_idx in range(total_parts):
+                chunk = group[part_idx * max_files:(part_idx + 1) * max_files]
+                filename = f"{source_slug}__{part_idx + 1:03d}.zip"
+                pack_rel = Path(genre_slug) / kind_slug / filename
+                pack_path = PACK_BUILD_ROOT / pack_rel
+                pack_path.parent.mkdir(parents=True, exist_ok=True)
+
+                with zipfile.ZipFile(
+                    pack_path,
+                    "w",
+                    compression=zipfile.ZIP_DEFLATED,
+                    compresslevel=6,
+                ) as zf:
+                    for item in chunk:
+                        item_id = item["id"]
+                        locator = locators.get(item_id)
+                        if locator is None:
+                            raise FileNotFoundError(f"Missing source locator for {item_id}")
+                        data = source_bytes_for_pack(item_id, locator)
+                        member_name = f"{item_id}__{Path(item['name']).name}"
+                        zf.writestr(member_name, data)
+
+                        packed = dict(item)
+                        packed["pack"] = pack_rel.as_posix()
+                        packed["packMember"] = member_name
+                        index_entries.append(packed)
+
+                pack_rows.append({
+                    "path": pack_rel.as_posix(),
+                    "genre": genre,
+                    "kind": kind,
+                    "source": source,
+                    "files": len(chunk),
+                })
+
+        index_entries.sort(
+            key=lambda item: (
+                item["genre"],
+                item["kind"],
+                item["source"],
+                item["name"].lower(),
+            )
+        )
+        index_payload = {
+            "schema": 1,
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+            "maxFilesPerPack": max_files,
+            "total": len(index_entries),
+            "packs": pack_rows,
+            "entries": index_entries,
         }
+        (PACK_BUILD_ROOT / "library-index.json").write_text(
+            json.dumps(index_payload, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
+
+        if PACK_OLD_ROOT.exists():
+            shutil.rmtree(PACK_OLD_ROOT)
+        if PACK_ROOT.exists():
+            PACK_ROOT.rename(PACK_OLD_ROOT)
+        try:
+            PACK_BUILD_ROOT.rename(PACK_ROOT)
+        except Exception:
+            if PACK_OLD_ROOT.exists() and not PACK_ROOT.exists():
+                PACK_OLD_ROOT.rename(PACK_ROOT)
+            raise
+        if PACK_OLD_ROOT.exists():
+            shutil.rmtree(PACK_OLD_ROOT)
+
+        with LIBRARY_LOCK:
+            result = load_pack_catalog_locked()
+
         return {
-            "root": str(LIBRARY_ROOT),
-            "entries": entries,
-            "counts": counts,
+            "ok": True,
+            "total": len(index_entries),
+            "packs": len(pack_rows),
+            "maxFilesPerPack": max_files,
+            "cachedFiles": warm["files"],
+            "cachedBytes": warm["bytes"],
+            "root": str(PACK_ROOT),
+            "counts": result["counts"],
         }
+    finally:
+        if PACK_BUILD_ROOT.exists():
+            shutil.rmtree(PACK_BUILD_ROOT, ignore_errors=True)
 
 
 def read_library_midi(item_id: str) -> tuple[bytes, dict]:
@@ -375,6 +632,9 @@ def read_library_midi(item_id: str) -> tuple[bytes, dict]:
     path = Path(path_text)
     if mode == "file":
         return path.read_bytes(), entry
+    if mode == "pack":
+        with zipfile.ZipFile(path) as zf:
+            return zf.read(member), entry
 
     cached = read_cached_midi(item_id)
     if cached is not None:
@@ -743,6 +1003,12 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return
+        if path == "/api/library/repack":
+            try:
+                self._send_json(200, build_style_packs())
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
         self._send_json(404, {"ok": False, "error": "Unknown API endpoint"})
 
     def _handle_sync(self) -> None:
@@ -834,6 +1100,17 @@ def main() -> None:
     args = parser.parse_args()
 
     os.chdir(ROOT)
+    if not PACK_INDEX_PATH.exists():
+        print("Style Library packs are missing; building optimized ZIP packs once...")
+        try:
+            report = build_style_packs()
+            print(
+                f"Style Library packs ready: {report['packs']} ZIP packs, "
+                f"{report['total']} MIDI"
+            )
+        except Exception as exc:
+            print(f"Style Library pack build failed; falling back to raw library: {exc}")
+
     address = ("127.0.0.1", args.port)
     server = ThreadingHTTPServer(address, Handler)
     url = f"http://localhost:{args.port}/midi-host.html"
