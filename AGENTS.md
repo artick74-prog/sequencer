@@ -39,7 +39,7 @@ python scripts/local_server.py --open
 
 ## Hardware MIDI Host (`midi-host.html`)
 
-Плеер Standard MIDI для живого сетапа + цикл правок с Cursor. Браузер и Cursor синхронизируются через папку `projects/`.
+Плеер Standard MIDI для живого сетапа + цикл правок через GitHub. Браузер и ассистент синхронизируются через папку `projects/`.
 
 ### Цепочка
 
@@ -68,7 +68,6 @@ PC USB → TD-3 → MIDI Out (5-pin DIN) → XR20 In
 1. **Load MIDI** → загрузить многодорожечный Standard MIDI.
 2. **Sync to AI**:
    - пишет `projects/current.json`, `overview.json`, `overview.md`;
-   - при selection также пишет `selection.json`;
    - автоматически делает git commit и `git push origin <current branch>`.
 3. После Sync ассистент может сразу прочитать новую версию из GitHub.
 4. Ассистент правит `current.json`/другие файлы в GitHub.
@@ -98,8 +97,6 @@ ASCII в overview:
 - Ноты дальше snap считаются `hardOff` (квантизация нарушена намеренно) — точные tick остаются в `current.json`.
 - Легенда: `.` пусто · `x` удар · `X` акцент · `o` тихо · `*` две+ ноты в слоте · `#` пик heatmap.
 - По каждой секции (маркеры Cubase): heatmap, паттерны треков, доминирующий 2-bar loop.
-| `selection.json` | Регион правки (trackId, bars, ticks) |
-
 После Sync (или `python scripts/regen_overview.py`) ассистент читает ASCII по секциям.
 
 ### Формат `current.json`
@@ -127,14 +124,14 @@ ASCII в overview:
 
 - `channel` — **1–16** (Cubase-style).
 - `tick` / `duration` — PPQ (при 480: 1/4 = 480, 1/16 = 120).
-- При правке selection: удалить ноты с `tick ∈ [startTick, endTick)`, вписать новые в том же диапазоне; остальное не трогать.
+- Для точечной правки пользователь задаёт трек/секцию/такты в чате; остальное не трогать.
 
 ### Типичные запросы
 
-- «Прочитай overview — где breakdown? Перепиши selection под него»
-- «Перепиши selection как breakdown»
+- «Прочитай overview — где breakdown?»
 - «На треке Bass, такты 17–32 — реже и ниже»
-- «Reload сделал — теперь плотнее TD-3 в том же регионе»
+- «В Hook сделай TD-3 плотнее, остальные секции не трогай»
+- «Reload сделал — теперь поправь тот же диапазон»
 
 ### TD-3: правило программирования Acid-партий (важно)
 
