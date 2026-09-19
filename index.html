@@ -1198,6 +1198,37 @@ body {
 }
 
 /* ═══════════════════════════════════════════
+   TRACK ENGINE / HARDWARE / SOUNDFONT
+   ═══════════════════════════════════════════ */
+.engine-global-select,
+.track-engine-select,
+.track-channel-select,
+.track-program-select {
+  background: var(--bg-grid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  border-radius: 3px;
+  padding: 4px 6px;
+}
+.engine-global-select { max-width: 180px; }
+.engine-mini-btn { font-size: 10px !important; padding: 5px 8px !important; }
+.track-engine-select { color: var(--accent); }
+.track-channel-select { width: 72px; }
+.track-program-select { max-width: 190px; }
+.engine-badge {
+  font-size: 9px;
+  color: var(--text-dim);
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.note-block.poly {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+}
+
+/* ═══════════════════════════════════════════
    LOOP BROWSER / CONSTRUCTOR
    ═══════════════════════════════════════════ */
 .workspace {
@@ -1376,6 +1407,7 @@ body {
 }
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/sf2synth.iife.min.js"></script>
 </head>
 <body>
 
@@ -1400,6 +1432,13 @@ body {
   <button class="btn" id="btnSavePattern" style="font-size:10px">📚 Save Pattern</button>
   <button class="btn" id="btnLoops" style="font-size:10px">♫ Loops</button>
   <button class="btn" id="btnSyncAI" style="font-size:10px" title="Save current constructor state to GitHub so AI can inspect it">⇄ Sync to AI</button>
+  <select id="globalMidiOut" class="engine-global-select" title="Hardware MIDI output">
+    <option value="">MIDI OUT…</option>
+  </select>
+  <button class="btn engine-mini-btn" id="btnRefreshMidiOut" type="button" title="Refresh MIDI devices">↻ MIDI</button>
+  <button class="btn engine-mini-btn" id="btnLoadSf2Global" type="button" title="Load a SoundFont .sf2 file">SF2…</button>
+  <input id="sf2FileInput" type="file" accept=".sf2" style="display:none">
+  <span id="engineStatus" class="engine-badge" title="CHIP / SoundFont / Hardware MIDI status">CHIP</span>
 
   <div class="ctrl-group">
     <label>BPM</label>
@@ -1459,6 +1498,8 @@ body {
     </div>
   </aside>
 </div>
+
+<div id="sf2PlaceholderChiptune" style="display:none"></div>
 
 <!-- Модальное окно Settings -->
 <div class="modal-overlay" id="settingsModal">
@@ -1548,6 +1589,9 @@ const CONFIG = {
   ],
   DRUM_NOTE_MAP: [48, 50, 52, 53, 55, 57, 59, 60],
   //                    C3   D3   E3   F3   G3   A3   B3   C4
+  GM_DRUM_NOTE_MAP: [36, 38, 39, 42, 46, 45, 50, 49],
+  DEFAULT_MIDI_CHANNELS: [1, 2, 10],
+  DEFAULT_GM_PROGRAMS: [33, 81, 0],
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -1673,6 +1717,20 @@ const PRESETS = {
    УТИЛИТЫ
    ═══════════════════════════════════════════════════════════ */
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+let CHIPESEQ_GM_PROGRAMS = [];
+
+async function loadChiptuneGmPrograms() {
+  try {
+    const response = await fetch('scripts/gm-instruments.json');
+    if (!response.ok) return;
+    const data = await response.json();
+    if (Array.isArray(data.programs) && data.programs.length === 128) {
+      CHIPESEQ_GM_PROGRAMS = data.programs;
+    }
+  } catch {
+    CHIPESEQ_GM_PROGRAMS = [];
+  }
+}
 
 function midiToName(midi) {
   const note = NOTE_NAMES[midi % 12];
@@ -1713,6 +1771,7 @@ function parseReferenceMidi(buffer) {
   let tempo = 120;
   let endTick = 0;
   const notes = [];
+  const programs = {};
 
   for (let t = 0; t < nTracks; t++) {
     if (String.fromCharCode(...b.slice(off, off + 4)) !== 'MTrk') throw new Error('Missing MTrk');
@@ -1772,7 +1831,9 @@ function parseReferenceMidi(buffer) {
         }
       } else if (type === 0xa0 || type === 0xb0 || type === 0xe0) {
         i += 2;
-      } else if (type === 0xc0 || type === 0xd0) {
+      } else if (type === 0xc0) {
+        programs[channel] = b[i++];
+      } else if (type === 0xd0) {
         i += 1;
       } else {
         throw new Error('Unsupported MIDI status 0x' + status.toString(16));
@@ -1782,7 +1843,7 @@ function parseReferenceMidi(buffer) {
   }
 
   notes.sort((a, b2) => a.tick - b2.tick || a.note - b2.note);
-  return { ppq, tempo, endTick, notes };
+  return { ppq, tempo, endTick, notes, programs };
 }
 
 function midiLoopStepCount(midi) {
@@ -1809,6 +1870,32 @@ function gmDrumToIndex(note) {
   if ([47, 48, 50].includes(note)) return 6; // high tom
   if ([49, 51, 52, 53, 55, 57, 59].includes(note)) return 7; // cymbals
   return -1;
+}
+
+function normalizeMelodicEvent(value) {
+  if (typeof value === 'number') return { note: value, velocity: 100, length: 1 };
+  if (!value || typeof value !== 'object') return null;
+  const note = Number(value.note ?? value.midi);
+  if (!Number.isFinite(note)) return null;
+  return {
+    note: Math.max(0, Math.min(127, Math.round(note))),
+    velocity: Math.max(1, Math.min(127, Math.round(Number(value.velocity ?? 100)))),
+    length: Math.max(1, Number(value.length ?? 1)),
+  };
+}
+
+function normalizeMelodicCell(cell) {
+  if (cell == null) return [];
+  const values = Array.isArray(cell) ? cell : [cell];
+  return values.map(normalizeMelodicEvent).filter(Boolean);
+}
+
+function cloneMelodicCell(cell) {
+  return normalizeMelodicCell(cell).map(e => ({...e}));
+}
+
+function primaryMelodicNote(cell) {
+  return normalizeMelodicCell(cell)[0]?.note ?? null;
 }
 
 /* Генератор белого шума (используется для синтезатора барабанов) */
@@ -1984,7 +2071,7 @@ class PatternLibrary {
       savedAt: new Date().toISOString(),
       patternLength: vA.patternLength,
       variantA: {
-        melodicPattern: vA.melodicPattern.map(t => t.map(s => s)),
+        melodicPattern: vA.melodicPattern.map(t => t.map(cell => cloneMelodicCell(cell))),
         drumPattern: vA.drumPattern.map(t => t.map(s => [...s])),
         trackTypes: [...vA.trackTypes],
         trackWaves: [...vA.trackWaves],
@@ -1995,9 +2082,13 @@ class PatternLibrary {
         adsrDepth: vA.adsrDepth.map(d => ({...d})),
         trackMute: [...vA.trackMute],
         trackSources: (vA.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null),
+        trackEngines: [...(vA.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
+        trackMidiChannels: [...(vA.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
+        trackPrograms: [...(vA.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
+        trackDrumMidiNotes: (vA.trackDrumMidiNotes || Array.from({length:CONFIG.TRACKS},()=>CONFIG.GM_DRUM_NOTE_MAP)).map(row => [...row]),
       },
       variantB: vB ? {
-        melodicPattern: vB.melodicPattern.map(t => t.map(s => s)),
+        melodicPattern: vB.melodicPattern.map(t => t.map(cell => cloneMelodicCell(cell))),
         drumPattern: vB.drumPattern.map(t => t.map(s => [...s])),
         trackTypes: [...vB.trackTypes],
         trackWaves: [...vB.trackWaves],
@@ -2008,6 +2099,10 @@ class PatternLibrary {
         adsrDepth: vB.adsrDepth.map(d => ({...d})),
         trackMute: [...vB.trackMute],
         trackSources: (vB.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null),
+        trackEngines: [...(vB.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
+        trackMidiChannels: [...(vB.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
+        trackPrograms: [...(vB.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
+        trackDrumMidiNotes: (vB.trackDrumMidiNotes || Array.from({length:CONFIG.TRACKS},()=>CONFIG.GM_DRUM_NOTE_MAP)).map(row => [...row]),
       } : null,
     };
     list.push(entry);
@@ -2030,7 +2125,7 @@ class PatternLibrary {
 
     const makeVariant = (src) => ({
       patternLength: entry.patternLength,
-      melodicPattern: src.melodicPattern,
+      melodicPattern: src.melodicPattern.map(t => t.map(cell => cloneMelodicCell(cell))),
       drumPattern: src.drumPattern.map(t => t.map(s => [...s])),
       trackTypes: [...src.trackTypes],
       trackWaves: [...src.trackWaves],
@@ -2041,6 +2136,10 @@ class PatternLibrary {
       adsrDepth: src.adsrDepth.map(d => ({...d})),
       trackMute: [...src.trackMute],
       trackSources: (src.trackSources || Array(CONFIG.TRACKS).fill(null)).map(s => s ? {...s} : null),
+      trackEngines: [...(src.trackEngines || Array(CONFIG.TRACKS).fill('chip'))],
+      trackMidiChannels: [...(src.trackMidiChannels || CONFIG.DEFAULT_MIDI_CHANNELS)],
+      trackPrograms: [...(src.trackPrograms || CONFIG.DEFAULT_GM_PROGRAMS)],
+      trackDrumMidiNotes: (src.trackDrumMidiNotes || Array.from({length:CONFIG.TRACKS},()=>CONFIG.GM_DRUM_NOTE_MAP)).map(row => [...row]),
     });
 
     const newIdx = this.state._arrangedPatterns.length;
@@ -2075,7 +2174,7 @@ class StateManager {
     return {
       patternLength: len,
       melodicPattern: Array.from({ length: CONFIG.TRACKS }, () =>
-        Array(len).fill(null)),
+        Array.from({ length: len }, () => [])),
       drumPattern: Array.from({ length: CONFIG.TRACKS }, () =>
         Array.from({ length: len }, () =>
           new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false))),
@@ -2092,7 +2191,56 @@ class StateManager {
       adsrDepth: Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 })),
       trackMute: [false, false, false],
       trackSources: Array(CONFIG.TRACKS).fill(null),
+      trackEngines: Array(CONFIG.TRACKS).fill('chip'),
+      trackMidiChannels: CONFIG.DEFAULT_MIDI_CHANNELS.slice(),
+      trackPrograms: CONFIG.DEFAULT_GM_PROGRAMS.slice(),
+      trackDrumMidiNotes: Array.from({ length: CONFIG.TRACKS }, () => CONFIG.GM_DRUM_NOTE_MAP.slice()),
     };
+  }
+
+  static _normalizePattern(pattern, fallbackLen = CONFIG.STEPS) {
+    const d = pattern || {};
+    const len = Math.max(1, Number(d.patternLength || fallbackLen) | 0);
+    d.patternLength = len;
+
+    const melodic = Array.isArray(d.melodicPattern) ? d.melodicPattern : [];
+    d.melodicPattern = Array.from({ length: CONFIG.TRACKS }, (_, t) =>
+      Array.from({ length: len }, (_, step) => cloneMelodicCell(melodic[t]?.[step]))
+    );
+
+    const drums = Array.isArray(d.drumPattern) ? d.drumPattern : [];
+    d.drumPattern = Array.from({ length: CONFIG.TRACKS }, (_, t) =>
+      Array.from({ length: len }, (_, step) => {
+        const src = drums[t]?.[step];
+        return Array.from({ length: CONFIG.DRUM_INSTRUMENTS.length }, (_, i) => !!src?.[i]);
+      })
+    );
+
+    d.trackTypes = Array.from({ length: CONFIG.TRACKS }, (_, i) => d.trackTypes?.[i] || CONFIG.TRACK_TYPES[i] || 'melodic');
+    d.trackWaves = Array.from({ length: CONFIG.TRACKS }, (_, i) => d.trackWaves?.[i] || CONFIG.WAVE_TYPES[i] || 'square');
+    d.drumSoundModes = Array.from({ length: CONFIG.TRACKS }, (_, i) => d.drumSoundModes?.[i] || 'synth');
+    d.trackAdsr = Array.from({ length: CONFIG.TRACKS }, (_, i) => ({ attack:0.01, decay:0.1, sustain:0.7, release:0.08, ...(d.trackAdsr?.[i] || {}) }));
+    d.trackFilter = Array.from({ length: CONFIG.TRACKS }, (_, i) => ({ enabled:true, type:'lowpass', frequency:8000, q:1, ...(d.trackFilter?.[i] || {}) }));
+    d.adsrTarget = Array.from({ length: CONFIG.TRACKS }, (_, i) => ({ amp:true, filter:false, ...(d.adsrTarget?.[i] || {}) }));
+    d.adsrDepth = Array.from({ length: CONFIG.TRACKS }, (_, i) => ({ amp:1, filter:1, ...(d.adsrDepth?.[i] || {}) }));
+    d.trackMute = Array.from({ length: CONFIG.TRACKS }, (_, i) => !!d.trackMute?.[i]);
+    d.trackSources = Array.from({ length: CONFIG.TRACKS }, (_, i) => d.trackSources?.[i] ? {...d.trackSources[i]} : null);
+    d.trackEngines = Array.from({ length: CONFIG.TRACKS }, (_, i) => ['chip','sf2','midi'].includes(d.trackEngines?.[i]) ? d.trackEngines[i] : 'chip');
+    d.trackMidiChannels = Array.from({ length: CONFIG.TRACKS }, (_, i) => {
+      const ch = Number(d.trackMidiChannels?.[i] ?? CONFIG.DEFAULT_MIDI_CHANNELS[i] ?? 1);
+      return Math.max(1, Math.min(16, ch | 0));
+    });
+    d.trackPrograms = Array.from({ length: CONFIG.TRACKS }, (_, i) => {
+      const p = Number(d.trackPrograms?.[i] ?? CONFIG.DEFAULT_GM_PROGRAMS[i] ?? 0);
+      return Math.max(0, Math.min(127, p | 0));
+    });
+    d.trackDrumMidiNotes = Array.from({ length: CONFIG.TRACKS }, (_, t) =>
+      Array.from({ length: CONFIG.DRUM_INSTRUMENTS.length }, (_, dIdx) => {
+        const note = Number(d.trackDrumMidiNotes?.[t]?.[dIdx] ?? CONFIG.GM_DRUM_NOTE_MAP[dIdx] ?? 36);
+        return Math.max(0, Math.min(127, note | 0));
+      })
+    );
+    return d;
   }
 
   constructor() {
@@ -2108,6 +2256,10 @@ class StateManager {
     this.adsrDepth = p.adsrDepth;
     this.trackMute = p.trackMute;
     this.trackSources = p.trackSources;
+    this.trackEngines = p.trackEngines;
+    this.trackMidiChannels = p.trackMidiChannels;
+    this.trackPrograms = p.trackPrograms;
+    this.trackDrumMidiNotes = p.trackDrumMidiNotes;
     this.patternLength = p.patternLength;
     this.steps = this.patternLength;
 
@@ -2201,8 +2353,11 @@ class StateManager {
 
   /* Загрузить данные в редактор */
   _loadPatternData(data) {
-    this._patternA = data._variantA;
-    this._patternB = data._variantB || JSON.parse(JSON.stringify(data._variantA));
+    this._patternA = StateManager._normalizePattern(data._variantA);
+    this._patternB = StateManager._normalizePattern(
+      data._variantB || JSON.parse(JSON.stringify(data._variantA)),
+      this._patternA.patternLength
+    );
     this._activeVariant = data._activeVariant || 'a';
     this._undoStackA = data._undoStackA || [];
     this._redoStackA = data._redoStackA || [];
@@ -2238,7 +2393,7 @@ class StateManager {
 
   /* Скопировать активный вариант из _patternA/B в state */
   _loadVariantToState() {
-    const d = this._getCurrentData();
+    const d = StateManager._normalizePattern(this._getCurrentData());
     this.melodicPattern = d.melodicPattern;
     this.drumPattern = d.drumPattern;
     this.trackTypes = d.trackTypes;
@@ -2250,6 +2405,10 @@ class StateManager {
     this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
     this.trackMute = d.trackMute || [false, false, false];
     this.trackSources = (d.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null);
+    this.trackEngines = [...d.trackEngines];
+    this.trackMidiChannels = [...d.trackMidiChannels];
+    this.trackPrograms = [...d.trackPrograms];
+    this.trackDrumMidiNotes = d.trackDrumMidiNotes.map(row => [...row]);
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this.locatorA = Math.max(0, Math.min(this.locatorA, this.patternLength));
@@ -2273,6 +2432,10 @@ class StateManager {
     d.adsrDepth = this.adsrDepth.map(d2 => ({...d2}));
     d.trackMute = [...this.trackMute];
     d.trackSources = this.trackSources.map(src => src ? {...src} : null);
+    d.trackEngines = [...this.trackEngines];
+    d.trackMidiChannels = [...this.trackMidiChannels];
+    d.trackPrograms = [...this.trackPrograms];
+    d.trackDrumMidiNotes = this.trackDrumMidiNotes.map(row => [...row]);
   }
 
   /* Коллбэк, вызываемый при каждом изменении состояния */
@@ -2295,12 +2458,16 @@ class StateManager {
       adsrDepth: this.adsrDepth.map(d => ({...d})),
       trackMute: [...this.trackMute],
       trackSources: this.trackSources.map(src => src ? {...src} : null),
+      trackEngines: [...this.trackEngines],
+      trackMidiChannels: [...this.trackMidiChannels],
+      trackPrograms: [...this.trackPrograms],
+      trackDrumMidiNotes: this.trackDrumMidiNotes.map(row => [...row]),
     });
   }
 
   /* Восстановить из снапшота */
   _restore(json) {
-    const d = JSON.parse(json);
+    const d = StateManager._normalizePattern(JSON.parse(json));
     this.melodicPattern = d.melodicPattern;
     this.drumPattern = d.drumPattern;
     this.trackTypes = d.trackTypes;
@@ -2314,6 +2481,10 @@ class StateManager {
     this.adsrDepth = d.adsrDepth || Array.from({ length: CONFIG.TRACKS }, () => ({ amp: 1, filter: 1 }));
     this.trackMute = d.trackMute || [false, false, false];
     this.trackSources = (d.trackSources || Array(CONFIG.TRACKS).fill(null)).map(src => src ? {...src} : null);
+    this.trackEngines = [...d.trackEngines];
+    this.trackMidiChannels = [...d.trackMidiChannels];
+    this.trackPrograms = [...d.trackPrograms];
+    this.trackDrumMidiNotes = d.trackDrumMidiNotes.map(row => [...row]);
     this.patternLength = d.patternLength ?? CONFIG.STEPS;
     this.steps = this.patternLength;
     this._saveStateToVariant();
@@ -2420,7 +2591,7 @@ class StateManager {
       const melodic = [];
       const drum = [];
       for (let s = this.selStart; s <= this.selEnd; s++) {
-        melodic.push(this.melodicPattern[t][s]);
+        melodic.push(cloneMelodicCell(this.melodicPattern[t][s]));
         drum.push(this.drumPattern[t][s] ? [...this.drumPattern[t][s]] : null);
       }
       data.push({ melodic, drum });
@@ -2445,7 +2616,7 @@ class StateManager {
       if (!this.clipboard.data[t]) continue;
       for (let i = 0; i < len; i++) {
         const s = target + i;
-        this.melodicPattern[t][s] = this.clipboard.data[t].melodic[i];
+        this.melodicPattern[t][s] = cloneMelodicCell(this.clipboard.data[t].melodic[i]);
         this.drumPattern[t][s] = this.clipboard.data[t].drum[i]
           ? [...this.clipboard.data[t].drum[i]]
           : new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
@@ -2501,7 +2672,7 @@ class StateManager {
     this.pushHistory();
     for (let s = this.selStart; s <= this.selEnd; s++) {
       for (let t = 0; t < CONFIG.TRACKS; t++) {
-        this.melodicPattern[t][s] = null;
+        this.melodicPattern[t][s] = [];
         this.drumPattern[t][s] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
       }
     }
@@ -2518,6 +2689,14 @@ class StateManager {
     this._notify();
   }
 
+  setTrackEngine(track, engine) {
+    if (!['chip', 'sf2', 'midi'].includes(engine)) return;
+    if (this.trackEngines[track] === engine) return;
+    this.pushHistory();
+    this.trackEngines[track] = engine;
+    this._notify();
+  }
+
   /* Import a parsed reference MIDI into one editable track and repeat it to pattern length. */
   loadMidiLoop(track, midi, entry) {
     if (!midi || !midi.ppq || !Array.isArray(midi.notes)) return false;
@@ -2528,23 +2707,33 @@ class StateManager {
     }
 
     this.pushHistory();
-    const isDrums = entry?.kind === 'drums' || midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
+    const channel10Notes = midi.notes.filter(n => n.channel === 10);
+    const isDrums = entry?.kind === 'drums' || channel10Notes.length > midi.notes.length * 0.6;
     this.trackTypes[track] = isDrums ? 'drum' : 'melodic';
 
-    for (let s = 0; s < this.steps; s++) {
-      this.melodicPattern[track][s] = null;
-      this.drumPattern[track][s] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
+    for (let step = 0; step < this.steps; step++) {
+      this.melodicPattern[track][step] = [];
+      this.drumPattern[track][step] = new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false);
     }
 
     const tickPerStep = midi.ppq / 4;
+    let polyphonic = false;
     if (isDrums) {
+      this.trackMidiChannels[track] = 10;
       const baseHits = [];
+      const noteCountsByLane = Array.from({ length: CONFIG.DRUM_INSTRUMENTS.length }, () => new Map());
       for (const note of midi.notes) {
         const drumIdx = gmDrumToIndex(note.note);
         if (drumIdx < 0) continue;
         const step = Math.max(0, Math.min(loopSteps - 1, Math.round(note.tick / tickPerStep)));
         baseHits.push([step, drumIdx]);
+        const counts = noteCountsByLane[drumIdx];
+        counts.set(note.note, (counts.get(note.note) || 0) + 1);
       }
+      this.trackDrumMidiNotes[track] = noteCountsByLane.map((counts, drumIdx) => {
+        if (!counts.size) return CONFIG.GM_DRUM_NOTE_MAP[drumIdx] ?? 36;
+        return [...counts.entries()].sort((a,b) => b[1] - a[1])[0][0];
+      });
       for (let offset = 0; offset < this.steps; offset += loopSteps) {
         for (const [baseStep, drumIdx] of baseHits) {
           const step = offset + baseStep;
@@ -2552,26 +2741,42 @@ class StateManager {
         }
       }
     } else {
-      const byStep = new Map();
-      for (const note of midi.notes) {
-        if (note.channel === 10) continue;
+      const melodicNotes = midi.notes.filter(n => n.channel !== 10);
+      const channelCounts = new Map();
+      for (const note of melodicNotes) {
+        channelCounts.set(note.channel, (channelCounts.get(note.channel) || 0) + 1);
+      }
+      const dominantChannel = [...channelCounts.entries()].sort((a,b) => b[1]-a[1])[0]?.[0];
+      if (dominantChannel) this.trackMidiChannels[track] = dominantChannel;
+      const encodedProgram = dominantChannel ? midi.programs?.[dominantChannel] : null;
+      if (Number.isInteger(encodedProgram)) this.trackPrograms[track] = encodedProgram;
+
+      const baseEvents = new Map();
+      for (const note of melodicNotes) {
         const step = Math.max(0, Math.min(loopSteps - 1, Math.round(note.tick / tickPerStep)));
         const pitch = foldMidiPitch(note.note);
-        const prev = byStep.get(step);
-        if (!prev) {
-          byStep.set(step, {pitch, velocity: note.velocity || 0});
-        } else if (entry?.kind === 'bass') {
-          if (pitch < prev.pitch || (pitch === prev.pitch && (note.velocity || 0) > prev.velocity)) {
-            byStep.set(step, {pitch, velocity: note.velocity || 0});
-          }
-        } else if ((note.velocity || 0) >= prev.velocity) {
-          byStep.set(step, {pitch, velocity: note.velocity || 0});
+        const length = Math.max(1, Math.min(CONFIG.MAX_STEPS, note.duration / tickPerStep));
+        if (!baseEvents.has(step)) baseEvents.set(step, []);
+        const row = baseEvents.get(step);
+        const existing = row.find(e => e.note === pitch);
+        const event = {
+          note: pitch,
+          velocity: Math.max(1, Math.min(127, note.velocity || 100)),
+          length: Math.max(1, Number(length.toFixed(3))),
+        };
+        if (!existing) row.push(event);
+        else {
+          existing.velocity = Math.max(existing.velocity, event.velocity);
+          existing.length = Math.max(existing.length, event.length);
         }
       }
+
+      polyphonic = [...baseEvents.values()].some(events => events.length > 1);
       for (let offset = 0; offset < this.steps; offset += loopSteps) {
-        for (const [baseStep, value] of byStep) {
+        for (const [baseStep, events] of baseEvents) {
           const step = offset + baseStep;
-          if (step < this.steps) this.melodicPattern[track][step] = value.pitch;
+          if (step >= this.steps) continue;
+          this.melodicPattern[track][step] = events.map(e => ({...e}));
         }
       }
     }
@@ -2585,6 +2790,7 @@ class StateManager {
       rating: typeof getLoopRating === 'function' ? getLoopRating(entry?.id || '') : 0,
       originalSteps: loopSteps,
       originalBars: Number((loopSteps / 16).toFixed(2)),
+      polyphonic,
       loadedAt: new Date().toISOString(),
     };
     this._notify();
@@ -2593,10 +2799,17 @@ class StateManager {
 
   setMelodicNote(track, step, midi) {
     this.pushHistory();
-    if (this.melodicPattern[track][step] === midi) {
-      this.melodicPattern[track][step] = null;
+    const cell = cloneMelodicCell(this.melodicPattern[track][step]);
+    const idx = cell.findIndex(e => e.note === midi);
+    if (this.trackEngines[track] === 'chip') {
+      this.melodicPattern[track][step] = idx >= 0 && cell.length === 1
+        ? []
+        : [{ note: midi, velocity: 100, length: 1 }];
     } else {
-      this.melodicPattern[track][step] = midi;
+      if (idx >= 0) cell.splice(idx, 1);
+      else cell.push({ note: midi, velocity: 100, length: 1 });
+      cell.sort((a,b) => a.note - b.note);
+      this.melodicPattern[track][step] = cell;
     }
     this._notify();
   }
@@ -2618,13 +2831,13 @@ class StateManager {
     if (!variant) return 0;
     const steps = variant.patternLength || CONFIG.STEPS;
     let count = 0;
-    if (this.trackTypes[trackIdx] === 'drum') {
+    if ((variant.trackTypes?.[trackIdx] || this.trackTypes[trackIdx]) === 'drum') {
       for (let s = 0; s < steps; s++)
         for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++)
           if (variant.drumPattern[trackIdx]?.[s]?.[d]) count++;
     } else {
       for (let s = 0; s < steps; s++)
-        if (variant.melodicPattern[trackIdx]?.[s] !== null && variant.melodicPattern[trackIdx]?.[s] !== undefined) count++;
+        count += normalizeMelodicCell(variant.melodicPattern[trackIdx]?.[s]).length;
     }
     return count;
   }
@@ -2633,7 +2846,7 @@ class StateManager {
     this.pushHistory();
     for (let t = 0; t < CONFIG.TRACKS; t++) {
       for (let s = 0; s < this.steps; s++) {
-        this.melodicPattern[t][s] = null;
+        this.melodicPattern[t][s] = [];
         for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
           this.drumPattern[t][s][d] = false;
         }
@@ -2653,7 +2866,7 @@ class StateManager {
     this.selStart = -1; this.selEnd = -1; this.pasteCursor = -1;
     for (let t = 0; t < CONFIG.TRACKS; t++) {
       if (clamped > oldLen) {
-        this.melodicPattern[t].push(...Array(clamped - oldLen).fill(null));
+        this.melodicPattern[t].push(...Array.from({ length: clamped - oldLen }, () => []));
         this.drumPattern[t].push(...Array.from({ length: clamped - oldLen }, () =>
           new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false)));
       } else {
@@ -2667,7 +2880,7 @@ class StateManager {
     for (let t = 0; t < CONFIG.TRACKS; t++) {
       const inactLen = inactive.melodicPattern[t].length;
       if (clamped > inactLen) {
-        inactive.melodicPattern[t].push(...Array(clamped - inactLen).fill(null));
+        inactive.melodicPattern[t].push(...Array.from({ length: clamped - inactLen }, () => []));
         inactive.drumPattern[t].push(...Array.from({ length: clamped - inactLen }, () =>
           new Array(CONFIG.DRUM_INSTRUMENTS.length).fill(false)));
       } else {
@@ -2686,9 +2899,9 @@ class StateManager {
   getMelodicNotesAtStep(step) {
     const result = new Map();
     for (let t = 0; t < CONFIG.TRACKS; t++) {
-      if (!this.isDrumTrack(t) && this.melodicPattern[t][step] !== null) {
-        result.set(t, this.melodicPattern[t][step]);
-      }
+      if (this.isDrumTrack(t)) continue;
+      const events = normalizeMelodicCell(this.melodicPattern[t][step]);
+      if (events.length) result.set(t, events);
     }
     return result;
   }
@@ -2783,8 +2996,8 @@ class StateManager {
       locatorA: ap.locatorA ?? 0,
       locatorB: ap.locatorB ?? (ap._variantA?.patternLength || CONFIG.STEPS),
       _activeVariant: ap._activeVariant || 'a',
-      _variantA: JSON.parse(JSON.stringify(ap._variantA)),
-      _variantB: ap._variantB ? JSON.parse(JSON.stringify(ap._variantB)) : null,
+      _variantA: StateManager._normalizePattern(JSON.parse(JSON.stringify(ap._variantA))),
+      _variantB: ap._variantB ? StateManager._normalizePattern(JSON.parse(JSON.stringify(ap._variantB)), ap._variantA?.patternLength || CONFIG.STEPS) : null,
       _undoStackA: [], _redoStackA: [],
       _undoStackB: [], _redoStackB: [],
     }));
@@ -3135,32 +3348,207 @@ class AudioEngine {
     this.ctx = null;
     this.drumSynth = null;
     this.activeNotes = new Map();
+
+    this.midiAccess = null;
+    this.outputId = localStorage.getItem('chiptune_midi_output') || '';
+    this.midiInitPromise = null;
+
+    this.sf2Engine = null;
+    this.sf2Ready = false;
+    this.sf2LoadingPromise = null;
+    this.sf2Name = 'Yamaha XG (built-in)';
+    this.sf2Timers = new Set();
+    this.sf2ChannelState = new Map();
   }
 
   init() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       this.drumSynth = new DrumSynth(this.ctx);
-      this.drumSynth.initSamples(); // рендеринг сэмплов (асинхронно)
+      this.drumSynth.initSamples();
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
     return this.ctx;
   }
 
-  /* Сыграть мелодическую ноту с ADSR + Filter */
+  /* ── Web MIDI ── */
+  async ensureMidiAccess() {
+    if (this.midiAccess) {
+      if (typeof refreshGlobalMidiOutUI === 'function') refreshGlobalMidiOutUI();
+      return this.midiAccess;
+    }
+    if (this.midiInitPromise) return this.midiInitPromise;
+    if (!navigator.requestMIDIAccess) {
+      if (typeof setEngineStatus === 'function') setEngineStatus('Web MIDI is not supported in this browser.', true);
+      return null;
+    }
+    this.midiInitPromise = navigator.requestMIDIAccess({ sysex: false })
+      .then(access => {
+        this.midiAccess = access;
+        access.onstatechange = () => {
+          if (typeof refreshGlobalMidiOutUI === 'function') refreshGlobalMidiOutUI();
+        };
+        const outputs = [...access.outputs.values()];
+        if (!outputs.some(o => o.id === this.outputId)) {
+          const prefer = outputs.find(o => /td-?3|behringer|akai|xr20/i.test(o.name)) || outputs[0];
+          this.outputId = prefer?.id || '';
+        }
+        if (this.outputId) localStorage.setItem('chiptune_midi_output', this.outputId);
+        if (typeof refreshGlobalMidiOutUI === 'function') refreshGlobalMidiOutUI();
+        return access;
+      })
+      .catch(err => {
+        if (typeof setEngineStatus === 'function') setEngineStatus('MIDI access: ' + err.message, true);
+        return null;
+      })
+      .finally(() => { this.midiInitPromise = null; });
+    return this.midiInitPromise;
+  }
+
+  getMidiOutput() {
+    if (!this.midiAccess || !this.outputId) return null;
+    return this.midiAccess.outputs.get(this.outputId) || null;
+  }
+
+  setMidiOutput(id) {
+    this.outputId = id || '';
+    if (this.outputId) localStorage.setItem('chiptune_midi_output', this.outputId);
+    else localStorage.removeItem('chiptune_midi_output');
+  }
+
+  scheduleMidiNote(channel, note, velocity, time, duration) {
+    const out = this.getMidiOutput();
+    if (!out || !this.ctx) return;
+    const ch = Math.max(0, Math.min(15, (channel || 1) - 1));
+    const delayMs = Math.max(0, (time - this.ctx.currentTime) * 1000);
+    const onAt = performance.now() + delayMs;
+    const offAt = onAt + Math.max(10, duration * 1000);
+    try {
+      out.send([0x90 | ch, note & 0x7f, Math.max(1, Math.min(127, velocity || 100))], onAt);
+      out.send([0x80 | ch, note & 0x7f, 0], offAt);
+    } catch (err) {
+      if (typeof setEngineStatus === 'function') setEngineStatus('MIDI send: ' + err.message, true);
+    }
+  }
+
+  /* ── SoundFont ── */
+  sf2Synth() {
+    return this.sf2Engine?.synth || null;
+  }
+
+  async ensureSf2Loaded() {
+    if (this.sf2Ready && this.sf2Synth()) return true;
+    if (this.sf2LoadingPromise) return this.sf2LoadingPromise;
+    if (typeof SoundFont === 'undefined') {
+      if (typeof setEngineStatus === 'function') setEngineStatus('SoundFont library is unavailable.', true);
+      return false;
+    }
+    const url = 'https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/Yamaha%20XG%20Sound%20Set.sf2';
+    this.sf2LoadingPromise = (async () => {
+      try {
+        if (!this.sf2Engine) {
+          this.sf2Engine = new SoundFont.WebMidiLink({
+            drawSynth: false,
+            placeholder: 'sf2PlaceholderChiptune',
+            url,
+            cache: true,
+          });
+          await new Promise((resolve, reject) => {
+            this.sf2Engine.setLoadCallback(resolve);
+            this.sf2Engine.setup().catch(reject);
+          });
+        }
+        await this.sf2Synth().ctx.resume();
+        this.sf2Ready = true;
+        this.sf2Name = 'Yamaha XG (built-in)';
+        this.sf2ChannelState.clear();
+        if (typeof setEngineStatus === 'function') setEngineStatus('SF2 ready · ' + this.sf2Name, false);
+        return true;
+      } catch (err) {
+        this.sf2Ready = false;
+        if (typeof setEngineStatus === 'function') setEngineStatus('SF2 load: ' + err.message, true);
+        return false;
+      } finally {
+        this.sf2LoadingPromise = null;
+      }
+    })();
+    return this.sf2LoadingPromise;
+  }
+
+  async loadSf2File(file) {
+    if (!file || typeof SoundFont === 'undefined') return false;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (!this.sf2Engine) {
+        this.sf2Engine = new SoundFont.WebMidiLink({
+          drawSynth: false,
+          placeholder: 'sf2PlaceholderChiptune',
+          cache: false,
+        });
+      }
+      await new Promise(resolve => {
+        this.sf2Engine.setLoadCallback(resolve);
+        this.sf2Engine.setupByBuffer(bytes);
+      });
+      await this.sf2Synth().ctx.resume();
+      this.sf2Ready = true;
+      this.sf2Name = file.name;
+      this.sf2ChannelState.clear();
+      if (typeof setEngineStatus === 'function') setEngineStatus('SF2 loaded · ' + file.name, false);
+      return true;
+    } catch (err) {
+      if (typeof setEngineStatus === 'function') setEngineStatus('SF2 load: ' + err.message, true);
+      return false;
+    }
+  }
+
+  configureSf2Channel(channel, program, percussion) {
+    const synth = this.sf2Synth();
+    if (!synth) return;
+    const ch = Math.max(0, Math.min(15, (channel || 1) - 1));
+    const signature = (percussion ? 'D' : 'M') + ':' + (program ?? 0);
+    if (this.sf2ChannelState.get(ch) === signature) return;
+    synth.setPercussionPart(ch, !!percussion);
+    if (!percussion) synth.programChange(ch, Math.max(0, Math.min(127, program || 0)));
+    this.sf2ChannelState.set(ch, signature);
+  }
+
+  _scheduleSf2Action(fn, time) {
+    if (!this.ctx) return;
+    const delay = Math.max(0, (time - this.ctx.currentTime) * 1000);
+    if (delay < 2) {
+      fn();
+      return;
+    }
+    const timer = setTimeout(() => {
+      this.sf2Timers.delete(timer);
+      fn();
+    }, delay);
+    this.sf2Timers.add(timer);
+  }
+
+  scheduleSf2Note(channel, program, note, velocity, time, duration, percussion = false) {
+    const synth = this.sf2Synth();
+    if (!synth) return;
+    const ch = Math.max(0, Math.min(15, (channel || 1) - 1));
+    this.configureSf2Channel(channel, program, percussion);
+    this._scheduleSf2Action(
+      () => synth.noteOn(ch, note & 0x7f, Math.max(1, Math.min(127, velocity || 100))),
+      time
+    );
+    this._scheduleSf2Action(() => synth.noteOff(ch, note & 0x7f), time + Math.max(0.01, duration));
+  }
+
+  /* ── Chiptune oscillator ── */
   scheduleNote(track, midi, time, duration, waveType, adsr, filter, adsrTarget, adsrDepth) {
     const ctx = this.ctx;
     if (!ctx) return;
 
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-
     const osc = ctx.createOscillator();
     osc.type = waveType;
     osc.frequency.setValueAtTime(freq, time);
 
-    // Фильтр (BiquadFilter)
     const filterNode = ctx.createBiquadFilter();
     const routeAmp = adsrTarget && adsrTarget.amp;
     const routeFlt = adsrTarget && adsrTarget.filter;
@@ -3186,46 +3574,37 @@ class AudioEngine {
     const adjRelease = Math.min(release, duration * 0.5);
     const decayEnd = time + adjAttack + adjDecay;
     const sustainEnd = time + duration - adjRelease;
-
     const gainNode = ctx.createGain();
 
     if (routeAmp) {
-      // ADSR управляет громкостью с глубиной depthAmp
       const centerAmp = peak;
-      const modRange = peak * depthAmp; // насколько может меняться
+      const modRange = peak * depthAmp;
       const minAmp = Math.max(0, centerAmp - modRange);
       const maxAmp = Math.min(1, centerAmp);
       gainNode.gain.setValueAtTime(minAmp, time);
       gainNode.gain.linearRampToValueAtTime(maxAmp, time + adjAttack);
       gainNode.gain.linearRampToValueAtTime(maxAmp - (maxAmp - minAmp) * (1 - sustain), decayEnd);
-      if (sustainEnd > decayEnd) {
-        gainNode.gain.setValueAtTime(maxAmp - (maxAmp - minAmp) * (1 - sustain), sustainEnd);
-      }
+      if (sustainEnd > decayEnd) gainNode.gain.setValueAtTime(maxAmp - (maxAmp - minAmp) * (1 - sustain), sustainEnd);
       gainNode.gain.linearRampToValueAtTime(minAmp, time + duration);
     } else {
       gainNode.gain.setValueAtTime(peak, time);
     }
 
     if (routeFlt) {
-      // ADSR управляет частотой среза с глубиной depthFlt
       const fMin = 20;
       const fMax = filter && filter.enabled ? filter.frequency : 8000;
       const fRange = (fMax - fMin) * depthFlt;
-      const baseFreq = fMax - fRange; // нижняя точка модуляции
-
+      const baseFreq = fMax - fRange;
       filterNode.frequency.setValueAtTime(baseFreq, time);
       filterNode.frequency.linearRampToValueAtTime(fMax, time + adjAttack);
       filterNode.frequency.linearRampToValueAtTime(baseFreq + fRange * sustain, decayEnd);
-      if (sustainEnd > decayEnd) {
-        filterNode.frequency.setValueAtTime(baseFreq + fRange * sustain, sustainEnd);
-      }
+      if (sustainEnd > decayEnd) filterNode.frequency.setValueAtTime(baseFreq + fRange * sustain, sustainEnd);
       filterNode.frequency.linearRampToValueAtTime(baseFreq, time + duration);
     }
 
     osc.connect(filterNode);
     filterNode.connect(gainNode);
     gainNode.connect(ctx.destination);
-
     osc.start(time);
     osc.stop(time + duration + 0.01);
 
@@ -3238,24 +3617,42 @@ class AudioEngine {
     });
   }
 
-  /* Сыграть барабан (синтез или сэмпл) */
   scheduleDrum(track, drumIdx, time, useSample) {
     if (!this.ctx || !this.drumSynth) return;
-    if (useSample) {
-      this.drumSynth.playSample(drumIdx, time);
-    } else {
-      this.drumSynth.play(drumIdx, time);
-    }
+    if (useSample) this.drumSynth.playSample(drumIdx, time);
+    else this.drumSynth.play(drumIdx, time);
   }
 
   stopAll() {
     const now = this.ctx ? this.ctx.currentTime : 0;
-    for (const [key, note] of this.activeNotes) {
-      try { note.oscillator.stop(now); } catch(e) {}
-      note.gainNode.gain.cancelScheduledValues(now);
-      note.gainNode.gain.setValueAtTime(0, now);
+    for (const note of this.activeNotes.values()) {
+      try { note.oscillator.stop(now); } catch {}
+      try {
+        note.gainNode.gain.cancelScheduledValues(now);
+        note.gainNode.gain.setValueAtTime(0, now);
+      } catch {}
     }
     this.activeNotes.clear();
+
+    for (const timer of this.sf2Timers) clearTimeout(timer);
+    this.sf2Timers.clear();
+    const synth = this.sf2Synth();
+    if (synth) {
+      for (let ch = 0; ch < 16; ch++) {
+        try { synth.allSoundOff(ch); } catch {}
+      }
+    }
+
+    const out = this.getMidiOutput();
+    if (out) {
+      try {
+        if (typeof out.clear === 'function') out.clear();
+        for (let ch = 0; ch < 16; ch++) {
+          out.send([0xb0 | ch, 123, 0]);
+          out.send([0xb0 | ch, 64, 0]);
+        }
+      } catch {}
+    }
   }
 
   get currentTime() {
@@ -3284,9 +3681,24 @@ class Sequencer {
     return (60 / this.state.tempo) / 4;
   }
 
-  start() {
-    if (this._running) return;
+  async start() {
+    if (this._running) return true;
     this.audio.init();
+
+    const activeEngines = new Set(
+      this.state.trackEngines.filter((engine, track) => !this.state.trackMute[track])
+    );
+    if (activeEngines.has('sf2')) {
+      const ok = await this.audio.ensureSf2Loaded();
+      if (!ok) return false;
+    }
+    if (activeEngines.has('midi')) {
+      await this.audio.ensureMidiAccess();
+      if (!this.audio.getMidiOutput() && activeEngines.size === 1) {
+        if (typeof setEngineStatus === 'function') setEngineStatus('No hardware MIDI output selected.', true);
+        return false;
+      }
+    }
 
     this._running = true;
     this.state.isPlaying = true;
@@ -3297,6 +3709,7 @@ class Sequencer {
     this.currentStep = (cs >= la && cs < lb) ? cs : la;
 
     this.timerID = setInterval(() => this._schedulerTick(), CONFIG.SCHEDULE_INTERVAL);
+    return true;
   }
 
   stop() {
@@ -3322,58 +3735,91 @@ class Sequencer {
     this.currentStep = this.state.locatorA;
   }
 
+  _scheduleMelodicTrack(track, events, playTime) {
+    const engine = this.state.trackEngines[track] || 'chip';
+    const channel = this.state.trackMidiChannels[track] || 1;
+    const program = this.state.trackPrograms[track] || 0;
+    const playable = engine === 'chip' ? events.slice(0, 1) : events;
+
+    for (const event of playable) {
+      const lengthSteps = Math.max(0.08, Number(event.length || 1));
+      const duration = this.stepDuration * lengthSteps;
+      if (engine === 'sf2') {
+        this.audio.scheduleSf2Note(channel, program, event.note, event.velocity, playTime, duration, false);
+      } else if (engine === 'midi') {
+        this.audio.scheduleMidiNote(channel, event.note, event.velocity, playTime, duration);
+      } else {
+        this.audio.scheduleNote(
+          track,
+          event.note,
+          playTime,
+          duration * 0.98,
+          this.state.trackWaves[track],
+          this.state.trackAdsr[track],
+          this.state.trackFilter[track],
+          this.state.adsrTarget[track],
+          this.state.adsrDepth[track]
+        );
+      }
+    }
+  }
+
+  _scheduleDrumTrack(track, drumSet, playTime) {
+    const engine = this.state.trackEngines[track] || 'chip';
+    const channel = this.state.trackMidiChannels[track] || 10;
+    const program = this.state.trackPrograms[track] || 0;
+    const duration = Math.max(0.05, this.stepDuration * 0.7);
+    if (engine === 'chip') {
+      const useSample = this.state.drumSoundModes[track] === 'sample';
+      for (const drumIdx of drumSet) this.audio.scheduleDrum(track, drumIdx, playTime, useSample);
+      return;
+    }
+    for (const drumIdx of drumSet) {
+      const note = this.state.trackDrumMidiNotes?.[track]?.[drumIdx] ?? CONFIG.GM_DRUM_NOTE_MAP[drumIdx] ?? 36;
+      if (engine === 'sf2') {
+        this.audio.scheduleSf2Note(channel, program, note, 105, playTime, duration, true);
+      } else if (engine === 'midi') {
+        this.audio.scheduleMidiNote(channel, note, 105, playTime, duration);
+      }
+    }
+  }
+
   _schedulerTick() {
     const ctx = this.audio.ctx;
     if (!ctx) return;
 
     while (this.nextStepTime < ctx.currentTime + CONFIG.LOOKAHEAD) {
-      // Авто-переключение на следующий паттерн, если шаг на границе локаторов
       if (this.state.songMode && this.currentStep === this.state.locatorA && this._hasScheduled && !this._didAdvance) {
         this._advancePattern();
         this._didAdvance = true;
       }
 
-      // Swing
       let swingOffset = 0;
       if (this.currentStep % 2 === 1 && this.state.swing > 0) {
         swingOffset = (this.state.swing / 100) * this.stepDuration * 0.5;
       }
-
       const playTime = this.nextStepTime + swingOffset;
-      const duration = this.stepDuration * 0.92;
 
-      // Мелодические ноты
       const melodicNotes = this.state.getMelodicNotesAtStep(this.currentStep);
-      for (const [track, midi] of melodicNotes) {
+      for (const [track, events] of melodicNotes) {
         if (this.state.trackMute[track]) continue;
-        const wave = this.state.trackWaves[track];
-        const adsr = this.state.trackAdsr[track];
-        const filter = this.state.trackFilter[track];
-        const adsrTarget = this.state.adsrTarget[track];
-        const adsrDepth = this.state.adsrDepth[track];
-        this.audio.scheduleNote(track, midi, playTime, duration, wave, adsr, filter, adsrTarget, adsrDepth);
+        this._scheduleMelodicTrack(track, events, playTime);
       }
 
-      // Барабаны (полифония: все активные инструменты на шаге)
       const drumNotes = this.state.getDrumNotesAtStep(this.currentStep);
       for (const [track, drumSet] of drumNotes) {
         if (this.state.trackMute[track]) continue;
-        const useSample = this.state.drumSoundModes[track] === 'sample';
-        for (const drumIdx of drumSet) {
-          this.audio.scheduleDrum(track, drumIdx, playTime, useSample);
-        }
+        this._scheduleDrumTrack(track, drumSet, playTime);
       }
 
-      // UI: запоминаем какой шаг сейчас играется, затем инкрементируем
       const playingStep = this.currentStep;
       const la = this.state.locatorA;
       const lb = this.state.locatorB;
-      this.currentStep = this.currentStep + 1;
+      this.currentStep += 1;
       if (la >= 0 && lb > la && this.currentStep >= lb) this.currentStep = la;
       this.state.currentStep = playingStep;
       this._hasScheduled = true;
       if (this.currentStep !== la) this._didAdvance = false;
-
       this.nextStepTime += this.stepDuration;
     }
   }
@@ -3525,9 +3971,15 @@ class UIRenderer {
     aPlay.textContent = state.isPlaying && this.sequencer.isRunning ? '❚❚' : '▶';
     aPlay.classList.toggle('playing', state.isPlaying && this.sequencer.isRunning);
     aPlay.title = 'Play (Space)';
-    aPlay.addEventListener('click', () => {
-      if (this.sequencer.isRunning) { this.sequencer.stop(); this.updatePlayButton(false); this.updatePlayhead(); }
-      else { this.sequencer.start(); this.updatePlayButton(true); }
+    aPlay.addEventListener('click', async () => {
+      if (this.sequencer.isRunning) {
+        this.sequencer.stop();
+        this.updatePlayButton(false);
+        this.updatePlayhead();
+      } else {
+        const ok = await this.sequencer.start();
+        this.updatePlayButton(!!ok);
+      }
     });
     at.appendChild(aPlay);
     const aStop = document.createElement('button');
@@ -3630,13 +4082,13 @@ class UIRenderer {
       if (variant) {
         for (let t = 0; t < CONFIG.TRACKS; t++) {
           const steps = variant.patternLength || CONFIG.STEPS;
-          if (state.trackTypes[t] === 'drum') {
+          if ((variant.trackTypes?.[t] || state.trackTypes[t]) === 'drum') {
             for (let s = 0; s < steps; s++)
               for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++)
                 if (variant.drumPattern[t]?.[s]?.[d]) totalNotes++;
           } else {
             for (let s = 0; s < steps; s++)
-              if (variant.melodicPattern[t]?.[s] !== null) totalNotes++;
+              totalNotes += normalizeMelodicCell(variant.melodicPattern[t]?.[s]).length;
           }
         }
       }
@@ -3820,11 +4272,78 @@ class UIRenderer {
       this.render(); // перерисовка всей дорожки
     });
 
+    // Engine: chip oscillator / browser SoundFont / external MIDI hardware
+    const engineSelect = document.createElement('select');
+    engineSelect.className = 'track-engine-select';
+    [
+      { value: 'chip', label: 'CHIP' },
+      { value: 'sf2', label: 'SF2' },
+      { value: 'midi', label: 'MIDI HW' },
+    ].forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.value;
+      opt.textContent = item.label;
+      if (this.state.trackEngines[trackIdx] === item.value) opt.selected = true;
+      engineSelect.appendChild(opt);
+    });
+    engineSelect.addEventListener('change', async () => {
+      this.state.setTrackEngine(trackIdx, engineSelect.value);
+      if (engineSelect.value !== 'chip') this.state.synthPanelOpen[trackIdx] = false;
+      if (engineSelect.value === 'sf2') await audio.ensureSf2Loaded();
+      if (engineSelect.value === 'midi') await audio.ensureMidiAccess();
+      this.render();
+    });
+
+    const channelSelect = document.createElement('select');
+    channelSelect.className = 'track-channel-select';
+    for (let ch = 1; ch <= 16; ch++) {
+      const opt = document.createElement('option');
+      opt.value = String(ch);
+      opt.textContent = 'CH ' + ch;
+      if (this.state.trackMidiChannels[trackIdx] === ch) opt.selected = true;
+      channelSelect.appendChild(opt);
+    }
+    channelSelect.style.display = this.state.trackEngines[trackIdx] === 'chip' ? 'none' : '';
+    channelSelect.addEventListener('change', () => {
+      this.state.trackMidiChannels[trackIdx] = Number(channelSelect.value);
+      this.state._notify();
+    });
+
+    const programSelect = document.createElement('select');
+    programSelect.className = 'track-program-select';
+    const gmNames = (typeof CHIPESEQ_GM_PROGRAMS !== 'undefined' && CHIPESEQ_GM_PROGRAMS.length === 128)
+      ? CHIPESEQ_GM_PROGRAMS
+      : Array.from({length:128}, (_,i) => 'Program ' + i);
+    gmNames.forEach((label, p) => {
+      const opt = document.createElement('option');
+      opt.value = String(p);
+      opt.textContent = p + ' ' + label;
+      if (this.state.trackPrograms[trackIdx] === p) opt.selected = true;
+      programSelect.appendChild(opt);
+    });
+    programSelect.style.display =
+      this.state.trackEngines[trackIdx] === 'sf2' && !this.state.isDrumTrack(trackIdx) ? '' : 'none';
+    programSelect.addEventListener('change', () => {
+      this.state.trackPrograms[trackIdx] = Number(programSelect.value);
+      audio.configureSf2Channel(
+        this.state.trackMidiChannels[trackIdx],
+        this.state.trackPrograms[trackIdx],
+        false
+      );
+      this.state._notify();
+    });
+
+    const engineBadge = document.createElement('span');
+    engineBadge.className = 'engine-badge';
+    engineBadge.textContent = this.state.trackEngines[trackIdx] === 'chip'
+      ? 'MONO CHIP'
+      : 'POLY';
+
     // Выбор волны (для мелодических)
     const waveSelect = document.createElement('select');
     waveSelect.dataset.track = trackIdx;
     waveSelect.dataset.control = 'wave';
-    if (this.state.isDrumTrack(trackIdx)) waveSelect.style.display = 'none';
+    if (this.state.isDrumTrack(trackIdx) || this.state.trackEngines[trackIdx] !== 'chip') waveSelect.style.display = 'none';
     CONFIG.WAVE_TYPES.forEach(wave => {
       const opt = document.createElement('option');
       opt.value = wave;
@@ -3840,7 +4359,7 @@ class UIRenderer {
     const soundModeSelect = document.createElement('select');
     soundModeSelect.dataset.track = trackIdx;
     soundModeSelect.dataset.control = 'drumMode';
-    if (!this.state.isDrumTrack(trackIdx)) soundModeSelect.style.display = 'none';
+    if (!this.state.isDrumTrack(trackIdx) || this.state.trackEngines[trackIdx] !== 'chip') soundModeSelect.style.display = 'none';
     [
       { value: 'synth', label: 'Synth' },
       { value: 'sample', label: 'Sample' },
@@ -3888,11 +4407,13 @@ class UIRenderer {
       } else {
         // Очищаем дорожку
         for (let s = 0; s < this.state.steps; s++) {
-          this.state.melodicPattern[trackIdx][s] = null;
+          this.state.melodicPattern[trackIdx][s] = [];
         }
         // Применяем пресет
         for (const [step, midi] of preset.pattern) {
-          if (step < this.state.steps) this.state.melodicPattern[trackIdx][step] = midi;
+          if (step < this.state.steps) {
+            this.state.melodicPattern[trackIdx][step] = [{ note: midi, velocity: 100, length: 1 }];
+          }
         }
       }
       // Обновляем UI
@@ -3902,6 +4423,10 @@ class UIRenderer {
     });
     header.appendChild(name);
     header.appendChild(typeSelect);
+    header.appendChild(engineSelect);
+    header.appendChild(channelSelect);
+    header.appendChild(programSelect);
+    header.appendChild(engineBadge);
     header.appendChild(waveSelect);
     header.appendChild(soundModeSelect);
     header.appendChild(presetSelect);
@@ -3929,6 +4454,7 @@ class UIRenderer {
     toggleBtn.className = 'synth-toggle-btn' + (this.state.synthPanelOpen[trackIdx] ? ' active' : '');
     toggleBtn.textContent = '⚙';
     toggleBtn.title = 'Synth settings (ADSR + Filter)';
+    if (this.state.trackEngines[trackIdx] !== 'chip') toggleBtn.style.display = 'none';
     toggleBtn.addEventListener('click', () => {
       this.state.synthPanelOpen[trackIdx] = !this.state.synthPanelOpen[trackIdx];
       const panel = wrapper.querySelector('.synth-panel');
@@ -3967,14 +4493,14 @@ class UIRenderer {
     playBtn.id = 'btnPlay';
     playBtn.textContent = '▶';
     playBtn.title = 'Play (Space)';
-    playBtn.addEventListener('click', () => {
+    playBtn.addEventListener('click', async () => {
       if (this.sequencer.isRunning) {
         this.sequencer.stop();
         this.updatePlayButton(false);
         this.updatePlayhead();
       } else {
-        this.sequencer.start();
-        this.updatePlayButton(true);
+        const ok = await this.sequencer.start();
+        this.updatePlayButton(!!ok);
       }
     });
     transportGroup.appendChild(playBtn);
@@ -4018,7 +4544,7 @@ class UIRenderer {
 
     // ─── Панель синтезатора (ADSR + Filter) ───
     const synthPanel = this._createSynthPanel(trackIdx);
-    if (this.state.synthPanelOpen[trackIdx]) synthPanel.classList.add('open');
+    if (this.state.synthPanelOpen[trackIdx] && this.state.trackEngines[trackIdx] === 'chip') synthPanel.classList.add('open');
     wrapper.appendChild(synthPanel);
 
     // ─── Контент ───
@@ -4756,44 +5282,49 @@ class UIRenderer {
       const cell = this.melodicCells[track]?.[step]?.[midi];
       if (cell) cell.innerHTML = '';
     }
-    // Основная нота (текущая дорожка)
-    const midi = this.state.melodicPattern[track][step];
-    if (midi !== null) {
-      const cell = this.melodicCells[track]?.[step]?.[midi];
-      if (cell) {
-        const block = document.createElement('div');
-        block.className = 'note-block';
-        block.style.background = CONFIG.TRACK_COLORS[track];
-        cell.appendChild(block);
+
+    // Main notes. SF2/MIDI tracks can display multiple notes at the same step.
+    const events = normalizeMelodicCell(this.state.melodicPattern[track][step]);
+    for (const event of events) {
+      const cell = this.melodicCells[track]?.[step]?.[event.note];
+      if (!cell) continue;
+      const noteBlock = document.createElement('div');
+      noteBlock.className = 'note-block' + (events.length > 1 ? ' poly' : '');
+      noteBlock.style.background = CONFIG.TRACK_COLORS[track];
+      const lengthSteps = Math.max(1, Number(event.length || 1));
+      if (lengthSteps > 1) {
+        noteBlock.style.width = Math.max(CONFIG.STEP_WIDTH - 2, lengthSteps * CONFIG.STEP_WIDTH - 2) + 'px';
+        noteBlock.style.zIndex = '3';
       }
+      noteBlock.title = midiToName(event.note) + ' · vel ' + event.velocity +
+        ' · gate ' + Number(lengthSteps.toFixed(2)) + ' step';
+      cell.appendChild(noteBlock);
     }
-    // Ghost-ноты из других дорожек
+
+    // Ghost notes from the other two tracks.
     for (let t = 0; t < CONFIG.TRACKS; t++) {
       if (t === track) continue;
       if (this.state.isDrumTrack(t)) {
-        // Барабаны отображаются как ghost-ноты на фиксированных клавишах
         for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
           if (this.state.isDrumActive(t, step, d)) {
             const ghostMidi = CONFIG.DRUM_NOTE_MAP[d];
             const cell = this.melodicCells[track]?.[step]?.[ghostMidi];
             if (cell && !cell.querySelector('.note-block:not(.ghost)')) {
-              const block = document.createElement('div');
-              block.className = 'note-block ghost';
-              block.style.background = CONFIG.TRACK_COLORS[t];
-              cell.appendChild(block);
+              const ghost = document.createElement('div');
+              ghost.className = 'note-block ghost';
+              ghost.style.background = CONFIG.TRACK_COLORS[t];
+              cell.appendChild(ghost);
             }
           }
         }
       } else {
-        // Ghost мелодической ноты из другой мелодической дорожки
-        const ghostMidi = this.state.melodicPattern[t][step];
-        if (ghostMidi !== null) {
-          const cell = this.melodicCells[track]?.[step]?.[ghostMidi];
+        for (const ghostEvent of normalizeMelodicCell(this.state.melodicPattern[t][step])) {
+          const cell = this.melodicCells[track]?.[step]?.[ghostEvent.note];
           if (cell && !cell.querySelector('.note-block:not(.ghost)')) {
-            const block = document.createElement('div');
-            block.className = 'note-block ghost';
-            block.style.background = CONFIG.TRACK_COLORS[t];
-            cell.appendChild(block);
+            const ghost = document.createElement('div');
+            ghost.className = 'note-block ghost';
+            ghost.style.background = CONFIG.TRACK_COLORS[t];
+            cell.appendChild(ghost);
           }
         }
       }
@@ -4917,6 +5448,64 @@ const audio = new AudioEngine();
 const sequencer = new Sequencer(state, audio);
 const ui = new UIRenderer(state, sequencer);
 const projectMgr = new ProjectManager(state);
+
+function setEngineStatus(message, isError = false) {
+  const el = document.getElementById('engineStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.style.color = isError ? 'var(--playhead)' : 'var(--accent)';
+  el.title = message;
+}
+
+function refreshGlobalMidiOutUI() {
+  const select = document.getElementById('globalMidiOut');
+  if (!select) return;
+  const access = audio.midiAccess;
+  const outputs = access ? [...access.outputs.values()] : [];
+  select.innerHTML = '';
+  if (!outputs.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = access ? '— no MIDI devices —' : 'MIDI OUT…';
+    select.appendChild(opt);
+    return;
+  }
+  for (const out of outputs) {
+    const opt = document.createElement('option');
+    opt.value = out.id;
+    opt.textContent = out.name;
+    select.appendChild(opt);
+  }
+  if (!outputs.some(o => o.id === audio.outputId)) {
+    const prefer = outputs.find(o => /td-?3|behringer|akai|xr20/i.test(o.name)) || outputs[0];
+    audio.setMidiOutput(prefer?.id || '');
+  }
+  select.value = audio.outputId || outputs[0].id;
+  setEngineStatus('MIDI · ' + (outputs.find(o => o.id === select.value)?.name || 'ready'), false);
+}
+
+document.getElementById('globalMidiOut').addEventListener('change', (e) => {
+  audio.setMidiOutput(e.target.value);
+  refreshGlobalMidiOutUI();
+});
+document.getElementById('btnRefreshMidiOut').addEventListener('click', async () => {
+  await audio.ensureMidiAccess();
+  refreshGlobalMidiOutUI();
+});
+document.getElementById('btnLoadSf2Global').addEventListener('click', () => {
+  document.getElementById('sf2FileInput').click();
+});
+document.getElementById('sf2FileInput').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  await audio.loadSf2File(file);
+  e.target.value = '';
+});
+
+// Load GM program names for per-track SF2 selectors.
+loadChiptuneGmPrograms().then(() => {
+  if (typeof ui !== 'undefined') ui.render();
+});
 
 // ─── Autosave ───
 state._autosaveFn = () => {
@@ -5052,7 +5641,7 @@ async function ensureLoopCatalog() {
 }
 
 function loopIsLoadable(entry) {
-  return !['chords', 'arrangement'].includes(entry.kind);
+  return true;
 }
 
 function filteredLoops() {
@@ -5107,7 +5696,7 @@ function renderLoopBrowser() {
         <div class="loop-meta">${loopEsc(entry.genre)} · ${loopEsc(barsHint)} · ${loopEsc(entry.source)}</div>
         <div class="loop-stars" title="Your rating / favorite marker">${stars}<span class="loop-rating-value">${rating ? rating + '/5' : ''}</span></div>
       </div>
-      <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="${loadable ? 'Load into active track' : 'Polyphonic arrangement/chords are preview-only in v1'}">LOAD</button>
+      <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="Load into active track">LOAD</button>
     </div>`;
   }).join('');
 
@@ -5170,41 +5759,72 @@ async function previewLoop(entry) {
     setLoopStatus('Preview loading · ' + entry.name);
     const midi = await fetchLoopMidi(entry);
     const ctx = audio.init();
+    const track = state.activeTrack;
+    const engine = state.trackEngines[track] || 'chip';
+
+    if (engine === 'sf2' && !(await audio.ensureSf2Loaded())) return;
+    if (engine === 'midi') {
+      await audio.ensureMidiAccess();
+      if (!audio.getMidiOutput()) throw new Error('No MIDI output selected');
+    }
+
     const start = ctx.currentTime + 0.06;
     const stepDuration = (60 / state.tempo) / 4;
     const tickPerStep = midi.ppq / 4;
     const maxSteps = Math.min(midiLoopStepCount(midi), 16 * 8);
     const maxTick = maxSteps * tickPerStep;
     const drums = entry.kind === 'drums' || midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
+    const melodic = midi.notes.filter(n => n.channel !== 10);
+    const channelCounts = new Map();
+    melodic.forEach(n => channelCounts.set(n.channel, (channelCounts.get(n.channel) || 0) + 1));
+    const sourceChannel = [...channelCounts.entries()].sort((a,b) => b[1]-a[1])[0]?.[0] || state.trackMidiChannels[track] || 1;
+    const channel = drums ? 10 : (state.trackMidiChannels[track] || sourceChannel || 1);
+    const sourceProgram = midi.programs?.[sourceChannel];
+    const program = Number.isInteger(sourceProgram) ? sourceProgram : (state.trackPrograms[track] || 0);
     loopPreviewEntryId = entry.id;
 
     for (const note of midi.notes) {
       if (note.tick >= maxTick) continue;
       const when = start + (note.tick / tickPerStep) * stepDuration;
+      const duration = Math.max(0.04, Math.min(6, (note.duration / tickPerStep) * stepDuration));
+
       if (drums) {
         const drumIdx = gmDrumToIndex(note.note);
-        if (drumIdx >= 0) audio.scheduleDrum(99, drumIdx, when, false);
+        if (drumIdx < 0) continue;
+        if (engine === 'sf2') {
+          audio.scheduleSf2Note(10, 0, note.note, note.velocity || 100, when, duration, true);
+        } else if (engine === 'midi') {
+          audio.scheduleMidiNote(channel, note.note, note.velocity || 100, when, duration);
+        } else {
+          audio.scheduleDrum(99, drumIdx, when, false);
+        }
       } else {
         if (note.channel === 10) continue;
-        const duration = Math.max(0.04, Math.min(2.5, (note.duration / tickPerStep) * stepDuration));
-        const track = state.activeTrack;
-        audio.scheduleNote(
-          99,
-          foldMidiPitch(note.note),
-          when,
-          duration,
-          state.trackWaves[track] || 'square',
-          state.trackAdsr[track],
-          state.trackFilter[track],
-          state.adsrTarget[track],
-          state.adsrDepth[track]
-        );
+        if (engine === 'sf2') {
+          audio.scheduleSf2Note(channel, program, note.note, note.velocity || 100, when, duration, false);
+        } else if (engine === 'midi') {
+          audio.scheduleMidiNote(channel, note.note, note.velocity || 100, when, duration);
+        } else {
+          audio.scheduleNote(
+            99,
+            foldMidiPitch(note.note),
+            when,
+            duration,
+            state.trackWaves[track] || 'square',
+            state.trackAdsr[track],
+            state.trackFilter[track],
+            state.adsrTarget[track],
+            state.adsrDepth[track]
+          );
+        }
       }
     }
 
     const previewSeconds = maxSteps * stepDuration;
+    const engineLabel = engine === 'sf2' ? ('SF2 · ' + program) : engine === 'midi' ? ('MIDI CH ' + channel) : 'CHIP';
     setLoopStatus(
-      'Preview · ' + entry.name + ' · ' + (maxSteps / 16).toFixed(2).replace(/\.00$/, '') + ' bars @ project BPM',
+      'Preview · ' + engineLabel + ' · ' + entry.name + ' · ' +
+      (maxSteps / 16).toFixed(2).replace(/\.00$/, '') + ' bars',
       true
     );
     loopPreviewTimer = setTimeout(() => {
@@ -5232,9 +5852,12 @@ async function loadLoopIntoTrack(entryId, trackIdx = state.activeTrack, isReload
     ui.render();
     const src = state.trackSources[trackIdx];
     const expanded = state.steps > beforeSteps ? ' · pattern expanded to ' + (state.steps / 16) + ' bars' : '';
+    const polyHint = src.polyphonic && state.trackEngines[trackIdx] === 'chip'
+      ? ' · POLY data loaded: switch track to SF2 or MIDI HW to hear all notes'
+      : '';
     setLoopStatus(
       'Loaded · ' + entry.name + ' · source ' + src.originalBars + ' bars → filled ' +
-      (state.steps / 16) + ' bars' + expanded,
+      (state.steps / 16) + ' bars' + expanded + polyHint,
       true
     );
   } catch (err) {
@@ -5286,7 +5909,14 @@ function buildChiptuneOverview(project) {
   for (let t = 0; t < CONFIG.TRACKS; t++) {
     const type = variant.trackTypes?.[t] || 'melodic';
     const source = variant.trackSources?.[t] || null;
+    const engine = variant.trackEngines?.[t] || 'chip';
+    const channel = variant.trackMidiChannels?.[t] || CONFIG.DEFAULT_MIDI_CHANNELS[t] || 1;
+    const program = variant.trackPrograms?.[t] ?? CONFIG.DEFAULT_GM_PROGRAMS[t] ?? 0;
     lines.push('## Track ' + (t + 1) + ' — ' + type);
+    lines.push('Engine: ' + engine.toUpperCase() +
+      (engine === 'chip' ? ' · monophonic playback' : ' · polyphonic') +
+      (engine !== 'chip' ? ' · CH ' + channel : '') +
+      (engine === 'sf2' && type !== 'drum' ? ' · GM ' + program + ' ' + (CHIPESEQ_GM_PROGRAMS[program] || '') : ''));
     lines.push('Source: ' + (source
       ? [source.genre, source.kind, source.source, source.name].filter(Boolean).join(' · ')
       : 'manual / none'));
@@ -5307,8 +5937,11 @@ function buildChiptuneOverview(project) {
     } else {
       const events = [];
       for (let step = 0; step < (variant.patternLength || CONFIG.STEPS); step++) {
-        const note = variant.melodicPattern?.[t]?.[step];
-        if (note !== null && note !== undefined) events.push((step + 1) + ':' + midiToName(note));
+        const cell = normalizeMelodicCell(variant.melodicPattern?.[t]?.[step]);
+        if (!cell.length) continue;
+        events.push((step + 1) + ':' + cell.map(note =>
+          midiToName(note.note) + '(v' + note.velocity + ',l' + Number(note.length.toFixed(2)) + ')'
+        ).join('+'));
       }
       lines.push('Notes: ' + (events.join(' ') || '—'));
     }
