@@ -40,6 +40,10 @@ LIBRARY_LOCATORS: dict[str, tuple[str, str, str | None]] = {}
 CLASSIFICATION_CACHE_VERSION = 1
 CLASSIFICATION_CACHE_PATH = LIBRARY_ROOT / ".style-library-classification-v1.json"
 MIDI_CACHE_DIR = Path(os.environ.get("LOCALAPPDATA", str(LIBRARY_ROOT.parent))) / "SequencerStyleLibrary" / "midi-v1"
+try:
+    GM_PROGRAM_NAMES = json.loads((ROOT / "scripts" / "gm-instruments.json").read_text(encoding="utf-8")).get("programs", [])
+except (OSError, ValueError, json.JSONDecodeError):
+    GM_PROGRAM_NAMES = []
 
 
 def midi_cache_path(item_id: str) -> Path:
@@ -554,6 +558,10 @@ def optimize_library(genre: str = "edm", kind: str = "unclassified") -> dict:
         "targetKind": kind,
         "roleCounts": dict(role_counts),
         "programCounts": {str(key): value for key, value in sorted(program_counts.items())},
+        "instrumentCounts": {
+            f"{key} {GM_PROGRAM_NAMES[key] if key < len(GM_PROGRAM_NAMES) else 'Program '+str(key)}": value
+            for key, value in sorted(program_counts.items())
+        },
         "counts": counts,
     }
 
