@@ -4349,6 +4349,26 @@ select, input[type="number"], input[type="text"] {
   for (const id of syncBtns) {
     document.getElementById(id)?.addEventListener("click", () => syncToProjects());
   }
+  document.getElementById("btnLoops").addEventListener("click", () => {
+    const open = document.getElementById("hostLoopBrowser")?.classList.contains("open");
+    if (open) closeHostLoopBrowser();
+    else openHostLoopBrowser();
+  });
+  document.getElementById("btnCloseLoops").addEventListener("click", () => {
+    closeHostLoopBrowser();
+  });
+  [
+    "hostLoopSearch",
+    "hostLoopGenre",
+    "hostLoopRole",
+    "hostLoopFamily",
+    "hostLoopSource",
+    "hostLoopRating",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    el?.addEventListener(el.tagName === "INPUT" ? "input" : "change", renderHostLoopBrowser);
+  });
+
   document.getElementById("btnCloudProjects").addEventListener("click", () => {
     showCloudProjects();
   });
@@ -4362,7 +4382,10 @@ select, input[type="number"], input[type="text"] {
     if (e.target === e.currentTarget) closeCloudProjects();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeCloudProjects();
+    if (e.key === "Escape") {
+      closeCloudProjects();
+      closeHostLoopBrowser();
+    }
   });
 
   document.getElementById("btnCloudSave").addEventListener("click", () => {
@@ -4451,6 +4474,13 @@ select, input[type="number"], input[type="text"] {
     saveProjectToCloud: () => saveProjectToCloud(),
     showCloudProjects: () => showCloudProjects(),
     openCloudProject: (id) => openCloudProject(id),
+    openLoops: () => openHostLoopBrowser(),
+    insertLibraryLoop: (id, trackId, startTick = 0) => {
+      const entry = hostLoopCatalog.find((item) => item.id === id);
+      const track = state.project?.tracks?.find((item) => item.id === trackId);
+      if (!entry || !track) return false;
+      return insertHostLoopIntoTrack(entry, track, startTick);
+    },
     parseGmTrackName,
     gmProgramFromTrack,
     formatGmTrackName,
@@ -4467,6 +4497,7 @@ select, input[type="number"], input[type="text"] {
   initMidi();
   (async () => {
     if (await loadLibraryReferenceFromQuery()) return;
+    if (restoreHostWorkingProject()) return;
     fetch("projects/current.json")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data?.tracks) setProject(normalizeProject(data, "current")); })
