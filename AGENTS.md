@@ -43,7 +43,8 @@ python scripts/local_server.py --open
 - Browser читает `GET /api/library` и `GET /api/library/midi?id=...`; отдельная копия библиотеки не создаётся.
 - **Preview** слушает MIDI при текущем BPM проекта, не изменяя piano roll, и следует engine активной дорожки: CHIP / SF2 / MIDI HW.
 - Browser разделяет **Style / Role / Instrument family / GM Program**. `acid` считается стилем/жанром, а не инструментальной ролью: piano/chord MIDI из acid-набора больше не должен отображаться как role=acid. Для старых pack-index v2 UI вычисляет effective role из `classificationRoles` и `classificationPrograms`, поэтому фильтрация исправляется без немедленной перепаковки.
-- В карточке loop показывается точный `GM <program> <name>`, если MIDI содержит Program Change; если Program Change отсутствует, UI прямо пишет `GM program not encoded` и не выдумывает инструмент.
+- В карточке loop показывается точный `GM <program> <name>`, если MIDI содержит Program Change. Если Program Change отсутствует, UI теперь различает данные файла и звук прослушивания: например `MIDI: no Program Change · Preview: GM 33 Electric Bass (finger)`. Это означает, что тембр пришёл из текущей настройки SF2-дорожки, а не из самого MIDI.
+- При Preview в каждой карточке есть тонкий циклический progress bar и подпись общей длины (`bars · seconds`), чтобы сразу видеть длину loop и положение внутри текущего круга.
 - У каждого loop есть пользовательский рейтинг **1–5 ★**, который хранится в browser localStorage по стабильному MIDI id. Повторный клик по текущей оценке очищает её. Фильтр Rating позволяет быстро показать rated loops, 4★+ favorites или выбранный минимальный рейтинг.
 - **LOAD** загружает MIDI в активную из трёх дорожек. После загрузки это обычные ноты секвенсора, а не живая ссылка на исходный файл.
 - Короткий loop автоматически физически повторяется до длины текущего паттерна: 1 bar → 4 копии в 4-bar pattern, 2 bars → 2 копии и т.д.

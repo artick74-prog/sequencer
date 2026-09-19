@@ -1376,6 +1376,46 @@ body {
   color: var(--text-dim);
   font-size: 11px;
 }
+.loop-progress-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1px;
+  min-width: 0;
+}
+.loop-progress-track {
+  flex: 1 1 auto;
+  height: 5px;
+  background: #22243a;
+  border: 1px solid #30334e;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.loop-progress-fill {
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.loop-progress-fill.playing {
+  animation-name: loop-preview-progress;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.loop-progress-label {
+  flex: 0 0 auto;
+  min-width: 88px;
+  text-align: right;
+  color: var(--text-dim);
+  font-size: 10px;
+  white-space: nowrap;
+}
+@keyframes loop-preview-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
 .source-chip {
   max-width: 280px;
   white-space: nowrap;
@@ -4342,6 +4382,9 @@ class UIRenderer {
         false
       );
       this.state._notify();
+      if (typeof renderLoopBrowser === 'function' && typeof loopCatalogLoaded !== 'undefined' && loopCatalogLoaded) {
+        renderLoopBrowser();
+      }
     });
 
     const engineBadge = document.createElement('span');
@@ -5594,6 +5637,7 @@ let loopPreviewToken = 0;
 let loopPreviewState = null;
 let lastLoopInspection = null;
 let loopInspectionHistory = [];
+const loopPreviewMeta = new Map();
 const LOOP_PREVIEW_LOOKAHEAD_SEC = 0.16;
 const LOOP_PREVIEW_PUMP_MS = 20;
 
@@ -5707,10 +5751,33 @@ function loopProgramLabels(entry) {
 
 function loopInstrumentSummary(entry) {
   const labels = loopProgramLabels(entry);
-  if (labels.length) return labels.join(', ');
-  const families = loopFamilies(entry);
-  if (families.length) return families.join(', ');
-  return 'GM program not encoded';
+  if (labels.length) return 'MIDI: ' + labels.join(', ');
+
+  const role = loopRole(entry);
+  const track = state.activeTrack;
+  const engine = state.trackEngines?.[track] || 'chip';
+  if (role !== 'drums' && engine === 'sf2') {
+    const program = state.trackPrograms?.[track] ?? 0;
+    return 'MIDI: no Program Change · Preview: GM ' + program + ' ' + gmProgramName(program);
+  }
+  if (role !== 'drums' && engine === 'midi') {
+    return 'MIDI: no Program Change · Preview: current hardware patch';
+  }
+  return 'MIDI: no Program Change';
+}
+
+function formatLoopBars(bars) {
+  const rounded = Math.round(Number(bars) * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+}
+
+function formatLoopSeconds(seconds) {
+  const sec = Math.max(0, Number(seconds) || 0);
+  if (sec < 10) return sec.toFixed(1) + 's';
+  const whole = Math.round(sec);
+  const min = Math.floor(whole / 60);
+  const rest = whole % 60;
+  return min ? (min + ':' + String(rest).padStart(2, '0')) : (whole + 's');
 }
 
 function exactMidiInspection(entry, midi) {
@@ -5857,6 +5924,10 @@ function renderLoopBrowser() {
         <div class="loop-stars" title="Your rating / favorite marker">${stars}<span class="loop-rating-value">${rating ? rating + '/5' : ''}</span></div>
       </div>
       <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="Load into active track">LOAD</button>
+      <div class="loop-progress-row">
+        <div class="loop-progress-track" title="Loop playback progress"><div class="loop-progress-fill"></div></div>
+        <span class="loop-progress-label">—</span>
+      </div>
     </div>`;
   }).join('');
 
@@ -5904,9 +5975,33 @@ function refreshLoopPreviewButtons() {
   loopListEl.querySelectorAll('.loop-item').forEach(row => {
     const btn = row.querySelector('.loop-preview-btn');
     if (!btn) return;
-    const active = !!loopPreviewState && row.dataset.id === loopPreviewEntryId;
+
+    const id = row.dataset.id;
+    const active = !!loopPreviewState && id === loopPreviewEntryId;
     btn.textContent = active ? '■' : '▶';
     btn.title = active ? 'Stop preview' : 'Preview loop';
+
+    const fill = row.querySelector('.loop-progress-fill');
+    const label = row.querySelector('.loop-progress-label');
+    const meta = loopPreviewMeta.get(id);
+    if (label) {
+      label.textContent = meta
+        ? (formatLoopBars(meta.bars) + ' bars · ' + formatLoopSeconds(meta.seconds))
+        : '—';
+    }
+    if (fill) {
+      fill.classList.remove('playing');
+      fill.style.animationDuration = '';
+      fill.style.animationDelay = '';
+      fill.style.transform = 'scaleX(0)';
+      if (active && loopPreviewState?.cycleDurationSec > 0) {
+        // Restart the visual loop exactly when Preview starts.
+        void fill.offsetWidth;
+        fill.style.animationDuration = loopPreviewState.cycleDurationSec + 's';
+        fill.style.animationDelay = '0.06s';
+        fill.classList.add('playing');
+      }
+    }
   });
 }
 
@@ -6070,10 +6165,22 @@ async function previewLoop(entry) {
     if (!notes.length) throw new Error('No playable notes in this MIDI');
 
     lastLoopInspection = exactMidiInspection(entry, midi);
+    lastLoopInspection.preview = {
+      engine,
+      channel,
+      program,
+      programName: drums ? 'GM percussion' : gmProgramName(program),
+      programSource: Number.isInteger(sourceProgram) ? 'MIDI Program Change' : 'active track setting',
+    };
     loopInspectionHistory = [
       lastLoopInspection,
       ...loopInspectionHistory.filter(item => item.id !== lastLoopInspection.id),
     ].slice(0, 20);
+
+    loopPreviewMeta.set(entry.id, {
+      bars: cycleSteps / 16,
+      seconds: cycleDurationSec,
+    });
     loopPreviewEntryId = entry.id;
     loopPreviewState = {
       entryId: entry.id,
@@ -6095,7 +6202,8 @@ async function previewLoop(entry) {
     loopPreviewTimer = setInterval(() => loopPreviewPump(token), LOOP_PREVIEW_PUMP_MS);
 
     const engineLabel = engine === 'sf2'
-      ? ('SF2 · GM ' + program)
+      ? ('SF2 · GM ' + program + ' ' + gmProgramName(program) +
+         (Number.isInteger(sourceProgram) ? ' [from MIDI]' : ' [track setting]'))
       : engine === 'midi'
         ? ('MIDI CH ' + channel)
         : 'CHIP';
