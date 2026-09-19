@@ -35,6 +35,27 @@ python scripts/local_server.py --open
 - Chiptune: http://localhost:8080/
 - Hardware host: http://localhost:8080/midi-host.html
 
+### Chiptune Loop Constructor
+
+`index.html` теперь умеет использовать ту же локальную MIDI Reference Library как конструктор.
+
+- Кнопка **Loops** открывает справа встроенный Loop Browser.
+- Browser читает `GET /api/library` и `GET /api/library/midi?id=...`; отдельная копия библиотеки не создаётся.
+- **Preview** слушает MIDI при текущем BPM проекта, не изменяя piano roll.
+- **LOAD** загружает MIDI в активную из трёх дорожек. После загрузки это обычные ноты секвенсора, а не живая ссылка на исходный файл.
+- Короткий loop автоматически физически повторяется до длины текущего паттерна: 1 bar → 4 копии в 4-bar pattern, 2 bars → 2 копии и т.д.
+- Если reference loop длиннее текущего паттерна, pattern автоматически расширяется до ближайшего целого такта (в пределах текущего лимита 16 bars).
+- Для melodic track MIDI квантуется на 1/16; в v1 полифонические `chords` / `arrangement` доступны только для Preview, потому что одна chiptune melodic track монofоническая.
+- Для drums GM percussion преобразуется в 8 внутренних drum lanes.
+- В track header хранится `Source` и есть **↻ Source**: заново загрузить исходный reference MIDI, если пользователь хочет сбросить свои правки на этой дорожке.
+- Source metadata сохраняется внутри проекта/варианта; исходные файлы библиотеки никогда не изменяются.
+
+Кнопка **Sync to AI** в Chiptune пишет и пушит:
+- `projects/chiptune-current.json` — полный проект и source metadata;
+- `projects/chiptune-overview.md` — активный pattern, его длина, источники трёх дорожек и пошаговые note/drum events.
+
+После этой кнопки ассистент может прочитать текущее состояние конструктора из GitHub и обсуждать с пользователем конкретные загруженные лупы и их правки. Не утверждать, что видно текущее состояние браузера, пока пользователь не нажал **Sync to AI** после изменений.
+
 ---
 
 ## Hardware MIDI Host (`midi-host.html`)
