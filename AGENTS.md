@@ -161,6 +161,42 @@ Swing / ручные правки пользователя:
 
 ---
 
+## MIDI Reference Library
+
+Папка `reference-library/` — исследовательский корпус референсов для анализа музыкального языка. Это **не** набор готовых лупов для прямого копирования в проекты.
+
+Сырьё:
+- `raw/acidvoice/` — короткие TB-303 MIDI-паттерны;
+- `raw/groove/` — Groove MIDI Dataset (барабаны, velocity, microtiming);
+- `raw/nrgcp/` — dance/trance/house/EDM MIDI corpus.
+
+Перед сочинением жанровой партии, когда нужен надёжный референс, сначала можно смотреть не только общие знания модели, но и производную статистику этого корпуса.
+
+Анализатор:
+
+```bash
+python scripts/analyze_reference_library.py
+```
+
+Быстрый анализ одного источника:
+
+```bash
+python scripts/analyze_reference_library.py --source acidvoice
+python scripts/analyze_reference_library.py --source groove
+python scripts/analyze_reference_library.py --source nrgcp --limit 500
+```
+
+Результат: `reference-library/analysis/summary.json`. С `--details` также создаётся `files.jsonl`.
+
+Правило использования:
+- извлекать закономерности: onset pattern, плотность, интервалы, velocity, длительности, groove;
+- не переносить конкретный MIDI-паттерн в проект один-в-один;
+- AcidVoice особенно полезен как внешний референс 303-ритмики;
+- Groove — для drums/groove;
+- NRG-CP — широкий EDM-корпус, поэтому не считать каждый пример каноническим Tech House/Acid House без дополнительной фильтрации.
+
+---
+
 ## GM-оркестровка (скетч-дорожки)
 
 Для разнообразия длинных партий (например Acid → духовые / фортепиано) добавляй **отдельные дорожки** под General MIDI. **Program Change не используем** — один трек = один инструмент навсегда.
