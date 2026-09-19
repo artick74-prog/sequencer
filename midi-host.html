@@ -2031,6 +2031,7 @@ select, input[type="number"], input[type="text"] {
         sf2Enabled: sf2El?.checked !== false,
         hwEnabled: hwEl?.checked !== false,
       },
+      workingProject: projectToJson(),
     };
   }
 
@@ -2047,6 +2048,21 @@ select, input[type="number"], input[type="text"] {
   function scheduleHostAutosave() {
     clearTimeout(hostAutosaveTimer);
     hostAutosaveTimer = setTimeout(saveHostAutosaveNow, 120);
+  }
+
+  function restoreHostWorkingProject() {
+    const saved = readHostAutosave();
+    if (!saved?.workingProject?.tracks) return false;
+    try {
+      const project = normalizeProject(saved.workingProject, saved.workingProject.name || "working-project");
+      setProject(project, {
+        restoreLocal: false,
+        statusText: "Restored local working copy · use ☁ Save Project to push unsaved changes to GitHub.",
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function restoreHostAutosaveUi() {
@@ -2689,6 +2705,7 @@ select, input[type="number"], input[type="text"] {
       cloudProject: data.cloudProject && typeof data.cloudProject === "object"
         ? {...data.cloudProject}
         : null,
+      clips: Array.isArray(data.clips) ? data.clips.map((clip) => ({...clip})) : [],
       tracks: (data.tracks || []).map((t, i) => {
         const channel = t.channel || 1;
         const name = t.name || roleForChannel(channel).label;
@@ -3786,6 +3803,7 @@ select, input[type="number"], input[type="text"] {
         id: data.projectId || projectId,
         path: data.projectPath || ("projects/cloud/" + projectId),
         savedAt: data.manifest?.updatedAt || new Date().toISOString(),
+        dirty: false,
       };
 
       applyCloudSession(data.session || {});
@@ -3811,9 +3829,13 @@ select, input[type="number"], input[type="text"] {
     const cloud = state.project?.cloudProject;
     if (!cloud?.id) {
       el.textContent = "Cloud: not saved";
+      el.style.color = "var(--dim)";
       return;
     }
-    el.textContent = "Cloud: " + (cloud.path || ("projects/cloud/" + cloud.id));
+    el.textContent =
+      "Cloud: " + (cloud.path || ("projects/cloud/" + cloud.id)) +
+      (cloud.dirty ? " · UNSAVED" : "");
+    el.style.color = cloud.dirty ? "var(--gm)" : "var(--dim)";
     el.title = cloud.savedAt ? ("Last saved: " + cloud.savedAt) : "";
   }
 
@@ -3889,6 +3911,7 @@ select, input[type="number"], input[type="text"] {
           session: cloudSessionJson(),
           arrangementMidi,
           trackMidis,
+          libraryClips: hostLoopUsedLibraryClips(),
         }),
       });
       const reply = await response.json().catch(() => ({}));
@@ -3898,6 +3921,7 @@ select, input[type="number"], input[type="text"] {
         id: reply.projectId,
         path: reply.projectPath,
         savedAt: new Date().toISOString(),
+        dirty: false,
       };
       scheduleHostAutosave();
       renderCloudProjectMeta();
@@ -3905,7 +3929,8 @@ select, input[type="number"], input[type="text"] {
       const suffix = reply.commit ? (" · " + reply.commit) : "";
       setStatus(
         "Project saved to GitHub: " + reply.projectPath +
-        " · " + reply.trackCount + " track MIDI files" + suffix,
+        " · " + reply.trackCount + " track MIDI files" +
+        " · " + Number(reply.clipCount || 0) + " source clip(s)" + suffix,
         "ok"
       );
       return true;
@@ -3938,6 +3963,7 @@ select, input[type="number"], input[type="text"] {
       },
       markers: p.markers || [],
       cloudProject: p.cloudProject ? {...p.cloudProject} : null,
+      clips: Array.isArray(p.clips) ? p.clips.map((clip) => ({...clip})) : [],
       tracks: p.tracks.map((t) => ({
         id: t.id,
         name: t.name,
