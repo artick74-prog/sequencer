@@ -579,18 +579,19 @@ def catalog_payload(entries: list[dict], mode: str, pack_count: int = 0) -> dict
 
 
 def library_material_type(item: dict) -> str:
-    """Separate short reusable loops from longer musical constructors/phrases."""
+    """Separate ordinary loops from very long constructor/performance material."""
+    bars = item.get("barsEstimate")
+    try:
+        if bars is not None:
+            return "constructor" if float(bars) > 32.0 else "loop"
+    except (TypeError, ValueError):
+        pass
+
     explicit = str(item.get("contentType") or "").strip().lower()
     if explicit in {"loop", "constructor"}:
         return explicit
     if str(item.get("kind") or "").lower() == "arrangement":
         return "constructor"
-    bars = item.get("barsEstimate")
-    try:
-        if bars is not None and float(bars) > 8.0:
-            return "constructor"
-    except (TypeError, ValueError):
-        pass
     return "loop"
 
 
@@ -624,7 +625,7 @@ def midi_bars_estimate(data: bytes, member: str = "") -> float | None:
 
 
 def enrich_pack_material_types(entries: list[dict], locators: dict[str, tuple[str, str, str | None]]) -> None:
-    """Read only the 1,150 Groove Dataset files once and split long performances from loops."""
+    """Read only the 1,150 Groove Dataset files once; >32 bars become constructors."""
     by_pack: defaultdict[str, list[dict]] = defaultdict(list)
     for item in entries:
         source = str(item.get("source") or "").lower()
