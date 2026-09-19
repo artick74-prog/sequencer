@@ -4918,6 +4918,353 @@ try {
 
 ui.render();
 
+/* ═══════════════════════════════════════════════════════════
+   EMBEDDED LOOP BROWSER
+   Reference Library → preview → load to active track → edit
+   ═══════════════════════════════════════════════════════════ */
+const loopBrowserEl = document.getElementById('loopBrowser');
+const loopSearchEl = document.getElementById('loopSearch');
+const loopGenreEl = document.getElementById('loopGenre');
+const loopKindEl = document.getElementById('loopKind');
+const loopSourceEl = document.getElementById('loopSource');
+const loopListEl = document.getElementById('loopList');
+const loopStatusEl = document.getElementById('loopStatus');
+const loopCountEl = document.getElementById('loopCount');
+const loopTargetEl = document.getElementById('loopTarget');
+const LOOP_RENDER_LIMIT = 100;
+
+let loopCatalog = [];
+let loopCatalogLoaded = false;
+let loopCatalogPromise = null;
+let loopPreviewTimer = null;
+let loopPreviewEntryId = null;
+
+function loopEsc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function setLoopStatus(text, ok = false) {
+  loopStatusEl.textContent = text;
+  loopStatusEl.style.color = ok ? 'var(--accent)' : 'var(--text-dim)';
+}
+
+function updateLoopBrowserTarget() {
+  if (!loopTargetEl) return;
+  loopTargetEl.textContent = 'LOAD TO TRACK ' + (state.activeTrack + 1);
+}
+
+function fillLoopSelect(el, values, label) {
+  const keep = el.value;
+  el.innerHTML = '<option value="">' + label + '</option>';
+  values.sort((a, b) => a.localeCompare(b)).forEach(value => {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = value;
+    el.appendChild(opt);
+  });
+  if (values.includes(keep)) el.value = keep;
+}
+
+async function ensureLoopCatalog() {
+  if (loopCatalogLoaded) return loopCatalog;
+  if (loopCatalogPromise) return loopCatalogPromise;
+  setLoopStatus('Loading MIDI library index…');
+  loopCatalogPromise = (async () => {
+    const response = await fetch('/api/library');
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Library API error');
+    loopCatalog = data.entries || [];
+    loopCatalogLoaded = true;
+    fillLoopSelect(loopGenreEl, [...new Set(loopCatalog.map(e => e.genre).filter(Boolean))], 'All styles');
+    fillLoopSelect(loopKindEl, [...new Set(loopCatalog.map(e => e.kind).filter(Boolean))], 'All types');
+    fillLoopSelect(loopSourceEl, [...new Set(loopCatalog.map(e => e.source).filter(Boolean))], 'All sources');
+    setLoopStatus(
+      'Ready · ' + loopCatalog.length.toLocaleString('ru-RU') + ' MIDI' +
+      (data.mode === 'packs' ? ' · ' + Number(data.packCount || 0) + ' packs' : ''),
+      true
+    );
+    renderLoopBrowser();
+    return loopCatalog;
+  })().finally(() => { loopCatalogPromise = null; });
+  return loopCatalogPromise;
+}
+
+function loopIsLoadable(entry) {
+  return !['chords', 'arrangement'].includes(entry.kind);
+}
+
+function filteredLoops() {
+  const q = loopSearchEl.value.trim().toLowerCase();
+  const genre = loopGenreEl.value;
+  const kind = loopKindEl.value;
+  const source = loopSourceEl.value;
+  return loopCatalog.filter(entry => {
+    if (genre && entry.genre !== genre) return false;
+    if (kind && entry.kind !== kind) return false;
+    if (source && entry.source !== source) return false;
+    if (q) {
+      const hay = [
+        entry.name, entry.source, entry.member, entry.container,
+        entry.genre, entry.kind, ...(entry.classificationRoles || [])
+      ].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderLoopBrowser() {
+  if (!loopCatalogLoaded) return;
+  const filtered = filteredLoops();
+  const rows = filtered.slice(0, LOOP_RENDER_LIMIT);
+  loopCountEl.textContent = filtered.length.toLocaleString('ru-RU') + ' MIDI';
+  if (!rows.length) {
+    loopListEl.innerHTML = '<div style="padding:12px;color:var(--text-dim);font-size:10px">Nothing found.</div>';
+    return;
+  }
+
+  loopListEl.innerHTML = rows.map(entry => {
+    const loadable = loopIsLoadable(entry);
+    const barsHint = entry.kind === 'arrangement' ? 'multi' : entry.kind;
+    return `<div class="loop-item" data-id="${loopEsc(entry.id)}">
+      <button class="loop-preview-btn" title="Preview">▶</button>
+      <div style="min-width:0">
+        <div class="loop-name" title="${loopEsc(entry.member || entry.container || entry.name)}">${loopEsc(entry.name)}</div>
+        <div class="loop-meta">${loopEsc(entry.genre)} · ${loopEsc(barsHint)} · ${loopEsc(entry.source)}</div>
+      </div>
+      <button class="loop-load-btn" ${loadable ? '' : 'disabled'} title="${loadable ? 'Load into active track' : 'Polyphonic arrangement/chords are preview-only in v1'}">LOAD</button>
+    </div>`;
+  }).join('');
+
+  loopListEl.querySelectorAll('.loop-item').forEach(row => {
+    const entry = loopCatalog.find(e => e.id === row.dataset.id);
+    if (!entry) return;
+    row.querySelector('.loop-preview-btn').addEventListener('click', async () => {
+      await previewLoop(entry);
+    });
+    const loadBtn = row.querySelector('.loop-load-btn');
+    if (!loadBtn.disabled) {
+      loadBtn.addEventListener('click', async () => {
+        await loadLoopIntoTrack(entry.id, state.activeTrack, false);
+      });
+    }
+  });
+
+  if (filtered.length > LOOP_RENDER_LIMIT) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'padding:8px;color:var(--text-dim);font-size:9px;text-align:center';
+    hint.textContent = 'Showing first ' + LOOP_RENDER_LIMIT + ' · refine search/filters for more';
+    loopListEl.appendChild(hint);
+  }
+}
+
+async function fetchLoopMidi(entry) {
+  const response = await fetch('/api/library/midi?id=' + encodeURIComponent(entry.id));
+  if (!response.ok) {
+    let message = 'MIDI load failed';
+    try { message = (await response.json()).error || message; } catch {}
+    throw new Error(message);
+  }
+  return parseReferenceMidi(await response.arrayBuffer());
+}
+
+function stopLoopPreview() {
+  if (loopPreviewTimer) {
+    clearTimeout(loopPreviewTimer);
+    loopPreviewTimer = null;
+  }
+  loopPreviewEntryId = null;
+  audio.stopAll();
+}
+
+async function previewLoop(entry) {
+  try {
+    if (sequencer.isRunning) sequencer.stop();
+    stopLoopPreview();
+    setLoopStatus('Preview loading · ' + entry.name);
+    const midi = await fetchLoopMidi(entry);
+    const ctx = audio.init();
+    const start = ctx.currentTime + 0.06;
+    const stepDuration = (60 / state.tempo) / 4;
+    const tickPerStep = midi.ppq / 4;
+    const maxSteps = Math.min(midiLoopStepCount(midi), 16 * 8);
+    const maxTick = maxSteps * tickPerStep;
+    const drums = entry.kind === 'drums' || midi.notes.filter(n => n.channel === 10).length > midi.notes.length * 0.6;
+    loopPreviewEntryId = entry.id;
+
+    for (const note of midi.notes) {
+      if (note.tick >= maxTick) continue;
+      const when = start + (note.tick / tickPerStep) * stepDuration;
+      if (drums) {
+        const drumIdx = gmDrumToIndex(note.note);
+        if (drumIdx >= 0) audio.scheduleDrum(99, drumIdx, when, false);
+      } else {
+        if (note.channel === 10) continue;
+        const duration = Math.max(0.04, Math.min(2.5, (note.duration / tickPerStep) * stepDuration));
+        const track = state.activeTrack;
+        audio.scheduleNote(
+          99,
+          foldMidiPitch(note.note),
+          when,
+          duration,
+          state.trackWaves[track] || 'square',
+          state.trackAdsr[track],
+          state.trackFilter[track],
+          state.adsrTarget[track],
+          state.adsrDepth[track]
+        );
+      }
+    }
+
+    const previewSeconds = maxSteps * stepDuration;
+    setLoopStatus(
+      'Preview · ' + entry.name + ' · ' + (maxSteps / 16).toFixed(2).replace(/\.00$/, '') + ' bars @ project BPM',
+      true
+    );
+    loopPreviewTimer = setTimeout(() => {
+      if (loopPreviewEntryId === entry.id) {
+        loopPreviewEntryId = null;
+        setLoopStatus('Ready · choose another loop or LOAD to Track ' + (state.activeTrack + 1), true);
+      }
+    }, Math.max(250, previewSeconds * 1000 + 100));
+  } catch (err) {
+    setLoopStatus('Preview error: ' + err.message);
+  }
+}
+
+async function loadLoopIntoTrack(entryId, trackIdx = state.activeTrack, isReload = false) {
+  try {
+    await ensureLoopCatalog();
+    const entry = loopCatalog.find(e => e.id === entryId);
+    if (!entry) throw new Error('Source MIDI is no longer in the library index');
+    stopLoopPreview();
+    setLoopStatus((isReload ? 'Reloading' : 'Loading') + ' · ' + entry.name + ' → Track ' + (trackIdx + 1));
+    const midi = await fetchLoopMidi(entry);
+    const beforeSteps = state.steps;
+    state.loadMidiLoop(trackIdx, midi, entry);
+    state.activeTrack = trackIdx;
+    ui.render();
+    const src = state.trackSources[trackIdx];
+    const expanded = state.steps > beforeSteps ? ' · pattern expanded to ' + (state.steps / 16) + ' bars' : '';
+    setLoopStatus(
+      'Loaded · ' + entry.name + ' · source ' + src.originalBars + ' bars → filled ' +
+      (state.steps / 16) + ' bars' + expanded,
+      true
+    );
+  } catch (err) {
+    setLoopStatus('Load error: ' + err.message);
+  }
+}
+
+document.getElementById('btnLoops').addEventListener('click', async () => {
+  const open = !loopBrowserEl.classList.contains('open');
+  loopBrowserEl.classList.toggle('open', open);
+  document.getElementById('btnLoops').classList.toggle('active', open);
+  updateLoopBrowserTarget();
+  if (open) {
+    try { await ensureLoopCatalog(); }
+    catch (err) { setLoopStatus('Library error: ' + err.message); }
+  } else {
+    stopLoopPreview();
+  }
+});
+document.getElementById('loopClose').addEventListener('click', () => {
+  loopBrowserEl.classList.remove('open');
+  document.getElementById('btnLoops').classList.remove('active');
+  stopLoopPreview();
+});
+[loopSearchEl, loopGenreEl, loopKindEl, loopSourceEl].forEach(el => {
+  el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', renderLoopBrowser);
+});
+
+/* ─── Sync current constructor state to GitHub for AI review ─── */
+function buildChiptuneOverview(project) {
+  const ap = project._arrangedPatterns?.[project._editingIdx] || null;
+  const variant = ap ? (ap._activeVariant === 'b' ? ap._variantB : ap._variantA) : null;
+  const lines = [
+    '# Chiptune Constructor Snapshot',
+    '',
+    '- Synced: ' + new Date().toISOString(),
+    '- Project: ' + (project.name || 'Project'),
+    '- BPM: ' + project.tempo,
+    '- Swing: ' + project.swing + '%',
+    '- Active pattern: ' + ((project._editingIdx ?? 0) + 1) + ' / ' + (project._arrangedPatterns?.length || 0),
+    '- Pattern name: ' + (ap?.name || '—'),
+    '- Variant: ' + ((ap?._activeVariant || 'a').toUpperCase()),
+    '- Length: ' + ((variant?.patternLength || CONFIG.STEPS) / 16) + ' bars',
+    '- Active track: ' + (state.activeTrack + 1),
+    ''
+  ];
+  if (!variant) return lines.join('\n');
+
+  for (let t = 0; t < CONFIG.TRACKS; t++) {
+    const type = variant.trackTypes?.[t] || 'melodic';
+    const source = variant.trackSources?.[t] || null;
+    lines.push('## Track ' + (t + 1) + ' — ' + type);
+    lines.push('Source: ' + (source
+      ? [source.genre, source.kind, source.source, source.name].filter(Boolean).join(' · ')
+      : 'manual / none'));
+    if (type === 'drum') {
+      const events = [];
+      for (let step = 0; step < (variant.patternLength || CONFIG.STEPS); step++) {
+        const active = [];
+        for (let d = 0; d < CONFIG.DRUM_INSTRUMENTS.length; d++) {
+          if (variant.drumPattern?.[t]?.[step]?.[d]) active.push(CONFIG.DRUM_INSTRUMENTS[d].name);
+        }
+        if (active.length) events.push((step + 1) + ':' + active.join('+'));
+      }
+      lines.push('Events: ' + (events.join(' ') || '—'));
+    } else {
+      const events = [];
+      for (let step = 0; step < (variant.patternLength || CONFIG.STEPS); step++) {
+        const note = variant.melodicPattern?.[t]?.[step];
+        if (note !== null && note !== undefined) events.push((step + 1) + ':' + midiToName(note));
+      }
+      lines.push('Notes: ' + (events.join(' ') || '—'));
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+document.getElementById('btnSyncAI').addEventListener('click', async () => {
+  const btn = document.getElementById('btnSyncAI');
+  btn.classList.remove('sync-ok', 'sync-err');
+  btn.textContent = '⇄ Syncing…';
+  btn.disabled = true;
+  try {
+    const project = state.exportProject();
+    const payload = {
+      projectName: 'Chiptune Constructor · ' + (project.name || 'Project'),
+      files: {
+        'chiptune-current.json': JSON.stringify(project, null, 2),
+        'chiptune-overview.md': buildChiptuneOverview(project),
+      },
+    };
+    const response = await fetch('/api/sync', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Sync failed');
+    btn.textContent = '✓ Synced ' + (data.commit || '');
+    btn.classList.add('sync-ok');
+    setTimeout(() => {
+      btn.textContent = '⇄ Sync to AI';
+      btn.classList.remove('sync-ok');
+      btn.disabled = false;
+    }, 1800);
+  } catch (err) {
+    btn.textContent = '✕ Sync error';
+    btn.classList.add('sync-err');
+    btn.disabled = false;
+    alert('Sync to AI: ' + err.message);
+  }
+});
+
 // ─── Project Manager UI ───
 const projectModal = document.getElementById('projectModal');
 const projectNameInput = document.getElementById('projectName');
