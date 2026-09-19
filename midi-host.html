@@ -1519,14 +1519,46 @@ select, input[type="number"], input[type="text"] {
     el.style.color = ok ? "var(--accent)" : "var(--dim)";
   }
 
-  function fillHostLoopSelect(el, values, label) {
+  const HOST_LOOP_STYLE_LABELS = {
+    "afrobeat": "Afrobeat",
+    "afrocuban": "Afro-Cuban",
+    "blues": "Blues",
+    "country": "Country",
+    "dance": "Dance",
+    "funk": "Funk",
+    "gospel": "Gospel",
+    "highlife": "Highlife",
+    "hiphop": "Hip-Hop",
+    "jazz": "Jazz",
+    "latin": "Latin",
+    "middleeastern": "Middle Eastern",
+    "neworleans": "New Orleans",
+    "pop": "Pop",
+    "punk": "Punk",
+    "reggae": "Reggae",
+    "rock": "Rock",
+    "soul": "Soul",
+    "tech-house": "Tech House",
+    "minimal-deep-tech": "Minimal / Deep Tech",
+    "acid": "Acid",
+    "house": "House",
+    "edm": "EDM",
+    "groove": "Groove",
+    "other": "Other"
+  };
+
+  function hostLoopStyleLabel(value) {
+    return HOST_LOOP_STYLE_LABELS[value] || String(value || "");
+  }
+
+  function fillHostLoopSelect(el, values, label, formatter = (value) => value) {
     if (!el) return;
     const keep = el.value;
     el.innerHTML = '<option value="">' + escapeHtml(label) + '</option>';
     [...values].sort((a, b) => String(a).localeCompare(String(b))).forEach((value) => {
       const option = document.createElement("option");
       option.value = value;
-      option.textContent = value;
+      option.textContent = formatter(value);
       el.appendChild(option);
     });
     if ([...values].includes(keep)) el.value = keep;
@@ -1548,7 +1580,8 @@ select, input[type="number"], input[type="text"] {
       fillHostLoopSelect(
         document.getElementById("hostLoopGenre"),
         new Set(hostLoopCatalog.map((entry) => entry.genre).filter(Boolean)),
-        "All styles"
+        "All styles",
+        hostLoopStyleLabel
       );
       fillHostLoopSelect(
         document.getElementById("hostLoopRole"),
@@ -1674,7 +1707,7 @@ select, input[type="number"], input[type="text"] {
       meta.className = "loop-card-meta";
       const familyText = hostLoopFamilies(entry).join(", ");
       meta.textContent =
-        [entry.genre, hostLoopRole(entry), familyText, entry.source].filter(Boolean).join(" · ");
+        [hostLoopStyleLabel(entry.genre), hostLoopRole(entry), familyText, entry.source].filter(Boolean).join(" · ");
 
       const stars = document.createElement("div");
       stars.className = "loop-stars";
