@@ -1486,6 +1486,7 @@ body {
   <button class="btn" id="btnSavePattern" style="font-size:10px">📚 Save Pattern</button>
   <button class="btn" id="btnLoops" style="font-size:10px">♫ Loops</button>
   <button class="btn" id="btnSyncAI" style="font-size:10px" title="Save current constructor state to GitHub so AI can inspect it">⇄ Sync to AI</button>
+  <button class="btn" id="btnUpdateApp" style="font-size:10px" title="Pull the newest main commit from GitHub and restart this local bridge automatically">↓ Update</button>
   <select id="globalMidiOut" class="engine-global-select" title="Hardware MIDI output">
     <option value="">MIDI OUT…</option>
   </select>
@@ -6495,6 +6496,68 @@ document.getElementById('btnSyncAI').addEventListener('click', async () => {
     btn.classList.add('sync-err');
     btn.disabled = false;
     alert('Sync to AI: ' + err.message);
+  }
+});
+
+async function waitForUpdatedBridge(expectedCommit, timeoutMs = 15000) {
+  // Give the current server time to close its socket and exec the freshly pulled script.
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch('/api/health?_=' + Date.now(), { cache: 'no-store' });
+      if (response.ok) {
+        const data = await response.json();
+        if (!expectedCommit || data.commit === expectedCommit) return data;
+      }
+    } catch (err) {
+      lastError = err;
+    }
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+  throw new Error(lastError?.message || 'Local bridge did not come back after update');
+}
+
+document.getElementById('btnUpdateApp').addEventListener('click', async () => {
+  const btn = document.getElementById('btnUpdateApp');
+  const original = '↓ Update';
+  btn.classList.remove('sync-ok', 'sync-err');
+  btn.textContent = '↓ Pulling…';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch('/api/update', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: '{}',
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Update failed');
+
+    if (!data.changed) {
+      btn.textContent = '✓ Up to date';
+      btn.classList.add('sync-ok');
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('sync-ok');
+        btn.disabled = false;
+      }, 1800);
+      return;
+    }
+
+    btn.textContent = '↻ Restarting…';
+    btn.classList.add('sync-ok');
+    await waitForUpdatedBridge(data.commit);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', data.commit || Date.now().toString());
+    window.location.replace(url.toString());
+  } catch (err) {
+    btn.textContent = '✕ Update error';
+    btn.classList.add('sync-err');
+    btn.disabled = false;
+    alert('Update: ' + err.message);
   }
 });
 

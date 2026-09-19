@@ -59,6 +59,7 @@ python scripts/local_server.py --open
 - В track header хранится `Source` и есть **↻ Source**: заново загрузить исходный reference MIDI, если пользователь хочет сбросить свои правки на этой дорожке.
 - Source metadata, engine, MIDI channel, GM program и polyphonic note data сохраняются внутри проекта/варианта; исходные файлы библиотеки никогда не изменяются.
 - Piano Roll / Drum Grid поддерживают горизонтальный zoom обычным колесом мыши над сеткой: wheel up = шире, wheel down = уже/overview. Диапазон шага 4–64 px, zoom запоминается в localStorage и старается удерживать музыкальную позицию под курсором. Shift+wheel остаётся горизонтальной прокруткой.
+- Верхняя кнопка **↓ Update** вызывает локальный `POST /api/update`: при чистом worktree делает `git fetch` + `git pull --ff-only origin main`, возвращает новый commit, затем локальный bridge сам корректно перезапускается на том же порту через свежий `scripts/local_server.py`. Браузер ждёт возвращения `/api/health` и сам перезагружает страницу с cache-buster. Это основной способ подтягивать новые изменения после первоначальной установки кнопки; PowerShell для обычных обновлений больше не нужен.
 
 Кнопка **Sync to AI** в Chiptune пишет и пушит:
 - `projects/chiptune-current.json` — полный проект и source metadata;
