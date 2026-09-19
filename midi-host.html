@@ -1096,6 +1096,140 @@ select, input[type="number"], input[type="text"] {
     bridgeReady: false,
   };
 
+  const HOST_AUTOSAVE_KEY = "midi-host-autosave-v1";
+  let hostAutosaveTimer = null;
+
+  function readHostAutosave() {
+    try {
+      return JSON.parse(localStorage.getItem(HOST_AUTOSAVE_KEY) || "null");
+    } catch {
+      return null;
+    }
+  }
+
+  function projectAutosaveSignature(project) {
+    if (!project) return "";
+    const tracks = (project.tracks || []).map((track, index) => ({
+      id: track.id || "",
+      cubaseIndex: track.cubaseIndex ?? index,
+      name: track.name || "",
+      notes: track.notes?.length || 0,
+    }));
+    const markers = (project.markers || []).map((m) => [m.tick | 0, String(m.text || "")]);
+    return JSON.stringify({
+      ppq: project.ppq || 480,
+      lengthTicks: project.lengthTicks || 0,
+      tracks,
+      markers,
+    });
+  }
+
+  function currentHostAutosavePayload() {
+    if (!state.project) return null;
+
+    const projectNameEl = document.getElementById("projectName");
+    const tempoEl = document.getElementById("tempo");
+    const sf2El = document.getElementById("chkSf2");
+    const hwEl = document.getElementById("chkHw");
+
+    const projectName = projectNameEl?.value?.trim() || state.project.name || "untitled";
+    const tempo = Number(tempoEl?.value) || state.project.tempo || 120;
+    state.project.name = projectName;
+    state.project.tempo = tempo;
+
+    return {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      signature: projectAutosaveSignature(state.project),
+      project: {
+        name: projectName,
+        tempo,
+        tracks: state.project.tracks.map((track, index) => ({
+          id: track.id || "",
+          cubaseIndex: track.cubaseIndex ?? index,
+          name: track.name || "",
+          channel: track.channel || 1,
+          role: track.role || inferTrackRole(track, track.channel || 1),
+          mute: !!track.mute,
+          solo: !!track.solo,
+        })),
+      },
+      ui: {
+        barW: state.barW,
+        loop: !!state.loop,
+        outputId: state.outputId || "",
+        sf2Enabled: sf2El?.checked !== false,
+        hwEnabled: hwEl?.checked !== false,
+      },
+    };
+  }
+
+  function saveHostAutosaveNow() {
+    const payload = currentHostAutosavePayload();
+    if (!payload) return;
+    try {
+      localStorage.setItem(HOST_AUTOSAVE_KEY, JSON.stringify(payload));
+    } catch {
+      // Local autosave is a convenience layer; playback must continue if storage fails.
+    }
+  }
+
+  function scheduleHostAutosave() {
+    clearTimeout(hostAutosaveTimer);
+    hostAutosaveTimer = setTimeout(saveHostAutosaveNow, 120);
+  }
+
+  function restoreHostAutosaveUi() {
+    const saved = readHostAutosave();
+    if (!saved?.ui) return;
+
+    const barW = Number(saved.ui.barW);
+    if (Number.isFinite(barW)) {
+      state.barW = Math.min(BAR_W_MAX, Math.max(BAR_W_MIN, barW));
+    }
+    state.loop = !!saved.ui.loop;
+    state.outputId = String(saved.ui.outputId || "");
+
+    const sf2El = document.getElementById("chkSf2");
+    const hwEl = document.getElementById("chkHw");
+    if (sf2El && typeof saved.ui.sf2Enabled === "boolean") sf2El.checked = saved.ui.sf2Enabled;
+    if (hwEl && typeof saved.ui.hwEnabled === "boolean") hwEl.checked = saved.ui.hwEnabled;
+
+    document.getElementById("btnLoop")?.classList.toggle("active", state.loop);
+    updateZoomLabel();
+  }
+
+  function applyHostAutosaveToProject(project) {
+    const saved = readHostAutosave();
+    if (!project || !saved?.project || saved.signature !== projectAutosaveSignature(project)) {
+      return false;
+    }
+
+    if (saved.project.name) project.name = saved.project.name;
+    if (Number.isFinite(Number(saved.project.tempo))) project.tempo = Number(saved.project.tempo);
+
+    const savedTracks = saved.project.tracks || [];
+    for (let i = 0; i < project.tracks.length; i++) {
+      const track = project.tracks[i];
+      const match = savedTracks.find((row) =>
+        (row.id && row.id === track.id) ||
+        (row.cubaseIndex != null && row.cubaseIndex === (track.cubaseIndex ?? i) && row.name === track.name)
+      );
+      if (!match) continue;
+
+      const channel = Number(match.channel);
+      if (Number.isInteger(channel) && channel >= 1 && channel <= 16) {
+        track.channel = channel;
+      }
+      track.role = match.role || inferTrackRole(track, track.channel || 1);
+      track.mute = !!match.mute;
+      track.solo = !!match.solo;
+    }
+    return true;
+  }
+
+  window.addEventListener("beforeunload", saveHostAutosaveNow);
+
   function useSf2Output() {
     return document.getElementById("chkSf2")?.checked !== false;
   }
@@ -1616,6 +1750,7 @@ select, input[type="number"], input[type="text"] {
       : (scroll && oldW > 0 ? (scroll.scrollLeft + scroll.clientWidth / 2) / Math.max(oldW, 1) : 0);
 
     state.barW = Math.min(BAR_W_MAX, Math.max(BAR_W_MIN, nextBarW));
+    scheduleHostAutosave();
     renderRuler();
     renderTracks();
     renderMarkerGuides();
@@ -1704,6 +1839,7 @@ select, input[type="number"], input[type="text"] {
     stopPlayback();
     state.startTick = 0;
     recomputeLength(project);
+    const restored = applyHostAutosaveToProject(project);
     state.project = project;
     document.getElementById("projectName").value = project.name || "untitled";
     document.getElementById("tempo").value = project.tempo || 120;
@@ -1713,7 +1849,13 @@ select, input[type="number"], input[type="text"] {
     document.getElementById("projectMeta").innerHTML =
       `${project.tempo || 120} BPM · PPQ ${project.ppq} · ${bars} bars`;
     renderOverview();
-    setStatus(`Loaded “${project.name}” · click ruler to set cue, then Play.`, "ok");
+    setStatus(
+      restored
+        ? `Loaded “${project.name}” · local routing/settings restored automatically.`
+        : `Loaded “${project.name}” · click ruler to set cue, then Play.`,
+      "ok"
+    );
+    scheduleHostAutosave();
   }
 
   function buildOverview(project) {
@@ -2408,6 +2550,7 @@ select, input[type="number"], input[type="text"] {
 
     if (mode === "solo") track.solo = !track.solo;
     else if (mode === "mute") track.mute = !track.mute;
+    scheduleHostAutosave();
 
     const newlySilent = state.project.tracks.filter(
       (t) => audibleBefore.get(t.id) && !trackIsAudible(t, state.project)
@@ -2513,6 +2656,7 @@ select, input[type="number"], input[type="text"] {
       el.querySelector(`[data-ch="${track.id}"]`).addEventListener("change", (e) => {
         track.channel = Number(e.target.value);
         if (!isGmTrack(track)) track.role = roleForChannel(track.channel).role;
+        scheduleHostAutosave();
         renderTracks();
       });
       el.querySelector(`[data-preview="${track.id}"]`).addEventListener("click", () => {
@@ -2923,6 +3067,7 @@ select, input[type="number"], input[type="text"] {
     const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
     state.loop = !state.loop;
     e.currentTarget.classList.toggle("active", state.loop);
+    scheduleHostAutosave();
     if (wasPlaying) {
       stopPlayback();
       state.startTick = tick;
@@ -2945,6 +3090,7 @@ select, input[type="number"], input[type="text"] {
     const previousOutput = state.playbackOutput || getOutput();
     if (wasPlaying) stopPlayback(previousOutput);
     state.outputId = e.target.value;
+    scheduleHostAutosave();
     const out = getOutput();
     if (wasPlaying) {
       state.startTick = tick;
@@ -2955,6 +3101,7 @@ select, input[type="number"], input[type="text"] {
   });
   for (const id of ["chkSf2", "chkHw"]) {
     document.getElementById(id)?.addEventListener("change", () => {
+      scheduleHostAutosave();
       restartPlaybackForRoutingChange();
     });
   }
@@ -3004,12 +3151,19 @@ select, input[type="number"], input[type="text"] {
     setStatus("Exported MIDI.", "ok");
   });
 
+  document.getElementById("projectName").addEventListener("input", () => {
+    if (!state.project) return;
+    state.project.name = document.getElementById("projectName").value || state.project.name;
+    scheduleHostAutosave();
+  });
+
   document.getElementById("tempo").addEventListener("change", () => {
     if (!state.project) return;
     const wasPlaying = state.playing;
     const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
     if (wasPlaying) stopPlayback();
     state.project.tempo = Number(document.getElementById("tempo").value) || 120;
+    scheduleHostAutosave();
     if (wasPlaying) {
       state.startTick = tick;
       runScheduler(tick);
@@ -3076,6 +3230,7 @@ select, input[type="number"], input[type="text"] {
     isGmTrack,
   };
 
+  restoreHostAutosaveUi();
   updateSyncUI();
   updateSf2UI();
   detectLocalBridge();
