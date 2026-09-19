@@ -418,6 +418,43 @@ select, input[type="number"], input[type="text"] {
   white-space: nowrap;
 }
 .track-head .meta { color: var(--dim); font-size: 11px; }
+.track-mix {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.mix-btn {
+  width: 27px;
+  min-width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #1c2430;
+  color: var(--dim);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 25px;
+  text-align: center;
+  cursor: pointer;
+}
+.mix-btn:hover { color: #fff; border-color: #566279; }
+.mix-btn.solo.active {
+  color: #111;
+  background: var(--gm);
+  border-color: var(--gm);
+  box-shadow: 0 0 7px rgba(232, 193, 112, 0.28);
+}
+.mix-btn.mute.active {
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+  box-shadow: 0 0 7px rgba(232, 93, 93, 0.28);
+}
+.track.mix-inactive .track-head,
+.track.mix-inactive .track-body {
+  opacity: 0.42;
+}
 .track-body {
   position: relative;
   height: 72px;
@@ -1160,11 +1197,20 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
+  function projectHasSolo(project = state.project) {
+    return !!project?.tracks?.some((track) => !!track.solo);
+  }
+
+  function trackIsAudible(track, project = state.project) {
+    if (!track || track.mute) return false;
+    return projectHasSolo(project) ? !!track.solo : true;
+  }
+
   function applySf2Programs(project) {
     const synth = sf2Synth();
     if (!synth || !project) return;
     for (const track of project.tracks || []) {
-      if (track.mute) continue;
+      if (!trackIsAudible(track, project)) continue;
       const ch = ((track.channel || 1) - 1) & 0x0f;
       const gm = gmProgramFromTrack(track);
       if (gm != null) {
@@ -1291,7 +1337,7 @@ select, input[type="number"], input[type="text"] {
   function buildEventQueue(project) {
     const queue = [];
     for (const track of project.tracks) {
-      if (track.mute) continue;
+      if (!trackIsAudible(track, project)) continue;
       const route = trackRoute(track);
       if (route === "none") continue;
       const ch = ((track.channel || 1) - 1) & 0x0f;
@@ -1612,6 +1658,7 @@ select, input[type="number"], input[type="text"] {
           channel,
           role: t.role || inferTrackRole({ name, role: t.role }, channel),
           mute: !!t.mute,
+          solo: !!t.solo,
           cubaseIndex: t.cubaseIndex ?? i,
           notes: (t.notes || []).map((n) => ({
             tick: n.tick | 0,
@@ -2281,6 +2328,32 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
+  function setTrackMixState(track, mode) {
+    if (!state.project || !track) return;
+
+    // Existing scheduler queues are built ahead of time, so rebuild transport
+    // immediately when S/M changes during playback.
+    const wasPlaying = state.playing;
+    const tick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
+    if (wasPlaying) stopPlayback();
+
+    if (mode === "solo") track.solo = !track.solo;
+    else if (mode === "mute") track.mute = !track.mute;
+
+    state.startTick = tick;
+    renderTracks();
+    updatePlayheads(tick, state.lengthTicks || 1);
+
+    if (wasPlaying) {
+      runScheduler(tick);
+    } else {
+      const stateName = mode === "solo"
+        ? (track.solo ? "Solo on" : "Solo off")
+        : (track.mute ? "Mute on" : "Mute off");
+      setStatus(`${stateName} · ${track.name}`, "ok");
+    }
+  }
+
   function renderTracks() {
     const root = document.getElementById("tracks");
     state.playheadEls = [];
@@ -2303,6 +2376,7 @@ select, input[type="number"], input[type="text"] {
       el.className = "track";
       el.dataset.trackId = track.id;
       el.style.setProperty("--head-w", `${HEAD_W}px`);
+      if (!trackIsAudible(track, project)) el.classList.add("mix-inactive");
 
       const chOptions = Array.from({ length: 16 }, (_, i) => {
         const c = i + 1;
@@ -2318,7 +2392,10 @@ select, input[type="number"], input[type="text"] {
           </label>
           <span class="meta">${track.notes.length}n</span>
           ${gmTag}
-          <label class="field"><input type="checkbox" data-mute="${track.id}" ${track.mute ? "checked" : ""}> Mute</label>
+          <span class="track-mix" aria-label="Solo and mute">
+            <button class="mix-btn solo ${track.solo ? "active" : ""}" type="button" data-solo="${track.id}" title="Solo">S</button>
+            <button class="mix-btn mute ${track.mute ? "active" : ""}" type="button" data-mute="${track.id}" title="Mute">M</button>
+          </span>
           <button class="btn" type="button" data-preview="${track.id}">Preview</button>\n          <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
         </div>
         <div class="track-body" data-body="${track.id}" style="--bar-w:${state.barW}px;width:${totalW}px"></div>
@@ -2349,8 +2426,11 @@ select, input[type="number"], input[type="text"] {
       body.appendChild(ph);
       state.playheadEls.push(ph);
 
-      el.querySelector(`[data-mute="${track.id}"]`).addEventListener("change", (e) => {
-        track.mute = e.target.checked;
+      el.querySelector(`[data-solo="${track.id}"]`).addEventListener("click", () => {
+        setTrackMixState(track, "solo");
+      });
+      el.querySelector(`[data-mute="${track.id}"]`).addEventListener("click", () => {
+        setTrackMixState(track, "mute");
       });
       el.querySelector(`[data-ch="${track.id}"]`).addEventListener("change", (e) => {
         track.channel = Number(e.target.value);
@@ -2499,6 +2579,7 @@ select, input[type="number"], input[type="text"] {
         channel: t.channel,
         role: t.role,
         mute: !!t.mute,
+        solo: !!t.solo,
         cubaseIndex: t.cubaseIndex,
         notes: t.notes.map((n) => ({
           tick: n.tick,
