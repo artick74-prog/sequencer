@@ -39,7 +39,7 @@ LIBRARY_ENTRIES: list[dict] = []
 LIBRARY_LOCATORS: dict[str, tuple[str, str, str | None]] = {}
 CLASSIFICATION_CACHE_VERSION = 1
 CLASSIFICATION_CACHE_PATH = LIBRARY_ROOT / ".style-library-classification-v1.json"
-MIDI_CACHE_DIR = LIBRARY_ROOT / ".style-library-midi-cache-v1"
+MIDI_CACHE_DIR = Path(os.environ.get("LOCALAPPDATA", str(LIBRARY_ROOT.parent))) / "SequencerStyleLibrary" / "midi-v1"
 
 
 def midi_cache_path(item_id: str) -> Path:
