@@ -1175,7 +1175,7 @@ select, input[type="number"], input[type="text"] {
         <strong>♫ LOOP BROWSER</strong>
         <span class="spacer"></span>
         <select class="loop-preview-route" id="hostLoopPreviewRoute" title="Choose where Loop Browser preview is played">
-          <option value="sf2">Preview · SoundFont</option>
+          <option value="sf2">Preview · SoundFont (independent)</option>
           <option value="1">Preview · CH 1 · Bass</option>
           <option value="2">Preview · CH 2 · Acid</option>
           <option value="10">Preview · CH 10 · Drums</option>
@@ -1274,7 +1274,7 @@ select, input[type="number"], input[type="text"] {
       <div class="sel-actions" style="margin-top:0;margin-bottom:8px">
         <button class="btn" id="btnLoadSf2" type="button">Load SF2…</button>
       </div>
-      <label class="field" style="margin-bottom:4px"><input type="checkbox" id="chkSf2" checked> Browser audio (SF2)</label>
+      <label class="field" style="margin-bottom:4px"><input type="checkbox" id="chkSf2" checked> Project GM tracks (SF2)</label>
       <label class="field" style="margin-bottom:8px"><input type="checkbox" id="chkHw" checked> Hardware MIDI Out</label>
 
       <h2>Project</h2>
@@ -2625,6 +2625,16 @@ select, input[type="number"], input[type="text"] {
     hostLoopNoteTimers.add(onTimer);
   }
 
+  function guardTd3BeforeHardwareBrowserPreview(previewStart, route) {
+    if (!state.project || route?.type !== "hardware" || route.channel === 2) return 0;
+    const output = getOutput();
+    if (!output) return 0;
+
+    const now = performance.now();
+    const resetAt = Math.max(now, Number(previewStart) - 12);
+    return resetTd3Gate(output, state.project, resetAt, "TD-3 browser reset");
+  }
+
   function scheduleHostLoopHardware(channel, note, velocity, targetTime, durationMs, oneShot = false) {
     const output = getOutput();
     if (!output) throw new Error("Select MIDI Out first");
@@ -2831,6 +2841,14 @@ select, input[type="number"], input[type="text"] {
         syncDetail = " · Sync needs project Loop ON; previewing free";
       }
 
+      // Hardware Loop Browser previews share the TD-3 USB→DIN path with the
+      // project's CH2 acid track. Apply the same gate reset that fixed direct
+      // transport starts, scheduled just before the preview actually begins.
+      const td3BrowserResetCount =
+        route.type === "hardware"
+          ? guardTd3BeforeHardwareBrowserPreview(previewStart, route)
+          : 0;
+
       const cycleMs = Math.max(100, ticksToMs(cycleTicks, tempo, ppq));
       hostLoopPreviewMeta.set(entry.id, {
         bars: sourceCycleTicks / sourceBarTicks,
@@ -2861,7 +2879,8 @@ select, input[type="number"], input[type="text"] {
         const waitMs = Math.max(0, previewStart - performance.now());
         hostLoopSetStatus(
           "Queued → next project cycle in " + (waitMs / 1000).toFixed(1) + "s" +
-          " · " + hostLoopDisplayName(entry) + syncDetail,
+          " · " + hostLoopDisplayName(entry) + syncDetail +
+          (td3BrowserResetCount ? " · TD-3 guarded" : ""),
           true
         );
       } else {
@@ -2870,7 +2889,8 @@ select, input[type="number"], input[type="text"] {
           " → " + hostLoopPreviewRouteLabel(route) +
           " · " + hostLoopDisplayName(entry) +
           " · " + hostLoopFormatDuration(hostLoopPreviewMeta.get(entry.id)) +
-          syncDetail,
+          syncDetail +
+          (td3BrowserResetCount ? " · TD-3 guarded" : ""),
           true
         );
       }
@@ -3223,13 +3243,19 @@ select, input[type="number"], input[type="text"] {
   function trackRoute(track) {
     const sf2 = useSf2Output();
     const hw = useHwOutput();
+
+    // GM tracks belong to the SoundFont engine.
     if (isGmTrack(track)) return sf2 ? "sf2" : "none";
+
+    // Dedicated hardware tracks must not be doubled by SoundFont while the
+    // hardware output is available. SF2 is only a fallback for hardware tracks
+    // when no hardware output is active.
     if (track.role === "td3" || track.role === "xr20-bass" || track.role === "xr20-drums") {
-      if (hw && sf2) return "both";
       if (hw) return "hw";
       if (sf2) return "sf2";
       return "none";
     }
+
     if (sf2 && hw) return "both";
     if (sf2) return "sf2";
     if (hw) return "hw";
@@ -3624,7 +3650,7 @@ select, input[type="number"], input[type="text"] {
     for (const timer of state.sf2Timers) clearTimeout(timer);
     state.sf2Timers.clear();
   }
-  function resetTd3Gate(output, project) {
+  function resetTd3Gate(output, project, timestamp = null, source = "TD-3 gate reset") {
     if (!output || !project) return 0;
 
     const notes = new Set();
@@ -3646,7 +3672,7 @@ select, input[type="number"], input[type="text"] {
     // track clears the mono gate state more reliably than CC123 on this setup.
     // Keep these as ordinary Note Off messages: they are intentionally silent.
     for (const note of [...notes].sort((a, b) => a - b)) {
-      midiSend(output, [0x81, note, 0], null, "TD-3 gate reset");
+      midiSend(output, [0x81, note, 0], timestamp, source);
     }
     return notes.size;
   }
