@@ -1476,6 +1476,7 @@ select, input[type="number"], input[type="text"] {
   cursor: grab;
   user-select: none;
   touch-action: none;
+  isolation: isolate;
 }
 .piano-roll-note:hover {
   filter: brightness(1.12);
@@ -1484,6 +1485,15 @@ select, input[type="number"], input[type="text"] {
   z-index: 5;
   border-color: #fff3a6;
   box-shadow: 0 0 0 1px var(--gm), 0 0 7px rgba(232,193,112,.35);
+}
+.piano-roll-note.selected::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(255,255,255,.88);
+  mix-blend-mode: difference;
 }
 .piano-roll-note.dragging,
 .piano-roll-note.resizing {
