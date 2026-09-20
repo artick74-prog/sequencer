@@ -4837,6 +4837,7 @@ select, input[type="number"], input[type="text"] {
         role: t.role,
         gmProgram: gmProgramFromTrack(t),
         mute: !!t.mute,
+        transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(t.transposeOctaves) || 0))),
         noteCount: notes.length,
         pitchMin: pitches.length ? Math.min(...pitches) : null,
         pitchMax: pitches.length ? Math.max(...pitches) : null,
@@ -4865,6 +4866,8 @@ select, input[type="number"], input[type="text"] {
       version: 2,
       name: project.name,
       tempo: project.tempo,
+      swing: Math.max(0, Math.min(50, Number(project.swing) || 0)),
+      masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(project.masterTranspose) || 0))),
       ppq,
       totalBars,
       lengthTicks: project.lengthTicks,
@@ -4906,6 +4909,9 @@ select, input[type="number"], input[type="text"] {
     lines.push(`# ${ov.name || "Arrangement"}`);
     lines.push("");
     lines.push(`- Tempo: **${ov.tempo}** BPM · PPQ ${ov.ppq} · **${ov.totalBars}** bars`);
+    lines.push(
+      `- Performance: swing **${ov.swing || 0}%** · master transpose **${(ov.masterTranspose || 0) > 0 ? "+" : ""}${ov.masterTranspose || 0} st** (drums/percussion excluded)`
+    );
     lines.push(`- Hardware: TD-3 USB → DIN → XR20 (ch2 acid, ch1 bass, ch10 drums)`);
     if (ov.grid) {
       lines.push(
@@ -4971,7 +4977,8 @@ select, input[type="number"], input[type="text"] {
     for (const t of ov.tracks) {
       const range = t.pitchMinName ? ` · ${t.pitchMinName}–${t.pitchMaxName}` : "";
       const gm = t.gmProgram != null ? ` · GM ${t.gmProgram}` : "";
-      lines.push(`- **${t.name}** (id \`${t.id}\`, ch ${t.channel}, ${t.role}${gm}) — ${t.noteCount} notes${range}`);
+      const oct = t.transposeOctaves ? ` · octave ${t.transposeOctaves > 0 ? "+" : ""}${t.transposeOctaves}` : "";
+      lines.push(`- **${t.name}** (id \`${t.id}\`, ch ${t.channel}, ${t.role}${gm}${oct}) — ${t.noteCount} notes${range}`);
     }
     lines.push("");
     lines.push("## Activity (notes per 8 bars)");
