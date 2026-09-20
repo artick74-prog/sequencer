@@ -649,7 +649,7 @@ def library_material_type(item: dict) -> str:
     bars = item.get("barsEstimate")
     try:
         if bars is not None:
-            return "constructor" if float(bars) > 32.0 else "loop"
+            return "constructor" if float(bars) > 16.0 else "loop"
     except (TypeError, ValueError):
         pass
 
