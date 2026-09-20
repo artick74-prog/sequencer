@@ -2035,7 +2035,11 @@ select, input[type="number"], input[type="text"] {
       120;
 
     if (mode === "restart" || !state.playing) {
-      if (state.playing) stopPlayback();
+      if (state.playing) {
+        // Internal restart for Loop Browser auditioning. Keep the Browser preview
+        // token alive; only a real transport Stop/Pause should kill the preview.
+        stopPlayback(state.playbackOutput || getOutput(), { stopLoopPreview: false });
+      }
       state.startTick = range.start;
       runScheduler(range.start);
       if (!state.playing) return null;
@@ -3775,16 +3779,20 @@ select, input[type="number"], input[type="text"] {
     }
     allNotesOffSf2();
   }
-  function stopPlayback(output = state.playbackOutput || getOutput()) {
+  function stopPlayback(
+    output = state.playbackOutput || getOutput(),
+    { stopLoopPreview = true } = {}
+  ) {
     state.playing = false;
     state.playbackToken++;
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
     clearSf2Timers();
     clearHardwareQueue(output);
 
-    // Loop Browser follows the master transport: stopping/pausing the project
-    // also stops any active preview instead of letting it continue on its own.
-    hostLoopStopPreview();
+    // User/master Stop or Pause stops Loop Browser too. Internal transport
+    // restarts used by "Sync · restart cycle" can explicitly preserve the
+    // Browser preview so hot-switching loops does not invalidate its token.
+    if (stopLoopPreview) hostLoopStopPreview();
 
     allNotesOff(output);
     state.playbackOutput = null;
