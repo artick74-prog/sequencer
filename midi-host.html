@@ -284,6 +284,40 @@ a { color: var(--accent); }
   padding: 6px 7px;
   font-size: 12px;
 }
+.loop-library-load {
+  display: none;
+  padding: 8px 11px 9px;
+  border-bottom: 1px solid var(--border);
+  background: #0c1117;
+}
+.loop-library-load.visible { display: block; }
+.loop-library-load-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--dim);
+  font-size: 10px;
+  line-height: 1.3;
+}
+.loop-library-load-row strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.loop-library-progress-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #1a2230;
+  border: 1px solid #263244;
+}
+.loop-library-progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width .14s linear;
+}
 .loop-drawer-status,
 .loop-drawer-foot {
   padding: 7px 11px;
@@ -1105,6 +1139,15 @@ select, input[type="number"], input[type="text"] {
         </select>
       </div>
     </div>
+    <div class="loop-library-load" id="hostLoopLibraryLoad" aria-live="polite">
+      <div class="loop-library-load-row">
+        <strong id="hostLoopLibraryLoadText">Loading MIDI library…</strong>
+        <span id="hostLoopLibraryLoadPct">0%</span>
+      </div>
+      <div class="loop-library-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="hostLoopLibraryProgress">
+        <div class="loop-library-progress-fill" id="hostLoopLibraryProgressFill"></div>
+      </div>
+    </div>
     <div class="loop-drawer-status" id="hostLoopStatus">Open the browser to load the MIDI catalogue.</div>
     <div class="loop-list" id="hostLoopList"></div>
     <div class="loop-drawer-foot">
@@ -1693,6 +1736,8 @@ select, input[type="number"], input[type="text"] {
   let hostLoopCatalog = [];
   let hostLoopCatalogLoaded = false;
   let hostLoopCatalogPromise = null;
+  let hostLoopCatalogLoading = false;
+  let hostLoopLoadToken = 0;
   let hostLoopRatings = {};
   let hostLoopAliases = {};
   let hostLoopPreview = null;
@@ -1854,68 +1899,172 @@ select, input[type="number"], input[type="text"] {
     if ([...values].includes(keep)) el.value = keep;
   }
 
+  function showHostLoopLibraryProgress(snapshot = {}) {
+    const box = document.getElementById("hostLoopLibraryLoad");
+    const textEl = document.getElementById("hostLoopLibraryLoadText");
+    const pctEl = document.getElementById("hostLoopLibraryLoadPct");
+    const bar = document.getElementById("hostLoopLibraryProgress");
+    const fill = document.getElementById("hostLoopLibraryProgressFill");
+    if (!box || !textEl || !pctEl || !bar || !fill) return;
+
+    const pct = Math.max(0, Math.min(100, Number(snapshot.percent) || 0));
+    const current = Math.max(0, Number(snapshot.current) || 0);
+    const total = Math.max(0, Number(snapshot.total) || 0);
+    const catalogTotal = Math.max(0, Number(snapshot.catalogTotal) || 0);
+    const message = String(snapshot.message || "Loading MIDI library");
+
+    const parts = [message];
+    if (total > 0) {
+      parts.push(current.toLocaleString("ru-RU") + " / " + total.toLocaleString("ru-RU"));
+    }
+    if (catalogTotal > 0 && catalogTotal !== total) {
+      parts.push("catalogue " + catalogTotal.toLocaleString("ru-RU") + " MIDI");
+    }
+
+    box.classList.add("visible");
+    textEl.textContent = parts.join(" · ");
+    pctEl.textContent = Math.round(pct) + "%";
+    fill.style.width = pct.toFixed(1) + "%";
+    bar.setAttribute("aria-valuenow", String(Math.round(pct)));
+  }
+
+  function hideHostLoopLibraryProgress() {
+    document.getElementById("hostLoopLibraryLoad")?.classList.remove("visible");
+  }
+
+  async function pollHostLoopLibraryProgress(token) {
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    while (hostLoopCatalogLoading && token === hostLoopLoadToken) {
+      try {
+        const response = await fetch("/api/library/status?_=" + Date.now(), { cache: "no-store" });
+        if (response.ok) {
+          const snapshot = await response.json();
+          showHostLoopLibraryProgress(snapshot);
+        }
+      } catch {
+        // The catalogue request itself remains authoritative; progress polling is optional UI.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 140));
+    }
+  }
+
+  function refreshHostLoopGenreFacet() {
+    const select = document.getElementById("hostLoopGenre");
+    if (!select || !hostLoopCatalogLoaded) return;
+
+    const keep = select.value;
+    const candidates = filteredHostLoops({ ignoreGenre: true });
+    const counts = new Map();
+    for (const entry of candidates) {
+      const genre = String(entry.genre || "");
+      if (!genre) continue;
+      counts.set(genre, (counts.get(genre) || 0) + 1);
+    }
+
+    const rows = [...counts.entries()].sort((a, b) =>
+      hostLoopStyleLabel(a[0]).localeCompare(hostLoopStyleLabel(b[0]))
+    );
+
+    select.innerHTML = "";
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = "All styles · " + candidates.length.toLocaleString("ru-RU");
+    select.appendChild(all);
+
+    for (const [genre, count] of rows) {
+      const option = document.createElement("option");
+      option.value = genre;
+      option.textContent =
+        "🟡 " + hostLoopStyleLabel(genre) + " · " + count.toLocaleString("ru-RU");
+      option.title =
+        count.toLocaleString("ru-RU") + " matching loop(s) with the current filters";
+      select.appendChild(option);
+    }
+
+    if (keep && counts.has(keep)) select.value = keep;
+    else select.value = "";
+  }
+
   async function ensureHostLoopCatalog() {
     if (hostLoopCatalogLoaded) return hostLoopCatalog;
     if (hostLoopCatalogPromise) return hostLoopCatalogPromise;
 
+    const token = ++hostLoopLoadToken;
+    hostLoopCatalogLoading = true;
+    showHostLoopLibraryProgress({
+      percent: 0,
+      message: "Starting MIDI library",
+    });
     hostLoopSetStatus("Loading MIDI library index…");
+    void pollHostLoopLibraryProgress(token);
+
     hostLoopCatalogPromise = (async () => {
-      const response = await fetch("/api/library?_=" + Date.now(), { cache: "no-store" });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Library API error");
+      try {
+        const response = await fetch("/api/library?_=" + Date.now(), { cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Library API error");
 
-      hostLoopCatalog = Array.isArray(data.entries) ? data.entries : [];
-      hostLoopCatalogLoaded = true;
+        hostLoopCatalog = Array.isArray(data.entries) ? data.entries : [];
+        hostLoopCatalogLoaded = true;
 
-      fillHostLoopSelect(
-        document.getElementById("hostLoopGenre"),
-        new Set(hostLoopCatalog.map((entry) => entry.genre).filter(Boolean)),
-        "All styles",
-        hostLoopStyleLabel
-      );
-      fillHostLoopSelect(
-        document.getElementById("hostLoopRole"),
-        new Set(hostLoopCatalog.map(hostLoopRole).filter(Boolean)),
-        "All roles"
-      );
-      fillHostLoopSelect(
-        document.getElementById("hostLoopFamily"),
-        new Set(hostLoopCatalog.flatMap(hostLoopFamilies)),
-        "All instrument families"
-      );
-      const programSelect = document.getElementById("hostLoopProgram");
-      if (programSelect) {
-        const keepProgram = programSelect.value;
-        const programs = [...new Set(hostLoopCatalog.flatMap(hostLoopPrograms))].sort((a, b) => a - b);
-        programSelect.innerHTML = '<option value="">All GM programs</option>';
-        for (const program of programs) {
-          const option = document.createElement("option");
-          option.value = String(program);
-          option.textContent = "GM " + program + " · " + gmProgramName(program);
-          programSelect.appendChild(option);
+        fillHostLoopSelect(
+          document.getElementById("hostLoopRole"),
+          new Set(hostLoopCatalog.map(hostLoopRole).filter(Boolean)),
+          "All roles"
+        );
+        fillHostLoopSelect(
+          document.getElementById("hostLoopFamily"),
+          new Set(hostLoopCatalog.flatMap(hostLoopFamilies)),
+          "All instrument families"
+        );
+        const programSelect = document.getElementById("hostLoopProgram");
+        if (programSelect) {
+          const keepProgram = programSelect.value;
+          const programs = [...new Set(hostLoopCatalog.flatMap(hostLoopPrograms))].sort((a, b) => a - b);
+          programSelect.innerHTML = '<option value="">All GM programs</option>';
+          for (const program of programs) {
+            const option = document.createElement("option");
+            option.value = String(program);
+            option.textContent = "GM " + program + " · " + gmProgramName(program);
+            programSelect.appendChild(option);
+          }
+          if (programs.map(String).includes(keepProgram)) programSelect.value = keepProgram;
         }
-        if (programs.map(String).includes(keepProgram)) programSelect.value = keepProgram;
+
+        fillHostLoopSelect(
+          document.getElementById("hostLoopSource"),
+          new Set(hostLoopCatalog.map((entry) => entry.source).filter(Boolean)),
+          "All sources"
+        );
+
+        refreshHostLoopGenreFacet();
+        showHostLoopLibraryProgress({
+          percent: 100,
+          current: hostLoopCatalog.length,
+          total: hostLoopCatalog.length,
+          catalogTotal: hostLoopCatalog.length,
+          message: "MIDI library ready",
+        });
+
+        hostLoopSetStatus(
+          "Ready · " + hostLoopCatalog.length.toLocaleString("ru-RU") + " MIDI" +
+          (data.mode === "packs" ? " · " + Number(data.packCount || 0) + " packs" : ""),
+          true
+        );
+        renderHostLoopBrowser();
+        setTimeout(() => {
+          if (token === hostLoopLoadToken && hostLoopCatalogLoaded) hideHostLoopLibraryProgress();
+        }, 900);
+        return hostLoopCatalog;
+      } finally {
+        hostLoopCatalogLoading = false;
       }
-
-      fillHostLoopSelect(
-        document.getElementById("hostLoopSource"),
-        new Set(hostLoopCatalog.map((entry) => entry.source).filter(Boolean)),
-        "All sources"
-      );
-
-      hostLoopSetStatus(
-        "Ready · " + hostLoopCatalog.length.toLocaleString("ru-RU") + " MIDI" +
-        (data.mode === "packs" ? " · " + Number(data.packCount || 0) + " packs" : ""),
-        true
-      );
-      renderHostLoopBrowser();
-      return hostLoopCatalog;
     })().finally(() => { hostLoopCatalogPromise = null; });
 
     return hostLoopCatalogPromise;
   }
 
-  function filteredHostLoops() {
+  function filteredHostLoops({ ignoreGenre = false } = {}) {
     const q = (document.getElementById("hostLoopSearch")?.value || "").trim().toLowerCase();
     const material = document.getElementById("hostLoopMaterial")?.value ?? "loop";
     const genre = document.getElementById("hostLoopGenre")?.value || "";
@@ -1927,7 +2076,7 @@ select, input[type="number"], input[type="text"] {
 
     return hostLoopCatalog.filter((entry) => {
       if (material && hostLoopMaterialType(entry) !== material) return false;
-      if (genre && entry.genre !== genre) return false;
+      if (!ignoreGenre && genre && entry.genre !== genre) return false;
       if (role && hostLoopRole(entry) !== role) return false;
       if (family && !hostLoopFamilies(entry).includes(family)) return false;
       if (program && !hostLoopPrograms(entry).includes(Number(program))) return false;
@@ -6189,6 +6338,7 @@ select, input[type="number"], input[type="text"] {
     const el = document.getElementById(id);
     el?.addEventListener(el.tagName === "INPUT" ? "input" : "change", () => {
       hostLoopRenderedCount = HOST_LOOP_RENDER_BATCH;
+      if (id !== "hostLoopGenre") refreshHostLoopGenreFacet();
       renderHostLoopBrowser();
     });
   });
