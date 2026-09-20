@@ -7744,7 +7744,7 @@ body.timeline-ruler-seeking {
     // Keep only the top sequencer toolbar visible; the timeline itself may
     // collapse almost completely so Piano Roll can occupy the working area.
     const reserved = zoomHeight + 18;
-    return Math.max(180, Math.floor(main.clientHeight - reserved));
+    return Math.max(220, Math.floor(main.clientHeight - reserved));
   }
 
   function clampPianoRollHeight(value) {
@@ -9386,7 +9386,7 @@ body.timeline-ruler-seeking {
     const delta = state.pianoRollResizeStartY - event.clientY;
     const maxHeight = pianoRollMaxHeight();
     const next = Math.max(
-      150,
+      220,
       Math.min(maxHeight, state.pianoRollResizeStartHeight + delta)
     );
     state.pianoRollHeight = Math.round(next);
