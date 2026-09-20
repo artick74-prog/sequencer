@@ -1296,6 +1296,14 @@ body.piano-roll-resizing {
   cursor: ns-resize !important;
   user-select: none !important;
 }
+body.piano-roll-ruler-zooming {
+  cursor: ns-resize !important;
+  user-select: none !important;
+}
+body.piano-roll-ruler-seeking {
+  cursor: ew-resize !important;
+  user-select: none !important;
+}
 
 .ruler-wrap {
   margin: 0;
@@ -2571,6 +2579,7 @@ body.piano-roll-resizing {
     pianoRollSnapDenominator: 16,
     pianoRollRulerSeeking: false,
     pianoRollRulerResumeAfterSeek: false,
+    pianoRollRulerGesture: null,
     pianoRollResizing: false,
     pianoRollResizeStartY: 0,
     pianoRollResizeStartHeight: 290,
@@ -7345,7 +7354,7 @@ body.piano-roll-resizing {
     setStatus(
       "Piano Roll VIEW · " + (track.name || "Track") +
       " · " + (clip.name || clip.originalName || "Project Clip") +
-      " · click/drag top ruler = cue · click empty grid = add · drag note = move · right edge = resize · Delete = remove · snap " + pianoRollSnapLabel(),
+      " · ruler: click/horizontal drag = cue · vertical drag = zoom · click empty grid = add · drag note = move · right edge = resize · Delete = remove · snap " + pianoRollSnapLabel(),
       "ok"
     );
   }
@@ -7763,6 +7772,8 @@ body.piano-roll-resizing {
 
     const ruler = document.createElement("div");
     ruler.className = "piano-roll-ruler";
+    ruler.id = "pianoRollRuler";
+    ruler.title = "Click/drag horizontally = cue · drag vertically = horizontal zoom";
 
     const keys = document.createElement("div");
     keys.className = "piano-roll-keys";
@@ -7835,55 +7846,11 @@ body.piano-roll-resizing {
       }
     }
 
-    const seekPianoRuler = (event, restart = false) => {
-      const rect = ruler.getBoundingClientRect();
-      const x = Math.max(0, Math.min(rect.width || 1, event.clientX - rect.left));
-      const rawTick = startTick + (x / Math.max(1, rect.width)) * spanTicks;
-      const tick = pianoRollSnapTick(rawTick, ctx);
-      const wasPlaying = state.playing;
-      if (wasPlaying && !state.pianoRollRulerSeeking) {
-        stopPlayback();
-        state.pianoRollRulerResumeAfterSeek = true;
-      }
-      state.startTick = Math.max(0, Math.min(state.lengthTicks || endTick, tick));
-      updatePlayheads(state.startTick, state.lengthTicks || 1);
-      setStatus(
-        "Piano Roll cue · " + tickToBarBeat(state.startTick, ppq) +
-        " · snap " + pianoRollSnapLabel(),
-        "ok"
-      );
-      if (restart && state.pianoRollRulerResumeAfterSeek && (getOutput() || useSf2Output())) {
-        state.pianoRollRulerResumeAfterSeek = false;
-        runScheduler(state.startTick);
-      }
-    };
-
     ruler.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
-      state.pianoRollRulerSeeking = true;
-      state.pianoRollRulerResumeAfterSeek = !!state.playing;
-      if (state.playing) stopPlayback();
-      seekPianoRuler(event, false);
-      ruler.setPointerCapture?.(event.pointerId);
-    });
-    ruler.addEventListener("pointermove", (event) => {
-      if (!state.pianoRollRulerSeeking || !(event.buttons & 1)) return;
-      event.preventDefault();
-      seekPianoRuler(event, false);
-    });
-    const finishPianoRulerSeek = (event) => {
-      if (!state.pianoRollRulerSeeking) return;
-      state.pianoRollRulerSeeking = false;
-      try { ruler.releasePointerCapture?.(event.pointerId); } catch {}
-      seekPianoRuler(event, true);
-    };
-    ruler.addEventListener("pointerup", finishPianoRulerSeek);
-    ruler.addEventListener("pointercancel", (event) => {
-      state.pianoRollRulerSeeking = false;
-      state.pianoRollRulerResumeAfterSeek = false;
-      try { ruler.releasePointerCapture?.(event.pointerId); } catch {}
+      startPianoRollRulerGesture(event);
     });
 
     for (const boundary of [0, rollW]) {
@@ -7979,13 +7946,13 @@ body.piano-roll-resizing {
     );
   }
 
-  function setPianoRollHorizontalZoom(factor, clientX = null) {
+  function setPianoRollHorizontalZoomValue(nextValue, clientX = null) {
     const scroll = document.getElementById("pianoRollScroll");
     const grid = document.getElementById("pianoRollGrid");
     if (!scroll || !grid || !state.pianoRollClipId) return;
 
     const oldBarW = Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96));
-    const nextBarW = Math.max(24, Math.min(2048, oldBarW * factor));
+    const nextBarW = Math.max(24, Math.min(2048, Number(nextValue) || oldBarW));
     if (Math.abs(nextBarW - oldBarW) < 0.01) return;
 
     const scrollRect = scroll.getBoundingClientRect();
@@ -8016,6 +7983,126 @@ body.piano-roll-resizing {
       keyW + anchorRatio * newRollW - anchorViewportX
     );
   }
+
+  function setPianoRollHorizontalZoom(factor, clientX = null) {
+    const oldBarW = Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96));
+    setPianoRollHorizontalZoomValue(oldBarW * factor, clientX);
+  }
+
+  function seekPianoRollRulerAtClientX(clientX, { restart = false } = {}) {
+    const ctx = pianoRollContext();
+    const ruler = document.getElementById("pianoRollRuler");
+    if (!ctx || !ruler) return;
+
+    const rect = ruler.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width || 1, clientX - rect.left));
+    const rawTick = ctx.startTick + (x / Math.max(1, rect.width)) * (ctx.endTick - ctx.startTick);
+    const tick = pianoRollSnapTick(rawTick, ctx);
+
+    state.startTick = Math.max(0, Math.min(state.lengthTicks || ctx.endTick, tick));
+    updatePlayheads(state.startTick, state.lengthTicks || 1);
+    setStatus(
+      "Piano Roll cue · " + tickToBarBeat(state.startTick, ctx.ppq) +
+      " · snap " + pianoRollSnapLabel(),
+      "ok"
+    );
+
+    if (restart && state.pianoRollRulerResumeAfterSeek && (getOutput() || useSf2Output())) {
+      state.pianoRollRulerResumeAfterSeek = false;
+      runScheduler(state.startTick);
+    }
+  }
+
+  function startPianoRollRulerGesture(event) {
+    if (!state.pianoRollClipId) return;
+    state.pianoRollRulerGesture = {
+      pointerId: event.pointerId,
+      originX: event.clientX,
+      originY: event.clientY,
+      originBarW: Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96)),
+      mode: "pending",
+      resumeAfterSeek: !!state.playing,
+    };
+    state.pianoRollRulerSeeking = false;
+    state.pianoRollRulerResumeAfterSeek = false;
+  }
+
+  document.addEventListener("pointermove", (event) => {
+    const gesture = state.pianoRollRulerGesture;
+    if (!gesture || event.pointerId !== gesture.pointerId || !(event.buttons & 1)) return;
+
+    const dx = event.clientX - gesture.originX;
+    const dy = event.clientY - gesture.originY;
+    const distance = Math.hypot(dx, dy);
+
+    if (gesture.mode === "pending" && distance >= 5) {
+      gesture.mode = Math.abs(dy) > Math.abs(dx) ? "zoom" : "seek";
+      if (gesture.mode === "zoom") {
+        document.body.classList.add("piano-roll-ruler-zooming");
+      } else {
+        document.body.classList.add("piano-roll-ruler-seeking");
+        state.pianoRollRulerSeeking = true;
+        state.pianoRollRulerResumeAfterSeek = gesture.resumeAfterSeek;
+        if (state.playing) stopPlayback();
+      }
+    }
+
+    if (gesture.mode === "zoom") {
+      event.preventDefault();
+      // Up = wider / zoom in, down = narrower / zoom out.
+      const nextBarW = gesture.originBarW * Math.pow(1.01, -dy);
+      setPianoRollHorizontalZoomValue(nextBarW, gesture.originX);
+      setStatus(
+        "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
+        " px/bar · drag up/down",
+        "ok"
+      );
+    } else if (gesture.mode === "seek") {
+      event.preventDefault();
+      seekPianoRollRulerAtClientX(event.clientX, { restart: false });
+    }
+  }, { passive: false });
+
+  const finishPianoRollRulerGesture = (event, cancelled = false) => {
+    const gesture = state.pianoRollRulerGesture;
+    if (!gesture || event.pointerId !== gesture.pointerId) return;
+
+    state.pianoRollRulerGesture = null;
+    document.body.classList.remove("piano-roll-ruler-zooming", "piano-roll-ruler-seeking");
+
+    if (cancelled) {
+      state.pianoRollRulerSeeking = false;
+      state.pianoRollRulerResumeAfterSeek = false;
+      return;
+    }
+
+    if (gesture.mode === "pending") {
+      // A plain click keeps the familiar ruler seek behavior.
+      state.pianoRollRulerSeeking = true;
+      state.pianoRollRulerResumeAfterSeek = gesture.resumeAfterSeek;
+      if (state.playing) stopPlayback();
+      seekPianoRollRulerAtClientX(event.clientX, { restart: true });
+    } else if (gesture.mode === "seek") {
+      seekPianoRollRulerAtClientX(event.clientX, { restart: true });
+    }
+
+    state.pianoRollRulerSeeking = false;
+    if (gesture.mode === "zoom") {
+      state.pianoRollRulerResumeAfterSeek = false;
+      setStatus(
+        "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
+        " px/bar · Ctrl+wheel also available",
+        "ok"
+      );
+    }
+  };
+
+  document.addEventListener("pointerup", (event) => {
+    finishPianoRollRulerGesture(event, false);
+  });
+  document.addEventListener("pointercancel", (event) => {
+    finishPianoRollRulerGesture(event, true);
+  });
 
   document.getElementById("pianoRollScroll")?.addEventListener("wheel", (event) => {
     if (!event.ctrlKey && !event.metaKey) return;
