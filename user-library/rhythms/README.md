@@ -47,6 +47,7 @@ Global MIDI Host Swing remains a separate groove layer. The Rhythm Browser's Gat
 Each library card can be edited without changing the built-in source pattern.
 
 - The **✎** button opens a compact onset-grid editor.
+- **LIVE preview is always on inside the editor**: opening the editor starts/continues audition, and every add/remove/drag change is heard immediately without waiting for Save. The project backing loop keeps running; only the temporary rhythm overlay is swapped.
 - Click a step to add/remove an attack; drag a hit to another step to move it while preserving duration, velocity and articulation metadata.
 - **Save as new revision** appends a non-destructive personal revision to that card.
 - Cards with revisions expose **‹ / ›** navigation. `O · N` means Original with N saved revisions available; `V3/10` means revision 3 of 10.
