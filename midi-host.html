@@ -8470,12 +8470,31 @@ body.timeline-ruler-seeking {
       duration: Math.max(1, Number(note.duration) || 1),
       note: Math.max(0, Math.min(127, Number(note.note) || 0)),
       velocity: Math.max(1, Math.min(127, Number(note.velocity) || 100)),
+      td3Slide: !!note.td3Slide,
       clipId: String(note.clipId || ""),
     }));
   }
 
+  function pianoRollCloneMidiControls(events) {
+    return (events || []).map((event) => ({
+      tick: Math.max(0, Number(event.tick) || 0),
+      type: String(event.type || "cc"),
+      ...(event.controller != null ? { controller: Math.max(0, Math.min(127, Number(event.controller) || 0)) } : {}),
+      ...(event.note != null ? { note: Math.max(0, Math.min(127, Number(event.note) || 0)) } : {}),
+      value: Math.max(
+        0,
+        Math.min(event.type === "pitchBend" ? 16383 : 127, Number(event.value) || 0)
+      ),
+      clipId: String(event.clipId || ""),
+    }));
+  }
+
   function pianoRollSnapshot(ctx = pianoRollContext()) {
-    return ctx ? pianoRollCloneNotes(hostClipOwnedNotes(ctx.clip, ctx.track)) : [];
+    if (!ctx) return null;
+    return {
+      notes: pianoRollCloneNotes(hostClipOwnedNotes(ctx.clip, ctx.track)),
+      midiControls: pianoRollCloneMidiControls(hostClipOwnedMidiControls(ctx.clip, ctx.track)),
+    };
   }
 
   function pianoRollPushUndo(ctx = pianoRollContext()) {
@@ -8486,18 +8505,30 @@ body.timeline-ruler-seeking {
   }
 
   function pianoRollRestoreSnapshot(ctx, snapshot, message) {
-    if (!ctx) return false;
+    if (!ctx || !snapshot) return false;
     const instanceId = hostClipInstanceId(
       ctx.clip,
       Math.max(0, (state.project.clips || []).indexOf(ctx.clip))
     );
-    const ownedSet = new Set(hostClipOwnedNotes(ctx.clip, ctx.track));
-    ctx.track.notes = ctx.track.notes.filter((note) => !ownedSet.has(note));
-    const restored = pianoRollCloneNotes(snapshot).map((note) => ({
+    const snapshotNotes = Array.isArray(snapshot) ? snapshot : (snapshot.notes || []);
+    const snapshotControls = Array.isArray(snapshot) ? [] : (snapshot.midiControls || []);
+
+    const ownedNotes = new Set(hostClipOwnedNotes(ctx.clip, ctx.track));
+    ctx.track.notes = ctx.track.notes.filter((note) => !ownedNotes.has(note));
+    const restoredNotes = pianoRollCloneNotes(snapshotNotes).map((note) => ({
       ...note,
       clipId: note.clipId || instanceId,
     }));
-    ctx.track.notes.push(...restored);
+    ctx.track.notes.push(...restoredNotes);
+
+    const ownedControls = new Set(hostClipOwnedMidiControls(ctx.clip, ctx.track));
+    ctx.track.midiControls = (ctx.track.midiControls || []).filter((event) => !ownedControls.has(event));
+    const restoredControls = pianoRollCloneMidiControls(snapshotControls).map((event) => ({
+      ...event,
+      clipId: event.clipId || instanceId,
+    }));
+    ctx.track.midiControls.push(...restoredControls);
+
     pianoRollSetSelection([]);
     commitPianoRollEdit(ctx, message);
     return true;
@@ -8529,6 +8560,7 @@ body.timeline-ruler-seeking {
       duration: Math.max(1, Number(note.duration) || 1),
       note: Number(note.note) || 0,
       velocity: Number(note.velocity) || 100,
+      td3Slide: !!note.td3Slide,
     }));
     setStatus("Piano Roll · copied " + notes.length + " note(s)", "ok");
     return true;
@@ -8557,6 +8589,7 @@ body.timeline-ruler-seeking {
         duration,
         note: Math.max(0, Math.min(127, Number(item.note) || 0)),
         velocity: Math.max(1, Math.min(127, Number(item.velocity) || 100)),
+        td3Slide: !!item.td3Slide,
         clipId: instanceId,
       };
       pianoRollNoteId(note);
@@ -8592,6 +8625,7 @@ body.timeline-ruler-seeking {
         duration,
         note: Number(source.note) || 0,
         velocity: Number(source.velocity) || 100,
+        td3Slide: !!source.td3Slide,
         clipId: instanceId,
       };
       pianoRollNoteId(note);
