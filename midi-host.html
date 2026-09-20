@@ -1648,16 +1648,14 @@ body.timeline-ruler-seeking {
   overflow: hidden;
   user-select: none;
 }
-.note-block {
+.track-note-canvas {
   position: absolute;
-  border-radius: 2px;
-  opacity: 0.85;
-  min-width: 2px;
-  pointer-events: none;
+  inset: 0;
+  width: 100%;
+  height: 72px;
   z-index: 2;
-}
-.note-block[data-note-clip] {
-  z-index: 4;
+  pointer-events: none;
+  image-rendering: auto;
 }
 .loop-clip-container {
   position: absolute;
@@ -1826,20 +1824,22 @@ body.timeline-ruler-seeking {
 .piano-roll-keys {
   contain: layout paint style;
 }
-.note-block,
-.loop-clip-container,
-.piano-roll-note {
+.loop-clip-container.moving,
+.loop-clip-container.repeating,
+.loop-clip-container.trimming,
+.piano-roll-note.dragging,
+.piano-roll-note.resizing {
   will-change: transform;
 }
 .playhead,
-.ruler-playhead,
+.ruler .ruler-playhead,
 .piano-roll-playhead {
-  will-change: left;
+  left: 0;
+  will-change: transform;
 }
-
 .playhead,
 .ruler .ruler-playhead {
-  left: var(--playhead-pct, 0%);
+  transform: translate3d(var(--playhead-x, 0px), 0, 0);
 }
 
 </style>
@@ -6375,10 +6375,10 @@ body.timeline-ruler-seeking {
 
   function updatePlayheads(tick, lengthTicks) {
     const length = lengthTicks || state.lengthTicks || 1;
-    const pct = Math.min(100, Math.max(0, (tick / length) * 100));
-    const leftPct = `${pct}%`;
-    document.getElementById("tracks")?.style.setProperty("--playhead-pct", leftPct);
-    document.getElementById("rulerWrap")?.style.setProperty("--playhead-pct", leftPct);
+    const ratio = Math.min(1, Math.max(0, tick / Math.max(1, length)));
+    const xPx = (ratio * timelineWidth()) + "px";
+    document.getElementById("tracks")?.style.setProperty("--playhead-x", xPx);
+    document.getElementById("rulerWrap")?.style.setProperty("--playhead-x", xPx);
     updateSectionPlaylistActive(tick);
     updatePianoRollPlayhead(tick);
   }
@@ -8988,8 +8988,8 @@ body.timeline-ruler-seeking {
       return;
     }
     playhead.style.display = "block";
-    playhead.style.left =
-      (((current - startTick) / Math.max(1, endTick - startTick)) * rollW) + "px";
+    const x = ((current - startTick) / Math.max(1, endTick - startTick)) * rollW;
+    playhead.style.transform = "translate3d(" + x + "px,0,0)";
   }
 
   const pianoRollResizer = document.getElementById("pianoRollResizer");
@@ -9686,9 +9686,6 @@ body.timeline-ruler-seeking {
       let previewTrack = track;
       let moved = false;
       let activeTrackTarget = null;
-      const noteEls = [...body.querySelectorAll(
-        '.note-block[data-note-clip="' + CSS.escape(instanceId) + '"]'
-      )];
 
       box.classList.add("moving");
       box.setPointerCapture?.(event.pointerId);
@@ -9700,8 +9697,7 @@ body.timeline-ruler-seeking {
 
       const applyPreview = (tick, targetTrack) => {
         const dx = ((tick - originStart) / Math.max(1, length)) * timelineWidth();
-        box.style.transform = "translateX(" + dx + "px)";
-        for (const el of noteEls) el.style.transform = "translateX(" + dx + "px)";
+        box.style.transform = "translate3d(" + dx + "px,0,0)";
         const targetBody = document.querySelector(
           '.track-body[data-body="' + CSS.escape(targetTrack.id) + '"]'
         );
@@ -9754,7 +9750,6 @@ body.timeline-ruler-seeking {
         try { box.releasePointerCapture?.(upEvent.pointerId); } catch {}
         box.classList.remove("moving");
         box.style.transform = "";
-        for (const el of noteEls) el.style.transform = "";
         clearTrackTarget();
 
         if (moved && (previewStart !== originStart || previewTrack.id !== track.id)) {
@@ -9776,7 +9771,6 @@ body.timeline-ruler-seeking {
         try { box.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
         box.classList.remove("moving");
         box.style.transform = "";
-        for (const el of noteEls) el.style.transform = "";
         clearTrackTarget();
       };
 
@@ -10029,6 +10023,39 @@ body.timeline-ruler-seeking {
     return true;
   }
 
+  function createTrackNoteCanvas(track, info, length) {
+    const canvas = document.createElement("canvas");
+    canvas.className = "track-note-canvas";
+    const bitmapW = 4096;
+    const bitmapH = 72;
+    canvas.width = bitmapW;
+    canvas.height = bitmapH;
+
+    const ctx = canvas.getContext("2d", { alpha: true });
+    const notes = track.notes || [];
+    if (!ctx || !notes.length) return canvas;
+
+    const minN = notes.reduce((m, n) => Math.min(m, Number(n.note) || 0), 127);
+    const maxN = notes.reduce((m, n) => Math.max(m, Number(n.note) || 0), 0);
+    const span = Math.max(1, maxN - minN);
+    const safeLength = Math.max(1, length || 1);
+
+    ctx.clearRect(0, 0, bitmapW, bitmapH);
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = info.color;
+    for (const n of notes) {
+      const tick = Math.max(0, Number(n.tick) || 0);
+      const duration = Math.max(1, Number(n.duration) || 1);
+      const note = Number(n.note) || 0;
+      const x = (tick / safeLength) * bitmapW;
+      const w = Math.max(1, (duration / safeLength) * bitmapW);
+      const y = 8 + (1 - (note - minN) / span) * 44;
+      ctx.fillRect(x, y, w, 12);
+    }
+    ctx.globalAlpha = 1;
+    return canvas;
+  }
+
   function renderTracks() {
     const root = document.getElementById("tracks");
     state.playheadEls = [];
@@ -10134,7 +10161,7 @@ body.timeline-ruler-seeking {
       body.addEventListener("dblclick", (event) => {
         if (
           event.button !== 0 ||
-          event.target.closest(".loop-clip-container, .note-block, button, .loop-clip-actions")
+          event.target.closest(".loop-clip-container, button, .loop-clip-actions")
         ) return;
         event.preventDefault();
         event.stopPropagation();
@@ -10168,26 +10195,7 @@ body.timeline-ruler-seeking {
         body.appendChild(slot);
       }
 
-      const notes = track.notes;
-      const minN = notes.length ? notes.reduce((m, n) => Math.min(m, n.note), 127) : 60;
-      const maxN = notes.length ? notes.reduce((m, n) => Math.max(m, n.note), 0) : 60;
-      const span = Math.max(1, maxN - minN);
-
-      for (const n of notes) {
-        const left = (n.tick / length) * 100;
-        const width = Math.max(0.2, (n.duration / length) * 100);
-        const top = 8 + (1 - (n.note - minN) / span) * 44;
-        const block = document.createElement("div");
-        block.className = "note-block";
-        block.style.left = `${left}%`;
-        block.style.width = `${width}%`;
-        block.style.top = `${top}px`;
-        block.style.height = "12px";
-        block.style.background = info.color;
-        if (n.clipId) block.dataset.noteClip = n.clipId;
-        block.title = `${midiToName(n.note)} vel ${n.velocity} @ bar ${tickToBar(n.tick, ppq)}`;
-        body.appendChild(block);
-      }
+      body.appendChild(createTrackNoteCanvas(track, info, length));
 
       const trackClips = (project.clips || []).filter((clip) => clip.targetTrackId === track.id);
       for (let clipIndex = 0; clipIndex < trackClips.length; clipIndex++) {
