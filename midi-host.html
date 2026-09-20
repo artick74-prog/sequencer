@@ -2031,7 +2031,7 @@ body.timeline-ruler-seeking {
         <button class="btn" id="btnZoomIn" type="button" title="Zoom in">+</button>
         <button class="btn" id="btnZoomFit" type="button" title="Fit arrangement in view">Fit</button>
         <span class="zoom-label" id="zoomLabel">40 px/bar</span>
-        <span style="color:var(--dim);font-size:12px">Ruler: horizontal drag seek · vertical drag zoom · Shift+drag loop · green edges locators · Ctrl+wheel zoom</span>
+        <span style="color:var(--dim);font-size:12px">Ruler: horizontal drag seek · vertical drag zoom + left/right pan · Shift+drag loop · green edges locators · Ctrl+wheel zoom</span>
       </div>
       <div class="timeline-scroll" id="timelineScroll">
         <div class="timeline-inner" id="timelineInner">
@@ -7122,7 +7122,7 @@ body.timeline-ruler-seeking {
     ruler.appendChild(barPlayhead);
     state.rulerPlayheadEls.push(barPlayhead);
 
-    ruler.title = "Click/horizontal drag = seek · vertical drag = zoom · Shift+drag = loop range · drag green locators = loop";
+    ruler.title = "Click/horizontal drag = seek · start vertical drag = zoom, then left/right pans · Shift+drag = loop range · drag green locators = loop";
 
     function beginLocatorDrag(kind, e) {
       if (e.button !== 0 || !state.project) return;
@@ -7174,6 +7174,7 @@ body.timeline-ruler-seeking {
       state.timelineRulerGesture = {
         originX: e.clientX,
         originY: e.clientY,
+        lastX: e.clientX,
         originBarW: state.barW,
         mode: "pending",
       };
@@ -9532,11 +9533,27 @@ body.timeline-ruler-seeking {
 
       if (gesture.mode === "zoom") {
         // Same direction as Piano Roll: down = wider, up = narrower.
+        // While the button stays down, horizontal movement pans the viewport
+        // without leaving zoom mode: left = earlier bars, right = later bars.
         const nextBarW = gesture.originBarW * Math.exp(dy * 0.006);
         setTimelineZoomAtClientX(nextBarW, gesture.originX);
+
+        const scroll = document.getElementById("timelineScroll");
+        const panDx = e.clientX - gesture.lastX;
+        gesture.lastX = e.clientX;
+        if (scroll && Math.abs(panDx) > 0.01) {
+          scroll.scrollLeft = Math.max(
+            0,
+            Math.min(
+              Math.max(0, scroll.scrollWidth - scroll.clientWidth),
+              scroll.scrollLeft + panDx
+            )
+          );
+        }
+
         setStatus(
           "Timeline zoom · " + (Math.round(state.barW * 10) / 10) +
-          " px/bar · drag down = wider · up = narrower",
+          " px/bar · down/up = zoom · left/right = pan",
           "ok"
         );
       } else if (gesture.mode === "seek") {
@@ -9648,7 +9665,7 @@ body.timeline-ruler-seeking {
       } else if (gesture.mode === "zoom") {
         setStatus(
           "Timeline zoom · " + (Math.round(state.barW * 10) / 10) +
-          " px/bar · Ctrl+wheel also available",
+          " px/bar · left/right pan while held · Ctrl+wheel also available",
           "ok"
         );
         return;
