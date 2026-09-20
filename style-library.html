@@ -663,7 +663,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     if(!e) { $("selectedCard").textContent="Ничего не выбрано."; return; }
     const bits=[
       "<strong>"+escapeHtml(e.name)+"</strong>",
-      "<span class='badge'>"+escapeHtml(e.kind)+"</span> <span class='badge'>"+escapeHtml(e.genre)+"</span>",
+      "<span class='badge'>"+escapeHtml(kindLabel(e.kind))+"</span> <span class='badge'>"+escapeHtml(styleLabel(e.genre))+"</span>",
       "<div>"+escapeHtml(e.source)+"</div>",
       "<div style='color:var(--dim);word-break:break-all'>"+escapeHtml(e.member||e.container)+"</div>",
     ];
@@ -700,6 +700,19 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   function escapeHtml(s) {
     return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   }
+
+  const KIND_LABELS = {
+    "drums":"Drums",
+    "drum-fill":"Drum fills",
+    "bass":"Bass",
+    "chords":"Chords",
+    "melody":"Melody",
+    "acid":"Acid",
+    "midi":"MIDI",
+    "arrangement":"Arrangement",
+    "unclassified":"Unclassified"
+  };
+  function kindLabel(v) { return KIND_LABELS[v]||String(v||""); }
 
   const STYLE_LABELS = {
     "afrobeat":"Afrobeat",
@@ -773,7 +786,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
           "<button title='Play'>▶</button>"+
           "<div><div class='name'>"+escapeHtml(e.name)+"</div><div class='small'>"+escapeHtml(e.member||e.container)+"</div></div>"+
           "<div class='small'>"+escapeHtml(e.source)+"</div>"+
-          "<div class='small hide-small'>"+escapeHtml(e.kind)+"</div>"+
+          "<div class='small hide-small'>"+escapeHtml(kindLabel(e.kind))+"</div>"+
           "<div class='small hide-small'>"+escapeHtml(styleLabel(e.genre))+"</div>"+
           "<div class='small hide-small'>"+Math.round((e.size||0)/1024)+" KB</div>";
         row.addEventListener("click",()=>loadEntry(e,false));
@@ -803,7 +816,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
       state.catalog=data.entries||[];
       state.filtered=state.catalog.slice();
       fillSelect("genre",[...new Set(state.catalog.map(e=>e.genre))],"Все стили",styleLabel);
-      fillSelect("kind",[...new Set(state.catalog.map(e=>e.kind))],"Все типы");
+      fillSelect("kind",[...new Set(state.catalog.map(e=>e.kind))],"Все типы",kindLabel);
       fillSelect("source",[...new Set(state.catalog.map(e=>e.source))],"Все источники");
       const c=data.counts||{};
       $("libraryCard").innerHTML=
