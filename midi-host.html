@@ -9534,7 +9534,8 @@ body.timeline-ruler-seeking {
       if (gesture.mode === "zoom") {
         // Same direction as Piano Roll: down = wider, up = narrower.
         // While the button stays down, horizontal movement pans the viewport
-        // without leaving zoom mode: left = earlier bars, right = later bars.
+        // without leaving zoom mode. Studio One-style direct manipulation:
+        // drag right = content moves right, drag left = content moves left.
         const nextBarW = gesture.originBarW * Math.exp(dy * 0.006);
         setTimelineZoomAtClientX(nextBarW, gesture.originX);
 
@@ -9546,7 +9547,7 @@ body.timeline-ruler-seeking {
             0,
             Math.min(
               Math.max(0, scroll.scrollWidth - scroll.clientWidth),
-              scroll.scrollLeft + panDx
+              scroll.scrollLeft - panDx
             )
           );
         }
