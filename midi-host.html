@@ -1139,6 +1139,8 @@ select, input[type="number"], input[type="text"] {
   background: rgba(133,149,170,.32);
   pointer-events: none;
 }
+.piano-roll-ruler-tick.sixtyfourth { height: 4px; background: rgba(120,134,153,.24); }
+.piano-roll-ruler-tick.thirtysecond { height: 5px; background: rgba(126,141,162,.30); }
 .piano-roll-ruler-tick.sixteenth { height: 7px; background: rgba(133,149,170,.42); }
 .piano-roll-ruler-tick.eighth { height: 9px; background: rgba(153,171,196,.55); }
 .piano-roll-ruler-tick.beat { height: 12px; background: rgba(171,191,219,.66); }
@@ -1206,6 +1208,9 @@ select, input[type="number"], input[type="text"] {
   width: 1px;
   background: rgba(90,104,123,.22);
   pointer-events: none;
+}
+.piano-roll-vline.sixtyfourth {
+  background: rgba(90,104,123,.075);
 }
 .piano-roll-vline.thirtysecond {
   background: rgba(90,104,123,.12);
@@ -2028,7 +2033,7 @@ body.piano-roll-resizing {
         <div class="piano-roll-resizer" id="pianoRollResizer" title="Drag to resize Piano Roll"></div>
         <div class="piano-roll-head">
           <strong id="pianoRollTitle">Piano Roll</strong>
-          <span class="piano-roll-badge" title="Click empty grid = add · drag note = move · drag right edge = length · Delete = remove">EDIT · v0.3</span>
+          <span class="piano-roll-badge" title="Click empty grid = add · drag note = move · drag right edge = length · Delete = remove">EDIT · v0.4</span>
           <span class="piano-roll-meta" id="pianoRollMeta">Double-click a Project Clip on the timeline.</span>
           <label class="piano-roll-snap" title="Snap notes and Piano Roll ruler to the selected grid">
             Snap to Grid
@@ -2036,6 +2041,7 @@ body.piano-roll-resizing {
               <option value="8">1/8</option>
               <option value="16" selected>1/16</option>
               <option value="32">1/32</option>
+              <option value="64">1/64</option>
             </select>
           </label>
           <button class="btn" id="btnClosePianoRoll" type="button" title="Close Piano Roll">Close</button>
@@ -7355,14 +7361,14 @@ body.piano-roll-resizing {
   }
 
   function pianoRollSnapLabel() {
-    const denominator = [8,16,32].includes(Number(state.pianoRollSnapDenominator))
+    const denominator = [8,16,32,64].includes(Number(state.pianoRollSnapDenominator))
       ? Number(state.pianoRollSnapDenominator)
       : 16;
     return "1/" + denominator;
   }
 
   function pianoRollSnapTicks(ppq = state.project?.ppq || 480) {
-    const denominator = [8,16,32].includes(Number(state.pianoRollSnapDenominator))
+    const denominator = [8,16,32,64].includes(Number(state.pianoRollSnapDenominator))
       ? Number(state.pianoRollSnapDenominator)
       : 16;
     return Math.max(1, Math.round((Number(ppq) || 480) * 4 / denominator));
@@ -7723,7 +7729,7 @@ body.piano-roll-resizing {
     const rows = maxNote - minNote + 1;
     const rollH = Math.max(rows * rowH, visiblePitchHeight);
     const availableW = Math.max(480, (scroll.clientWidth || 760) - keyW - 2);
-    const pxPerBar = Math.max(24, Math.min(640, Number(state.pianoRollBarW) || 96));
+    const pxPerBar = Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96));
     const rollW = Math.max(availableW, Math.max(1, barSpan) * pxPerBar);
 
     const stage = document.createElement("div");
@@ -7768,14 +7774,18 @@ body.piano-roll-resizing {
       grid.appendChild(row);
     }
 
-    const grid32 = Math.max(1, Math.round(ppq / 8));
-    const firstGridTick = Math.ceil(startTick / grid32) * grid32;
-    for (let tick = firstGridTick; tick <= endTick; tick += grid32) {
+    const gridStep = pianoRollSnapTicks(ppq);
+    const firstGridTick = Math.ceil(startTick / gridStep) * gridStep;
+    const eighthTicks = Math.max(1, Math.round(ppq / 2));
+    const sixteenthTicks = Math.max(1, Math.round(ppq / 4));
+    const thirtySecondTicks = Math.max(1, Math.round(ppq / 8));
+    for (let tick = firstGridTick; tick <= endTick; tick += gridStep) {
       const x = ((tick - startTick) / spanTicks) * rollW;
       const isBar = tick % tpb === 0;
       const isBeat = tick % ppq === 0;
-      const isEighth = tick % Math.max(1, Math.round(ppq / 2)) === 0;
-      const isSixteenth = tick % Math.max(1, Math.round(ppq / 4)) === 0;
+      const isEighth = tick % eighthTicks === 0;
+      const isSixteenth = tick % sixteenthTicks === 0;
+      const isThirtySecond = tick % thirtySecondTicks === 0;
       const kind = isBar
         ? "bar"
         : isBeat
@@ -7784,7 +7794,9 @@ body.piano-roll-resizing {
             ? "eighth"
             : isSixteenth
               ? "sixteenth"
-              : "thirtysecond";
+              : isThirtySecond
+                ? "thirtysecond"
+                : "sixtyfourth";
 
       const line = document.createElement("div");
       line.className = "piano-roll-vline " + kind;
@@ -7954,8 +7966,8 @@ body.piano-roll-resizing {
     const grid = document.getElementById("pianoRollGrid");
     if (!scroll || !grid || !state.pianoRollClipId) return;
 
-    const oldBarW = Math.max(24, Math.min(640, Number(state.pianoRollBarW) || 96));
-    const nextBarW = Math.max(24, Math.min(640, oldBarW * factor));
+    const oldBarW = Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96));
+    const nextBarW = Math.max(24, Math.min(2048, oldBarW * factor));
     if (Math.abs(nextBarW - oldBarW) < 0.01) return;
 
     const scrollRect = scroll.getBoundingClientRect();
@@ -8077,7 +8089,7 @@ body.piano-roll-resizing {
 
   document.getElementById("pianoRollSnap")?.addEventListener("change", (event) => {
     const value = Number(event.target.value);
-    if (![8,16,32].includes(value)) return;
+    if (![8,16,32,64].includes(value)) return;
     state.pianoRollSnapDenominator = value;
     try {
       localStorage.setItem("midi_host_piano_roll_snap_v1", String(value));
@@ -8096,11 +8108,11 @@ body.piano-roll-resizing {
       state.pianoRollHeight = savedPianoHeight;
     }
     const savedPianoBarW = Number(localStorage.getItem("midi_host_piano_roll_bar_w_v1"));
-    if (Number.isFinite(savedPianoBarW) && savedPianoBarW >= 24 && savedPianoBarW <= 640) {
+    if (Number.isFinite(savedPianoBarW) && savedPianoBarW >= 24 && savedPianoBarW <= 2048) {
       state.pianoRollBarW = savedPianoBarW;
     }
     const savedPianoSnap = Number(localStorage.getItem("midi_host_piano_roll_snap_v1"));
-    if ([8,16,32].includes(savedPianoSnap)) {
+    if ([8,16,32,64].includes(savedPianoSnap)) {
       state.pianoRollSnapDenominator = savedPianoSnap;
     }
   } catch {}
