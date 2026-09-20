@@ -1025,7 +1025,7 @@ select, input[type="number"], input[type="text"] {
   display: none;
   flex: 0 0 auto;
   height: 290px;
-  min-height: 150px;
+  min-height: 220px;
   max-height: none;
   margin-top: 8px;
   border: 1px solid var(--border);
@@ -1126,6 +1126,82 @@ select, input[type="number"], input[type="text"] {
   min-height: 0;
   overflow: auto;
   background: #090d12;
+}
+.piano-roll-parameter-lane {
+  flex: 0 0 92px;
+  height: 92px;
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  border-top: 1px solid var(--border);
+  background: #0b1016;
+  overflow: hidden;
+}
+.piano-roll-parameter-head {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 8px;
+  border-right: 1px solid #6f7780;
+  background: #151b22;
+  color: var(--text);
+  font: 11px/1.2 ui-monospace, Consolas, monospace;
+}
+.piano-roll-parameter-head strong {
+  color: var(--accent);
+  font-size: 11px;
+}
+.piano-roll-parameter-head span {
+  color: var(--dim);
+  font-size: 9px;
+}
+.piano-roll-parameter-viewport {
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(to bottom,
+      rgba(135,157,188,.18) 0 1px,
+      transparent 1px 50%,
+      rgba(111,130,155,.12) 50% calc(50% + 1px),
+      transparent calc(50% + 1px) 100%
+    ),
+    #090d12;
+}
+.piano-roll-parameter-content {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  transform: translate3d(0,0,0);
+  will-change: transform;
+}
+.piano-roll-velocity-bar {
+  position: absolute;
+  bottom: 8px;
+  width: 7px;
+  min-height: 3px;
+  border: 1px solid rgba(255,255,255,.26);
+  border-radius: 2px 2px 0 0;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  opacity: .88;
+}
+.piano-roll-velocity-bar:hover {
+  filter: brightness(1.14);
+}
+.piano-roll-velocity-bar.selected {
+  z-index: 3;
+  border-color: #fff3a6;
+  box-shadow: 0 0 0 1px var(--gm), 0 0 6px rgba(232,193,112,.32);
+  opacity: 1;
+}
+.piano-roll-velocity-bar.dragging {
+  z-index: 4;
+  filter: brightness(1.18);
 }
 .piano-roll-stage {
   --pr-key-w: 78px;
@@ -2182,6 +2258,15 @@ body.timeline-ruler-seeking {
         </div>
         <div class="piano-roll-scroll" id="pianoRollScroll">
           <div class="piano-roll-empty">Double-click a Project Clip to inspect its notes.</div>
+        </div>
+        <div class="piano-roll-parameter-lane" id="pianoRollParameterLane" aria-label="Piano Roll parameter lane">
+          <div class="piano-roll-parameter-head">
+            <strong id="pianoRollParameterName">Velocity</strong>
+            <span id="pianoRollParameterMeta">1–127</span>
+          </div>
+          <div class="piano-roll-parameter-viewport" id="pianoRollParameterViewport">
+            <div class="piano-roll-parameter-content" id="pianoRollParameterContent"></div>
+          </div>
         </div>
       </section>
     </main>
@@ -7663,7 +7748,7 @@ body.timeline-ruler-seeking {
   }
 
   function clampPianoRollHeight(value) {
-    return Math.max(150, Math.min(pianoRollMaxHeight(), Number(value) || 290));
+    return Math.max(220, Math.min(pianoRollMaxHeight(), Number(value) || 290));
   }
 
   function openPianoRollForClip(clip, track) {
