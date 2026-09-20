@@ -1304,6 +1304,14 @@ body.piano-roll-ruler-seeking {
   cursor: ew-resize !important;
   user-select: none !important;
 }
+body.timeline-ruler-zooming {
+  cursor: ns-resize !important;
+  user-select: none !important;
+}
+body.timeline-ruler-seeking {
+  cursor: ew-resize !important;
+  user-select: none !important;
+}
 
 .ruler-wrap {
   margin: 0;
@@ -2023,7 +2031,7 @@ body.piano-roll-ruler-seeking {
         <button class="btn" id="btnZoomIn" type="button" title="Zoom in">+</button>
         <button class="btn" id="btnZoomFit" type="button" title="Fit arrangement in view">Fit</button>
         <span class="zoom-label" id="zoomLabel">40 px/bar</span>
-        <span style="color:var(--dim);font-size:12px">Click/drag ruler: seek · Shift+drag: loop range · drag green edges: locators · Ctrl+wheel zoom</span>
+        <span style="color:var(--dim);font-size:12px">Ruler: horizontal drag seek · vertical drag zoom · Shift+drag loop · green edges locators · Ctrl+wheel zoom</span>
       </div>
       <div class="timeline-scroll" id="timelineScroll">
         <div class="timeline-inner" id="timelineInner">
@@ -2564,6 +2572,7 @@ body.piano-roll-ruler-seeking {
     rulerPlayheadEls: [],
     rulerSeeking: false,
     resumeAfterSeek: false,
+    timelineRulerGesture: null,
     lengthTicks: 0,
     barW: BAR_W_DEFAULT,
     projectsDir: null,
@@ -6286,6 +6295,57 @@ body.piano-roll-ruler-seeking {
     setZoom(state.barW * factor, { anchorRatio });
   }
 
+  function setTimelineZoomAtClientX(nextBarW, clientX = null) {
+    const scroll = document.getElementById("timelineScroll");
+    const ruler = document.querySelector(".ruler.bars-ruler");
+    if (!scroll || !ruler) {
+      setZoom(nextBarW);
+      return;
+    }
+
+    const scrollRect = scroll.getBoundingClientRect();
+    const rulerRect = ruler.getBoundingClientRect();
+    const anchorClientX = clientX == null
+      ? scrollRect.left + scroll.clientWidth / 2
+      : clientX;
+    const anchorRatio = Math.max(
+      0,
+      Math.min(1, (anchorClientX - rulerRect.left) / Math.max(1, rulerRect.width))
+    );
+    const anchorViewportX = anchorClientX - scrollRect.left;
+
+    setZoom(nextBarW, { anchorRatio });
+    scroll.scrollLeft = Math.max(
+      0,
+      HEAD_W + anchorRatio * timelineWidth() - anchorViewportX
+    );
+  }
+
+  function timelineRulerTickAtClientX(clientX) {
+    const ruler = document.querySelector(".ruler.bars-ruler");
+    if (!ruler || !state.project) return 0;
+    const rect = ruler.getBoundingClientRect();
+    const x = Math.min(Math.max(0, clientX - rect.left), rect.width || 1);
+    return (x / Math.max(1, rect.width)) * (state.lengthTicks || 1);
+  }
+
+  function beginTimelineRulerSeek(clientX) {
+    const tick = timelineRulerTickAtClientX(clientX);
+    state.rulerSeeking = true;
+    state.resumeAfterSeek = !!seekToTick(tick, { restart: false });
+  }
+
+  function moveTimelineRulerSeek(clientX) {
+    if (!state.project) return;
+    const tick = timelineRulerTickAtClientX(clientX);
+    const snapped = snapToBar(tick);
+    state.startTick = snapped;
+    updatePlayheads(snapped, state.lengthTicks || 1);
+    if (!state.playing) {
+      setStatus("Cue: bar " + tickToBar(snapped, state.project.ppq), "");
+    }
+  }
+
   function zoomFit() {
     const scroll = document.getElementById("timelineScroll");
     if (!scroll || !state.project) return;
@@ -7062,7 +7122,7 @@ body.piano-roll-ruler-seeking {
     ruler.appendChild(barPlayhead);
     state.rulerPlayheadEls.push(barPlayhead);
 
-    ruler.title = "Click/drag to seek · Shift+drag sets loop range · drag green locator handles to edit loop";
+    ruler.title = "Click/horizontal drag = seek · vertical drag = zoom · Shift+drag = loop range · drag green locators = loop";
 
     function beginLocatorDrag(kind, e) {
       if (e.button !== 0 || !state.project) return;
@@ -7111,11 +7171,16 @@ body.piano-roll-ruler-seeking {
 
       e.preventDefault();
       e.stopPropagation();
-      state.rulerSeeking = true;
-      const rect = ruler.getBoundingClientRect();
-      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
-      const tick = (x / (rect.width || 1)) * length;
-      state.resumeAfterSeek = !!seekToTick(tick, { restart: false });
+      state.timelineRulerGesture = {
+        originX: e.clientX,
+        originY: e.clientY,
+        originBarW: state.barW,
+        mode: "pending",
+      };
+      setStatus(
+        "Timeline ruler · horizontal drag = seek · vertical drag = zoom",
+        ""
+      );
     });
 
     row.appendChild(ruler);
@@ -9449,6 +9514,36 @@ body.piano-roll-ruler-seeking {
       }
       return;
     }
+    if (state.timelineRulerGesture && state.project) {
+      const gesture = state.timelineRulerGesture;
+      const dx = e.clientX - gesture.originX;
+      const dy = e.clientY - gesture.originY;
+      const distance = Math.hypot(dx, dy);
+
+      if (gesture.mode === "pending" && distance >= 5) {
+        gesture.mode = Math.abs(dy) > Math.abs(dx) ? "zoom" : "seek";
+        if (gesture.mode === "zoom") {
+          document.body.classList.add("timeline-ruler-zooming");
+        } else {
+          document.body.classList.add("timeline-ruler-seeking");
+          beginTimelineRulerSeek(e.clientX);
+        }
+      }
+
+      if (gesture.mode === "zoom") {
+        // Same direction as Piano Roll: down = wider, up = narrower.
+        const nextBarW = gesture.originBarW * Math.exp(dy * 0.006);
+        setTimelineZoomAtClientX(nextBarW, gesture.originX);
+        setStatus(
+          "Timeline zoom · " + (Math.round(state.barW * 10) / 10) +
+          " px/bar · drag down = wider · up = narrower",
+          "ok"
+        );
+      } else if (gesture.mode === "seek") {
+        moveTimelineRulerSeek(e.clientX);
+      }
+      return;
+    }
     if (state.rulerSeeking && state.project) {
       const ruler = document.querySelector(".ruler.seekable");
       if (ruler) {
@@ -9542,6 +9637,25 @@ body.piano-roll-ruler-seeking {
       }
       return;
     }
+    if (state.timelineRulerGesture) {
+      const gesture = state.timelineRulerGesture;
+      state.timelineRulerGesture = null;
+      document.body.classList.remove("timeline-ruler-zooming", "timeline-ruler-seeking");
+
+      if (gesture.mode === "pending") {
+        // Plain click keeps the existing one-bar seek behavior.
+        beginTimelineRulerSeek(gesture.originX);
+      } else if (gesture.mode === "zoom") {
+        setStatus(
+          "Timeline zoom · " + (Math.round(state.barW * 10) / 10) +
+          " px/bar · Ctrl+wheel also available",
+          "ok"
+        );
+        return;
+      }
+      // Seek mode continues into the existing rulerSeeking finalizer below.
+    }
+
     if (state.rulerSeeking) {
       state.rulerSeeking = false;
       const tick = state.startTick || 0;
@@ -10333,7 +10447,8 @@ body.piano-roll-ruler-seeking {
   document.getElementById("timelineScroll").addEventListener("wheel", (e) => {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
-    zoomBy(e.deltaY > 0 ? 1 / 1.2 : 1.2, e.clientX);
+    const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
+    setTimelineZoomAtClientX(state.barW * factor, e.clientX);
   }, { passive: false });
 
   document.getElementById("btnMidiMonitor")?.addEventListener("click", showMidiMonitor);
