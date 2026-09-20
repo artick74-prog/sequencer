@@ -2614,7 +2614,7 @@ select, input[type="number"], input[type="text"] {
     hostLoopNoteTimers.clear();
   }
 
-  function stopHostLoopHardwarePreview(channel) {
+  function stopHostLoopHardwarePreview(channel, preview = null) {
     const output = getOutput();
     if (!output || !channel) return;
 
@@ -2626,6 +2626,22 @@ select, input[type="number"], input[type="text"] {
     clearHardwareQueue(output);
     const ch = (Number(channel) - 1) & 0x0f;
     try {
+      if (Number(channel) === 2) {
+        // TD-3 is more reliable with ordinary Note Off messages than CC123/CC120.
+        const notes = [...new Set((preview?.notes || []).map((item) => Number(item.note))
+          .filter((note) => Number.isFinite(note))
+          .map((note) => Math.max(0, Math.min(127, note | 0))))]
+          .sort((a, b) => a - b);
+        if (notes.length) {
+          for (const note of notes) {
+            midiSend(output, [0x81, note, 0], null, "browser stop · TD-3");
+          }
+        } else {
+          resetTd3Gate(output, state.project, null, "browser stop · TD-3");
+        }
+        return;
+      }
+
       midiSend(output, [0xb0 | ch, 123, 0], null, "browser stop"); // All Notes Off
       midiSend(output, [0xb0 | ch, 120, 0], null, "browser stop"); // All Sound Off
       midiSend(output, [0xb0 | ch, 64, 0], null, "browser stop");  // Sustain Off
@@ -2647,7 +2663,7 @@ select, input[type="number"], input[type="text"] {
 
     if (hadPreview) {
       if (stoppedPreview.route?.type === "hardware") {
-        stopHostLoopHardwarePreview(stoppedPreview.route.channel);
+        stopHostLoopHardwarePreview(stoppedPreview.route.channel, stoppedPreview);
       } else {
         const synth = sf2Synth();
         if (synth && Number.isInteger(stoppedPreview.sf2Channel)) {
@@ -3743,7 +3759,13 @@ select, input[type="number"], input[type="text"] {
   function allNotesOff(output) {
     if (output) {
       try {
+        // TD-3 on MIDI CH2 is deliberately excluded from the generic CC123 stop.
+        // We already proved that explicit Note Off messages clear its mono/gate
+        // state more reliably, especially around rapid Loop Browser restarts.
+        resetTd3Gate(output, state.project, null, "transport stop · TD-3");
+
         for (let ch = 0; ch < 16; ch++) {
+          if (ch === 1) continue; // MIDI CH2 = TD-3
           midiSend(output, [0xb0 | ch, 123, 0], null, "transport stop");
           midiSend(output, [0xb0 | ch, 64, 0], null, "transport stop");
         }
@@ -3759,6 +3781,11 @@ select, input[type="number"], input[type="text"] {
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
     clearSf2Timers();
     clearHardwareQueue(output);
+
+    // Loop Browser follows the master transport: stopping/pausing the project
+    // also stops any active preview instead of letting it continue on its own.
+    hostLoopStopPreview();
+
     allNotesOff(output);
     state.playbackOutput = null;
     document.getElementById("btnPlay").textContent = "Play";
