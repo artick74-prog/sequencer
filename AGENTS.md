@@ -307,7 +307,9 @@ Playback в Style Library использует короткий lookahead schedu
 - **Previous / Next** позволяют быстро листать отфильтрованные rhythms; category/search работают поверх одной библиотеки.
 - Global MIDI Host Swing остаётся отдельным groove-layer; Rhythm Gate масштабирует только длительности событий.
 - **Apply to track** заменяет note onsets внутри audition slot, после подтверждения. Если slot пересекает library clip, clip metadata отсоединяется, чтобы provenance не лгал после редактирования.
-- Starter library: 20 формул (Straight, Rock/Gallop, Tresillo/Habanera/Clave, Charleston, Funk, Sparse, Triplet).
+- Библиотека расширена до **278** формул: Core 20 + Guitar 144 + Bass 42 + Acid 36 + Keys 36.
+- В Rhythm Browser добавлен фильтр **Bank**. Режим `Auto for target` автоматически подбирает Guitar/Bass/Acid/Keys по выбранной дорожке (role / GM program / имени); `All banks` показывает всё.
+- Guitar events могут дополнительно хранить будущие articulation metadata `attack` (`CHORD/CHOKE/MUTE/SUSTAIN`) и `stroke` (`DOWN/UP`). Текущий playback пока использует только `pos/dur/vel`, но articulation metadata не теряется.
 
 ## User Style Library (arranger-style drafts)
 
