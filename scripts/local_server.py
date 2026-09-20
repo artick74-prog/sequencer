@@ -42,6 +42,16 @@ LIBRARY_ROOT = Path(
     os.environ.get("MIDI_REFERENCE_ROOT", str(ROOT.parent / "midi-reference"))
 ).resolve()
 LIBRARY_LOCK = threading.Lock()
+LIBRARY_PROGRESS_LOCK = threading.Lock()
+LIBRARY_PROGRESS: dict = {
+    "active": False,
+    "stage": "idle",
+    "current": 0,
+    "total": 0,
+    "percent": 0,
+    "catalogTotal": 0,
+    "message": "MIDI library is idle",
+}
 LIBRARY_ENTRIES: list[dict] = []
 LIBRARY_LOCATORS: dict[str, tuple[str, str, str | None]] = {}
 LIBRARY_MODE: str | None = None
@@ -66,6 +76,38 @@ GM_FAMILY_NAMES = [
 ]
 LIBRARY_REPORT_MD = ROOT / "reference-library" / "library-inventory.md"
 LIBRARY_REPORT_CSV = ROOT / "reference-library" / "library-inventory.csv"
+
+
+def set_library_progress(
+    *,
+    active: bool,
+    stage: str,
+    current: int = 0,
+    total: int = 0,
+    percent: float | int | None = None,
+    catalog_total: int = 0,
+    message: str = "",
+) -> None:
+    current = max(0, int(current or 0))
+    total = max(0, int(total or 0))
+    if percent is None:
+        percent = (current / total * 100.0) if total > 0 else (100.0 if not active else 0.0)
+    pct = max(0.0, min(100.0, float(percent)))
+    with LIBRARY_PROGRESS_LOCK:
+        LIBRARY_PROGRESS.update({
+            "active": bool(active),
+            "stage": str(stage or "idle"),
+            "current": current,
+            "total": total,
+            "percent": round(pct, 1),
+            "catalogTotal": max(0, int(catalog_total or 0)),
+            "message": str(message or ""),
+        })
+
+
+def library_progress_snapshot() -> dict:
+    with LIBRARY_PROGRESS_LOCK:
+        return {"ok": True, **LIBRARY_PROGRESS}
 
 
 def gm_program_label(program: int) -> str:
@@ -625,7 +667,7 @@ def midi_bars_estimate(data: bytes, member: str = "") -> float | None:
 
 
 def enrich_pack_material_types(entries: list[dict], locators: dict[str, tuple[str, str, str | None]]) -> None:
-    """Read only the 1,150 Groove Dataset files once; >32 bars become constructors."""
+    """Read Groove Dataset MIDI and report visible progress while measuring lengths."""
     by_pack: defaultdict[str, list[dict]] = defaultdict(list)
     for item in entries:
         source = str(item.get("source") or "").lower()
@@ -636,6 +678,18 @@ def enrich_pack_material_types(entries: list[dict], locators: dict[str, tuple[st
         else:
             item["contentType"] = library_material_type(item)
 
+    total = sum(len(items) for items in by_pack.values())
+    processed = 0
+    set_library_progress(
+        active=True,
+        stage="measuring",
+        current=0,
+        total=total,
+        percent=5,
+        catalog_total=len(entries),
+        message="Measuring Groove MIDI lengths",
+    )
+
     for pack_path, items in by_pack.items():
         try:
             with zipfile.ZipFile(pack_path) as zf:
@@ -644,22 +698,53 @@ def enrich_pack_material_types(entries: list[dict], locators: dict[str, tuple[st
                     member = locator[2] if locator else None
                     if not member:
                         item["contentType"] = library_material_type(item)
-                        continue
-                    try:
-                        data = zf.read(member)
-                        bars = midi_bars_estimate(data, str(item.get("member") or member))
-                    except (KeyError, OSError, ValueError):
-                        bars = None
-                    if bars is not None:
-                        item["barsEstimate"] = bars
-                    item["contentType"] = library_material_type(item)
+                    else:
+                        try:
+                            data = zf.read(member)
+                            bars = midi_bars_estimate(data, str(item.get("member") or member))
+                        except (KeyError, OSError, ValueError):
+                            bars = None
+                        if bars is not None:
+                            item["barsEstimate"] = bars
+                        item["contentType"] = library_material_type(item)
+
+                    processed += 1
+                    if processed == total or processed % 8 == 0:
+                        scan_pct = (processed / total) if total else 1.0
+                        set_library_progress(
+                            active=True,
+                            stage="measuring",
+                            current=processed,
+                            total=total,
+                            percent=5 + scan_pct * 90,
+                            catalog_total=len(entries),
+                            message="Measuring Groove MIDI lengths",
+                        )
         except (OSError, ValueError, zipfile.BadZipFile):
             for item in items:
                 item["contentType"] = library_material_type(item)
+                processed += 1
+                if processed == total or processed % 8 == 0:
+                    scan_pct = (processed / total) if total else 1.0
+                    set_library_progress(
+                        active=True,
+                        stage="measuring",
+                        current=processed,
+                        total=total,
+                        percent=5 + scan_pct * 90,
+                        catalog_total=len(entries),
+                        message="Measuring Groove MIDI lengths",
+                    )
 
 
 def load_pack_catalog_locked() -> dict:
     global LIBRARY_ENTRIES, LIBRARY_LOCATORS, LIBRARY_MODE
+    set_library_progress(
+        active=True,
+        stage="index",
+        percent=1,
+        message="Reading MIDI library index",
+    )
     payload = json.loads(PACK_INDEX_PATH.read_text(encoding="utf-8"))
     if payload.get("schema") != 1 or not isinstance(payload.get("entries"), list):
         raise ValueError("Unsupported Style Library pack index")
@@ -687,6 +772,15 @@ def load_pack_catalog_locked() -> dict:
     LIBRARY_ENTRIES = entries
     LIBRARY_LOCATORS = locators
     LIBRARY_MODE = "packs"
+    set_library_progress(
+        active=False,
+        stage="ready",
+        current=len(entries),
+        total=len(entries),
+        percent=100,
+        catalog_total=len(entries),
+        message="MIDI library ready",
+    )
     return catalog_payload(entries, "packs", len(payload.get("packs") or []))
 
 
@@ -851,6 +945,15 @@ def build_library_catalog(force: bool = False, prefer_packs: bool = True) -> dic
     with LIBRARY_LOCK:
         if prefer_packs and PACK_INDEX_PATH.exists():
             if LIBRARY_MODE == "packs" and LIBRARY_ENTRIES and not force:
+                set_library_progress(
+                    active=False,
+                    stage="ready",
+                    current=len(LIBRARY_ENTRIES),
+                    total=len(LIBRARY_ENTRIES),
+                    percent=100,
+                    catalog_total=len(LIBRARY_ENTRIES),
+                    message="MIDI library ready",
+                )
                 return catalog_payload(
                     LIBRARY_ENTRIES,
                     "packs",
@@ -1600,6 +1703,9 @@ class Handler(SimpleHTTPRequestHandler):
                 self._send_json(409, {"ok": False, "error": str(exc)})
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/library/status":
+            self._send_json(200, library_progress_snapshot())
             return
         if path == "/api/library":
             try:
