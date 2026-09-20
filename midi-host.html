@@ -1118,9 +1118,9 @@ select, input[type="number"], input[type="text"] {
       </div>
       <div class="loop-filters">
         <input class="wide" id="hostLoopSearch" type="search" placeholder="Search MIDI…">
-        <select id="hostLoopMaterial" title="Loops up to 32 bars; material longer than 32 bars is separated as constructors">
-          <option value="loop" selected>Loops · up to 32 bars</option>
-          <option value="constructor">Constructors · over 32 bars</option>
+        <select id="hostLoopMaterial" title="Loops up to 16 bars; material longer than 16 bars is separated as constructors">
+          <option value="loop" selected>Loops · up to 16 bars</option>
+          <option value="constructor">Constructors · over 16 bars</option>
           <option value="">All material</option>
         </select>
         <select id="hostLoopGenre"><option value="">All styles</option></select>
@@ -1832,7 +1832,7 @@ select, input[type="number"], input[type="text"] {
 
   function hostLoopMaterialType(entry) {
     const bars = Number(entry?.barsEstimate);
-    if (Number.isFinite(bars)) return bars > 32 ? "constructor" : "loop";
+    if (Number.isFinite(bars)) return bars > 16 ? "constructor" : "loop";
 
     const explicit = String(entry?.contentType || "").toLowerCase();
     if (explicit === "constructor" || explicit === "loop") return explicit;
