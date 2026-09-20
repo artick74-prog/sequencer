@@ -7033,6 +7033,7 @@ select, input[type="number"], input[type="text"] {
           (data.projectPath || ("projects/cloud/" + projectId)),
       });
       closeCloudProjects();
+      clearOneShotImportQuery();
       scheduleHostAutosave();
       return true;
     } catch (err) {
@@ -7886,6 +7887,18 @@ select, input[type="number"], input[type="text"] {
     }
   });
 
+  function clearOneShotImportQuery() {
+    const url = new URL(window.location.href);
+    let changed = false;
+    for (const key of ["userStyle", "library", "name"]) {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key);
+        changed = true;
+      }
+    }
+    if (changed) history.replaceState(null, "", url.toString());
+  }
+
   async function loadUserStyleFromQuery() {
     const params = new URLSearchParams(location.search);
     const styleId = params.get("userStyle");
@@ -7945,6 +7958,7 @@ select, input[type="number"], input[type="text"] {
       updateLoopRangeVisuals();
       markHostProjectDirty();
       saveHostAutosaveNow();
+      clearOneShotImportQuery();
       return true;
     } catch (err) {
       setStatus("User style load failed: " + err.message, "err");
@@ -7964,6 +7978,7 @@ select, input[type="number"], input[type="text"] {
       project.name = params.get("name") || "library-reference";
       setProject(project);
       setStatus(`Loaded Style Library reference “${project.name}”.`, "ok");
+      clearOneShotImportQuery();
       return true;
     } catch (err) {
       setStatus(`Style Library load failed: ${err.message}`, "err");
