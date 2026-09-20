@@ -1192,8 +1192,8 @@ select, input[type="number"], input[type="text"] {
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding: 0 7px 0 4px;
+  justify-content: flex-start;
+  padding: 0 4px 0 7px;
   border-bottom: 1px solid #9ca3aa;
   background:
     linear-gradient(to bottom, #fbfbfc 0%, #f2f3f4 62%, #d9dde0 100%);
@@ -1233,6 +1233,8 @@ select, input[type="number"], input[type="text"] {
     inset -7px 0 8px rgba(255,255,255,.035);
 }
 .piano-roll-key.c-note {
+  justify-content: flex-end;
+  padding: 0 7px 0 4px;
   font-weight: 700;
   color: #111820;
 }
