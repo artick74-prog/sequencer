@@ -8399,6 +8399,7 @@ body.timeline-ruler-seeking {
         el.style.left = (((clippedStart - ctx.startTick) / spanTicks) * rollW) + "px";
         el.style.width = Math.max(2, ((clippedEnd - clippedStart) / spanTicks) * rollW) + "px";
       });
+      updatePianoRollParameterLaneGeometry(ctx, rollW);
       const meta = document.getElementById("pianoRollMeta");
       if (meta) {
         meta.textContent = meta.textContent.replace(
@@ -8619,6 +8620,9 @@ body.timeline-ruler-seeking {
         el: document.querySelector(
           '.piano-roll-note[data-piano-note-id="' + CSS.escape(pianoRollNoteId(item)) + '"]'
         ),
+        velocityBar: document.querySelector(
+          '.piano-roll-velocity-bar[data-piano-note-id="' + CSS.escape(pianoRollNoteId(item)) + '"]'
+        ),
       }));
       const minTick = Math.min(...origins.map((item) => item.tick));
       const maxEnd = Math.max(...origins.map((item) => item.tick + item.duration));
@@ -8656,8 +8660,10 @@ body.timeline-ruler-seeking {
           if (!el) continue;
           const tick = origin.tick + deltaTicks;
           const pitch = origin.pitch + deltaPitch;
-          el.style.left = (((tick - ctx.startTick) / Math.max(1, spanTicks)) * rollW) + "px";
+          const x = ((tick - ctx.startTick) / Math.max(1, spanTicks)) * rollW;
+          el.style.left = x + "px";
           el.style.top = ((maxNote - pitch) * rowH + 2) + "px";
+          if (origin.velocityBar) origin.velocityBar.style.left = Math.max(0, x - 3) + "px";
         }
 
         const auditionPitch = origins[origins.length - 1].pitch + deltaPitch;
@@ -9045,6 +9051,9 @@ body.timeline-ruler-seeking {
         state.pianoRollSelectedNoteIds = [...ids];
         pianoRollSyncPrimarySelection();
         for (const box of noteBoxes) box.el.classList.toggle("selected", ids.has(box.id));
+        document.querySelectorAll(".piano-roll-velocity-bar").forEach((el) => {
+          el.classList.toggle("selected", ids.has(el.dataset.pianoNoteId));
+        });
       };
 
       const onMove = (moveEvent) => {
@@ -9112,6 +9121,9 @@ body.timeline-ruler-seeking {
       scroll.scrollTop = previousTop;
     }
 
+    renderPianoRollParameterLane(ctx, rollW);
+    syncPianoRollParameterLaneScroll();
+
     updatePianoRollPlayhead(
       state.playing ? currentTransportTick() : (state.startTick || 0)
     );
@@ -9148,6 +9160,7 @@ body.timeline-ruler-seeking {
       0,
       keyW + anchorRatio * newRollW - anchorViewportX
     );
+    syncPianoRollParameterLaneScroll();
   }
 
   function setPianoRollHorizontalZoom(factor, clientX = null) {
@@ -9293,6 +9306,10 @@ body.timeline-ruler-seeking {
   document.addEventListener("pointercancel", (event) => {
     finishPianoRollRulerGesture(event, true);
   });
+
+  document.getElementById("pianoRollScroll")?.addEventListener("scroll", () => {
+    scheduleUiFrame("piano-parameter-scroll", syncPianoRollParameterLaneScroll);
+  }, { passive: true });
 
   document.getElementById("pianoRollScroll")?.addEventListener("wheel", (event) => {
     if (!event.ctrlKey && !event.metaKey) return;
