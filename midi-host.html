@@ -1079,24 +1079,35 @@ select, input[type="number"], input[type="text"] {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--dim);
-  font: 10px ui-monospace, Consolas, monospace;
   white-space: nowrap;
 }
+.piano-roll-snap-toggle {
+  min-height: 30px;
+}
 .piano-roll-snap select {
-  min-width: 68px;
-  padding: 3px 5px;
-  font-size: 10px;
+  min-width: 72px;
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #1c2430;
+  color: var(--text);
+  font-size: 12px;
+}
+.piano-roll-snap select:focus {
+  outline: none;
+  border-color: var(--accent-dim);
 }
 .piano-roll-tools {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
 .piano-roll-tools .btn {
-  padding: 3px 6px;
-  min-width: 0;
-  font-size: 10px;
+  min-width: 34px;
+  min-height: 30px;
+  padding: 6px 10px;
+  font-size: 13px;
 }
 .piano-roll-selection-box {
   position: absolute;
@@ -2143,12 +2154,13 @@ body.timeline-ruler-seeking {
       <section class="piano-roll-dock" id="pianoRollDock" aria-hidden="true">
         <div class="piano-roll-resizer" id="pianoRollResizer" title="Drag to resize Piano Roll"></div>
         <div class="piano-roll-head">
-          <strong id="pianoRollTitle">Piano Roll</strong>
+          <strong id="pianoRollTitle">Track</strong>
           <span class="piano-roll-badge" title="1 = Select · 5 = Draw · Ctrl temporarily selects while drawing">EDIT · v0.6 · DRAW</span>
           <span class="piano-roll-meta" id="pianoRollMeta">Double-click a Project Clip on the timeline.</span>
-          <label class="piano-roll-snap" title="Snap notes and Piano Roll ruler to the selected grid">
-            Snap to Grid
-            <select id="pianoRollSnap">
+          <span class="piano-roll-snap">
+            <button class="btn piano-roll-snap-toggle active" id="pianoRollSnapToggle" type="button"
+              aria-pressed="true" title="Snap note movement and editing to the selected grid">Snap to Grid</button>
+            <select id="pianoRollSnap" title="Grid step and default drawn-note length">
               <option value="4">1/4</option>
               <option value="8">1/8</option>
               <option value="8T">1/8T</option>
@@ -2157,7 +2169,7 @@ body.timeline-ruler-seeking {
               <option value="32">1/32</option>
               <option value="64">1/64</option>
             </select>
-          </label>
+          </span>
           <span class="piano-roll-tools" aria-label="Piano Roll edit tools">
             <button class="btn" id="pianoUndo" type="button" title="Undo · Ctrl+Z">↶</button>
             <button class="btn" id="pianoRedo" type="button" title="Redo · Ctrl+Y / Ctrl+Shift+Z">↷</button>
@@ -2723,6 +2735,7 @@ body.timeline-ruler-seeking {
     pianoRollHeight: 290,
     pianoRollBarW: 96,
     pianoRollSnapDenominator: 16,
+    pianoRollSnapEnabled: true,
     pianoRollRulerSeeking: false,
     pianoRollRulerResumeAfterSeek: false,
     pianoRollRulerGesture: null,
@@ -7673,7 +7686,7 @@ body.timeline-ruler-seeking {
     setStatus(
       "Piano Roll VIEW · " + (track.name || "Track") +
       " · " + (clip.name || clip.originalName || "Project Clip") +
-      " · 1 Select · 5 Draw · Ctrl temporarily Select · arrows transpose/move · Shift+Up/Down ±12 · Ctrl+C/V/D/Z/Y · Ctrl+wheel on keys = vertical zoom · snap " + pianoRollSnapLabel(),
+      " · 1 Select · 5 Draw · Ctrl temporarily Select · arrows transpose/move · Shift+Up/Down ±12 · Ctrl+C/V/D/Z/Y · Ctrl+wheel on keys = vertical zoom · snap " + pianoRollSnapStatusLabel(),
       "ok"
     );
   }
@@ -7714,6 +7727,12 @@ body.timeline-ruler-seeking {
     return "1/" + pianoRollSnapValue();
   }
 
+  function pianoRollSnapStatusLabel() {
+    return state.pianoRollSnapEnabled
+      ? pianoRollSnapLabel()
+      : "OFF · grid " + pianoRollSnapLabel();
+  }
+
   function pianoRollSnapTicks(ppq = state.project?.ppq || 480) {
     const q = Math.max(1, Number(ppq) || 480);
     const value = pianoRollSnapValue();
@@ -7723,11 +7742,31 @@ body.timeline-ruler-seeking {
     return Math.max(1, Math.round(triplet ? straight * 2 / 3 : straight));
   }
 
+  function pianoRollEditStepTicks(ppq = state.project?.ppq || 480) {
+    return state.pianoRollSnapEnabled ? pianoRollSnapTicks(ppq) : 1;
+  }
+
   function pianoRollSnapTick(rawTick, ctx = pianoRollContext()) {
     if (!ctx) return Math.max(0, Number(rawTick) || 0);
-    const snap = pianoRollSnapTicks(ctx.ppq);
-    const snapped = Math.round((Number(rawTick) || 0) / snap) * snap;
+    const raw = Number(rawTick) || 0;
+    const step = pianoRollEditStepTicks(ctx.ppq);
+    const snapped = Math.round(raw / step) * step;
     return Math.max(ctx.startTick, Math.min(ctx.endTick, snapped));
+  }
+
+  function updatePianoRollSnapUi() {
+    const button = document.getElementById("pianoRollSnapToggle");
+    const select = document.getElementById("pianoRollSnap");
+    if (button) {
+      const enabled = !!state.pianoRollSnapEnabled;
+      button.classList.toggle("active", enabled);
+      button.setAttribute("aria-pressed", enabled ? "true" : "false");
+      button.textContent = enabled ? "Snap to Grid" : "Snap Off";
+      button.title = enabled
+        ? "Snap ON · note movement and editing follow the selected grid"
+        : "Snap OFF · notes can move freely between grid lines";
+    }
+    if (select) select.value = pianoRollSnapValue();
   }
 
   function pianoRollSelectedIdSet() {
@@ -7894,7 +7933,7 @@ body.timeline-ruler-seeking {
     if (!ctx || !notes.length) return false;
     pianoRollPushUndo(ctx);
 
-    const snap = pianoRollSnapTicks(ctx.ppq);
+    const snap = pianoRollEditStepTicks(ctx.ppq);
     const minTick = Math.min(...notes.map((note) => Number(note.tick) || 0));
     const maxEnd = Math.max(...notes.map((note) => (Number(note.tick) || 0) + Math.max(1, Number(note.duration) || 1)));
     const span = Math.max(snap, Math.ceil((maxEnd - minTick) / snap) * snap);
@@ -8203,7 +8242,7 @@ body.timeline-ruler-seeking {
     }
 
     setStatus(
-      "Piano Roll · " + message + " · snap " + pianoRollSnapLabel() + " · Project Clip is now an edited instance",
+      "Piano Roll · " + message + " · snap " + pianoRollSnapStatusLabel() + " · Project Clip is now an edited instance",
       "ok"
     );
   }
@@ -8224,10 +8263,11 @@ body.timeline-ruler-seeking {
     const ctx = pianoRollContext();
     if (!ctx || !grid) return;
     const point = pianoRollGridPoint(event, grid, ctx);
-    const snap = pianoRollSnapTicks(ctx.ppq);
-    const defaultDuration = Math.max(1, Math.min(snap, ctx.endTick - ctx.startTick));
+    const gridStep = pianoRollSnapTicks(ctx.ppq);
+    const editStep = pianoRollEditStepTicks(ctx.ppq);
+    const defaultDuration = Math.max(1, Math.min(gridStep, ctx.endTick - ctx.startTick));
     const latestStart = Math.max(ctx.startTick, ctx.endTick - defaultDuration);
-    let tick = Math.round(point.rawTick / snap) * snap;
+    let tick = Math.round(point.rawTick / editStep) * editStep;
     tick = Math.max(ctx.startTick, Math.min(latestStart, tick));
     const duration = Math.max(1, Math.min(defaultDuration, ctx.endTick - tick));
     const instanceId = hostClipInstanceId(
@@ -8267,7 +8307,6 @@ body.timeline-ruler-seeking {
 
   function attachPianoRollNoteEditor(block, resizeHandle, note, ctx, layout) {
     const noteId = pianoRollNoteId(note);
-    const snap = pianoRollSnapTicks(ctx.ppq);
 
     block.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -8318,7 +8357,8 @@ body.timeline-ruler-seeking {
         const dx = clientX - originX;
         const dy = clientY - originY;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
-        let deltaTicks = Math.round(rawDeltaTicks / snap) * snap;
+        const editStep = pianoRollEditStepTicks(ctx.ppq);
+        let deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
         deltaTicks = Math.max(ctx.startTick - minTick, Math.min(ctx.endTick - maxEnd, deltaTicks));
         let deltaPitch = -Math.round(dy / rowH);
         deltaPitch = Math.max(-minPitch, Math.min(127 - maxPitch, deltaPitch));
@@ -8413,7 +8453,8 @@ body.timeline-ruler-seeking {
         if (!resizeActive) return;
         const dx = clientX - originX;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
-        const deltaTicks = Math.round(rawDeltaTicks / snap) * snap;
+        const editStep = pianoRollEditStepTicks(ctx.ppq);
+        const deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
         previewDuration = Math.max(1, Math.min(maxDuration, originDuration + deltaTicks));
         changed = changed || previewDuration !== originDuration;
         block.style.width = Math.max(3, (previewDuration / Math.max(1, spanTicks)) * rollW) + "px";
@@ -8492,18 +8533,17 @@ body.timeline-ruler-seeking {
     const endBar = tickToBar(Math.max(startTick, endTick - 1), ppq);
     const clipName = clip.name || clip.originalName || "Project Clip";
 
-    if (title) title.textContent = "Piano Roll · " + track.name;
+    if (title) title.textContent = track.name;
     const badge = document.querySelector(".piano-roll-badge");
     if (badge) badge.textContent = "EDIT · v0.6 · " + (state.pianoRollTool === "select" ? "SELECT" : "DRAW");
-    const snapSelect = document.getElementById("pianoRollSnap");
-    if (snapSelect) snapSelect.value = pianoRollSnapValue();
+    updatePianoRollSnapUi();
     if (meta) {
       meta.textContent =
         clipName + " · project bars " + startBar +
         (endBar !== startBar ? "–" + endBar : "") +
         " · " + notes.length + " notes · " +
         Math.round(Number(state.pianoRollBarW) || 96) + " px/bar · snap " +
-        pianoRollSnapLabel() + " · EDIT";
+        pianoRollSnapStatusLabel() + " · EDIT";
     }
 
     const rowH = Math.max(10, Math.min(48, Number(state.pianoRollRowH) || 18));
@@ -8639,7 +8679,9 @@ body.timeline-ruler-seeking {
 
       const resizeHandle = document.createElement("span");
       resizeHandle.className = "piano-roll-note-resize";
-      resizeHandle.title = "Drag to change note length · " + pianoRollSnapLabel() + " steps";
+      resizeHandle.title =
+        "Drag to change note length · " +
+        (state.pianoRollSnapEnabled ? ("snap " + pianoRollSnapLabel()) : "free movement");
       block.appendChild(resizeHandle);
       grid.appendChild(block);
 
@@ -8843,7 +8885,7 @@ body.timeline-ruler-seeking {
     updatePlayheads(state.startTick, state.lengthTicks || 1);
     setStatus(
       "Piano Roll cue · " + tickToBarBeat(state.startTick, ctx.ppq) +
-      " · snap " + pianoRollSnapLabel(),
+      " · snap " + pianoRollSnapStatusLabel(),
       "ok"
     );
 
@@ -9076,11 +9118,46 @@ body.timeline-ruler-seeking {
     const value = String(event.target.value || "16");
     if (!["4","8","8T","16","16T","32","64"].includes(value)) return;
     state.pianoRollSnapDenominator = value;
-    try {
-      localStorage.setItem("midi_host_piano_roll_snap_v1", String(value));
-    } catch {}
+    scheduleLocalStorageSet("midi_host_piano_roll_snap_v1", value);
     renderPianoRoll();
-    setStatus("Piano Roll · Snap to Grid " + pianoRollSnapLabel(), "ok");
+    setStatus(
+      "Piano Roll · grid " + pianoRollSnapLabel() +
+      (state.pianoRollSnapEnabled ? " · Snap ON" : " · Snap OFF"),
+      "ok"
+    );
+  });
+
+  document.getElementById("pianoRollSnapToggle")?.addEventListener("click", () => {
+    state.pianoRollSnapEnabled = !state.pianoRollSnapEnabled;
+    scheduleLocalStorageSet(
+      "midi_host_piano_roll_snap_enabled_v1",
+      state.pianoRollSnapEnabled ? "1" : "0"
+    );
+    updatePianoRollSnapUi();
+    const ctx = pianoRollContext();
+    const grid = document.getElementById("pianoRollGrid");
+    const ruler = document.getElementById("pianoRollRuler");
+    if (ctx && grid && ruler) {
+      drawPianoRollGridCanvases(
+        grid,
+        ruler,
+        ctx,
+        Math.max(1, Number(grid.dataset.rollWidth) || grid.offsetWidth || 1)
+      );
+    }
+    const meta = document.getElementById("pianoRollMeta");
+    if (meta) {
+      meta.textContent = meta.textContent.replace(
+        /snap (?:OFF · grid )?1\/(?:4|8T?|16T?|32|64)/,
+        "snap " + pianoRollSnapStatusLabel()
+      );
+    }
+    setStatus(
+      state.pianoRollSnapEnabled
+        ? "Piano Roll · Snap to Grid ON · " + pianoRollSnapLabel()
+        : "Piano Roll · Snap to Grid OFF · free timing for humanization",
+      "ok"
+    );
   });
 
   document.getElementById("pianoUndo")?.addEventListener("click", pianoRollUndo);
@@ -9106,6 +9183,10 @@ body.timeline-ruler-seeking {
     const savedPianoSnap = String(localStorage.getItem("midi_host_piano_roll_snap_v1") || "");
     if (["4","8","8T","16","16T","32","64"].includes(savedPianoSnap)) {
       state.pianoRollSnapDenominator = savedPianoSnap;
+    }
+    const savedPianoSnapEnabled = localStorage.getItem("midi_host_piano_roll_snap_enabled_v1");
+    if (savedPianoSnapEnabled === "0" || savedPianoSnapEnabled === "1") {
+      state.pianoRollSnapEnabled = savedPianoSnapEnabled === "1";
     }
     const savedPianoRowH = Number(localStorage.getItem("midi_host_piano_roll_row_h_v1"));
     if (Number.isFinite(savedPianoRowH) && savedPianoRowH >= 10 && savedPianoRowH <= 48) {
@@ -11895,7 +11976,7 @@ body.timeline-ruler-seeking {
       if (code === "ArrowLeft" || code === "ArrowRight") {
         e.preventDefault();
         if (selectedNotes.length) {
-          const step = pianoRollSnapTicks(state.project?.ppq || 480);
+          const step = pianoRollEditStepTicks(state.project?.ppq || 480);
           moveSelectedPianoRollNotes(code === "ArrowLeft" ? -step : step);
         }
         return;
