@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "id": "acid-rock-1",
+  "name": "Acid Rock 1",
+  "createdAt": "2026-09-20T02:01:29+00:00",
+  "updatedAt": "2026-09-20T02:01:29+00:00",
+  "editors": {
+    "midiHost": true,
+    "chiptune": false
+  },
+  "files": {
+    "midiHostProject": "midi-host/project.json",
+    "session": "midi-host/session.json",
+    "overviewJson": "midi-host/overview.json",
+    "overviewMarkdown": "midi-host/overview.md",
+    "arrangementMidi": "midi-host/arrangement.mid",
+    "tracks": [
+      {
+        "index": 1,
+        "name": "Bass",
+        "file": "midi-host/tracks/001 - Bass.mid"
+      },
+      {
+        "index": 2,
+        "name": "Acid",
+        "file": "midi-host/tracks/002 - Acid.mid"
+      },
+      {
+        "index": 3,
+        "name": "29 Overdriven Guitar",
+        "file": "midi-host/tracks/003 - 29 Overdriven Guitar.mid"
+      },
+      {
+        "index": 4,
+        "name": "4 Electric Piano 1",
+        "file": "midi-host/tracks/004 - 4 Electric Piano 1.mid"
+      },
+      {
+        "index": 5,
+        "name": "Drums",
+        "file": "midi-host/tracks/005 - Drums.mid"
+      }
+    ],
+    "clips": [
+      {
+        "id": "fb0ec8299b4fce00df98",
+        "name": "pattern19.mid",
+        "originalName": "pattern19.mid",
+        "source": "acidvoice",
+        "genre": "acid",
+        "role": "bass",
+        "file": "midi-host/clips/001 - pattern19.mid.mid"
+      },
+      {
+        "id": "d173a7fa9f3103e4f307",
+        "name": "9_soul-groove9_105_beat_4-4.mid",
+        "originalName": "9_soul-groove9_105_beat_4-4.mid",
+        "source": "groove-v1.0.0-midionly",
+        "genre": "soul",
+        "role": "drums",
+        "file": "midi-host/clips/002 - 9_soul-groove9_105_beat_4-4.mid.mid"
+      }
+    ]
+  }
+}

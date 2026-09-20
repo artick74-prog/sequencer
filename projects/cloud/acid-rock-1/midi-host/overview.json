@@ -1,0 +1,509 @@
+{
+  "version": 2,
+  "name": "Acid Rock 1",
+  "tempo": 120,
+  "ppq": 480,
+  "totalBars": 32,
+  "lengthTicks": 61440,
+  "grid": {
+    "resolution": "1/32",
+    "slotsPerBar": 32,
+    "slotTicks": 60,
+    "snapToleranceTicks": 30,
+    "legend": {
+      ".": "empty",
+      "x": "hit",
+      "X": "accent (vel≥110)",
+      "o": "soft (vel≤55)",
+      "*": "flam/stack (2+ notes in slot)",
+      "#": "heatmap peak"
+    },
+    "note": "ASCII uses a 1/32 grid. Humanized notes within ±½×32nd snap to the nearest slot. hardOffNotes = onsets farther than that (shown in pattern stats). Exact ticks remain in current.json."
+  },
+  "hardware": {
+    "output": "TD-3 USB (thru to XR20 DIN)",
+    "channels": {
+      "1": "XR20 bass",
+      "2": "TD-3 acid",
+      "10": "XR20 drums"
+    }
+  },
+  "markers": [
+    {
+      "tick": 0,
+      "bar": 1,
+      "text": "Start"
+    }
+  ],
+  "sections": [
+    {
+      "name": "Start",
+      "startBar": 1,
+      "endBar": 32,
+      "startTick": 0,
+      "endTick": 61440
+    }
+  ],
+  "tracks": [
+    {
+      "id": "bass",
+      "name": "Bass",
+      "channel": 1,
+      "role": "xr20-bass",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 0,
+      "pitchMin": null,
+      "pitchMax": null,
+      "pitchMinName": null,
+      "pitchMaxName": null,
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "acid",
+      "name": "Acid",
+      "channel": 2,
+      "role": "td3",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 224,
+      "pitchMin": 24,
+      "pitchMax": 58,
+      "pitchMinName": "C1",
+      "pitchMaxName": "A#3",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 112,
+          "avgVel": 105
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 112,
+          "avgVel": 105
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "guitar",
+      "name": "29 Overdriven Guitar",
+      "channel": 3,
+      "role": "gm",
+      "gmProgram": 29,
+      "mute": false,
+      "noteCount": 0,
+      "pitchMin": null,
+      "pitchMax": null,
+      "pitchMinName": null,
+      "pitchMaxName": null,
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "keys",
+      "name": "4 Electric Piano 1",
+      "channel": 4,
+      "role": "gm",
+      "gmProgram": 4,
+      "mute": false,
+      "noteCount": 0,
+      "pitchMin": null,
+      "pitchMax": null,
+      "pitchMinName": null,
+      "pitchMaxName": null,
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
+    {
+      "id": "drums",
+      "name": "Drums",
+      "channel": 10,
+      "role": "xr20-drums",
+      "gmProgram": null,
+      "mute": false,
+      "noteCount": 207,
+      "pitchMin": 36,
+      "pitchMax": 42,
+      "pitchMinName": "C2",
+      "pitchMaxName": "F#2",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 103,
+          "avgVel": 92
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 104,
+          "avgVel": 97
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 0,
+          "avgVel": 0
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    }
+  ],
+  "activityPer8Bars": [
+    {
+      "bars": "1-8",
+      "startBar": 1,
+      "endBar": 8,
+      "notes": 215,
+      "byTrack": {
+        "Bass": 0,
+        "Acid": 112,
+        "29 Overdriven Guitar": 0,
+        "4 Electric Piano 1": 0,
+        "Drums": 103
+      }
+    },
+    {
+      "bars": "9-16",
+      "startBar": 9,
+      "endBar": 16,
+      "notes": 216,
+      "byTrack": {
+        "Bass": 0,
+        "Acid": 112,
+        "29 Overdriven Guitar": 0,
+        "4 Electric Piano 1": 0,
+        "Drums": 104
+      }
+    },
+    {
+      "bars": "17-24",
+      "startBar": 17,
+      "endBar": 24,
+      "notes": 0,
+      "byTrack": {
+        "Bass": 0,
+        "Acid": 0,
+        "29 Overdriven Guitar": 0,
+        "4 Electric Piano 1": 0,
+        "Drums": 0
+      }
+    },
+    {
+      "bars": "25-32",
+      "startBar": 25,
+      "endBar": 32,
+      "notes": 0,
+      "byTrack": {
+        "Bass": 0,
+        "Acid": 0,
+        "29 Overdriven Guitar": 0,
+        "4 Electric Piano 1": 0,
+        "Drums": 0
+      }
+    }
+  ],
+  "asciiBySection": [
+    {
+      "name": "Start",
+      "startBar": 1,
+      "endBar": 32,
+      "heatmap32": {
+        "ascii": "x.o.xoo.|#oo.ooo.|xoo.#oo.|xoo.xoxo",
+        "max": 2.9,
+        "barsSampled": 16
+      },
+      "tracks": [
+        {
+          "trackId": "acid",
+          "trackName": "Acid",
+          "channel": 2,
+          "noteCount": 224,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+              "bars": "1–16",
+              "barCount": 16,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C2",
+                "C2",
+                "C3",
+                "C1",
+                "C3",
+                "C3",
+                "C2",
+                "C1",
+                "C3",
+                "C3",
+                "A#3",
+                "C3"
+              ]
+            },
+            {
+              "ascii": "........|........|........|........",
+              "bars": "17–32",
+              "barCount": 16,
+              "hardOffNotes": 0,
+              "pitches": []
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+            "pitchesA": [
+              "C3",
+              "C3",
+              "C2",
+              "C2",
+              "C3",
+              "C1",
+              "C3",
+              "C3",
+              "C2",
+              "C1",
+              "C3",
+              "C3"
+            ],
+            "pitchesB": [
+              "C3",
+              "C3",
+              "C2",
+              "C2",
+              "C3",
+              "C1",
+              "C3",
+              "C3",
+              "C2",
+              "C1",
+              "C3",
+              "C3"
+            ],
+            "repeats": 8,
+            "bars": "1–16"
+          }
+        },
+        {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 207,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "........|........|........|........",
+              "bars": "17–32",
+              "barCount": 16,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "*...x...|*...x...|X...*...|*....x.o",
+              "bars": "3–4",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "F#2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
+              "bars": "1",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "F#2",
+                "C2",
+                "D2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*...x...|Xx...x..|x...*...|*...x..o",
+              "bars": "2",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "F#2",
+                "F#2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*....x..|*....x..|x...*...|*...x.ox",
+              "bars": "5",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "F#2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "x...x...|*...X...|x...*...|*...x.ox",
+              "bars": "6",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "F#2",
+                "F#2",
+                "D2",
+                "F#2",
+                "F#2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "C2"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        }
+      ]
+    }
+  ],
+  "forAssistant": "Read overview.md ASCII patterns per section first (1/32 grid, humanize-aware). Then current.json for exact ticks/velocity. Prefer markers/sections for form. Use markers/sections and the user's requested bar range for targeted edits."
+}
