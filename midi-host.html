@@ -1233,6 +1233,8 @@ select, input[type="number"], input[type="text"] {
         <strong id="midiMonitorTitle">MIDI OUT Monitor</strong>
         <span id="midiMonitorCount" style="color:var(--dim);font-size:11px">0 messages</span>
         <span class="spacer"></span>
+        <button class="btn" id="btnMidiMonitorCopy" type="button" title="Copy the complete stored MIDI log as text">Copy Log</button>
+        <button class="btn" id="btnMidiMonitorExport" type="button" title="Download the complete stored MIDI log as a text file">Export TXT</button>
         <button class="btn" id="btnMidiMonitorClear" type="button">Clear</button>
         <button class="btn" id="btnMidiMonitorClose" type="button">Close</button>
       </div>
@@ -1314,7 +1316,8 @@ select, input[type="number"], input[type="text"] {
 (() => {
   "use strict";
 
-  const MIDI_MONITOR_MAX = 500;
+  const MIDI_MONITOR_MAX = 10000;
+  const MIDI_MONITOR_VISIBLE = 500;
   const midiMonitorEvents = [];
   let midiMonitorPaused = false;
   let midiMonitorRenderQueued = false;
@@ -3426,7 +3429,12 @@ select, input[type="number"], input[type="text"] {
     const count = document.getElementById("midiMonitorCount");
     if (!log || !count) return;
 
-    count.textContent = midiMonitorEvents.length.toLocaleString("ru-RU") + " messages";
+    const visibleEvents = midiMonitorEvents.slice(-MIDI_MONITOR_VISIBLE);
+    count.textContent =
+      midiMonitorEvents.length.toLocaleString("ru-RU") + " stored" +
+      (midiMonitorEvents.length > visibleEvents.length
+        ? " · showing last " + visibleEvents.length.toLocaleString("ru-RU")
+        : "");
     if (!midiMonitorEvents.length) {
       log.innerHTML = '<div class="midi-monitor-empty">No outgoing MIDI messages yet.</div>';
       return;
@@ -3434,7 +3442,7 @@ select, input[type="number"], input[type="text"] {
 
     const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 28;
     const fragment = document.createDocumentFragment();
-    for (const event of midiMonitorEvents) {
+    for (const event of visibleEvents) {
       const row = document.createElement("div");
       row.className = "midi-monitor-row";
 
@@ -3515,6 +3523,83 @@ select, input[type="number"], input[type="text"] {
   function clearMidiMonitor() {
     midiMonitorEvents.length = 0;
     renderMidiMonitor();
+  }
+
+  function midiMonitorText() {
+    const header = [
+      "# MIDI Host OUT Monitor",
+      "# Project: " + (state.project?.name || "untitled"),
+      "# Tempo: " + (Number(document.getElementById("tempo")?.value) || state.project?.tempo || 120) + " BPM",
+      "# Output: " + (getOutput()?.name || "none"),
+      "# Exported: " + new Date().toISOString(),
+      "# Messages: " + midiMonitorEvents.length,
+      "",
+      "time\tsource\tchannel\tmessage\traw",
+    ];
+    const rows = midiMonitorEvents.map((event) => [
+      event.time,
+      event.source,
+      event.channel,
+      event.text + (event.scheduleText ? " · " + event.scheduleText : ""),
+      event.raw,
+    ].join("\t"));
+    return header.concat(rows).join("\n");
+  }
+
+  async function copyMidiMonitorLog() {
+    const text = midiMonitorText();
+    if (!midiMonitorEvents.length) {
+      setStatus("MIDI Monitor is empty.", "err");
+      return false;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus(
+        "MIDI Monitor copied · " + midiMonitorEvents.length.toLocaleString("ru-RU") +
+        " messages · paste it directly into ChatGPT",
+        "ok"
+      );
+      return true;
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.style.position = "fixed";
+      area.style.left = "-9999px";
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand("copy");
+      area.remove();
+      setStatus(
+        ok
+          ? "MIDI Monitor copied · paste it directly into ChatGPT"
+          : "Could not copy MIDI Monitor log.",
+        ok ? "ok" : "err"
+      );
+      return ok;
+    }
+  }
+
+  function exportMidiMonitorLog() {
+    if (!midiMonitorEvents.length) {
+      setStatus("MIDI Monitor is empty.", "err");
+      return false;
+    }
+    const text = midiMonitorText();
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    link.href = URL.createObjectURL(blob);
+    link.download = "midi-monitor-" + stamp + ".txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    setStatus(
+      "MIDI Monitor exported · " + midiMonitorEvents.length.toLocaleString("ru-RU") +
+      " messages · upload the TXT here",
+      "ok"
+    );
+    return true;
   }
 
   function getOutput() {
@@ -7052,6 +7137,8 @@ select, input[type="number"], input[type="text"] {
 
   document.getElementById("btnMidiMonitor")?.addEventListener("click", showMidiMonitor);
   document.getElementById("btnMidiMonitorClose")?.addEventListener("click", closeMidiMonitor);
+  document.getElementById("btnMidiMonitorCopy")?.addEventListener("click", copyMidiMonitorLog);
+  document.getElementById("btnMidiMonitorExport")?.addEventListener("click", exportMidiMonitorLog);
   document.getElementById("btnMidiMonitorClear")?.addEventListener("click", clearMidiMonitor);
   document.getElementById("chkMidiMonitorPause")?.addEventListener("change", (e) => {
     midiMonitorPaused = !!e.target.checked;
