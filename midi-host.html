@@ -1653,7 +1653,7 @@ select, input[type="number"], input[type="text"] {
         </div>
         <div class="rhythm-editor-grid" id="rhythmEditorGrid"></div>
         <div class="rhythm-editor-hint">
-          LIVE preview is always on. Click an empty step to add an attack; click a hit to select it. Drag a hit left/right to move it. Use the length buttons for 1/32, 1/16, 1/8, 1/4, dotted 1/4 and longer values. The global Gate control still scales these stored lengths during playback. Changes are heard immediately but are not saved until you press Save as new revision.
+          LIVE preview is always on. Click an empty step to add an attack; click a hit to select it. Drag a hit left/right to move it. Use the length buttons for 1/32, 1/16, 1/8, 1/4, dotted 1/4 and longer values. Notes never overlap in the editor: if a new/moved attack lands before the previous note ends, the previous note is automatically shortened exactly to the new attack. The global Gate control still scales these stored lengths during playback. Changes are heard immediately but are not saved until you press Save as new revision.
         </div>
       </div>
       <div class="rhythm-editor-actions">
@@ -3759,6 +3759,33 @@ select, input[type="number"], input[type="text"] {
     return (rhythmEditorState.draft.events || []).filter((event) => Number(event.pos) === Number(pos));
   }
 
+  function rhythmEditorClampNoOverlap(pattern, events) {
+    const rows = Array.isArray(events) ? events : [];
+    if (!pattern || !rows.length) return 0;
+
+    const stepsPerBar = Math.max(1, Number(pattern.stepsPerBar) || 16);
+    const bars = Math.max(1, Number(pattern.bars) || 1);
+    const totalSteps = stepsPerBar * bars;
+    const positions = [...new Set(
+      rows.map((event) => Number(event.pos)).filter(Number.isFinite)
+    )].sort((a,b)=>a-b);
+
+    let changed = 0;
+    for (const event of rows) {
+      const pos = Number(event.pos);
+      if (!Number.isFinite(pos)) continue;
+      const next = positions.find((candidate) => candidate > pos);
+      const boundary = Number.isFinite(next) ? next : totalSteps;
+      const maxDur = Math.max(0.05, boundary - pos);
+      const current = Math.max(0.05, Number(event.dur) || 0.8);
+      if (current > maxDur + 1e-9) {
+        event.dur = maxDur;
+        changed++;
+      }
+    }
+    return changed;
+  }
+
   function rhythmEditorSelectOrAddStep(pos) {
     if (!rhythmEditorState) return;
     const existing = rhythmEditorEventsAt(pos);
@@ -3790,8 +3817,15 @@ select, input[type="number"], input[type="text"] {
             : {}),
         };
     rhythmEditorState.draft.events = [...events, event].sort((a,b) => Number(a.pos) - Number(b.pos));
+    const trimmed = rhythmEditorClampNoOverlap(
+      rhythmEditorState.draft,
+      rhythmEditorState.draft.events
+    );
     rhythmEditorState.selectedPos = pos;
     renderRhythmEditor();
+    if (trimmed) {
+      setStatus("Rhythm Editor: previous note length auto-trimmed to the new attack.", "ok");
+    }
     previewRhythmEditorDraft();
   }
 
@@ -3818,7 +3852,14 @@ select, input[type="number"], input[type="text"] {
     for (const event of rhythmEditorState.draft.events || []) {
       if (Number(event.pos) === pos) event.dur = dur;
     }
+    const trimmed = rhythmEditorClampNoOverlap(
+      rhythmEditorState.draft,
+      rhythmEditorState.draft.events
+    );
     renderRhythmEditor();
+    if (trimmed) {
+      setStatus("Rhythm Editor: note length capped at the next attack to prevent overlap.", "ok");
+    }
     previewRhythmEditorDraft();
   }
 
@@ -3832,7 +3873,14 @@ select, input[type="number"], input[type="text"] {
     for (const event of to) event.pos = fromPos;
     rhythmEditorState.selectedPos = toPos;
     rhythmEditorState.draft.events = events.sort((a,b) => Number(a.pos) - Number(b.pos));
+    const trimmed = rhythmEditorClampNoOverlap(
+      rhythmEditorState.draft,
+      rhythmEditorState.draft.events
+    );
     renderRhythmEditor();
+    if (trimmed) {
+      setStatus("Rhythm Editor: note length auto-trimmed after moving an attack.", "ok");
+    }
     previewRhythmEditorDraft();
   }
 
