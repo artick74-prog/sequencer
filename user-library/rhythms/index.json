@@ -1,0 +1,1119 @@
+{
+  "schema": 1,
+  "title": "User Rhythm Library",
+  "description": "Pitch-free rhythmic cells for live audition in MIDI Host. Positions and durations are stored in abstract grid steps, not MIDI ticks.",
+  "patterns": [
+    {
+      "id": "straight-quarters-01",
+      "name": "Straight Quarters",
+      "category": "Straight",
+      "family": "straight",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "basic",
+        "rock",
+        "keys",
+        "bass",
+        "acid"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys",
+        "guitar"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 3.2,
+          "vel": 104
+        },
+        {
+          "pos": 4,
+          "dur": 3.2,
+          "vel": 104
+        },
+        {
+          "pos": 8,
+          "dur": 3.2,
+          "vel": 104
+        },
+        {
+          "pos": 12,
+          "dur": 3.2,
+          "vel": 104
+        }
+      ]
+    },
+    {
+      "id": "straight-eighths-01",
+      "name": "Straight 8ths",
+      "category": "Straight",
+      "family": "straight",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "basic",
+        "driving"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys",
+        "guitar"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 1.45,
+          "vel": 108
+        },
+        {
+          "pos": 2,
+          "dur": 1.45,
+          "vel": 92
+        },
+        {
+          "pos": 4,
+          "dur": 1.45,
+          "vel": 108
+        },
+        {
+          "pos": 6,
+          "dur": 1.45,
+          "vel": 92
+        },
+        {
+          "pos": 8,
+          "dur": 1.45,
+          "vel": 108
+        },
+        {
+          "pos": 10,
+          "dur": 1.45,
+          "vel": 92
+        },
+        {
+          "pos": 12,
+          "dur": 1.45,
+          "vel": 108
+        },
+        {
+          "pos": 14,
+          "dur": 1.45,
+          "vel": 92
+        }
+      ]
+    },
+    {
+      "id": "straight-sixteenths-01",
+      "name": "Straight 16ths",
+      "category": "Straight",
+      "family": "straight",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "basic",
+        "dense",
+        "acid"
+      ],
+      "worksFor": [
+        "acid",
+        "bass",
+        "synth"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 0.7,
+          "vel": 112
+        },
+        {
+          "pos": 1,
+          "dur": 0.7,
+          "vel": 88
+        },
+        {
+          "pos": 2,
+          "dur": 0.7,
+          "vel": 98
+        },
+        {
+          "pos": 3,
+          "dur": 0.7,
+          "vel": 88
+        },
+        {
+          "pos": 4,
+          "dur": 0.7,
+          "vel": 112
+        },
+        {
+          "pos": 5,
+          "dur": 0.7,
+          "vel": 88
+        },
+        {
+          "pos": 6,
+          "dur": 0.7,
+          "vel": 98
+        },
+        {
+          "pos": 7,
+          "dur": 0.7,
+          "vel": 88
+        },
+        {
+          "pos": 8,
+          "dur": 0.7,
+          "vel": 112
+        },
+        {
+          "pos": 9,
+          "dur": 0.7,
+          "vel": 88
+        },
+        {
+          "pos": 10,
+          "dur": 0.7,
+          "vel": 98
+        },
+        {
+          "pos": 11,
+          "dur": 0.7,
+          "vel": 88
+        },
+        {
+          "pos": 12,
+          "dur": 0.7,
+          "vel": 112
+        },
+        {
+          "pos": 13,
+          "dur": 0.7,
+          "vel": 88
+        },
+        {
+          "pos": 14,
+          "dur": 0.7,
+          "vel": 98
+        },
+        {
+          "pos": 15,
+          "dur": 0.7,
+          "vel": 88
+        }
+      ]
+    },
+    {
+      "id": "offbeat-eighths-01",
+      "name": "Offbeat 8ths",
+      "category": "Straight",
+      "family": "offbeat",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "dance",
+        "reggae",
+        "syncopated"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys",
+        "guitar"
+      ],
+      "events": [
+        {
+          "pos": 2,
+          "dur": 1.35,
+          "vel": 108
+        },
+        {
+          "pos": 6,
+          "dur": 1.35,
+          "vel": 108
+        },
+        {
+          "pos": 10,
+          "dur": 1.35,
+          "vel": 108
+        },
+        {
+          "pos": 14,
+          "dur": 1.35,
+          "vel": 108
+        }
+      ]
+    },
+    {
+      "id": "rock-push-01",
+      "name": "Rock Push",
+      "category": "Rock",
+      "family": "push",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "rock",
+        "push",
+        "syncopated"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "guitar"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 1.8,
+          "vel": 114
+        },
+        {
+          "pos": 3,
+          "dur": 0.8,
+          "vel": 94
+        },
+        {
+          "pos": 4,
+          "dur": 0.8,
+          "vel": 108
+        },
+        {
+          "pos": 7,
+          "dur": 1.8,
+          "vel": 92
+        },
+        {
+          "pos": 8,
+          "dur": 0.8,
+          "vel": 112
+        },
+        {
+          "pos": 10,
+          "dur": 0.8,
+          "vel": 96
+        },
+        {
+          "pos": 12,
+          "dur": 1.8,
+          "vel": 106
+        },
+        {
+          "pos": 15,
+          "dur": 0.8,
+          "vel": 100
+        }
+      ]
+    },
+    {
+      "id": "gallop-01",
+      "name": "Gallop",
+      "category": "Rock",
+      "family": "gallop",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "rock",
+        "metal",
+        "driving"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "guitar"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 1.7,
+          "vel": 114
+        },
+        {
+          "pos": 2,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 3,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 4,
+          "dur": 1.7,
+          "vel": 114
+        },
+        {
+          "pos": 6,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 7,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 8,
+          "dur": 1.7,
+          "vel": 114
+        },
+        {
+          "pos": 10,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 11,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 12,
+          "dur": 1.7,
+          "vel": 114
+        },
+        {
+          "pos": 14,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 15,
+          "dur": 0.7,
+          "vel": 96
+        }
+      ]
+    },
+    {
+      "id": "reverse-gallop-01",
+      "name": "Reverse Gallop",
+      "category": "Rock",
+      "family": "gallop",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "rock",
+        "metal",
+        "driving"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "guitar"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 0.7,
+          "vel": 108
+        },
+        {
+          "pos": 1,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 2,
+          "dur": 1.7,
+          "vel": 96
+        },
+        {
+          "pos": 4,
+          "dur": 0.7,
+          "vel": 108
+        },
+        {
+          "pos": 5,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 6,
+          "dur": 1.7,
+          "vel": 96
+        },
+        {
+          "pos": 8,
+          "dur": 0.7,
+          "vel": 108
+        },
+        {
+          "pos": 9,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 10,
+          "dur": 1.7,
+          "vel": 96
+        },
+        {
+          "pos": 12,
+          "dur": 0.7,
+          "vel": 108
+        },
+        {
+          "pos": 13,
+          "dur": 0.7,
+          "vel": 96
+        },
+        {
+          "pos": 14,
+          "dur": 1.7,
+          "vel": 96
+        }
+      ]
+    },
+    {
+      "id": "half-gallop-01",
+      "name": "Half Gallop",
+      "category": "Rock",
+      "family": "gallop",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "rock",
+        "sparse"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "guitar"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 1.8,
+          "vel": 114
+        },
+        {
+          "pos": 2,
+          "dur": 0.75,
+          "vel": 96
+        },
+        {
+          "pos": 3,
+          "dur": 0.75,
+          "vel": 96
+        },
+        {
+          "pos": 8,
+          "dur": 1.8,
+          "vel": 114
+        },
+        {
+          "pos": 10,
+          "dur": 0.75,
+          "vel": 96
+        },
+        {
+          "pos": 11,
+          "dur": 0.75,
+          "vel": 96
+        }
+      ]
+    },
+    {
+      "id": "dotted-drive-01",
+      "name": "Dotted Drive",
+      "category": "Rock",
+      "family": "dotted",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "rock",
+        "syncopated",
+        "dotted"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "synth"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 2.25,
+          "vel": 112
+        },
+        {
+          "pos": 3,
+          "dur": 0.75,
+          "vel": 94
+        },
+        {
+          "pos": 4,
+          "dur": 2.25,
+          "vel": 112
+        },
+        {
+          "pos": 7,
+          "dur": 0.75,
+          "vel": 94
+        },
+        {
+          "pos": 8,
+          "dur": 2.25,
+          "vel": 112
+        },
+        {
+          "pos": 11,
+          "dur": 0.75,
+          "vel": 94
+        },
+        {
+          "pos": 12,
+          "dur": 2.25,
+          "vel": 112
+        },
+        {
+          "pos": 15,
+          "dur": 0.75,
+          "vel": 94
+        }
+      ]
+    },
+    {
+      "id": "tresillo-01",
+      "name": "Tresillo",
+      "category": "Latin / Timeline",
+      "family": "tresillo",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "3-3-2",
+        "timeline",
+        "syncopated"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys",
+        "percussion"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 4.8,
+          "vel": 114
+        },
+        {
+          "pos": 6,
+          "dur": 4.8,
+          "vel": 104
+        },
+        {
+          "pos": 12,
+          "dur": 3.2,
+          "vel": 108
+        }
+      ]
+    },
+    {
+      "id": "habanera-01",
+      "name": "Habanera Cell",
+      "category": "Latin / Timeline",
+      "family": "habanera",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "habanera",
+        "syncopated"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 2.4,
+          "vel": 114
+        },
+        {
+          "pos": 3,
+          "dur": 0.75,
+          "vel": 92
+        },
+        {
+          "pos": 4,
+          "dur": 1.5,
+          "vel": 102
+        },
+        {
+          "pos": 6,
+          "dur": 1.4,
+          "vel": 102
+        },
+        {
+          "pos": 8,
+          "dur": 2.4,
+          "vel": 114
+        },
+        {
+          "pos": 11,
+          "dur": 0.75,
+          "vel": 92
+        },
+        {
+          "pos": 12,
+          "dur": 1.5,
+          "vel": 102
+        },
+        {
+          "pos": 14,
+          "dur": 1.4,
+          "vel": 102
+        }
+      ]
+    },
+    {
+      "id": "son-clave-3-2",
+      "name": "Son Clave 3–2",
+      "category": "Latin / Timeline",
+      "family": "clave",
+      "meter": "4/4",
+      "bars": 2,
+      "stepsPerBar": 16,
+      "tags": [
+        "clave",
+        "3-2",
+        "two-bar"
+      ],
+      "worksFor": [
+        "percussion",
+        "keys",
+        "acid"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 0.8,
+          "vel": 114
+        },
+        {
+          "pos": 6,
+          "dur": 0.8,
+          "vel": 104
+        },
+        {
+          "pos": 12,
+          "dur": 0.8,
+          "vel": 110
+        },
+        {
+          "pos": 20,
+          "dur": 0.8,
+          "vel": 106
+        },
+        {
+          "pos": 24,
+          "dur": 0.8,
+          "vel": 110
+        }
+      ]
+    },
+    {
+      "id": "son-clave-2-3",
+      "name": "Son Clave 2–3",
+      "category": "Latin / Timeline",
+      "family": "clave",
+      "meter": "4/4",
+      "bars": 2,
+      "stepsPerBar": 16,
+      "tags": [
+        "clave",
+        "2-3",
+        "two-bar"
+      ],
+      "worksFor": [
+        "percussion",
+        "keys",
+        "acid"
+      ],
+      "events": [
+        {
+          "pos": 4,
+          "dur": 0.8,
+          "vel": 106
+        },
+        {
+          "pos": 8,
+          "dur": 0.8,
+          "vel": 110
+        },
+        {
+          "pos": 16,
+          "dur": 0.8,
+          "vel": 114
+        },
+        {
+          "pos": 22,
+          "dur": 0.8,
+          "vel": 104
+        },
+        {
+          "pos": 28,
+          "dur": 0.8,
+          "vel": 110
+        }
+      ]
+    },
+    {
+      "id": "charleston-01",
+      "name": "Charleston Cell",
+      "category": "Jazz / Syncopation",
+      "family": "charleston",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "charleston",
+        "syncopated"
+      ],
+      "worksFor": [
+        "keys",
+        "guitar",
+        "bass",
+        "acid"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 5.2,
+          "vel": 112
+        },
+        {
+          "pos": 6,
+          "dur": 1.2,
+          "vel": 100
+        },
+        {
+          "pos": 8,
+          "dur": 5.2,
+          "vel": 108
+        },
+        {
+          "pos": 14,
+          "dur": 1.2,
+          "vel": 98
+        }
+      ]
+    },
+    {
+      "id": "funk16-a",
+      "name": "Funk 16 A",
+      "category": "Funk",
+      "family": "funk16",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "funk",
+        "16th",
+        "syncopated"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "guitar",
+        "keys"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 1.6,
+          "vel": 114
+        },
+        {
+          "pos": 3,
+          "dur": 0.7,
+          "vel": 92
+        },
+        {
+          "pos": 6,
+          "dur": 0.7,
+          "vel": 103
+        },
+        {
+          "pos": 8,
+          "dur": 1.6,
+          "vel": 112
+        },
+        {
+          "pos": 11,
+          "dur": 0.7,
+          "vel": 94
+        },
+        {
+          "pos": 14,
+          "dur": 0.7,
+          "vel": 105
+        }
+      ]
+    },
+    {
+      "id": "funk16-b",
+      "name": "Funk 16 B",
+      "category": "Funk",
+      "family": "funk16",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "funk",
+        "16th",
+        "syncopated"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "guitar",
+        "keys"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 1.1,
+          "vel": 112
+        },
+        {
+          "pos": 2,
+          "dur": 0.65,
+          "vel": 96
+        },
+        {
+          "pos": 5,
+          "dur": 1.1,
+          "vel": 103
+        },
+        {
+          "pos": 7,
+          "dur": 0.65,
+          "vel": 91
+        },
+        {
+          "pos": 10,
+          "dur": 1.1,
+          "vel": 108
+        },
+        {
+          "pos": 13,
+          "dur": 0.65,
+          "vel": 95
+        },
+        {
+          "pos": 15,
+          "dur": 1.1,
+          "vel": 102
+        }
+      ]
+    },
+    {
+      "id": "anticipation-01",
+      "name": "Anticipation",
+      "category": "Funk",
+      "family": "anticipation",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "anticipation",
+        "push",
+        "syncopated"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 2.2,
+          "vel": 114
+        },
+        {
+          "pos": 3,
+          "dur": 0.8,
+          "vel": 96
+        },
+        {
+          "pos": 7,
+          "dur": 1.2,
+          "vel": 103
+        },
+        {
+          "pos": 8,
+          "dur": 2.2,
+          "vel": 110
+        },
+        {
+          "pos": 11,
+          "dur": 0.8,
+          "vel": 94
+        },
+        {
+          "pos": 15,
+          "dur": 0.8,
+          "vel": 104
+        }
+      ]
+    },
+    {
+      "id": "sparse-syncopation-01",
+      "name": "Sparse Syncopation",
+      "category": "Sparse",
+      "family": "syncopation",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "sparse",
+        "space",
+        "syncopated"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys",
+        "synth"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 3.5,
+          "vel": 112
+        },
+        {
+          "pos": 6,
+          "dur": 2.2,
+          "vel": 98
+        },
+        {
+          "pos": 11,
+          "dur": 3.2,
+          "vel": 106
+        }
+      ]
+    },
+    {
+      "id": "long-offbeats-01",
+      "name": "Long Offbeats",
+      "category": "Sparse",
+      "family": "offbeat",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 16,
+      "tags": [
+        "sustained",
+        "offbeat",
+        "space"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys",
+        "pad"
+      ],
+      "events": [
+        {
+          "pos": 2,
+          "dur": 3.4,
+          "vel": 106
+        },
+        {
+          "pos": 6,
+          "dur": 3.4,
+          "vel": 102
+        },
+        {
+          "pos": 10,
+          "dur": 3.4,
+          "vel": 108
+        },
+        {
+          "pos": 14,
+          "dur": 1.6,
+          "vel": 100
+        }
+      ]
+    },
+    {
+      "id": "triplet-shuffle-01",
+      "name": "Triplet Shuffle",
+      "category": "Triplet",
+      "family": "shuffle",
+      "meter": "4/4",
+      "bars": 1,
+      "stepsPerBar": 12,
+      "tags": [
+        "triplet",
+        "shuffle"
+      ],
+      "worksFor": [
+        "bass",
+        "acid",
+        "keys",
+        "guitar"
+      ],
+      "events": [
+        {
+          "pos": 0,
+          "dur": 1.55,
+          "vel": 110
+        },
+        {
+          "pos": 2,
+          "dur": 0.7,
+          "vel": 94
+        },
+        {
+          "pos": 3,
+          "dur": 1.55,
+          "vel": 110
+        },
+        {
+          "pos": 5,
+          "dur": 0.7,
+          "vel": 94
+        },
+        {
+          "pos": 6,
+          "dur": 1.55,
+          "vel": 110
+        },
+        {
+          "pos": 8,
+          "dur": 0.7,
+          "vel": 94
+        },
+        {
+          "pos": 9,
+          "dur": 1.55,
+          "vel": 110
+        },
+        {
+          "pos": 11,
+          "dur": 0.7,
+          "vel": 94
+        }
+      ]
+    }
+  ]
+}
