@@ -72,6 +72,8 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
 </header>
 
 <div class="toolbar">
+  <button id="referenceMode" class="primary">Reference MIDI</button>
+  <button id="userStylesMode">My Styles</button>
   <input id="search" type="search" placeholder="Поиск по имени, источнику, пути…">
   <select id="genre"><option value="">Все стили</option></select>
   <select id="kind"><option value="">Все типы</option></select>
@@ -152,6 +154,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   const DEFAULT_SF2_URL = "https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/Yamaha%20XG%20Sound%20Set.sf2";
   const PAGE_SIZE = 100;
   const state = {
+    view: "reference", userStyles: [], userStyleSelected: null,
     catalog: [], filtered: [], page: 0, selected: null, midi: null,
     midiAccess: null, outputId: "", sf2Engine: null, sf2Ready: false,
     sf2Promise: null,
@@ -752,6 +755,108 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     if(values.includes(keep)) el.value=keep;
   }
 
+  async function loadUserStyles() {
+    try {
+      const r=await fetch("user-library/styles/index.json?_="+Date.now(), {cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const data=await r.json();
+      state.userStyles=Array.isArray(data.styles)?data.styles:[];
+      if(state.view==="styles") renderUserStyleList();
+    } catch(e) {
+      state.userStyles=[];
+      if(state.view==="styles") {
+        $("list").innerHTML="<div class='empty'>User Style Library недоступна: "+escapeHtml(e.message)+"</div>";
+      }
+    }
+  }
+
+  function setLibraryView(view) {
+    state.view=view==="styles"?"styles":"reference";
+    const isStyles=state.view==="styles";
+    $("referenceMode").classList.toggle("primary",!isStyles);
+    $("userStylesMode").classList.toggle("primary",isStyles);
+
+    for(const id of ["search","genre","kind","source","rescan","repack","report"]) {
+      const el=$(id);
+      if(el) el.style.display=isStyles?"none":"";
+    }
+    $("prev").style.display=isStyles?"none":"";
+    $("next").style.display=isStyles?"none":"";
+    $("pageLabel").style.display=isStyles?"none":"";
+
+    stop({reset:true});
+    if(isStyles) {
+      state.selected=null;
+      state.midi=null;
+      state.seekTick=0;
+      updateProgressUI(0);
+      renderUserStyleList();
+      setStatus(
+        "My Styles · "+state.userStyles.length+" draft style(s) · reusable arranger patterns",
+        "ok"
+      );
+    } else {
+      state.userStyleSelected=null;
+      renderSelected();
+      applyFilters();
+      setStatus("Reference MIDI · "+state.catalog.length.toLocaleString("ru-RU")+" entries","ok");
+    }
+  }
+
+  function renderUserStyleSelected() {
+    const e=state.userStyleSelected;
+    if(!e) {
+      $("selectedCard").innerHTML="Выбери draft style. Его можно открыть в MIDI Host как самостоятельную заготовку.";
+      return;
+    }
+    $("selectedCard").innerHTML=[
+      "<strong>"+escapeHtml(e.name)+"</strong>",
+      "<div><span class='badge'>"+escapeHtml(e.status||"draft")+"</span> <span class='badge'>"+escapeHtml(e.family||"style")+"</span></div>",
+      "<div>"+escapeHtml(e.summary||"")+"</div>",
+      "<div><strong>"+escapeHtml(String(e.tempo||120))+" BPM</strong> · "+escapeHtml(e.meter||"4/4")+" · "+escapeHtml(String(e.bars||"—"))+" bars</div>",
+      "<div style='color:var(--dim);word-break:break-all'>"+escapeHtml(e.path||"")+"</div>",
+      "<div style='color:var(--dim)'>Draft styles store both a playable snapshot and harmony-relative rhythm data for later reharmonization.</div>"
+    ].join("");
+  }
+
+  function openUserStyleInHost(e) {
+    if(!e) return;
+    location.href="midi-host.html?userStyle="+encodeURIComponent(e.id);
+  }
+
+  function renderUserStyleList() {
+    const rows=state.userStyles||[];
+    const list=$("list");
+    list.innerHTML="";
+    if(!rows.length) {
+      list.innerHTML="<div class='empty'>Пока нет пользовательских стилей.</div>";
+    } else {
+      for(const e of rows) {
+        const row=document.createElement("div");
+        row.className="item"+(state.userStyleSelected?.id===e.id?" selected":"");
+        row.innerHTML=
+          "<button title='Open in MIDI Host'>↗</button>"+
+          "<div><div class='name'>"+escapeHtml(e.name)+"</div><div class='small'>"+escapeHtml(e.summary||"")+"</div></div>"+
+          "<div class='small'>"+escapeHtml(e.family||"")+"</div>"+
+          "<div class='small hide-small'>"+escapeHtml(e.status||"draft")+"</div>"+
+          "<div class='small hide-small'>"+escapeHtml(String(e.tempo||120))+" BPM</div>"+
+          "<div class='small hide-small'>"+escapeHtml(String(e.bars||"—"))+" bars</div>";
+        row.addEventListener("click",()=>{
+          state.userStyleSelected=e;
+          renderUserStyleSelected();
+          renderUserStyleList();
+        });
+        row.querySelector("button").addEventListener("click",(ev)=>{
+          ev.stopPropagation();
+          openUserStyleInHost(e);
+        });
+        list.appendChild(row);
+      }
+    }
+    $("countLabel").textContent=rows.length+" style"+(rows.length===1?"":"s");
+    renderUserStyleSelected();
+  }
+
   function applyFilters() {
     const q=$("search").value.trim().toLowerCase();
     const genre=$("genre").value,kind=$("kind").value,source=$("source").value;
@@ -769,6 +874,10 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   }
 
   function renderList() {
+    if(state.view==="styles") {
+      renderUserStyleList();
+      return;
+    }
     const total=state.filtered.length;
     const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
     state.page=Math.max(0,Math.min(state.page,pages-1));
@@ -837,6 +946,8 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     }
   }
 
+  $("referenceMode").addEventListener("click",()=>setLibraryView("reference"));
+  $("userStylesMode").addEventListener("click",()=>setLibraryView("styles"));
   $("search").addEventListener("input",applyFilters);
   $("genre").addEventListener("change",applyFilters);
   $("kind").addEventListener("change",applyFilters);
@@ -937,6 +1048,11 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     }
   });
   $("openHost").addEventListener("click",()=>{
+    if(state.view==="styles") {
+      if(!state.userStyleSelected) { setStatus("Сначала выбери draft style.","err"); return; }
+      openUserStyleInHost(state.userStyleSelected);
+      return;
+    }
     if(!state.selected) { setStatus("Сначала выбери MIDI.","err"); return; }
     location.href="midi-host.html?library="+encodeURIComponent(state.selected.id)+"&name="+encodeURIComponent(state.selected.name);
   });
@@ -944,6 +1060,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   updateProgressUI(0);
   loadPrograms();
   initMidi();
+  loadUserStyles();
   loadCatalog(false);
 })();
 </script>
