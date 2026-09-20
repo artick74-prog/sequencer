@@ -449,6 +449,45 @@ a { color: var(--accent); }
 .loop-card.dragging { opacity: .55; border-color: var(--accent); }
 .rhythm-card { cursor: pointer; grid-template-columns: 28px 1fr; }
 .rhythm-card.active { border-color: var(--accent); background: rgba(61,220,151,.08); }
+.rhythm-card.has-revisions { border-color: #36584f; }
+.rhythm-card.user-rhythm { border-style: dashed; }
+.rhythm-card-body { min-width: 0; }
+.rhythm-card-title-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rhythm-card-title-row .loop-card-name { flex: 1; min-width: 0; }
+.rhythm-card-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.rhythm-mini-btn {
+  height: 22px;
+  min-width: 22px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #141c26;
+  color: var(--dim);
+  font: 600 11px/20px "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+.rhythm-mini-btn:hover { border-color: var(--accent-dim); color: #fff; }
+.rhythm-card.has-revisions .rhythm-rev-btn,
+.rhythm-card.has-revisions .rhythm-edit-btn { color: var(--accent); border-color: var(--accent-dim); }
+.rhythm-revision-label {
+  min-width: 42px;
+  text-align: center;
+  color: #bff9e4;
+  font: 10px/20px ui-monospace, Consolas, monospace;
+  white-space: nowrap;
+}
+.rhythm-save-btn { color: var(--gm); }
+.rhythm-saved-tag { color: var(--gm); }
 .rhythm-grid-preview {
   grid-column: 1 / -1;
   display: grid;
@@ -477,6 +516,88 @@ a { color: var(--accent); }
   line-height: 1.45;
 }
 .rhythm-now strong { color: var(--accent); }
+
+.rhythm-editor-modal { width: min(780px, 96vw); }
+.rhythm-editor-body {
+  padding: 14px;
+  overflow: auto;
+}
+.rhythm-editor-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+  color: var(--dim);
+  font-size: 11px;
+}
+.rhythm-editor-summary strong { color: var(--text); }
+.rhythm-editor-grid {
+  --rhythm-editor-cols: 16;
+  display: grid;
+  grid-template-columns: repeat(var(--rhythm-editor-cols), minmax(22px, 1fr));
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #090d12;
+  overflow-x: auto;
+}
+.rhythm-editor-step {
+  position: relative;
+  min-width: 22px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #263244;
+  border-radius: 4px;
+  background: #111923;
+  color: #617083;
+  cursor: pointer;
+}
+.rhythm-editor-step.beat { border-left-color: #526173; }
+.rhythm-editor-step:hover { border-color: var(--accent-dim); }
+.rhythm-editor-step.hit {
+  background: rgba(61,220,151,.22);
+  border-color: var(--accent-dim);
+  color: #dffbf1;
+  cursor: grab;
+}
+.rhythm-editor-step.hit:active { cursor: grabbing; }
+.rhythm-editor-step .step-num {
+  position: absolute;
+  left: 3px;
+  bottom: 2px;
+  font: 8px/1 ui-monospace, Consolas, monospace;
+  opacity: .65;
+}
+.rhythm-editor-step .hit-mark {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 8px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.rhythm-editor-step.drag-over {
+  outline: 2px solid var(--gm);
+  outline-offset: 1px;
+}
+.rhythm-editor-hint {
+  margin-top: 10px;
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.rhythm-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--border);
+}
+.rhythm-editor-actions .danger { color: var(--danger); border-color: #633; }
+
 .rhythm-audition-slot {
   position: absolute;
   top: 3px;
@@ -1394,6 +1515,29 @@ select, input[type="number"], input[type="text"] {
     </div>
   </aside>
 
+  <div class="cloud-modal-backdrop" id="rhythmEditorModal" aria-hidden="true">
+    <div class="cloud-modal rhythm-editor-modal" role="dialog" aria-modal="true" aria-labelledby="rhythmEditorTitle">
+      <div class="cloud-modal-head">
+        <strong id="rhythmEditorTitle">Rhythm Editor</strong>
+        <span id="rhythmEditorVersion" style="color:var(--dim);font-size:11px"></span>
+        <span class="spacer"></span>
+        <button class="btn" id="rhythmEditorClose" type="button">Close</button>
+      </div>
+      <div class="rhythm-editor-body">
+        <div class="rhythm-editor-summary" id="rhythmEditorSummary"></div>
+        <div class="rhythm-editor-grid" id="rhythmEditorGrid"></div>
+        <div class="rhythm-editor-hint">
+          Click an empty step to add an attack; click a hit to remove it. Drag a hit left/right to move it while preserving its duration, velocity and guitar articulation metadata.
+        </div>
+      </div>
+      <div class="rhythm-editor-actions">
+        <button class="btn danger" id="rhythmEditorDelete" type="button" hidden>Delete current revision</button>
+        <button class="btn" id="rhythmEditorCancel" type="button">Cancel</button>
+        <button class="btn primary" id="rhythmEditorSaveRevision" type="button">Save as new revision</button>
+      </div>
+    </div>
+  </div>
+
   <div class="cloud-modal-backdrop" id="midiMonitorModal" aria-hidden="true">
     <div class="cloud-modal midi-monitor-modal" role="dialog" aria-modal="true" aria-labelledby="midiMonitorTitle">
       <div class="cloud-modal-head">
@@ -2030,10 +2174,23 @@ select, input[type="number"], input[type="text"] {
   const hostLoopNoteTimers = new Set();
   const hostLoopPreviewMeta = new Map();
 
+  const RHYTHM_REVISIONS_KEY = "midi_host_rhythm_revisions_v1";
+  const RHYTHM_CUSTOM_KEY = "midi_host_custom_rhythms_v1";
   let rhythmLibrary = [];
   let rhythmLibraryLoaded = false;
   let rhythmSelectedId = "";
   let rhythmAudition = null;
+  let rhythmRevisions = {};
+  let rhythmCustomPatterns = [];
+  let rhythmEditorState = null;
+  let rhythmEditorDragMoved = false;
+
+  try { rhythmRevisions = JSON.parse(localStorage.getItem(RHYTHM_REVISIONS_KEY) || "{}") || {}; }
+  catch { rhythmRevisions = {}; }
+  try {
+    const saved = JSON.parse(localStorage.getItem(RHYTHM_CUSTOM_KEY) || "[]");
+    rhythmCustomPatterns = Array.isArray(saved) ? saved : [];
+  } catch { rhythmCustomPatterns = []; }
 
   try { hostLoopRatings = JSON.parse(localStorage.getItem(HOST_LOOP_RATINGS_KEY) || "{}") || {}; }
   catch { hostLoopRatings = {}; }
@@ -3165,12 +3322,54 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
+  function cloneRhythmEvents(events) {
+    return (events || []).map((event) => ({ ...event }));
+  }
+
+  function persistRhythmUserData() {
+    localStorage.setItem(RHYTHM_REVISIONS_KEY, JSON.stringify(rhythmRevisions));
+    localStorage.setItem(RHYTHM_CUSTOM_KEY, JSON.stringify(rhythmCustomPatterns));
+  }
+
+  function rhythmRevisionBucket(patternId) {
+    let bucket = rhythmRevisions[patternId];
+    if (!bucket || !Array.isArray(bucket.revisions)) {
+      bucket = { cursor: 0, revisions: [] };
+      rhythmRevisions[patternId] = bucket;
+    }
+    bucket.cursor = Math.max(0, Math.min(bucket.revisions.length, Math.round(Number(bucket.cursor) || 0)));
+    return bucket;
+  }
+
+  function rhythmResolvedPattern(pattern) {
+    if (!pattern) return null;
+    const bucket = rhythmRevisionBucket(pattern.id);
+    const cursor = bucket.cursor;
+    if (!cursor) return pattern;
+    const revision = bucket.revisions[cursor - 1];
+    if (!revision) return pattern;
+    return {
+      ...pattern,
+      events: cloneRhythmEvents(revision.events),
+      _revisionIndex: cursor,
+      _revisionCount: bucket.revisions.length,
+      _revisionId: revision.id,
+    };
+  }
+
+  function rhythmBasePatternById(id) {
+    return rhythmLibrary.find((pattern) => pattern.id === id) || null;
+  }
+
   async function loadRhythmLibrary() {
     if (rhythmLibraryLoaded) return rhythmLibrary;
     const res = await fetch("user-library/rhythms/index.json?_=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error("Rhythm Library HTTP " + res.status);
     const data = await res.json();
-    rhythmLibrary = Array.isArray(data.patterns) ? data.patterns : [];
+    const builtIn = Array.isArray(data.patterns) ? data.patterns : [];
+    const builtInIds = new Set(builtIn.map((pattern) => pattern.id));
+    rhythmCustomPatterns = rhythmCustomPatterns.filter((pattern) => pattern?.id && !builtInIds.has(pattern.id));
+    rhythmLibrary = [...builtIn, ...rhythmCustomPatterns];
     rhythmLibraryLoaded = true;
     return rhythmLibrary;
   }
@@ -3181,7 +3380,235 @@ select, input[type="number"], input[type="text"] {
   }
 
   function rhythmPatternById(id = rhythmSelectedId) {
-    return rhythmLibrary.find((pattern) => pattern.id === id) || null;
+    return rhythmResolvedPattern(rhythmBasePatternById(id));
+  }
+
+  function rhythmRevisionLabel(patternId) {
+    const bucket = rhythmRevisionBucket(patternId);
+    if (!bucket.revisions.length) return "";
+    return bucket.cursor > 0 ? ("V" + bucket.cursor + "/" + bucket.revisions.length) : ("O · " + bucket.revisions.length);
+  }
+
+  async function shiftRhythmRevision(patternId, direction) {
+    const bucket = rhythmRevisionBucket(patternId);
+    const total = bucket.revisions.length;
+    if (!total) return;
+    const positions = total + 1;
+    bucket.cursor = (bucket.cursor + direction + positions) % positions;
+    persistRhythmUserData();
+    renderRhythmBrowser();
+    const pattern = rhythmPatternById(patternId);
+    if (pattern) await previewRhythmPattern(pattern);
+  }
+
+  function savedRhythmNameDefault(pattern, revisionIndex) {
+    const suffix = revisionIndex > 0 ? (" V" + revisionIndex) : " variation";
+    return (pattern?.name || "Custom Rhythm") + suffix;
+  }
+
+  function saveRhythmRevisionAsStandalone(patternId) {
+    const base = rhythmBasePatternById(patternId);
+    if (!base) return;
+    const bucket = rhythmRevisionBucket(patternId);
+    if (bucket.cursor <= 0) return;
+    const current = rhythmResolvedPattern(base);
+    const name = window.prompt(
+      "Name for the saved rhythm:",
+      savedRhythmNameDefault(base, bucket.cursor)
+    );
+    if (!name?.trim()) return;
+
+    const now = Date.now();
+    const {
+      _revisionIndex, _revisionCount, _revisionId,
+      ...cleanCurrent
+    } = current;
+    const saved = {
+      ...cleanCurrent,
+      id: "user-rhythm-" + now + "-" + Math.random().toString(36).slice(2, 8),
+      name: name.trim(),
+      variant: "User",
+      tags: [...new Set([...(cleanCurrent.tags || []), "user-saved", "custom"])],
+      events: cloneRhythmEvents(cleanCurrent.events),
+      userSaved: true,
+      sourcePatternId: base.id,
+      sourceRevision: bucket.cursor,
+      savedAt: new Date(now).toISOString(),
+    };
+    rhythmCustomPatterns.push(saved);
+    rhythmLibrary.push(saved);
+    persistRhythmUserData();
+    renderRhythmBrowser();
+    setStatus("Saved custom rhythm “" + saved.name + "” locally in Rhythm Browser.", "ok");
+  }
+
+  function rhythmEditorCurrentSourceEvents() {
+    if (!rhythmEditorState) return [];
+    const base = rhythmBasePatternById(rhythmEditorState.patternId);
+    if (!base) return [];
+    if (rhythmEditorState.sourceCursor <= 0) return cloneRhythmEvents(base.events);
+    const bucket = rhythmRevisionBucket(base.id);
+    return cloneRhythmEvents(bucket.revisions[rhythmEditorState.sourceCursor - 1]?.events || base.events);
+  }
+
+  function openRhythmEditor(patternId) {
+    const base = rhythmBasePatternById(patternId);
+    if (!base) return;
+    const bucket = rhythmRevisionBucket(patternId);
+    const current = rhythmResolvedPattern(base);
+    rhythmEditorState = {
+      patternId,
+      sourceCursor: bucket.cursor,
+      draft: {
+        ...current,
+        events: cloneRhythmEvents(current.events),
+      },
+    };
+    renderRhythmEditor();
+    const modal = document.getElementById("rhythmEditorModal");
+    modal?.classList.add("open");
+    modal?.setAttribute("aria-hidden", "false");
+  }
+
+  function closeRhythmEditor() {
+    const modal = document.getElementById("rhythmEditorModal");
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden", "true");
+    rhythmEditorState = null;
+  }
+
+  function rhythmEditorToggleStep(pos) {
+    if (!rhythmEditorState) return;
+    const events = rhythmEditorState.draft.events || [];
+    const existing = events.filter((event) => Number(event.pos) === pos);
+    if (existing.length) {
+      rhythmEditorState.draft.events = events.filter((event) => Number(event.pos) !== pos);
+    } else {
+      let nearest = null;
+      let nearestDistance = Infinity;
+      for (const event of events) {
+        const distance = Math.abs(Number(event.pos) - pos);
+        if (distance < nearestDistance) {
+          nearest = event;
+          nearestDistance = distance;
+        }
+      }
+      const event = nearest
+        ? { ...nearest, pos }
+        : {
+            pos,
+            dur: 0.8,
+            vel: 100,
+            ...(rhythmEditorState.draft.instrument === "guitar"
+              ? { attack: "CHORD", stroke: (pos % 2 ? "UP" : "DOWN") }
+              : {}),
+          };
+      rhythmEditorState.draft.events = [...events, event].sort((a,b) => Number(a.pos) - Number(b.pos));
+    }
+    renderRhythmEditorGrid();
+  }
+
+  function rhythmEditorMoveStep(fromPos, toPos) {
+    if (!rhythmEditorState || fromPos === toPos) return;
+    const events = rhythmEditorState.draft.events || [];
+    const from = events.filter((event) => Number(event.pos) === fromPos);
+    if (!from.length) return;
+    const to = events.filter((event) => Number(event.pos) === toPos);
+    for (const event of from) event.pos = toPos;
+    for (const event of to) event.pos = fromPos;
+    rhythmEditorState.draft.events = events.sort((a,b) => Number(a.pos) - Number(b.pos));
+    renderRhythmEditorGrid();
+  }
+
+  function renderRhythmEditorGrid() {
+    if (!rhythmEditorState) return;
+    const grid = document.getElementById("rhythmEditorGrid");
+    if (!grid) return;
+    const pattern = rhythmEditorState.draft;
+    const stepsPerBar = Math.max(1, Math.round(Number(pattern.stepsPerBar) || 16));
+    const bars = Math.max(1, Math.round(Number(pattern.bars) || 1));
+    const total = stepsPerBar * bars;
+    const hitPositions = new Set((pattern.events || []).map((event) => Number(event.pos)));
+    grid.style.setProperty("--rhythm-editor-cols", String(stepsPerBar));
+    grid.innerHTML = Array.from({length: total}, (_, pos) => {
+      const hit = hitPositions.has(pos);
+      const beatSize = Math.max(1, stepsPerBar / 4);
+      const beat = Math.abs((pos % stepsPerBar) % beatSize) < 0.001;
+      return '<button class="rhythm-editor-step ' + (hit ? 'hit ' : '') + (beat ? 'beat' : '') +
+        '" type="button" data-pos="' + pos + '" draggable="' + (hit ? 'true' : 'false') + '">' +
+        (hit ? '<span class="hit-mark"></span>' : '') +
+        '<span class="step-num">' + (pos + 1) + '</span></button>';
+    }).join("");
+  }
+
+  function renderRhythmEditor() {
+    if (!rhythmEditorState) return;
+    const base = rhythmBasePatternById(rhythmEditorState.patternId);
+    if (!base) return;
+    const bucket = rhythmRevisionBucket(base.id);
+    document.getElementById("rhythmEditorTitle").textContent = "Edit · " + base.name;
+    document.getElementById("rhythmEditorVersion").textContent =
+      rhythmEditorState.sourceCursor > 0
+        ? ("editing V" + rhythmEditorState.sourceCursor + "/" + bucket.revisions.length)
+        : "editing Original";
+    document.getElementById("rhythmEditorSummary").innerHTML =
+      '<span><strong>' + escapeHtml(base.bank || "Core") + '</strong></span>' +
+      '<span>' + escapeHtml(base.category || "") + '</span>' +
+      '<span>' + escapeHtml(String(base.bars || 1)) + ' bar' + ((base.bars || 1) === 1 ? '' : 's') + '</span>' +
+      '<span>grid ' + escapeHtml(String(base.stepsPerBar || 16)) + '</span>' +
+      '<span>' + (rhythmEditorState.draft.events || []).length + ' attacks</span>';
+    const del = document.getElementById("rhythmEditorDelete");
+    if (del) del.hidden = rhythmEditorState.sourceCursor <= 0;
+    renderRhythmEditorGrid();
+  }
+
+  async function saveRhythmEditorRevision() {
+    if (!rhythmEditorState) return;
+    const base = rhythmBasePatternById(rhythmEditorState.patternId);
+    if (!base) return;
+    const sourceEvents = rhythmEditorCurrentSourceEvents()
+      .map((event) => ({...event})).sort((a,b)=>Number(a.pos)-Number(b.pos));
+    const draftEvents = cloneRhythmEvents(rhythmEditorState.draft.events)
+      .sort((a,b)=>Number(a.pos)-Number(b.pos));
+    if (JSON.stringify(sourceEvents) === JSON.stringify(draftEvents)) {
+      setStatus("Rhythm Editor: no changes to save.", "");
+      return;
+    }
+
+    const bucket = rhythmRevisionBucket(base.id);
+    bucket.revisions.push({
+      id: "rev-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      createdAt: new Date().toISOString(),
+      parentCursor: rhythmEditorState.sourceCursor,
+      events: draftEvents,
+    });
+    bucket.cursor = bucket.revisions.length;
+    persistRhythmUserData();
+    closeRhythmEditor();
+    renderRhythmBrowser();
+    setStatus(
+      "Saved " + base.name + " revision V" + bucket.cursor + "/" + bucket.revisions.length + ".",
+      "ok"
+    );
+    const pattern = rhythmPatternById(base.id);
+    if (pattern && rhythmTargetTrack()) await previewRhythmPattern(pattern);
+  }
+
+  async function deleteRhythmEditorRevision() {
+    if (!rhythmEditorState || rhythmEditorState.sourceCursor <= 0) return;
+    const base = rhythmBasePatternById(rhythmEditorState.patternId);
+    if (!base) return;
+    const bucket = rhythmRevisionBucket(base.id);
+    const cursor = rhythmEditorState.sourceCursor;
+    if (!window.confirm("Delete revision V" + cursor + " of “" + base.name + "”?")) return;
+    bucket.revisions.splice(cursor - 1, 1);
+    bucket.cursor = Math.max(0, Math.min(bucket.revisions.length, cursor - 1));
+    persistRhythmUserData();
+    closeRhythmEditor();
+    renderRhythmBrowser();
+    setStatus("Deleted rhythm revision. " + bucket.revisions.length + " revision(s) remain.", "ok");
+    const pattern = rhythmPatternById(base.id);
+    if (pattern && rhythmTargetTrack()) await previewRhythmPattern(pattern);
   }
 
   function rhythmSuggestedBankForTrack(track) {
@@ -3290,25 +3717,69 @@ select, input[type="number"], input[type="text"] {
     list.innerHTML = "";
 
     for (const pattern of rows) {
+      const displayPattern = rhythmResolvedPattern(pattern);
+      const bucket = rhythmRevisionBucket(pattern.id);
       const active = rhythmSelectedId === pattern.id;
+      const hasRevisions = bucket.revisions.length > 0;
+      const revisionLabel = rhythmRevisionLabel(pattern.id);
       const card = document.createElement("div");
-      card.className = "loop-card rhythm-card" + (active ? " active" : "");
+      card.className =
+        "loop-card rhythm-card" +
+        (active ? " active" : "") +
+        (hasRevisions ? " has-revisions" : "") +
+        (pattern.userSaved ? " user-rhythm" : "");
       card.innerHTML =
-        '<button class="loop-preview ' + (active && rhythmAudition?.active ? 'active' : '') +
+        '<button class="loop-preview rhythm-play ' + (active && rhythmAudition?.active ? 'active' : '') +
         '" type="button" title="Audition">▶</button>' +
-        '<div><div class="loop-card-name">' + escapeHtml(pattern.name) + '</div>' +
-        '<div class="loop-card-meta">' +
-        escapeHtml(pattern.bank || "Core") + ' · ' +
-        escapeHtml(pattern.category || "") + ' · ' +
-        escapeHtml(pattern.family || "") + ' · ' +
-        escapeHtml(String(pattern.bars || 1)) + ' bar' + ((pattern.bars || 1) === 1 ? '' : 's') +
-        ' · grid ' + escapeHtml(String(pattern.stepsPerBar || 16)) +
-        '</div></div>' +
-        '<div class="rhythm-grid-preview">' + rhythmGridPreviewHtml(pattern) + '</div>';
-      card.addEventListener("click", () => previewRhythmPattern(pattern));
-      card.querySelector("button")?.addEventListener("click", (event) => {
+        '<div class="rhythm-card-body">' +
+          '<div class="rhythm-card-title-row">' +
+            '<div class="loop-card-name">' + escapeHtml(pattern.name) + '</div>' +
+            '<div class="rhythm-card-tools">' +
+              (hasRevisions
+                ? '<button class="rhythm-mini-btn rhythm-rev-btn rhythm-rev-prev" type="button" title="Previous revision / Original">‹</button>' +
+                  '<span class="rhythm-revision-label">' + escapeHtml(revisionLabel) + '</span>' +
+                  '<button class="rhythm-mini-btn rhythm-rev-btn rhythm-rev-next" type="button" title="Next revision">›</button>'
+                : '') +
+              '<button class="rhythm-mini-btn rhythm-edit-btn" type="button" title="Edit rhythm">✎</button>' +
+              (bucket.cursor > 0
+                ? '<button class="rhythm-mini-btn rhythm-save-btn" type="button" title="Save this revision as a standalone rhythm">▣</button>'
+                : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="loop-card-meta">' +
+            escapeHtml(pattern.bank || "Core") + ' · ' +
+            escapeHtml(pattern.category || "") + ' · ' +
+            escapeHtml(pattern.family || "") + ' · ' +
+            escapeHtml(String(pattern.bars || 1)) + ' bar' + ((pattern.bars || 1) === 1 ? '' : 's') +
+            ' · grid ' + escapeHtml(String(pattern.stepsPerBar || 16)) +
+            (pattern.userSaved ? ' · <span class="rhythm-saved-tag">saved</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="rhythm-grid-preview">' + rhythmGridPreviewHtml(displayPattern) + '</div>';
+
+      card.addEventListener("click", (event) => {
+        if (event.target.closest("button")) return;
+        previewRhythmPattern(rhythmPatternById(pattern.id));
+      });
+      card.querySelector(".rhythm-play")?.addEventListener("click", (event) => {
         event.stopPropagation();
-        previewRhythmPattern(pattern);
+        previewRhythmPattern(rhythmPatternById(pattern.id));
+      });
+      card.querySelector(".rhythm-edit-btn")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openRhythmEditor(pattern.id);
+      });
+      card.querySelector(".rhythm-rev-prev")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        shiftRhythmRevision(pattern.id, -1);
+      });
+      card.querySelector(".rhythm-rev-next")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        shiftRhythmRevision(pattern.id, 1);
+      });
+      card.querySelector(".rhythm-save-btn")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        saveRhythmRevisionAsStandalone(pattern.id);
       });
       list.appendChild(card);
     }
@@ -3499,7 +3970,7 @@ select, input[type="number"], input[type="text"] {
     let index = rows.findIndex((pattern) => pattern.id === rhythmSelectedId);
     if (index < 0) index = direction > 0 ? -1 : 0;
     index = (index + direction + rows.length) % rows.length;
-    previewRhythmPattern(rows[index]);
+    previewRhythmPattern(rhythmResolvedPattern(rows[index]));
   }
 
   function detachOverlappingClipsForRhythm(track, startTick, endTick) {
@@ -8167,6 +8638,51 @@ select, input[type="number"], input[type="text"] {
   document.getElementById("rhythmSearch")?.addEventListener("input", renderRhythmBrowser);
   document.getElementById("rhythmBank")?.addEventListener("change", renderRhythmBrowser);
   document.getElementById("rhythmCategory")?.addEventListener("change", renderRhythmBrowser);
+
+  document.getElementById("rhythmEditorClose")?.addEventListener("click", closeRhythmEditor);
+  document.getElementById("rhythmEditorCancel")?.addEventListener("click", closeRhythmEditor);
+  document.getElementById("rhythmEditorSaveRevision")?.addEventListener("click", saveRhythmEditorRevision);
+  document.getElementById("rhythmEditorDelete")?.addEventListener("click", deleteRhythmEditorRevision);
+  document.getElementById("rhythmEditorModal")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeRhythmEditor();
+  });
+  document.getElementById("rhythmEditorGrid")?.addEventListener("click", (event) => {
+    const step = event.target.closest(".rhythm-editor-step");
+    if (!step || rhythmEditorDragMoved) return;
+    rhythmEditorToggleStep(Number(step.dataset.pos));
+  });
+  document.getElementById("rhythmEditorGrid")?.addEventListener("dragstart", (event) => {
+    const step = event.target.closest(".rhythm-editor-step.hit");
+    if (!step) { event.preventDefault(); return; }
+    rhythmEditorDragMoved = false;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", step.dataset.pos);
+  });
+  document.getElementById("rhythmEditorGrid")?.addEventListener("dragover", (event) => {
+    const step = event.target.closest(".rhythm-editor-step");
+    if (!step) return;
+    event.preventDefault();
+    step.classList.add("drag-over");
+  });
+  document.getElementById("rhythmEditorGrid")?.addEventListener("dragleave", (event) => {
+    event.target.closest(".rhythm-editor-step")?.classList.remove("drag-over");
+  });
+  document.getElementById("rhythmEditorGrid")?.addEventListener("drop", (event) => {
+    const step = event.target.closest(".rhythm-editor-step");
+    if (!step) return;
+    event.preventDefault();
+    document.querySelectorAll(".rhythm-editor-step.drag-over").forEach((el) => el.classList.remove("drag-over"));
+    const from = Number(event.dataTransfer.getData("text/plain"));
+    const to = Number(step.dataset.pos);
+    if (Number.isFinite(from) && Number.isFinite(to)) {
+      rhythmEditorDragMoved = true;
+      rhythmEditorMoveStep(from, to);
+    }
+  });
+  document.getElementById("rhythmEditorGrid")?.addEventListener("dragend", () => {
+    document.querySelectorAll(".rhythm-editor-step.drag-over").forEach((el) => el.classList.remove("drag-over"));
+    setTimeout(() => { rhythmEditorDragMoved = false; }, 0);
+  });
   document.getElementById("rhythmGate")?.addEventListener("input", (event) => {
     document.getElementById("rhythmGateValue").textContent = event.target.value + "%";
   });
@@ -8272,6 +8788,7 @@ select, input[type="number"], input[type="text"] {
       closeCloudProjects();
       closeHostLoopBrowser();
       closeMidiMonitor();
+      closeRhythmEditor();
     }
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       const key = String(e.key || "").toLowerCase();
@@ -8598,6 +9115,10 @@ select, input[type="number"], input[type="text"] {
     },
     openLoops: () => openHostLoopBrowser(),
     openRhythms: () => openRhythmBrowser(),
+    getRhythmUserData: () => ({
+      revisions: JSON.parse(JSON.stringify(rhythmRevisions)),
+      customPatterns: JSON.parse(JSON.stringify(rhythmCustomPatterns)),
+    }),
     insertLibraryLoop: (id, trackId, startTick = 0) => {
       const entry = hostLoopCatalog.find((item) => item.id === id);
       const track = state.project?.tracks?.find((item) => item.id === trackId);
