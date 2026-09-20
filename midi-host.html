@@ -1821,6 +1821,22 @@ body.timeline-ruler-seeking {
   line-height: 1.5;
 }
 .file-hidden { display: none; }
+.track-body,
+.piano-roll-grid,
+.piano-roll-keys {
+  contain: layout paint style;
+}
+.note-block,
+.loop-clip-container,
+.piano-roll-note {
+  will-change: transform;
+}
+.playhead,
+.ruler-playhead,
+.piano-roll-playhead {
+  will-change: left;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/sf2synth.iife.min.js"></script>
 </head>
@@ -2182,6 +2198,13 @@ body.timeline-ruler-seeking {
       for (const job of jobs) job();
     });
   }
+
+  let timelineWheelZoomFactor = 1;
+  let timelineWheelZoomClientX = null;
+  let pianoWheelVerticalFactor = 1;
+  let pianoWheelVerticalClientY = null;
+  let pianoWheelHorizontalFactor = 1;
+  let pianoWheelHorizontalClientX = null;
 
   const deferredStorageTimers = new Map();
   function scheduleLocalStorageSet(key, value, delay = 220) {
@@ -5879,7 +5902,7 @@ body.timeline-ruler-seeking {
       : null;
   }
 
-  function setLoopRangeBars(startBar, endBar, { commit = false } = {}) {
+  function setLoopRangeBars(startBar, endBar, { commit = false, autosave = true } = {}) {
     if (!state.project) return null;
     const bars = totalBars();
     const a = Math.max(1, Math.min(bars, Math.round(Number(startBar) || 1)));
@@ -5892,7 +5915,7 @@ body.timeline-ruler-seeking {
     syncProjectLoopRange();
     updateLoopButtonUi();
     updateLoopRangeVisuals();
-    scheduleHostAutosave();
+    if (autosave) scheduleHostAutosave();
     if (commit) markHostProjectDirty();
     return loopRangeBounds();
   }
@@ -6389,8 +6412,6 @@ body.timeline-ruler-seeking {
     renderRuler();
     updateTrackZoomGeometry();
     renderMarkerGuides();
-    updatePlayheads(state.startTick || 0, state.lengthTicks || 1);
-    updateZoomLabel();
 
     if (scroll) {
       const newW = timelineWidth();
@@ -8609,28 +8630,31 @@ body.timeline-ruler-seeking {
       // Studio One-style direct manipulation while held:
       // mouse right = content moves right, mouse left = content moves left.
       const nextBarW = gesture.originBarW * Math.exp(dy * 0.006);
-      setPianoRollHorizontalZoomValue(nextBarW, gesture.originX);
-
-      const scroll = document.getElementById("pianoRollScroll");
       const panDx = event.clientX - gesture.lastX;
       gesture.lastX = event.clientX;
-      if (scroll && Math.abs(panDx) > 0.01) {
-        scroll.scrollLeft = Math.max(
-          0,
-          Math.min(
-            Math.max(0, scroll.scrollWidth - scroll.clientWidth),
-            scroll.scrollLeft - panDx
-          )
+      gesture.pendingPanDx = (gesture.pendingPanDx || 0) + panDx;
+      scheduleUiFrame("piano-ruler-zoom", () => {
+        setPianoRollHorizontalZoomValue(nextBarW, gesture.originX);
+        const scroll = document.getElementById("pianoRollScroll");
+        const pendingPanDx = gesture.pendingPanDx || 0;
+        gesture.pendingPanDx = 0;
+        if (scroll && Math.abs(pendingPanDx) > 0.01) {
+          scroll.scrollLeft = Math.max(
+            0,
+            Math.min(
+              Math.max(0, scroll.scrollWidth - scroll.clientWidth),
+              scroll.scrollLeft - pendingPanDx
+            )
+          );
+        }
+        setStatus(
+          "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
+          " px/bar" +
+          (state.pianoRollBarW >= PIANO_ROLL_BAR_W_MAX ? " · MAX" : "") +
+          " · down/up = zoom · left/right = pan",
+          "ok"
         );
-      }
-
-      setStatus(
-        "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
-        " px/bar" +
-        (state.pianoRollBarW >= PIANO_ROLL_BAR_W_MAX ? " · MAX" : "") +
-        " · down/up = zoom · left/right = pan",
-        "ok"
-      );
+      });
     } else if (gesture.mode === "seek") {
       event.preventDefault();
       seekPianoRollRulerAtClientX(event.clientX, { restart: false });
@@ -8686,17 +8710,27 @@ body.timeline-ruler-seeking {
     event.stopPropagation();
 
     if (event.target.closest?.(".piano-roll-keys, .piano-roll-key")) {
-      setPianoRollVerticalZoom(
-        event.deltaY < 0 ? 1.12 : 1 / 1.12,
-        event.clientY
-      );
+      pianoWheelVerticalFactor *= event.deltaY < 0 ? 1.12 : 1 / 1.12;
+      pianoWheelVerticalClientY = event.clientY;
+      scheduleUiFrame("piano-wheel-vertical", () => {
+        const factor = pianoWheelVerticalFactor;
+        const clientY = pianoWheelVerticalClientY;
+        pianoWheelVerticalFactor = 1;
+        pianoWheelVerticalClientY = null;
+        setPianoRollVerticalZoom(factor, clientY);
+      });
       return;
     }
 
-    setPianoRollHorizontalZoom(
-      event.deltaY > 0 ? 1.2 : 1 / 1.2,
-      event.clientX
-    );
+    pianoWheelHorizontalFactor *= event.deltaY > 0 ? 1.2 : 1 / 1.2;
+    pianoWheelHorizontalClientX = event.clientX;
+    scheduleUiFrame("piano-wheel-horizontal", () => {
+      const factor = pianoWheelHorizontalFactor;
+      const clientX = pianoWheelHorizontalClientX;
+      pianoWheelHorizontalFactor = 1;
+      pianoWheelHorizontalClientX = null;
+      setPianoRollHorizontalZoom(factor, clientX);
+    });
   }, { passive: false });
 
   function updatePianoRollPlayhead(tick) {
@@ -9419,6 +9453,7 @@ body.timeline-ruler-seeking {
       let previewStart = originStart;
       let previewTrack = track;
       let moved = false;
+      let activeTrackTarget = null;
       const noteEls = [...body.querySelectorAll(
         '.note-block[data-note-clip="' + CSS.escape(instanceId) + '"]'
       )];
@@ -9427,20 +9462,24 @@ body.timeline-ruler-seeking {
       box.setPointerCapture?.(event.pointerId);
 
       const clearTrackTarget = () => {
-        document.querySelectorAll(".track-body.clip-move-target").forEach((el) => {
-          el.classList.remove("clip-move-target");
-        });
+        if (activeTrackTarget) activeTrackTarget.classList.remove("clip-move-target");
+        activeTrackTarget = null;
       };
 
       const applyPreview = (tick, targetTrack) => {
         const dx = ((tick - originStart) / Math.max(1, length)) * timelineWidth();
         box.style.transform = "translateX(" + dx + "px)";
         for (const el of noteEls) el.style.transform = "translateX(" + dx + "px)";
-        clearTrackTarget();
         const targetBody = document.querySelector(
           '.track-body[data-body="' + CSS.escape(targetTrack.id) + '"]'
         );
-        if (targetBody && targetTrack.id !== track.id) targetBody.classList.add("clip-move-target");
+        if (targetBody !== activeTrackTarget) {
+          clearTrackTarget();
+          if (targetBody && targetTrack.id !== track.id) {
+            targetBody.classList.add("clip-move-target");
+            activeTrackTarget = targetBody;
+          }
+        }
         box.title =
           (clip.name || clip.originalName || "MIDI loop") +
           " → " + targetTrack.name +
@@ -10060,45 +10099,53 @@ body.timeline-ruler-seeking {
 
   document.addEventListener("mousemove", (e) => {
     if (state.loopLocatorDragging && state.project && state.loopLocatorDragRect) {
-      const rect = state.loopLocatorDragRect;
-      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
-      const bar = Math.max(
-        1,
-        Math.min(rect.bars || totalBars(), Math.floor(x / Math.max(1, state.barW)) + 1)
-      );
-      const current = loopRangeBounds() || ensureLoopRangeAtTick(state.startTick || 0);
-      if (current) {
-        if (state.loopLocatorDragging === "start") {
-          setLoopRangeBars(Math.min(bar, current.endBar), current.endBar);
-        } else {
-          setLoopRangeBars(current.startBar, Math.max(bar, current.startBar));
+      const clientX = e.clientX;
+      scheduleUiFrame("loop-locator-drag", () => {
+        if (!state.loopLocatorDragging || !state.project || !state.loopLocatorDragRect) return;
+        const rect = state.loopLocatorDragRect;
+        const x = Math.min(Math.max(0, clientX - rect.left), rect.width || 1);
+        const bar = Math.max(
+          1,
+          Math.min(rect.bars || totalBars(), Math.floor(x / Math.max(1, state.barW)) + 1)
+        );
+        const current = loopRangeBounds() || ensureLoopRangeAtTick(state.startTick || 0);
+        if (current) {
+          if (state.loopLocatorDragging === "start") {
+            setLoopRangeBars(Math.min(bar, current.endBar), current.endBar, { autosave: false });
+          } else {
+            setLoopRangeBars(current.startBar, Math.max(bar, current.startBar), { autosave: false });
+          }
+          const range = loopRangeBounds();
+          if (range) {
+            setStatus(
+              "Loop locators: " + range.startBar + "–" + range.endBar +
+              " · playhead stays independent",
+              "ok"
+            );
+          }
         }
-        const range = loopRangeBounds();
-        if (range) {
-          setStatus(
-            "Loop locators: " + range.startBar + "–" + range.endBar +
-            " · playhead stays independent",
-            "ok"
-          );
-        }
-      }
+      });
       return;
     }
     if (state.loopRangeSelecting && state.project && state.loopRangeDragRect) {
-      const rect = state.loopRangeDragRect;
-      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
-      const bar = Math.max(
-        1,
-        Math.min(rect.bars || totalBars(), Math.floor(x / Math.max(1, state.barW)) + 1)
-      );
-      const range = setLoopRangeBars(state.loopRangeAnchorBar, bar);
-      if (range) {
-        setStatus(
-          "Loop range: " + range.startBar + "–" + range.endBar +
-          " · release mouse to set",
-          "ok"
+      const clientX = e.clientX;
+      scheduleUiFrame("loop-range-drag", () => {
+        if (!state.loopRangeSelecting || !state.project || !state.loopRangeDragRect) return;
+        const rect = state.loopRangeDragRect;
+        const x = Math.min(Math.max(0, clientX - rect.left), rect.width || 1);
+        const bar = Math.max(
+          1,
+          Math.min(rect.bars || totalBars(), Math.floor(x / Math.max(1, state.barW)) + 1)
         );
-      }
+        const range = setLoopRangeBars(state.loopRangeAnchorBar, bar, { autosave: false });
+        if (range) {
+          setStatus(
+            "Loop range: " + range.startBar + "–" + range.endBar +
+            " · release mouse to set",
+            "ok"
+          );
+        }
+      });
       return;
     }
     if (state.timelineRulerGesture && state.project) {
@@ -10123,46 +10170,53 @@ body.timeline-ruler-seeking {
         // without leaving zoom mode. Studio One-style direct manipulation:
         // drag right = content moves right, drag left = content moves left.
         const nextBarW = gesture.originBarW * Math.exp(dy * 0.006);
-        setTimelineZoomAtClientX(nextBarW, gesture.originX);
-
-        const scroll = document.getElementById("timelineScroll");
         const panDx = e.clientX - gesture.lastX;
         gesture.lastX = e.clientX;
-        if (scroll && Math.abs(panDx) > 0.01) {
-          scroll.scrollLeft = Math.max(
-            0,
-            Math.min(
-              Math.max(0, scroll.scrollWidth - scroll.clientWidth),
-              scroll.scrollLeft - panDx
-            )
+        gesture.pendingPanDx = (gesture.pendingPanDx || 0) + panDx;
+        scheduleUiFrame("timeline-ruler-zoom", () => {
+          setTimelineZoomAtClientX(nextBarW, gesture.originX);
+          const scroll = document.getElementById("timelineScroll");
+          const pendingPanDx = gesture.pendingPanDx || 0;
+          gesture.pendingPanDx = 0;
+          if (scroll && Math.abs(pendingPanDx) > 0.01) {
+            scroll.scrollLeft = Math.max(
+              0,
+              Math.min(
+                Math.max(0, scroll.scrollWidth - scroll.clientWidth),
+                scroll.scrollLeft - pendingPanDx
+              )
+            );
+          }
+          setStatus(
+            "Timeline zoom · " + (Math.round(state.barW * 10) / 10) +
+            " px/bar · down/up = zoom · left/right = pan",
+            "ok"
           );
-        }
-
-        setStatus(
-          "Timeline zoom · " + (Math.round(state.barW * 10) / 10) +
-          " px/bar · down/up = zoom · left/right = pan",
-          "ok"
-        );
+        });
       } else if (gesture.mode === "seek") {
         moveTimelineRulerSeek(e.clientX);
       }
       return;
     }
     if (state.rulerSeeking && state.project) {
-      const ruler = document.querySelector(".ruler.seekable");
-      if (ruler) {
-        const rect = ruler.getBoundingClientRect();
-        const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width || 1);
-        const tick = (x / (rect.width || 1)) * (state.lengthTicks || 1);
-        // During drag: update cue without restarting every pixel if playing —
-        // soft seek (playhead only), restart on mouseup
-        const snapped = snapToBar(tick);
-        state.startTick = snapped;
-        updatePlayheads(snapped, state.lengthTicks || 1);
-        if (!state.playing) {
-          setStatus(`Cue: bar ${tickToBar(snapped, state.project.ppq)}`, "");
+      const clientX = e.clientX;
+      scheduleUiFrame("timeline-ruler-seek", () => {
+        if (!state.rulerSeeking || !state.project) return;
+        const ruler = document.querySelector(".ruler.seekable");
+        if (ruler) {
+          const rect = ruler.getBoundingClientRect();
+          const x = Math.min(Math.max(0, clientX - rect.left), rect.width || 1);
+          const tick = (x / (rect.width || 1)) * (state.lengthTicks || 1);
+          // During drag: update cue without restarting every pixel if playing —
+          // soft seek (playhead only), restart on mouseup
+          const snapped = snapToBar(tick);
+          state.startTick = snapped;
+          updatePlayheads(snapped, state.lengthTicks || 1);
+          if (!state.playing) {
+            setStatus(`Cue: bar ${tickToBar(snapped, state.project.ppq)}`, "");
+          }
         }
-      }
+      });
       return;
     }
   });
@@ -11051,8 +11105,15 @@ body.timeline-ruler-seeking {
   document.getElementById("timelineScroll").addEventListener("wheel", (e) => {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
-    const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
-    setTimelineZoomAtClientX(state.barW * factor, e.clientX);
+    timelineWheelZoomFactor *= e.deltaY > 0 ? 1.2 : 1 / 1.2;
+    timelineWheelZoomClientX = e.clientX;
+    scheduleUiFrame("timeline-wheel-zoom", () => {
+      const factor = timelineWheelZoomFactor;
+      const clientX = timelineWheelZoomClientX;
+      timelineWheelZoomFactor = 1;
+      timelineWheelZoomClientX = null;
+      setTimelineZoomAtClientX(state.barW * factor, clientX);
+    });
   }, { passive: false });
 
   document.getElementById("btnMidiMonitor")?.addEventListener("click", showMidiMonitor);
