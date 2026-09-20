@@ -41,3 +41,18 @@ The **Bank** filter defaults to **Auto for target**:
 The user can always switch Bank to **All banks** or a specific bank manually.
 
 Global MIDI Host Swing remains a separate groove layer. The Rhythm Browser's Gate control scales the pattern's stored durations without changing its onset positions.
+
+## Personal revisions in MIDI Host
+
+Each library card can be edited without changing the built-in source pattern.
+
+- The **✎** button opens a compact onset-grid editor.
+- Click a step to add/remove an attack; drag a hit to another step to move it while preserving duration, velocity and articulation metadata.
+- **Save as new revision** appends a non-destructive personal revision to that card.
+- Cards with revisions expose **‹ / ›** navigation. `O · N` means Original with N saved revisions available; `V3/10` means revision 3 of 10.
+- Revision arrows immediately audition the selected Original/revision on the current target track.
+- The card's **▣** button saves the currently selected revision as a separate custom rhythm card.
+- Personal revisions and custom cards are stored in browser localStorage, so they survive normal page reloads and one-click application updates without modifying `user-library/rhythms/index.json`.
+
+Built-in patterns remain immutable; personal experiments never overwrite the factory rhythm.
+
