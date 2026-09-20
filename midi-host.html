@@ -850,15 +850,19 @@ select, input[type="number"], input[type="text"] {
   font-size: 13px;
 }
 .status {
-  padding: 8px 20px;
-  font-size: 12px;
-  color: var(--dim);
-  border-bottom: 1px solid var(--border);
-  font-family: ui-monospace, Consolas, monospace;
-  flex-shrink: 0;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
-.status.ok { color: var(--accent); }
-.status.err { color: var(--danger); }
+.status.ok,
+.status.err { color: inherit; }
 .layout {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -1931,7 +1935,7 @@ body.timeline-ruler-seeking {
 
   <div id="sf2Placeholder" style="display:none" aria-hidden="true"></div>
 
-  <div class="status" id="status">Ready. Bind projects/ once, Load MIDI, Sync to AI — then I can read the full arrangement.</div>
+  <div class="status" id="status" role="status" aria-live="polite" aria-atomic="true">Ready.</div>
 
   <aside class="loop-drawer" id="hostLoopBrowser" aria-hidden="true">
     <div class="loop-drawer-head">
