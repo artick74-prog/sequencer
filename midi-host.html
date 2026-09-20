@@ -2482,6 +2482,7 @@ body.piano-roll-resizing {
     pianoRollResizing: false,
     pianoRollResizeStartY: 0,
     pianoRollResizeStartHeight: 290,
+    pianoRollResizeRenderFrame: 0,
     lastClipClickId: "",
     lastClipClickAt: 0,
     loopStartTick: 0,
@@ -7299,20 +7300,28 @@ body.piano-roll-resizing {
       return;
     }
 
-    let minNote = Math.max(0, Math.min(...notes.map((n) => Number(n.note) || 0)) - 2);
-    let maxNote = Math.min(127, Math.max(...notes.map((n) => Number(n.note) || 0)) + 2);
-    const minRows = 13;
-    while (maxNote - minNote + 1 < minRows && (minNote > 0 || maxNote < 127)) {
-      if (minNote > 0) minNote--;
-      if (maxNote - minNote + 1 >= minRows) break;
-      if (maxNote < 127) maxNote++;
-    }
-
     const rowH = 18;
-    const rows = maxNote - minNote + 1;
-    const rollH = rows * rowH;
     const keyW = 64;
     const rulerH = 24;
+
+    // The pitch canvas grows with the dock. Because the dock is resized from
+    // its top edge, reveal extra higher notes first: existing low/mid notes
+    // then stay visually anchored instead of leaving an empty field below.
+    const noteMin = Math.min(...notes.map((n) => Number(n.note) || 0));
+    const noteMax = Math.max(...notes.map((n) => Number(n.note) || 0));
+    let minNote = Math.max(0, noteMin - 2);
+    let maxNote = Math.min(127, noteMax + 2);
+    const visiblePitchHeight = Math.max(rowH * 13, (scroll.clientHeight || 0) - rulerH);
+    const minRows = Math.min(128, Math.max(13, Math.ceil(visiblePitchHeight / rowH)));
+
+    let missingRows = Math.max(0, minRows - (maxNote - minNote + 1));
+    const growUp = Math.min(missingRows, 127 - maxNote);
+    maxNote += growUp;
+    missingRows -= growUp;
+    if (missingRows > 0) minNote = Math.max(0, minNote - missingRows);
+
+    const rows = maxNote - minNote + 1;
+    const rollH = Math.max(rows * rowH, visiblePitchHeight);
     const availableW = Math.max(480, (scroll.clientWidth || 760) - keyW - 2);
     const rollW = Math.max(availableW, Math.max(1, barSpan) * 96);
 
@@ -7489,6 +7498,15 @@ body.piano-roll-resizing {
     );
     state.pianoRollHeight = Math.round(next);
     dock.style.height = state.pianoRollHeight + "px";
+
+    // Redraw on the next animation frame so resizing behaves like a DAW:
+    // more vertical space reveals more pitches instead of exposing blank area.
+    if (!state.pianoRollResizeRenderFrame) {
+      state.pianoRollResizeRenderFrame = requestAnimationFrame(() => {
+        state.pianoRollResizeRenderFrame = 0;
+        renderPianoRoll();
+      });
+    }
   });
 
   document.addEventListener("pointerup", (event) => {
@@ -7497,6 +7515,11 @@ body.piano-roll-resizing {
     document.getElementById("pianoRollDock")?.classList.remove("resizing");
     document.body.classList.remove("piano-roll-resizing");
     try { pianoRollResizer?.releasePointerCapture?.(event.pointerId); } catch {}
+    if (state.pianoRollResizeRenderFrame) {
+      cancelAnimationFrame(state.pianoRollResizeRenderFrame);
+      state.pianoRollResizeRenderFrame = 0;
+    }
+    renderPianoRoll();
     try {
       localStorage.setItem("midi_host_piano_roll_height_v1", String(state.pianoRollHeight));
     } catch {}
