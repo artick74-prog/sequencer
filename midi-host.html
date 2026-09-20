@@ -8051,8 +8051,8 @@ body.piano-roll-ruler-seeking {
 
     if (gesture.mode === "zoom") {
       event.preventDefault();
-      // Up = wider / zoom in, down = narrower / zoom out.
-      const nextBarW = gesture.originBarW * Math.exp(-dy * 0.006);
+      // Down = wider / zoom in, up = narrower / zoom out.
+      const nextBarW = gesture.originBarW * Math.exp(dy * 0.006);
       setPianoRollHorizontalZoomValue(nextBarW, gesture.originX);
       setStatus(
         "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
@@ -8115,7 +8115,7 @@ body.piano-roll-ruler-seeking {
     event.preventDefault();
     event.stopPropagation();
     setPianoRollHorizontalZoom(
-      event.deltaY > 0 ? 1 / 1.2 : 1.2,
+      event.deltaY > 0 ? 1.2 : 1 / 1.2,
       event.clientX
     );
   }, { passive: false });
