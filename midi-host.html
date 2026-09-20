@@ -11534,6 +11534,7 @@ body.timeline-ruler-seeking {
         const instanceId = hostClipInstanceId(clip, globalClipIndex);
         clip.instanceId = instanceId;
         hostClipOwnedNotes(clip, track);
+        hostClipOwnedMidiControls(clip, track);
 
         const startTick = Math.max(0, Number(clip.startTick) || 0);
         const meta = ensureHostClipRepeatMeta(clip, ppq);
