@@ -2393,6 +2393,9 @@ body.timeline-ruler-seeking {
     105:"Undefined", 106:"Undefined", 107:"Undefined", 108:"Undefined", 109:"Undefined",
     110:"Undefined", 111:"Undefined", 112:"Undefined", 113:"Undefined", 114:"Undefined",
     115:"Undefined", 116:"Undefined", 117:"Undefined", 118:"Undefined", 119:"Undefined",
+    120:"All Sound Off", 121:"Reset All Controllers", 122:"Local Control",
+    123:"All Notes Off", 124:"Omni Mode Off", 125:"Omni Mode On",
+    126:"Mono Mode On", 127:"Poly Mode On",
   };
   function midiCcLabel(controller) {
     const cc = Math.max(0, Math.min(127, Number(controller) || 0));
@@ -2415,7 +2418,7 @@ body.timeline-ruler-seeking {
     }
     const ccMatch = key.match(/^cc:(\d{1,3})$/);
     if (ccMatch) {
-      const controller = Math.max(0, Math.min(119, Number(ccMatch[1]) || 0));
+      const controller = Math.max(0, Math.min(127, Number(ccMatch[1]) || 0));
       return {
         key:"cc:" + controller,
         kind:"control",
@@ -2443,7 +2446,7 @@ body.timeline-ruler-seeking {
       { value:"pitchBend", text:"Pitch Bend" },
       { value:"channelPressure", text:"Aftertouch" },
     ];
-    for (let cc = 0; cc <= 119; cc++) {
+    for (let cc = 0; cc <= 127; cc++) {
       options.push({ value:"cc:" + cc, text:midiCcLabel(cc) });
     }
     select.innerHTML = "";
@@ -10262,7 +10265,7 @@ body.timeline-ruler-seeking {
       savedParameterMode === "td3Slide" ||
       savedParameterMode === "pitchBend" ||
       savedParameterMode === "channelPressure" ||
-      /^cc:(?:[0-9]|[1-9][0-9]|1[01][0-9])$/.test(savedParameterMode)
+      /^cc:(?:[0-9]|[1-9][0-9]|1[01][0-9]|12[0-7])$/.test(savedParameterMode)
     ) {
       state.pianoRollParameterMode = savedParameterMode;
     }
