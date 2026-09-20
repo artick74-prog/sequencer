@@ -23,12 +23,12 @@
   ],
   "loopRange": {
     "startBar": 1,
-    "endBar": 16
+    "endBar": 1
   },
   "cloudProject": {
     "id": "acid-rock-1",
     "path": "projects/cloud/acid-rock-1",
-    "savedAt": "2026-09-20T03:33:15+00:00",
+    "savedAt": "2026-09-20T03:46:06.669Z",
     "dirty": true
   },
   "clips": [
@@ -2259,7 +2259,50 @@
       "solo": false,
       "transposeOctaves": 0,
       "cubaseIndex": 2,
-      "notes": []
+      "notes": [
+        {
+          "tick": 240,
+          "duration": 54,
+          "note": 48,
+          "velocity": 98
+        },
+        {
+          "tick": 480,
+          "duration": 162,
+          "note": 48,
+          "velocity": 98
+        },
+        {
+          "tick": 720,
+          "duration": 54,
+          "note": 48,
+          "velocity": 102
+        },
+        {
+          "tick": 960,
+          "duration": 162,
+          "note": 48,
+          "velocity": 116
+        },
+        {
+          "tick": 1200,
+          "duration": 108,
+          "note": 48,
+          "velocity": 100
+        },
+        {
+          "tick": 1440,
+          "duration": 63,
+          "note": 48,
+          "velocity": 108
+        },
+        {
+          "tick": 1680,
+          "duration": 108,
+          "note": 48,
+          "velocity": 98
+        }
+      ]
     },
     {
       "id": "keys",

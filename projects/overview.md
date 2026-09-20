@@ -1,6 +1,7 @@
 # Acid Rock 1
 
 - Tempo: **120** BPM · PPQ 480 · **32** bars
+- Performance: swing **24%** · master transpose **+7 st** (drums/percussion excluded)
 - Hardware: TD-3 USB → DIN → XR20 (ch2 acid, ch1 bass, ch10 drums)
 - ASCII grid: **1/32** (32 slots/bar, snap ±30 ticks for humanization)
 - Legend: `.` empty · `x` hit · `X` accent · `o` soft · `*` stack · `#` heatmap peak
@@ -16,42 +17,60 @@
 ### Start (bars 1–32)
 Heatmap (all tracks, avg density):
 ```
-#.o.xoo.|xoo.ooo.|xoo.xoo.|#oo.oooo
+x.o.xoo.|xoo.xoo.|xoo.#oo.|xoo.xoxo
 ```
-**Acid** (ch 2, 224 notes)
-2-bar loop (dominant):
-```
-A X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
-B X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
-```
-- A pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3
-- B pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3
-- Covers: 1–16 (8×)
-- bars 1–16:
-```
-X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
-```
-  pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
+**Bass A · Kick Lock Long** (ch 1, 95 notes)
 - bars 17–32:
 ```
 ........|........|........|........
 ```
+- bars 2, 4, 8:
+```
+x.......|....x...|....x...|x.x....x
+```
+  pitches: G#2 G#3 D#3 G#2 D#3 D#3
+- bars 5, 9:
+```
+x.......|....x...|....x...|x...x.xx
+```
+  pitches: C3 C4 G3 G3 C4 G#2 G#2
+- bars 6, 14:
+```
+........|....x...|....x...|x.x...xx
+```
+  pitches: G#3 D#3 G#2 D#3 F2 F2
 
-**4 Electric Piano 1** (ch 4, 102 notes)
-- bars 9–32:
+**Acid** (ch 2, 224 notes)
+- bars 17–32:
 ```
 ........|........|........|........
 ```
-- bars 1, 3, 5, 7:
+- bars 1, 3, 5, 7, 9, 11, 13, 15:
 ```
-*.......|....*...|........|*.......
+X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
-  pitches: C2 C2 C2
-- bars 2, 4, 6, 8:
+  pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
+- bars 2, 6, 10, 14:
 ```
-....*...|........|*.......|*.......
+X.X.X...|x.X.X.X.|x.X.X.X.|..x.x.x.
 ```
-  pitches: C2 C2 C2
+  pitches: C3 C3 C2 C3 C1 C2 C3 C3 C2 C1 C3 C3 A#3 C3
+- bars 4, 8, 12, 16:
+```
+X...X.X.|x.X.X.X.|x.X.X.X.|x...x.x.
+```
+  pitches: C3 C2 C2 C3 C1 C3 C3 C3 C2 C1 C3 C3 A#3 C3
+
+**29 Overdriven Guitar** (ch 3, 7 notes)
+- bars 2–32:
+```
+........|........|........|........
+```
+- bars 1:
+```
+....x...|x...x...|X...x...|x...x...
+```
+  pitches: C3 C3 C3 C3 C3 C3 C3
 
 **Drums** (ch 10, 207 notes)
 - bars 17–32:
@@ -75,15 +94,15 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
   pitches: C2 F#2 D2 F#2 F#2 F#2 C2 D2 F#2 C2
 
 ## Tracks
-- **Bass** (id `bass`, ch 1, xr20-bass) — 0 notes
+- **Bass A · Kick Lock Long** (id `bass`, ch 1, xr20-bass · octave -1) — 95 notes · F2–D#4
 - **Acid** (id `acid`, ch 2, td3) — 224 notes · C1–A#3
-- **29 Overdriven Guitar** (id `guitar`, ch 3, gm · GM 29) — 0 notes
-- **4 Electric Piano 1** (id `keys`, ch 4, gm · GM 4) — 102 notes · C2–E4
+- **29 Overdriven Guitar** (id `guitar`, ch 3, gm · GM 29) — 7 notes · C3–C3
+- **4 Electric Piano 1** (id `keys`, ch 4, gm · GM 4) — 0 notes
 - **Drums** (id `drums`, ch 10, xr20-drums) — 207 notes · C2–F#2
 
 ## Activity (notes per 8 bars)
-- Bars 1-8: total 317 — Acid:112, 4 Electric Piano 1:102, Drums:103
-- Bars 9-16: total 216 — Acid:112, Drums:104
+- Bars 1-8: total 269 — Bass A · Kick Lock Long:47, Acid:112, 29 Overdriven Guitar:7, Drums:103
+- Bars 9-16: total 264 — Bass A · Kick Lock Long:48, Acid:112, Drums:104
 - Bars 17-24: total 0 — (empty)
 - Bars 25-32: total 0 — (empty)
 
