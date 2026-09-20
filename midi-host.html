@@ -1127,12 +1127,23 @@ select, input[type="number"], input[type="text"] {
   overflow: auto;
   background: #090d12;
 }
+.piano-roll-parameter-resizer {
+  height: 6px;
+  flex: 0 0 6px;
+  cursor: ns-resize;
+  background: #18212d;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.piano-roll-parameter-resizer:hover,
+.piano-roll-dock.parameter-resizing .piano-roll-parameter-resizer {
+  background: var(--accent-dim);
+}
 .piano-roll-parameter-lane {
-  flex: 0 0 92px;
+  flex: 0 0 auto;
   height: 92px;
   display: grid;
   grid-template-columns: 78px minmax(0, 1fr);
-  border-top: 1px solid var(--border);
   background: #0b1016;
   overflow: hidden;
 }
@@ -1457,7 +1468,8 @@ select, input[type="number"], input[type="text"] {
   color: var(--dim);
   font-size: 11px;
 }
-body.piano-roll-resizing {
+body.piano-roll-resizing,
+body.piano-roll-parameter-resizing {
   cursor: ns-resize !important;
   user-select: none !important;
 }
@@ -2259,6 +2271,8 @@ body.timeline-ruler-seeking {
         <div class="piano-roll-scroll" id="pianoRollScroll">
           <div class="piano-roll-empty">Double-click a Project Clip to inspect its notes.</div>
         </div>
+        <div class="piano-roll-parameter-resizer" id="pianoRollParameterResizer"
+          title="Drag to resize Velocity lane"></div>
         <div class="piano-roll-parameter-lane" id="pianoRollParameterLane" aria-label="Piano Roll parameter lane">
           <div class="piano-roll-parameter-head">
             <strong id="pianoRollParameterName">Velocity</strong>
@@ -2832,6 +2846,11 @@ body.timeline-ruler-seeking {
     pianoRollResizeStartY: 0,
     pianoRollResizeStartHeight: 290,
     pianoRollResizeRenderFrame: 0,
+    pianoRollParameterLaneHeight: 92,
+    pianoRollParameterResizing: false,
+    pianoRollParameterResizeStartY: 0,
+    pianoRollParameterResizeStartHeight: 92,
+    pianoRollParameterResizeRenderFrame: 0,
     pianoRollSelectedNoteId: "",
     pianoRollSelectedNoteIds: [],
     pianoRollNoteClipboard: null,
@@ -7724,7 +7743,8 @@ body.timeline-ruler-seeking {
     state.pianoRollUndoStack = [];
     state.pianoRollRedoStack = [];
     state.pianoRollResizing = false;
-    document.body.classList.remove("piano-roll-resizing");
+    state.pianoRollParameterResizing = false;
+    document.body.classList.remove("piano-roll-resizing", "piano-roll-parameter-resizing");
     const dock = document.getElementById("pianoRollDock");
     if (dock) {
       dock.classList.remove("open", "resizing");
@@ -7915,9 +7935,43 @@ body.timeline-ruler-seeking {
     return note ? { ...ctx, note } : null;
   }
 
+  function clampPianoRollParameterLaneHeight(value) {
+    const dock = document.getElementById("pianoRollDock");
+    const dockHeight = dock?.getBoundingClientRect().height || state.pianoRollHeight || 290;
+    const maxHeight = Math.max(64, Math.min(320, dockHeight - 88));
+    return Math.max(64, Math.min(maxHeight, Number(value) || 92));
+  }
+
+  function pianoRollVelocityDrawableHeight() {
+    return Math.max(36, clampPianoRollParameterLaneHeight(state.pianoRollParameterLaneHeight) - 20);
+  }
+
+  function applyPianoRollParameterLaneHeight({ refreshBars = true } = {}) {
+    const lane = document.getElementById("pianoRollParameterLane");
+    if (!lane) return;
+    state.pianoRollParameterLaneHeight =
+      clampPianoRollParameterLaneHeight(state.pianoRollParameterLaneHeight);
+    lane.style.height = state.pianoRollParameterLaneHeight + "px";
+    if (refreshBars) {
+      const ctx = pianoRollContext();
+      if (ctx) {
+        for (const note of ctx.notes) {
+          const bar = document.querySelector(
+            '.piano-roll-velocity-bar[data-piano-note-id="' +
+            CSS.escape(pianoRollNoteId(note)) + '"]'
+          );
+          if (bar) updatePianoRollVelocityBar(bar, note);
+        }
+      }
+    }
+  }
+
   function pianoRollVelocityHeight(value) {
     const velocity = Math.max(1, Math.min(127, Number(value) || 1));
-    return Math.max(3, Math.round((velocity / 127) * 72));
+    return Math.max(
+      3,
+      Math.round((velocity / 127) * pianoRollVelocityDrawableHeight())
+    );
   }
 
   function updatePianoRollVelocityBar(bar, note) {
@@ -7990,7 +8044,9 @@ body.timeline-ruler-seeking {
 
       const applyVelocity = (clientY) => {
         if (!active) return;
-        const delta = Math.round(((originY - clientY) / 72) * 127);
+        const delta = Math.round(
+          ((originY - clientY) / pianoRollVelocityDrawableHeight()) * 127
+        );
         if (delta === lastDelta) return;
         lastDelta = delta;
         if (delta !== 0 && !undoPushed) {
@@ -8072,6 +8128,7 @@ body.timeline-ruler-seeking {
 
     if (name) name.textContent = "Velocity";
     if (meta) meta.textContent = trackIsPercussion(ctx.track) ? "per hit · 1–127" : "1–127";
+    applyPianoRollParameterLaneHeight({ refreshBars: false });
 
     const grid = document.getElementById("pianoRollGrid");
     const width = Math.max(
