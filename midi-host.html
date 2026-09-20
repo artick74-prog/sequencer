@@ -7304,22 +7304,13 @@ body.piano-roll-resizing {
     const keyW = 64;
     const rulerH = 24;
 
-    // The pitch canvas grows with the dock. Because the dock is resized from
-    // its top edge, reveal extra higher notes first: existing low/mid notes
-    // then stay visually anchored instead of leaving an empty field below.
-    const noteMin = Math.min(...notes.map((n) => Number(n.note) || 0));
-    const noteMax = Math.max(...notes.map((n) => Number(n.note) || 0));
-    let minNote = Math.max(0, noteMin - 2);
-    let maxNote = Math.min(127, noteMax + 2);
+    // DAW-style pitch canvas: keep the full MIDI 0–127 range available.
+    // The viewport opens centered on the clip's actual notes, while the mouse
+    // wheel can move freely through the whole register. Resizing the dock only
+    // changes how many pitch rows are visible at once; it never creates blank space.
+    const minNote = 0;
+    const maxNote = 127;
     const visiblePitchHeight = Math.max(rowH * 13, (scroll.clientHeight || 0) - rulerH);
-    const minRows = Math.min(128, Math.max(13, Math.ceil(visiblePitchHeight / rowH)));
-
-    let missingRows = Math.max(0, minRows - (maxNote - minNote + 1));
-    const growUp = Math.min(missingRows, 127 - maxNote);
-    maxNote += growUp;
-    missingRows -= growUp;
-    if (missingRows > 0) minNote = Math.max(0, minNote - missingRows);
-
     const rows = maxNote - minNote + 1;
     const rollH = Math.max(rows * rowH, visiblePitchHeight);
     const availableW = Math.max(480, (scroll.clientWidth || 760) - keyW - 2);
