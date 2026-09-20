@@ -5505,6 +5505,9 @@ body.timeline-ruler-seeking {
     const flattened = parsed.tracks.flatMap((track) =>
       track.notes.map((note) => ({ ...note, channel: track.channel || 1 }))
     );
+    const flattenedControls = parsed.tracks.flatMap((track) =>
+      (track.midiControls || []).map((event) => ({ ...event, channel: track.channel || 1 }))
+    );
 
     const targetIsDrums = targetTrack.channel === 10 || targetTrack.role === "xr20-drums";
     let selected = targetIsDrums
@@ -5512,6 +5515,10 @@ body.timeline-ruler-seeking {
       : flattened.filter((note) => note.channel !== 10);
     if (!selected.length) selected = flattened;
     if (!selected.length) throw new Error("No notes found in source MIDI");
+    let selectedControls = targetIsDrums
+      ? flattenedControls.filter((event) => event.channel === 10)
+      : flattenedControls.filter((event) => event.channel !== 10);
+    if (!selectedControls.length && flattenedControls.length) selectedControls = flattenedControls;
 
     const clipInstanceId = newHostClipInstanceId();
     let insertedEnd = startTick;
@@ -5534,8 +5541,19 @@ body.timeline-ruler-seeking {
       };
     });
 
+    const newControls = selectedControls.map((event) =>
+      cloneMidiControlEvent(
+        event,
+        startTick + Math.max(0, Math.round((Number(event.tick) || 0) * scale)),
+        clipInstanceId
+      )
+    );
+
     targetTrack.notes.push(...newNotes);
     targetTrack.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+    targetTrack.midiControls = Array.isArray(targetTrack.midiControls) ? targetTrack.midiControls : [];
+    targetTrack.midiControls.push(...newControls);
+    targetTrack.midiControls.sort((a, b) => a.tick - b.tick);
 
     state.project.clips = Array.isArray(state.project.clips) ? state.project.clips : [];
     state.project.clips.push({
@@ -5600,6 +5618,7 @@ body.timeline-ruler-seeking {
       cubaseIndex: track.cubaseIndex ?? index,
       name: track.name || "",
       notes: track.notes?.length || 0,
+      midiControls: track.midiControls?.length || 0,
     }));
     const markers = (project.markers || []).map((m) => [m.tick | 0, String(m.text || "")]);
     return JSON.stringify({
@@ -6942,6 +6961,9 @@ body.timeline-ruler-seeking {
     let lengthTicks = 0;
     for (const t of project.tracks) {
       for (const n of t.notes) lengthTicks = Math.max(lengthTicks, n.tick + n.duration);
+      for (const event of t.midiControls || []) {
+        lengthTicks = Math.max(lengthTicks, (Number(event.tick) || 0) + 1);
+      }
     }
     // pad to whole bars; a newly-created project keeps its starter timeline visible
     // even before any notes are dropped into it.
@@ -7019,18 +7041,24 @@ body.timeline-ruler-seeking {
       }
       const track = project.tracks.find((item) => item.id === clip.targetTrackId);
       if (!track) return;
-      const alreadyOwned = track.notes.some((note) => note.clipId === clip.instanceId);
-      if (alreadyOwned) return;
+      const notesAlreadyOwned = track.notes.some((note) => note.clipId === clip.instanceId);
+      const controlsAlreadyOwned = (track.midiControls || []).some(
+        (event) => event.clipId === clip.instanceId
+      );
       const start = Math.max(0, Number(clip.startTick) || 0);
       const end = Math.max(start + 1, Number(clip.endTick) || (start + 1));
-      for (const note of track.notes) {
-        if (!note.clipId && note.tick >= start && note.tick < end) {
-          note.clipId = clip.instanceId;
+      if (!notesAlreadyOwned) {
+        for (const note of track.notes) {
+          if (!note.clipId && note.tick >= start && note.tick < end) {
+            note.clipId = clip.instanceId;
+          }
         }
       }
-      for (const event of track.midiControls || []) {
-        if (!event.clipId && event.tick >= start && event.tick < end) {
-          event.clipId = clip.instanceId;
+      if (!controlsAlreadyOwned) {
+        for (const event of track.midiControls || []) {
+          if (!event.clipId && event.tick >= start && event.tick < end) {
+            event.clipId = clip.instanceId;
+          }
         }
       }
     });
