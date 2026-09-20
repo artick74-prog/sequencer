@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "title": "User Style Library",
+  "description": "Reusable arranger-style drafts. Rhythm is stored independently enough to be reharmonized later.",
+  "styles": [
+    {
+      "id": "acid-rock-1",
+      "name": "Acid Rock 1",
+      "status": "draft",
+      "family": "acid-rock",
+      "tempo": 120,
+      "meter": "4/4",
+      "bars": 16,
+      "summary": "Rock backbeat with a Tresillo-based bass line.",
+      "path": "user-library/styles/drafts/acid-rock-1/style.json"
+    },
+    {
+      "id": "acid-rock-2",
+      "name": "Acid Rock 2",
+      "status": "draft",
+      "family": "acid-rock",
+      "tempo": 120,
+      "meter": "4/4",
+      "bars": 16,
+      "summary": "Rock backbeat with Kick Lock Long: bass follows kick anchors and sustains through the gaps.",
+      "path": "user-library/styles/drafts/acid-rock-2/style.json"
+    }
+  ]
+}
