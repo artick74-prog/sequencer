@@ -1017,6 +1017,207 @@ select, input[type="number"], input[type="text"] {
   vertical-align: top;
   padding-bottom: 12px;
 }
+.piano-roll-dock {
+  display: none;
+  flex: 0 0 auto;
+  height: 290px;
+  min-height: 150px;
+  max-height: 70%;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0b1016;
+  overflow: hidden;
+}
+.piano-roll-dock.open {
+  display: flex;
+  flex-direction: column;
+}
+.piano-roll-resizer {
+  height: 6px;
+  flex: 0 0 6px;
+  cursor: ns-resize;
+  background: #18212d;
+  border-bottom: 1px solid var(--border);
+}
+.piano-roll-resizer:hover,
+.piano-roll-dock.resizing .piano-roll-resizer {
+  background: var(--accent-dim);
+}
+.piano-roll-head {
+  min-height: 34px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px 5px 10px;
+  border-bottom: 1px solid var(--border);
+  background: #10161d;
+}
+.piano-roll-head strong {
+  color: var(--accent);
+  letter-spacing: .04em;
+}
+.piano-roll-badge {
+  padding: 2px 5px;
+  border: 1px solid #3b4b61;
+  border-radius: 3px;
+  color: #8fa0b6;
+  font: 700 9px/1 ui-monospace, Consolas, monospace;
+}
+.piano-roll-meta {
+  min-width: 0;
+  flex: 1;
+  color: var(--dim);
+  font: 10px/1.3 ui-monospace, Consolas, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.piano-roll-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #090d12;
+}
+.piano-roll-stage {
+  --pr-key-w: 64px;
+  --pr-ruler-h: 24px;
+  display: grid;
+  grid-template-columns: var(--pr-key-w) var(--pr-roll-w);
+  grid-template-rows: var(--pr-ruler-h) var(--pr-roll-h);
+  width: calc(var(--pr-key-w) + var(--pr-roll-w));
+  height: calc(var(--pr-ruler-h) + var(--pr-roll-h));
+  position: relative;
+}
+.piano-roll-corner {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  padding-left: 7px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: #121820;
+  color: var(--dim);
+  font: 9px ui-monospace, Consolas, monospace;
+}
+.piano-roll-ruler {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: #111821;
+}
+.piano-roll-ruler .bar-label {
+  position: absolute;
+  top: 4px;
+  color: #9aa8b9;
+  font: 9px ui-monospace, Consolas, monospace;
+  pointer-events: none;
+}
+.piano-roll-keys {
+  grid-column: 1;
+  grid-row: 2;
+  position: sticky;
+  left: 0;
+  z-index: 7;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: #10161d;
+}
+.piano-roll-key {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 7px;
+  border-bottom: 1px solid #26303d;
+  background: #d7dbe0;
+  color: #202832;
+  font: 9px ui-monospace, Consolas, monospace;
+}
+.piano-roll-key.black {
+  width: 74%;
+  background: #242c38;
+  color: #c2ccd8;
+}
+.piano-roll-key.c-note {
+  font-weight: 700;
+}
+.piano-roll-grid {
+  grid-column: 2;
+  grid-row: 2;
+  position: relative;
+  overflow: hidden;
+  background: #0c1219;
+}
+.piano-roll-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px solid rgba(70,82,98,.35);
+  pointer-events: none;
+}
+.piano-roll-row.black {
+  background: rgba(0,0,0,.14);
+}
+.piano-roll-vline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(90,104,123,.22);
+  pointer-events: none;
+}
+.piano-roll-vline.bar {
+  width: 2px;
+  background: rgba(111,130,155,.48);
+}
+.piano-roll-note {
+  position: absolute;
+  min-width: 2px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 2px;
+  background: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px rgba(61,220,151,.08);
+  color: #e8fff6;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 3px;
+  font: 8px/14px ui-monospace, Consolas, monospace;
+  pointer-events: none;
+}
+.piano-roll-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  z-index: 6;
+  display: none;
+  background: var(--playhead);
+  box-shadow: 0 0 5px var(--playhead);
+  pointer-events: none;
+}
+.piano-roll-empty {
+  padding: 24px;
+  color: var(--dim);
+  font-size: 11px;
+}
+body.piano-roll-resizing {
+  cursor: ns-resize !important;
+  user-select: none !important;
+}
+
 .ruler-wrap {
   margin: 0;
   overflow: visible;
@@ -1748,6 +1949,19 @@ select, input[type="number"], input[type="text"] {
           </div>
         </div>
       </div>
+
+      <section class="piano-roll-dock" id="pianoRollDock" aria-hidden="true">
+        <div class="piano-roll-resizer" id="pianoRollResizer" title="Drag to resize Piano Roll"></div>
+        <div class="piano-roll-head">
+          <strong id="pianoRollTitle">Piano Roll</strong>
+          <span class="piano-roll-badge">VIEW · v0.1</span>
+          <span class="piano-roll-meta" id="pianoRollMeta">Double-click a Project Clip on the timeline.</span>
+          <button class="btn" id="btnClosePianoRoll" type="button" title="Close Piano Roll">Close</button>
+        </div>
+        <div class="piano-roll-scroll" id="pianoRollScroll">
+          <div class="piano-roll-empty">Double-click a Project Clip to inspect its notes.</div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -2263,6 +2477,13 @@ select, input[type="number"], input[type="text"] {
     bridgeReady: false,
     selectedClipId: "",
     clipClipboard: null,
+    pianoRollClipId: "",
+    pianoRollHeight: 290,
+    pianoRollResizing: false,
+    pianoRollResizeStartY: 0,
+    pianoRollResizeStartHeight: 290,
+    lastClipClickId: "",
+    lastClipClickAt: 0,
     loopStartTick: 0,
     loopEndTick: 0,
     loopRangeSelecting: false,
@@ -5908,6 +6129,7 @@ select, input[type="number"], input[type="text"] {
       el.style.left = leftPct;
     }
     updateSectionPlaylistActive(tick);
+    updatePianoRollPlayhead(tick);
   }
 
   // ─── Timeline / zoom ────────────────────────────────────────────
@@ -6065,6 +6287,7 @@ select, input[type="number"], input[type="text"] {
     stopPlayback();
     state.startTick = 0;
     state.selectedClipId = "";
+    closePianoRoll({ silent: true });
     recomputeLength(project);
     state.project = project;
     state.loopStartTick = 0;
@@ -6611,6 +6834,7 @@ select, input[type="number"], input[type="text"] {
     renderRuler();
     renderTracks();
     renderMarkerGuides();
+    renderPianoRoll();
     updatePlayheads(state.startTick || 0, state.lengthTicks || 1);
     renderOverview();
   }
@@ -6950,6 +7174,344 @@ select, input[type="number"], input[type="text"] {
       )?.classList.add("selected");
     }
   }
+
+  function pianoRollContext() {
+    if (!state.project || !state.pianoRollClipId) return null;
+    const clips = state.project.clips || [];
+    const clip = clips.find(
+      (item, index) => hostClipInstanceId(item, index) === state.pianoRollClipId
+    );
+    if (!clip) return null;
+    const track = state.project.tracks.find((item) => item.id === clip.targetTrackId);
+    if (!track) return null;
+
+    const ppq = state.project.ppq || 480;
+    const startTick = Math.max(0, Number(clip.startTick) || 0);
+    const endTick = Math.max(startTick + 1, Number(clip.endTick) || (startTick + ticksPerBar(ppq)));
+    const notes = hostClipOwnedNotes(clip, track)
+      .filter((note) => {
+        const noteStart = Number(note.tick) || 0;
+        const noteEnd = noteStart + Math.max(1, Number(note.duration) || 1);
+        return noteStart < endTick && noteEnd > startTick;
+      })
+      .sort((a,b) => Number(a.tick) - Number(b.tick) || Number(a.note) - Number(b.note));
+
+    return { clip, track, ppq, startTick, endTick, notes };
+  }
+
+  function closePianoRoll({ silent = false } = {}) {
+    state.pianoRollClipId = "";
+    state.pianoRollResizing = false;
+    document.body.classList.remove("piano-roll-resizing");
+    const dock = document.getElementById("pianoRollDock");
+    if (dock) {
+      dock.classList.remove("open", "resizing");
+      dock.setAttribute("aria-hidden", "true");
+    }
+    const scroll = document.getElementById("pianoRollScroll");
+    if (scroll) scroll.innerHTML = '<div class="piano-roll-empty">Double-click a Project Clip to inspect its notes.</div>';
+    if (!silent) setStatus("Piano Roll closed.", "");
+  }
+
+  function openPianoRollForClip(clip, track) {
+    if (!state.project || !clip || !track) return;
+    const index = Math.max(0, (state.project.clips || []).indexOf(clip));
+    const instanceId = hostClipInstanceId(clip, index);
+    clip.instanceId = instanceId;
+    state.pianoRollClipId = instanceId;
+    state.selectedClipId = instanceId;
+    selectHostLoopClip(instanceId);
+
+    const dock = document.getElementById("pianoRollDock");
+    if (dock) {
+      dock.classList.add("open");
+      dock.setAttribute("aria-hidden", "false");
+      dock.style.height = Math.max(150, Number(state.pianoRollHeight) || 290) + "px";
+    }
+    renderPianoRoll({ centerPitch: true });
+    setStatus(
+      "Piano Roll VIEW · " + (track.name || "Track") +
+      " · " + (clip.name || clip.originalName || "Project Clip") +
+      " · read-only first iteration",
+      "ok"
+    );
+  }
+
+  function handleHostClipPlainClick(clip, track, instanceId) {
+    const now = performance.now();
+    const doubled =
+      state.lastClipClickId === instanceId &&
+      now - state.lastClipClickAt <= 420;
+
+    if (doubled) {
+      state.lastClipClickId = "";
+      state.lastClipClickAt = 0;
+      openPianoRollForClip(clip, track);
+      return true;
+    }
+
+    state.lastClipClickId = instanceId;
+    state.lastClipClickAt = now;
+    return false;
+  }
+
+  function renderPianoRoll({ centerPitch = false } = {}) {
+    const dock = document.getElementById("pianoRollDock");
+    const scroll = document.getElementById("pianoRollScroll");
+    const title = document.getElementById("pianoRollTitle");
+    const meta = document.getElementById("pianoRollMeta");
+    if (!dock || !scroll) return;
+
+    if (!state.pianoRollClipId) {
+      dock.classList.remove("open");
+      dock.setAttribute("aria-hidden", "true");
+      return;
+    }
+
+    const ctx = pianoRollContext();
+    if (!ctx) {
+      closePianoRoll({ silent: true });
+      return;
+    }
+
+    dock.classList.add("open");
+    dock.setAttribute("aria-hidden", "false");
+    dock.style.height = Math.max(150, Number(state.pianoRollHeight) || 290) + "px";
+
+    const { clip, track, ppq, startTick, endTick, notes } = ctx;
+    const tpb = ticksPerBar(ppq);
+    const spanTicks = Math.max(1, endTick - startTick);
+    const barSpan = spanTicks / tpb;
+    const startBar = tickToBar(startTick, ppq);
+    const endBar = tickToBar(Math.max(startTick, endTick - 1), ppq);
+    const clipName = clip.name || clip.originalName || "Project Clip";
+
+    if (title) title.textContent = "Piano Roll · " + track.name;
+    if (meta) {
+      meta.textContent =
+        clipName + " · project bars " + startBar +
+        (endBar !== startBar ? "–" + endBar : "") +
+        " · " + notes.length + " notes · read-only";
+    }
+
+    if (!notes.length) {
+      scroll.innerHTML = '<div class="piano-roll-empty">This Project Clip has no MIDI notes in its current range.</div>';
+      return;
+    }
+
+    let minNote = Math.max(0, Math.min(...notes.map((n) => Number(n.note) || 0)) - 2);
+    let maxNote = Math.min(127, Math.max(...notes.map((n) => Number(n.note) || 0)) + 2);
+    const minRows = 13;
+    while (maxNote - minNote + 1 < minRows && (minNote > 0 || maxNote < 127)) {
+      if (minNote > 0) minNote--;
+      if (maxNote - minNote + 1 >= minRows) break;
+      if (maxNote < 127) maxNote++;
+    }
+
+    const rowH = 18;
+    const rows = maxNote - minNote + 1;
+    const rollH = rows * rowH;
+    const keyW = 64;
+    const rulerH = 24;
+    const availableW = Math.max(480, (scroll.clientWidth || 760) - keyW - 2);
+    const rollW = Math.max(availableW, Math.max(1, barSpan) * 96);
+
+    const stage = document.createElement("div");
+    stage.className = "piano-roll-stage";
+    stage.style.setProperty("--pr-key-w", keyW + "px");
+    stage.style.setProperty("--pr-ruler-h", rulerH + "px");
+    stage.style.setProperty("--pr-roll-w", rollW + "px");
+    stage.style.setProperty("--pr-roll-h", rollH + "px");
+
+    const corner = document.createElement("div");
+    corner.className = "piano-roll-corner";
+    corner.textContent = "pitch";
+
+    const ruler = document.createElement("div");
+    ruler.className = "piano-roll-ruler";
+
+    const keys = document.createElement("div");
+    keys.className = "piano-roll-keys";
+
+    const grid = document.createElement("div");
+    grid.className = "piano-roll-grid";
+    grid.id = "pianoRollGrid";
+    grid.dataset.startTick = String(startTick);
+    grid.dataset.endTick = String(endTick);
+    grid.dataset.rollWidth = String(rollW);
+
+    for (let note = maxNote; note >= minNote; note--) {
+      const y = (maxNote - note) * rowH;
+      const sharp = NOTE_NAMES[note % 12].includes("#");
+      const key = document.createElement("div");
+      key.className =
+        "piano-roll-key" + (sharp ? " black" : "") + (note % 12 === 0 ? " c-note" : "");
+      key.style.top = y + "px";
+      key.style.height = rowH + "px";
+      key.textContent = midiToName(note);
+      keys.appendChild(key);
+
+      const row = document.createElement("div");
+      row.className = "piano-roll-row" + (sharp ? " black" : "");
+      row.style.top = y + "px";
+      row.style.height = rowH + "px";
+      grid.appendChild(row);
+    }
+
+    const firstBeatTick = Math.ceil(startTick / ppq) * ppq;
+    for (let tick = firstBeatTick; tick <= endTick; tick += ppq) {
+      const x = ((tick - startTick) / spanTicks) * rollW;
+      const isBar = tick % tpb === 0;
+      const line = document.createElement("div");
+      line.className = "piano-roll-vline" + (isBar ? " bar" : "");
+      line.style.left = x + "px";
+      grid.appendChild(line);
+
+      if (isBar && tick < endTick) {
+        const label = document.createElement("span");
+        label.className = "bar-label";
+        label.style.left = Math.max(2, x + 3) + "px";
+        label.textContent = String(tickToBar(tick, ppq));
+        ruler.appendChild(label);
+      }
+    }
+
+    for (const boundary of [0, rollW]) {
+      const line = document.createElement("div");
+      line.className = "piano-roll-vline bar";
+      line.style.left = boundary + "px";
+      grid.appendChild(line);
+    }
+
+    const info = trackDisplayInfo(track);
+    for (const note of notes) {
+      const clippedStart = Math.max(startTick, Number(note.tick) || 0);
+      const clippedEnd = Math.min(
+        endTick,
+        (Number(note.tick) || 0) + Math.max(1, Number(note.duration) || 1)
+      );
+      if (clippedEnd <= clippedStart) continue;
+
+      const x = ((clippedStart - startTick) / spanTicks) * rollW;
+      const w = Math.max(2, ((clippedEnd - clippedStart) / spanTicks) * rollW);
+      const y = (maxNote - (Number(note.note) || 0)) * rowH + 2;
+
+      const block = document.createElement("div");
+      block.className = "piano-roll-note";
+      block.style.left = x + "px";
+      block.style.width = w + "px";
+      block.style.top = y + "px";
+      block.style.height = Math.max(10, rowH - 4) + "px";
+      block.style.background = info.color;
+      block.textContent = midiToName(Number(note.note) || 0);
+      block.title =
+        midiToName(Number(note.note) || 0) +
+        " · vel " + (Number(note.velocity) || 0) +
+        " · " + tickToBarBeat(Number(note.tick) || 0, ppq);
+      grid.appendChild(block);
+    }
+
+    const playhead = document.createElement("div");
+    playhead.className = "piano-roll-playhead";
+    playhead.id = "pianoRollPlayhead";
+    grid.appendChild(playhead);
+
+    stage.append(corner, ruler, keys, grid);
+
+    const previousLeft = scroll.scrollLeft;
+    const previousTop = scroll.scrollTop;
+    scroll.innerHTML = "";
+    scroll.appendChild(stage);
+
+    if (centerPitch) {
+      const centerNote = notes.reduce((sum, note) => sum + Number(note.note || 0), 0) / notes.length;
+      const centerY = rulerH + (maxNote - centerNote + 0.5) * rowH;
+      scroll.scrollTop = Math.max(0, centerY - scroll.clientHeight / 2);
+      scroll.scrollLeft = 0;
+    } else {
+      scroll.scrollLeft = previousLeft;
+      scroll.scrollTop = previousTop;
+    }
+
+    updatePianoRollPlayhead(
+      state.playing ? currentTransportTick() : (state.startTick || 0)
+    );
+  }
+
+  function updatePianoRollPlayhead(tick) {
+    const grid = document.getElementById("pianoRollGrid");
+    const playhead = document.getElementById("pianoRollPlayhead");
+    if (!grid || !playhead) return;
+
+    const startTick = Number(grid.dataset.startTick);
+    const endTick = Number(grid.dataset.endTick);
+    const rollW = Number(grid.dataset.rollWidth);
+    const current = Number(tick) || 0;
+    if (
+      !Number.isFinite(startTick) ||
+      !Number.isFinite(endTick) ||
+      !Number.isFinite(rollW) ||
+      current < startTick ||
+      current > endTick
+    ) {
+      playhead.style.display = "none";
+      return;
+    }
+    playhead.style.display = "block";
+    playhead.style.left =
+      (((current - startTick) / Math.max(1, endTick - startTick)) * rollW) + "px";
+  }
+
+  const pianoRollResizer = document.getElementById("pianoRollResizer");
+  pianoRollResizer?.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    const dock = document.getElementById("pianoRollDock");
+    if (!dock?.classList.contains("open")) return;
+    event.preventDefault();
+    state.pianoRollResizing = true;
+    state.pianoRollResizeStartY = event.clientY;
+    state.pianoRollResizeStartHeight = dock.getBoundingClientRect().height;
+    dock.classList.add("resizing");
+    document.body.classList.add("piano-roll-resizing");
+    pianoRollResizer.setPointerCapture?.(event.pointerId);
+  });
+
+  document.addEventListener("pointermove", (event) => {
+    if (!state.pianoRollResizing) return;
+    const dock = document.getElementById("pianoRollDock");
+    const main = dock?.closest(".main");
+    if (!dock || !main) return;
+    const delta = state.pianoRollResizeStartY - event.clientY;
+    const maxHeight = Math.max(180, main.clientHeight - 110);
+    const next = Math.max(
+      150,
+      Math.min(maxHeight, state.pianoRollResizeStartHeight + delta)
+    );
+    state.pianoRollHeight = Math.round(next);
+    dock.style.height = state.pianoRollHeight + "px";
+  });
+
+  document.addEventListener("pointerup", (event) => {
+    if (!state.pianoRollResizing) return;
+    state.pianoRollResizing = false;
+    document.getElementById("pianoRollDock")?.classList.remove("resizing");
+    document.body.classList.remove("piano-roll-resizing");
+    try { pianoRollResizer?.releasePointerCapture?.(event.pointerId); } catch {}
+    try {
+      localStorage.setItem("midi_host_piano_roll_height_v1", String(state.pianoRollHeight));
+    } catch {}
+  });
+
+  document.getElementById("btnClosePianoRoll")?.addEventListener("click", () => {
+    closePianoRoll();
+  });
+
+  try {
+    const savedPianoHeight = Number(localStorage.getItem("midi_host_piano_roll_height_v1"));
+    if (Number.isFinite(savedPianoHeight) && savedPianoHeight >= 150) {
+      state.pianoRollHeight = savedPianoHeight;
+    }
+  } catch {}
 
   function updateHostProjectMeta() {
     if (!state.project) return;
@@ -7558,10 +8120,10 @@ select, input[type="number"], input[type="text"] {
 
         if (moved && (previewStart !== originStart || previewTrack.id !== track.id)) {
           moveHostLoopClip(clip, track, previewStart, previewTrack);
-        } else {
+        } else if (!handleHostClipPlainClick(clip, track, instanceId)) {
           setStatus(
-            "Selected loop “" + (clip.name || clip.originalName || "MIDI loop") +
-            "” · drag = move · gold bottom edges = trim · ✂ = split at playhead · striped edge = repeat · Ctrl+D duplicate · Delete remove",
+            "Selected Project Clip “" + (clip.name || clip.originalName || "MIDI loop") +
+            "” · double-click = Piano Roll · drag = move · gold bottom edges = trim · ✂ = split at playhead · striped edge = repeat · Ctrl+D duplicate · Delete remove",
             "ok"
           );
         }
@@ -8005,7 +8567,7 @@ select, input[type="number"], input[type="text"] {
           (clip.name || clip.originalName || "MIDI loop") +
           " · bar " + tickToBar(startTick, ppq) +
           (repeatCount > 1 ? " · ×" + repeatCount : "") +
-          " · drag = move · gold bottom edges = trim · ✂ = split at playhead · striped right edge = repeat";
+          " · double-click = Piano Roll · drag = move · gold bottom edges = trim · ✂ = split at playhead · striped right edge = repeat";
 
         for (let cycle = 1; cycle < repeatCount; cycle++) {
           const divider = document.createElement("div");
