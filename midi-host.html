@@ -10656,6 +10656,7 @@ body.timeline-ruler-seeking {
         duration: Math.max(1, clippedEnd - clippedStart),
         note: note.note | 0,
         velocity: note.velocity | 0,
+        td3Slide: !!note.td3Slide,
         clipId: instanceId,
       });
     }
@@ -10665,6 +10666,23 @@ body.timeline-ruler-seeking {
       .concat(kept)
       .sort((a, b) => a.tick - b.tick || a.note - b.note);
 
+    return kept;
+  }
+
+  function cropOwnedClipMidiControls(clip, track, newStart, newEnd) {
+    const instanceId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project?.clips || []).indexOf(clip))
+    );
+    const owned = hostClipOwnedMidiControls(clip, track);
+    const ownedSet = new Set(owned);
+    const kept = owned
+      .filter((event) => event.tick >= newStart && event.tick < newEnd)
+      .map((event) => cloneMidiControlEvent(event, event.tick, instanceId));
+    track.midiControls = (track.midiControls || [])
+      .filter((event) => !ownedSet.has(event))
+      .concat(kept)
+      .sort((a, b) => a.tick - b.tick);
     return kept;
   }
 
@@ -10688,6 +10706,7 @@ body.timeline-ruler-seeking {
     if (newStart === oldStart && newEnd === oldEnd) return false;
 
     const kept = cropOwnedClipNotes(clip, track, newStart, newEnd);
+    cropOwnedClipMidiControls(clip, track, newStart, newEnd);
     const span = Math.max(trimStep, newEnd - newStart);
 
     clip.startTick = newStart;
@@ -10737,7 +10756,9 @@ body.timeline-ruler-seeking {
     clip.instanceId = leftId;
     const rightId = newHostClipInstanceId();
     const owned = hostClipOwnedNotes(clip, track);
+    const ownedControls = hostClipOwnedMidiControls(clip, track);
     const ownedSet = new Set(owned);
+    const ownedControlSet = new Set(ownedControls);
     const leftNotes = [];
     const rightNotes = [];
 
@@ -10754,6 +10775,7 @@ body.timeline-ruler-seeking {
             duration: Math.max(1, leftEnd - leftStart),
             note: note.note | 0,
             velocity: note.velocity | 0,
+            td3Slide: !!note.td3Slide,
             clipId: leftId,
           });
         }
@@ -10768,6 +10790,7 @@ body.timeline-ruler-seeking {
             duration: Math.max(1, rightEnd - rightStart),
             note: note.note | 0,
             velocity: note.velocity | 0,
+            td3Slide: !!note.td3Slide,
             clipId: rightId,
           });
         }
@@ -10778,6 +10801,17 @@ body.timeline-ruler-seeking {
       .filter((note) => !ownedSet.has(note))
       .concat(leftNotes, rightNotes)
       .sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    const leftControls = ownedControls
+      .filter((event) => event.tick >= start && event.tick < split)
+      .map((event) => cloneMidiControlEvent(event, event.tick, leftId));
+    const rightControls = ownedControls
+      .filter((event) => event.tick >= split && event.tick < end)
+      .map((event) => cloneMidiControlEvent(event, event.tick, rightId));
+    track.midiControls = (track.midiControls || [])
+      .filter((event) => !ownedControlSet.has(event))
+      .concat(leftControls, rightControls)
+      .sort((a, b) => a.tick - b.tick);
 
     const leftSpan = split - start;
     const rightSpan = end - split;
@@ -10840,15 +10874,25 @@ body.timeline-ruler-seeking {
     }
 
     const notes = hostClipOwnedNotes(clip, track);
+    const controls = hostClipOwnedMidiControls(clip, track);
     for (const note of notes) note.tick = Math.max(0, note.tick + delta);
+    for (const event of controls) event.tick = Math.max(0, event.tick + delta);
 
     if (changingTrack) {
       const ownedSet = new Set(notes);
+      const ownedControlSet = new Set(controls);
       track.notes = track.notes.filter((note) => !ownedSet.has(note));
+      track.midiControls = (track.midiControls || []).filter((event) => !ownedControlSet.has(event));
       destinationTrack.notes.push(...notes);
       destinationTrack.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+      destinationTrack.midiControls = Array.isArray(destinationTrack.midiControls)
+        ? destinationTrack.midiControls
+        : [];
+      destinationTrack.midiControls.push(...controls);
+      destinationTrack.midiControls.sort((a, b) => a.tick - b.tick);
     } else {
       track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+      track.midiControls = (track.midiControls || []).sort((a, b) => a.tick - b.tick);
     }
 
     clip.startTick = newStart;
@@ -10881,8 +10925,11 @@ body.timeline-ruler-seeking {
       Math.max(0, (state.project.clips || []).indexOf(clip))
     );
     const owned = hostClipOwnedNotes(clip, track);
+    const ownedControls = hostClipOwnedMidiControls(clip, track);
     const ownedSet = new Set(owned);
+    const ownedControlSet = new Set(ownedControls);
     track.notes = track.notes.filter((note) => !ownedSet.has(note));
+    track.midiControls = (track.midiControls || []).filter((event) => !ownedControlSet.has(event));
     state.project.clips = (state.project.clips || []).filter(
       (item, index) => hostClipInstanceId(item, index) !== instanceId
     );
