@@ -3100,6 +3100,7 @@ body.timeline-ruler-seeking {
     pianoRollRowH: 18,
     pianoRollTool: "draw",
     pianoRollNoteIdCounter: 0,
+    pianoRollControlIdCounter: 0,
     lastClipClickId: "",
     lastClipClickAt: 0,
     loopStartTick: 0,
@@ -8303,10 +8304,11 @@ body.timeline-ruler-seeking {
     );
     const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
     content.style.width = width + "px";
-    content.querySelectorAll(".piano-roll-velocity-bar[data-note-tick]").forEach((bar) => {
-      const tick = Number(bar.dataset.noteTick) || 0;
+    content.querySelectorAll("[data-parameter-tick]").forEach((el) => {
+      const tick = Number(el.dataset.parameterTick) || 0;
       const x = ((tick - ctx.startTick) / spanTicks) * width;
-      bar.style.left = Math.max(0, x - 3) + "px";
+      const offset = el.classList.contains("piano-roll-slide-step") ? 0 : -3;
+      el.style.left = Math.max(0, x + offset) + "px";
     });
     syncPianoRollParameterLaneScroll();
   }
@@ -8418,16 +8420,203 @@ body.timeline-ruler-seeking {
     });
   }
 
+  function pianoRollControlId(event) {
+    if (!event) return "";
+    if (!event._pianoControlId) {
+      state.pianoRollControlIdCounter++;
+      event._pianoControlId = "prc-" + state.pianoRollControlIdCounter.toString(36);
+    }
+    return event._pianoControlId;
+  }
+
+  function pianoRollParameterMatches(event, spec) {
+    if (!event || !spec || spec.kind !== "control") return false;
+    if (spec.type === "cc") {
+      return event.type === "cc" && Number(event.controller) === Number(spec.controller);
+    }
+    return event.type === spec.type;
+  }
+
+  function pianoRollParameterDisplayValue(value, spec) {
+    const raw = Math.max(spec.min, Math.min(spec.max, Number(value) || 0));
+    if (spec.type === "pitchBend") return String(Math.round(raw) - 8192);
+    return String(Math.round(raw));
+  }
+
+  function updatePianoRollControlBar(bar, event, spec) {
+    if (!bar || !event || !spec) return;
+    const value = Math.max(spec.min, Math.min(spec.max, Number(event.value) || 0));
+    const ratio = (value - spec.min) / Math.max(1, spec.max - spec.min);
+    bar.style.height = Math.max(0.03, ratio) * 100 + "%";
+    bar.dataset.parameterTick = String(Math.max(0, Number(event.tick) || 0));
+    bar.dataset.parameterValue = String(value);
+    bar.title =
+      spec.label + " · " + pianoRollParameterDisplayValue(value, spec) +
+      " · drag vertically · right-click delete";
+  }
+
+  function attachPianoRollControlEditor(bar, control, ctx, spec) {
+    bar.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const originY = event.clientY;
+      const originValue = Math.max(spec.min, Math.min(spec.max, Number(control.value) || 0));
+      const drawable = Math.max(36, Number(state.pianoRollParameterLaneHeight) || 92);
+      let undoPushed = false;
+      let active = true;
+      bar.classList.add("dragging");
+      bar.setPointerCapture?.(event.pointerId);
+
+      const applyValue = (clientY) => {
+        if (!active) return;
+        const delta = Math.round(
+          ((originY - clientY) / drawable) * (spec.max - spec.min)
+        );
+        const value = Math.max(spec.min, Math.min(spec.max, originValue + delta));
+        if (value === Number(control.value)) return;
+        if (!undoPushed) {
+          pianoRollPushUndo(ctx);
+          undoPushed = true;
+        }
+        control.value = value;
+        updatePianoRollControlBar(bar, control, spec);
+        const meta = document.getElementById("pianoRollParameterMeta");
+        if (meta) meta.textContent = pianoRollParameterDisplayValue(value, spec);
+      };
+
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const clientY = moveEvent.clientY;
+        scheduleUiFrame("piano-control-" + pianoRollControlId(control), () => applyValue(clientY));
+      };
+      const finish = (upEvent) => {
+        applyValue(upEvent.clientY);
+        active = false;
+        bar.removeEventListener("pointermove", onMove);
+        bar.removeEventListener("pointerup", finish);
+        bar.removeEventListener("pointercancel", cancel);
+        try { bar.releasePointerCapture?.(upEvent.pointerId); } catch {}
+        bar.classList.remove("dragging");
+        const meta = document.getElementById("pianoRollParameterMeta");
+        if (meta) meta.textContent = spec.meta;
+        if (undoPushed) commitPianoRollEdit(ctx, spec.label + " changed");
+      };
+      const cancel = (cancelEvent) => {
+        active = false;
+        bar.removeEventListener("pointermove", onMove);
+        bar.removeEventListener("pointerup", finish);
+        bar.removeEventListener("pointercancel", cancel);
+        try { bar.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
+        bar.classList.remove("dragging");
+        if (undoPushed) {
+          state.pianoRollUndoStack.pop();
+          control.value = originValue;
+          updatePianoRollControlBar(bar, control, spec);
+        }
+        const meta = document.getElementById("pianoRollParameterMeta");
+        if (meta) meta.textContent = spec.meta;
+      };
+
+      bar.addEventListener("pointermove", onMove);
+      bar.addEventListener("pointerup", finish);
+      bar.addEventListener("pointercancel", cancel);
+    });
+
+    bar.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      pianoRollPushUndo(ctx);
+      const doomed = control;
+      ctx.track.midiControls = (ctx.track.midiControls || []).filter((item) => item !== doomed);
+      commitPianoRollEdit(ctx, "Deleted " + spec.label + " point");
+    });
+  }
+
+  function pianoRollAddControlAtPointer(event, ctx, spec, width) {
+    if (!ctx || !spec || spec.kind !== "control") return;
+    const content = document.getElementById("pianoRollParameterContent");
+    const viewport = document.getElementById("pianoRollParameterViewport");
+    if (!content || !viewport) return;
+    if (event.target.closest?.(".piano-roll-control-bar")) return;
+
+    const contentRect = content.getBoundingClientRect();
+    const viewportRect = viewport.getBoundingClientRect();
+    const localX = Math.max(0, Math.min(width, event.clientX - contentRect.left));
+    const localY = Math.max(0, Math.min(viewportRect.height, event.clientY - viewportRect.top));
+    const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
+    const rawTick = ctx.startTick + (localX / Math.max(1, width)) * spanTicks;
+    let tick = pianoRollSnapTick(rawTick, ctx);
+    tick = Math.max(ctx.startTick, Math.min(ctx.endTick - 1, tick));
+    const ratio = 1 - (localY / Math.max(1, viewportRect.height));
+    const value = Math.round(spec.min + Math.max(0, Math.min(1, ratio)) * (spec.max - spec.min));
+
+    const instanceId = hostClipInstanceId(
+      ctx.clip,
+      Math.max(0, (state.project.clips || []).indexOf(ctx.clip))
+    );
+    const matching = (ctx.track.midiControls || []).find((item) =>
+      Number(item.tick) === tick &&
+      pianoRollParameterMatches(item, spec) &&
+      item.clipId === instanceId
+    );
+
+    pianoRollPushUndo(ctx);
+    if (matching) {
+      matching.value = value;
+    } else {
+      ctx.track.midiControls = Array.isArray(ctx.track.midiControls) ? ctx.track.midiControls : [];
+      ctx.track.midiControls.push({
+        tick,
+        type: spec.type,
+        ...(spec.type === "cc" ? { controller: spec.controller } : {}),
+        value,
+        clipId: instanceId,
+      });
+    }
+    commitPianoRollEdit(
+      ctx,
+      spec.label + " · " + pianoRollParameterDisplayValue(value, spec)
+    );
+  }
+
+  function attachPianoRollSlideEditor(step, note, ctx) {
+    const noteId = pianoRollNoteId(note);
+    step.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (!pianoRollSelectedIdSet().has(noteId)) pianoRollSelectNote(noteId);
+      const selected = pianoRollSelectedNotes(ctx);
+      const targets = selected.length ? selected : [note];
+      const enabled = !note.td3Slide;
+      pianoRollPushUndo(ctx);
+      for (const target of targets) target.td3Slide = enabled;
+      commitPianoRollEdit(
+        ctx,
+        "TD-3 Slide " + (enabled ? "ON" : "OFF") +
+        (targets.length > 1 ? " · " + targets.length + " notes" : "")
+      );
+    });
+  }
+
   function renderPianoRollParameterLane(ctx = pianoRollContext(), rollW = null) {
     const content = document.getElementById("pianoRollParameterContent");
-    const name = document.getElementById("pianoRollParameterName");
     const meta = document.getElementById("pianoRollParameterMeta");
+    const select = document.getElementById("pianoRollParameterSelect");
     if (!content) return;
     content.innerHTML = "";
     if (!ctx) return;
 
-    if (name) name.textContent = "Velocity";
-    if (meta) meta.textContent = "1–127";
+    populatePianoRollParameterSelect(ctx.track);
+    const spec = pianoRollParameterSpec(state.pianoRollParameterMode);
+    if (meta) meta.textContent = spec.meta;
+    if (select) {
+      select.value = spec.key;
+      select.title = select.selectedOptions[0]?.textContent || spec.label;
+    }
     applyPianoRollParameterLaneHeight();
 
     const grid = document.getElementById("pianoRollGrid");
@@ -8444,23 +8633,66 @@ body.timeline-ruler-seeking {
     content.style.width = width + "px";
     const fragment = document.createDocumentFragment();
 
-    for (const note of ctx.notes) {
-      const tick = Number(note.tick) || 0;
-      if (tick < ctx.startTick || tick >= ctx.endTick) continue;
-      const id = pianoRollNoteId(note);
-      const x = ((tick - ctx.startTick) / spanTicks) * width;
-      const bar = document.createElement("div");
-      bar.className =
-        "piano-roll-velocity-bar" + (selected.has(id) ? " selected" : "");
-      bar.dataset.pianoNoteId = id;
-      bar.dataset.noteTick = String(tick);
-      bar.style.left = Math.max(0, x - 3) + "px";
-      bar.style.background = info.color;
-      updatePianoRollVelocityBar(bar, note);
-      attachPianoRollVelocityEditor(bar, note, ctx);
-      fragment.appendChild(bar);
+    if (spec.kind === "velocity") {
+      for (const note of ctx.notes) {
+        const tick = Number(note.tick) || 0;
+        if (tick < ctx.startTick || tick >= ctx.endTick) continue;
+        const id = pianoRollNoteId(note);
+        const x = ((tick - ctx.startTick) / spanTicks) * width;
+        const bar = document.createElement("div");
+        bar.className =
+          "piano-roll-velocity-bar" + (selected.has(id) ? " selected" : "");
+        bar.dataset.pianoNoteId = id;
+        bar.dataset.noteTick = String(tick);
+        bar.dataset.parameterTick = String(tick);
+        bar.style.left = Math.max(0, x - 3) + "px";
+        bar.style.background = info.color;
+        updatePianoRollVelocityBar(bar, note);
+        attachPianoRollVelocityEditor(bar, note, ctx);
+        fragment.appendChild(bar);
+      }
+    } else if (spec.kind === "slide") {
+      for (const note of ctx.notes) {
+        const tick = Number(note.tick) || 0;
+        if (tick < ctx.startTick || tick >= ctx.endTick) continue;
+        const x = ((tick - ctx.startTick) / spanTicks) * width;
+        const step = document.createElement("div");
+        step.className = "piano-roll-slide-step" + (note.td3Slide ? " on" : "");
+        step.dataset.parameterTick = String(tick);
+        step.style.left = Math.max(0, x) + "px";
+        step.title =
+          midiToName(Number(note.note) || 0) +
+          " · TD-3 Slide " + (note.td3Slide ? "ON" : "OFF") +
+          " · click to toggle";
+        attachPianoRollSlideEditor(step, note, ctx);
+        fragment.appendChild(step);
+      }
+    } else {
+      for (const control of ctx.midiControls || []) {
+        if (!pianoRollParameterMatches(control, spec)) continue;
+        const tick = Number(control.tick) || 0;
+        if (tick < ctx.startTick || tick >= ctx.endTick) continue;
+        const x = ((tick - ctx.startTick) / spanTicks) * width;
+        const bar = document.createElement("div");
+        bar.className = "piano-roll-control-bar";
+        bar.dataset.pianoControlId = pianoRollControlId(control);
+        bar.dataset.parameterTick = String(tick);
+        bar.style.left = Math.max(0, x - 3) + "px";
+        bar.style.background = info.color;
+        updatePianoRollControlBar(bar, control, spec);
+        attachPianoRollControlEditor(bar, control, ctx, spec);
+        fragment.appendChild(bar);
+      }
     }
+
     content.appendChild(fragment);
+    if (spec.kind === "control") {
+      content.ondblclick = (event) => pianoRollAddControlAtPointer(event, ctx, spec, width);
+      content.title = spec.label + " · double-click empty lane to add point";
+    } else {
+      content.ondblclick = null;
+      content.title = "";
+    }
     syncPianoRollParameterLaneScroll();
   }
 
