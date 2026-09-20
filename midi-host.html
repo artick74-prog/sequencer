@@ -3046,6 +3046,11 @@ body.timeline-ruler-seeking {
 
   // ─── State / playback ────────────────────────────────────────────
 
+  // Studio One-style coupled resize: when the whole Piano Roll dock changes
+  // height, the active MIDI parameter lane follows more gently instead of
+  // staying fixed or taking the full resize delta.
+  const PIANO_ROLL_PARAMETER_COUPLED_RESIZE_RATIO = 0.23;
+
   const state = {
     project: null,
     midiAccess: null,
@@ -3088,6 +3093,7 @@ body.timeline-ruler-seeking {
     pianoRollResizing: false,
     pianoRollResizeStartY: 0,
     pianoRollResizeStartHeight: 290,
+    pianoRollResizeStartParameterLaneHeight: 92,
     pianoRollResizeRenderFrame: 0,
     pianoRollParameterLaneHeight: 92,
     pianoRollParameterResizing: false,
@@ -8302,9 +8308,13 @@ body.timeline-ruler-seeking {
     return note ? { ...ctx, note } : null;
   }
 
-  function clampPianoRollParameterLaneHeight(value) {
+  function clampPianoRollParameterLaneHeight(value, dockHeightOverride = null) {
     const dock = document.getElementById("pianoRollDock");
-    const dockHeight = dock?.getBoundingClientRect().height || state.pianoRollHeight || 290;
+    const override = Number(dockHeightOverride);
+    const dockHeight =
+      Number.isFinite(override) && override > 0
+        ? override
+        : (dock?.getBoundingClientRect().height || state.pianoRollHeight || 290);
     const maxHeight = Math.max(64, Math.min(320, dockHeight - 88));
     return Math.max(64, Math.min(maxHeight, Number(value) || 92));
   }
@@ -10104,6 +10114,9 @@ body.timeline-ruler-seeking {
     state.pianoRollResizing = true;
     state.pianoRollResizeStartY = event.clientY;
     state.pianoRollResizeStartHeight = dock.getBoundingClientRect().height;
+    const lane = document.getElementById("pianoRollParameterLane");
+    state.pianoRollResizeStartParameterLaneHeight =
+      lane?.getBoundingClientRect().height || state.pianoRollParameterLaneHeight || 92;
     dock.classList.add("resizing");
     document.body.classList.add("piano-roll-resizing");
     pianoRollResizer.setPointerCapture?.(event.pointerId);
@@ -10142,6 +10155,14 @@ body.timeline-ruler-seeking {
     state.pianoRollHeight = Math.round(next);
     dock.style.height = state.pianoRollHeight + "px";
 
+    const actualDockDelta =
+      state.pianoRollHeight - state.pianoRollResizeStartHeight;
+    const coupledLaneHeight =
+      state.pianoRollResizeStartParameterLaneHeight +
+      actualDockDelta * PIANO_ROLL_PARAMETER_COUPLED_RESIZE_RATIO;
+    state.pianoRollParameterLaneHeight =
+      clampPianoRollParameterLaneHeight(coupledLaneHeight, state.pianoRollHeight);
+
     // Keep the existing Piano Roll DOM alive while resizing; only geometry changes.
     if (!state.pianoRollResizeRenderFrame) {
       state.pianoRollResizeRenderFrame = requestAnimationFrame(() => {
@@ -10179,6 +10200,10 @@ body.timeline-ruler-seeking {
     applyPianoRollParameterLaneHeight();
     updatePianoRollGeometry({ horizontal: false, vertical: true });
     scheduleLocalStorageSet("midi_host_piano_roll_height_v1", state.pianoRollHeight);
+    scheduleLocalStorageSet(
+      "midi_host_piano_roll_parameter_lane_height_v1",
+      state.pianoRollParameterLaneHeight
+    );
   });
 
   document.addEventListener("pointercancel", (event) => {
