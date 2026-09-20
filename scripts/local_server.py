@@ -600,7 +600,31 @@ def slugify_pack_part(value: str) -> str:
     return text or "other"
 
 
+DRUM_FILL_RE = re.compile(r"(?:^|[^a-z0-9])(?:drum[-_ ]?fill|fills?)(?:[^a-z0-9]|$)", re.IGNORECASE)
+
+
+def library_entry_is_drum_fill(item: dict) -> bool:
+    """Keep drum fills separate from ordinary drum grooves when filenames identify them."""
+    roles = {str(role).lower() for role in (item.get("classificationRoles") or [])}
+    kind = str(item.get("kind") or "").lower()
+    is_drums = kind in {"drums", "drum-fill"} or "drums" in roles
+    if not is_drums:
+        return False
+    text = " ".join(
+        str(item.get(key) or "")
+        for key in ("name", "member", "container", "source")
+    )
+    return bool(DRUM_FILL_RE.search(text))
+
+
+def apply_library_display_categories(entries: list[dict]) -> None:
+    for item in entries:
+        if library_entry_is_drum_fill(item):
+            item["kind"] = "drum-fill"
+
+
 def catalog_payload(entries: list[dict], mode: str, pack_count: int = 0) -> dict:
+    apply_library_display_categories(entries)
     counts = {
         "total": len(entries),
         "genre": dict(Counter(item["genre"] for item in entries)),
