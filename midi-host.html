@@ -7405,10 +7405,11 @@ body.piano-roll-resizing {
     if (!ctx || !grid) return;
     const point = pianoRollGridPoint(event, grid, ctx);
     const snap = pianoRollSnapTicks(ctx.ppq);
-    const latestStart = Math.max(ctx.startTick, ctx.endTick - 1);
+    const defaultDuration = Math.max(1, Math.min(snap, ctx.endTick - ctx.startTick));
+    const latestStart = Math.max(ctx.startTick, ctx.endTick - defaultDuration);
     let tick = Math.round(point.rawTick / snap) * snap;
     tick = Math.max(ctx.startTick, Math.min(latestStart, tick));
-    const duration = Math.max(1, Math.min(snap, ctx.endTick - tick));
+    const duration = Math.max(1, Math.min(defaultDuration, ctx.endTick - tick));
     const instanceId = hostClipInstanceId(
       ctx.clip,
       Math.max(0, (state.project.clips || []).indexOf(ctx.clip))
@@ -7510,9 +7511,6 @@ body.piano-roll-resizing {
             "Moved note → " + midiToName(note.note) + " @ " + tickToBarBeat(note.tick, ctx.ppq),
             note.note
           );
-        } else {
-          block.style.left = "";
-          block.style.top = "";
         }
       };
 
@@ -7578,8 +7576,6 @@ body.piano-roll-resizing {
             "Resized " + midiToName(note.note) +
             " → " + (note.duration / Math.max(1, ctx.ppq)).toFixed(2) + " beats"
           );
-        } else {
-          block.style.width = "";
         }
       };
 
