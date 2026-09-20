@@ -346,7 +346,7 @@ Playback в Style Library использует короткий lookahead schedu
 
 - Основная линейка секвенсора теперь повторяет Piano Roll: обычный click или преимущественно horizontal drag двигает cue/playhead по тактам; преимущественно vertical drag меняет горизонтальный zoom.
 - Направление одинаковое с Piano Roll: drag вниз = шире/zoom in, drag вверх = уже/zoom out. `Ctrl/Cmd + wheel` использует то же направление: wheel down = шире, wheel up = уже.
-- После того как vertical drag уже вошёл в zoom mode, ЛКМ остаётся зажатой и горизонтальное движение одновременно pan'ит timeline: влево = к более ранним тактам, вправо = к более поздним. Режим не переключается обратно в seek до отпускания кнопки.
+- После того как vertical drag уже вошёл в zoom mode, ЛКМ остаётся зажатой и горизонтальное движение одновременно pan'ит timeline в Studio One-style direct manipulation: мышь вправо → содержимое timeline визуально едет вправо, мышь влево → содержимое едет влево. Режим не переключается обратно в seek до отпускания кнопки.
 - `Shift+drag` по-прежнему задаёт loop range, зелёные locator handles работают отдельно и не смешиваются с zoom gesture.
 ## Project Clip Piano Roll
 
