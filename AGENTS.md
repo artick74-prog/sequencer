@@ -293,6 +293,22 @@ Playback в Style Library использует короткий lookahead schedu
 
 ---
 
+## Rhythm Library / live audition
+
+- Собственная pitch-free библиотека ритмических формул: `user-library/rhythms/index.json`; схема описана в `user-library/rhythms/README.md`.
+- Rhythm pattern хранит абстрактную сетку (`bars`, `stepsPerBar`) и события `pos / dur / vel`; MIDI pitch в библиотеке не хранится.
+- В MIDI Host кнопка **♬ Rhythms** открывает отдельный Rhythm Browser.
+- Пользователь выбирает pitched target track, start bar, fixed audition pitch и Gate. Клик по rhythm pattern:
+  - временно глушит только NOTE ON исходной target track;
+  - ставит project Loop на длину pattern (обычно 1 bar, clave = 2 bars);
+  - запускает project backing tracks и одновременно играет rhythm pattern через реальный route target track (TD-3/XR20/SF2);
+  - показывает временный ghost slot на timeline;
+  - не меняет project notes до **Apply to track**.
+- **Previous / Next** позволяют быстро листать отфильтрованные rhythms; category/search работают поверх одной библиотеки.
+- Global MIDI Host Swing остаётся отдельным groove-layer; Rhythm Gate масштабирует только длительности событий.
+- **Apply to track** заменяет note onsets внутри audition slot, после подтверждения. Если slot пересекает library clip, clip metadata отсоединяется, чтобы provenance не лгал после редактирования.
+- Starter library: 20 формул (Straight, Rock/Gallop, Tresillo/Habanera/Clave, Charleston, Funk, Sparse, Triplet).
+
 ## User Style Library (arranger-style drafts)
 
 Отдельно от внешней MIDI Reference Library существует собственная библиотека переиспользуемых стилей:
