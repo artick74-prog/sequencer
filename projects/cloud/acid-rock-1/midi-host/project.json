@@ -46,7 +46,7 @@
     },
     {
       "tick": 149760,
-      "text": "H5 · dominant"
+      "text": "H5 · dominant · low-register new bass"
     },
     {
       "tick": 153600,
@@ -54,7 +54,7 @@
     },
     {
       "tick": 165120,
-      "text": "H6 · dominant under pedal"
+      "text": "H6 · dominant · low-register new bass"
     },
     {
       "tick": 168960,
@@ -62,7 +62,7 @@
     },
     {
       "tick": 180480,
-      "text": "H456 · dominant 1"
+      "text": "H456 · dominant 1 · low-register bass"
     },
     {
       "tick": 184320,
@@ -70,7 +70,7 @@
     },
     {
       "tick": 195840,
-      "text": "H456 · dominant 2"
+      "text": "H456 · dominant 2 · low-register bass"
     }
   ],
   "loopRange": {
@@ -2102,63 +2102,81 @@
         },
         {
           "tick": 149774,
-          "duration": 651,
+          "duration": 594,
           "note": 55,
-          "velocity": 108
-        },
-        {
-          "tick": 150480,
-          "duration": 462,
-          "note": 67,
-          "velocity": 88
-        },
-        {
-          "tick": 150992,
-          "duration": 178,
-          "note": 62,
           "velocity": 105
         },
         {
+          "tick": 150480,
+          "duration": 378,
+          "note": 50,
+          "velocity": 88
+        },
+        {
+          "tick": 150978,
+          "duration": 162,
+          "note": 53,
+          "velocity": 103
+        },
+        {
           "tick": 151200,
-          "duration": 198,
-          "note": 62,
+          "duration": 186,
+          "note": 59,
           "velocity": 94
         },
         {
           "tick": 151440,
-          "duration": 212,
-          "note": 67,
+          "duration": 108,
+          "note": 50,
           "velocity": 90
         },
         {
-          "tick": 151694,
-          "duration": 651,
-          "note": 55,
-          "velocity": 108
+          "tick": 151590,
+          "duration": 66,
+          "note": 53,
+          "velocity": 99
         },
         {
-          "tick": 152400,
-          "duration": 462,
-          "note": 67,
+          "tick": 151692,
+          "duration": 414,
+          "note": 55,
+          "velocity": 104
+        },
+        {
+          "tick": 152184,
+          "duration": 162,
+          "note": 59,
+          "velocity": 91
+        },
+        {
+          "tick": 152406,
+          "duration": 372,
+          "note": 50,
           "velocity": 88
         },
         {
-          "tick": 152912,
-          "duration": 178,
-          "note": 62,
-          "velocity": 105
+          "tick": 152892,
+          "duration": 162,
+          "note": 53,
+          "velocity": 104
         },
         {
           "tick": 153120,
-          "duration": 198,
-          "note": 62,
+          "duration": 150,
+          "note": 50,
           "velocity": 94
         },
         {
-          "tick": 153360,
-          "duration": 212,
-          "note": 67,
-          "velocity": 90
+          "tick": 153300,
+          "duration": 132,
+          "note": 59,
+          "velocity": 89
+        },
+        {
+          "tick": 153510,
+          "duration": 66,
+          "note": 53,
+          "velocity": 100
         },
         {
           "tick": 153614,
@@ -2342,63 +2360,81 @@
         },
         {
           "tick": 165134,
-          "duration": 651,
+          "duration": 594,
           "note": 55,
-          "velocity": 108
-        },
-        {
-          "tick": 165840,
-          "duration": 462,
-          "note": 67,
-          "velocity": 88
-        },
-        {
-          "tick": 166352,
-          "duration": 178,
-          "note": 62,
           "velocity": 105
         },
         {
+          "tick": 165840,
+          "duration": 378,
+          "note": 50,
+          "velocity": 88
+        },
+        {
+          "tick": 166338,
+          "duration": 162,
+          "note": 53,
+          "velocity": 103
+        },
+        {
           "tick": 166560,
-          "duration": 198,
-          "note": 62,
+          "duration": 186,
+          "note": 59,
           "velocity": 94
         },
         {
           "tick": 166800,
-          "duration": 212,
-          "note": 67,
+          "duration": 108,
+          "note": 50,
           "velocity": 90
         },
         {
-          "tick": 167054,
-          "duration": 651,
-          "note": 55,
-          "velocity": 108
+          "tick": 166950,
+          "duration": 66,
+          "note": 53,
+          "velocity": 99
         },
         {
-          "tick": 167760,
-          "duration": 462,
-          "note": 67,
+          "tick": 167052,
+          "duration": 414,
+          "note": 55,
+          "velocity": 104
+        },
+        {
+          "tick": 167544,
+          "duration": 162,
+          "note": 59,
+          "velocity": 91
+        },
+        {
+          "tick": 167766,
+          "duration": 372,
+          "note": 50,
           "velocity": 88
         },
         {
-          "tick": 168272,
-          "duration": 178,
-          "note": 62,
-          "velocity": 105
+          "tick": 168252,
+          "duration": 162,
+          "note": 53,
+          "velocity": 104
         },
         {
           "tick": 168480,
-          "duration": 198,
-          "note": 62,
+          "duration": 150,
+          "note": 50,
           "velocity": 94
         },
         {
-          "tick": 168720,
-          "duration": 212,
-          "note": 67,
-          "velocity": 90
+          "tick": 168660,
+          "duration": 132,
+          "note": 59,
+          "velocity": 89
+        },
+        {
+          "tick": 168870,
+          "duration": 66,
+          "note": 53,
+          "velocity": 100
         },
         {
           "tick": 168974,
@@ -2582,63 +2618,81 @@
         },
         {
           "tick": 180494,
-          "duration": 651,
+          "duration": 594,
           "note": 55,
-          "velocity": 108
-        },
-        {
-          "tick": 181200,
-          "duration": 462,
-          "note": 67,
-          "velocity": 88
-        },
-        {
-          "tick": 181712,
-          "duration": 178,
-          "note": 62,
           "velocity": 105
         },
         {
+          "tick": 181200,
+          "duration": 378,
+          "note": 50,
+          "velocity": 88
+        },
+        {
+          "tick": 181698,
+          "duration": 162,
+          "note": 53,
+          "velocity": 103
+        },
+        {
           "tick": 181920,
-          "duration": 198,
-          "note": 62,
+          "duration": 186,
+          "note": 59,
           "velocity": 94
         },
         {
           "tick": 182160,
-          "duration": 212,
-          "note": 67,
+          "duration": 108,
+          "note": 50,
           "velocity": 90
         },
         {
-          "tick": 182414,
-          "duration": 651,
-          "note": 55,
-          "velocity": 108
+          "tick": 182310,
+          "duration": 66,
+          "note": 53,
+          "velocity": 99
         },
         {
-          "tick": 183120,
-          "duration": 462,
-          "note": 67,
+          "tick": 182412,
+          "duration": 414,
+          "note": 55,
+          "velocity": 104
+        },
+        {
+          "tick": 182904,
+          "duration": 162,
+          "note": 59,
+          "velocity": 91
+        },
+        {
+          "tick": 183126,
+          "duration": 372,
+          "note": 50,
           "velocity": 88
         },
         {
-          "tick": 183632,
-          "duration": 178,
-          "note": 62,
-          "velocity": 105
+          "tick": 183612,
+          "duration": 162,
+          "note": 53,
+          "velocity": 104
         },
         {
           "tick": 183840,
-          "duration": 198,
-          "note": 62,
+          "duration": 150,
+          "note": 50,
           "velocity": 94
         },
         {
-          "tick": 184080,
-          "duration": 212,
-          "note": 67,
-          "velocity": 90
+          "tick": 184020,
+          "duration": 132,
+          "note": 59,
+          "velocity": 89
+        },
+        {
+          "tick": 184230,
+          "duration": 66,
+          "note": 53,
+          "velocity": 100
         },
         {
           "tick": 184334,
@@ -2822,63 +2876,81 @@
         },
         {
           "tick": 195854,
-          "duration": 651,
+          "duration": 594,
           "note": 55,
-          "velocity": 108
-        },
-        {
-          "tick": 196560,
-          "duration": 462,
-          "note": 67,
-          "velocity": 88
-        },
-        {
-          "tick": 197072,
-          "duration": 178,
-          "note": 62,
           "velocity": 105
         },
         {
+          "tick": 196560,
+          "duration": 378,
+          "note": 50,
+          "velocity": 88
+        },
+        {
+          "tick": 197058,
+          "duration": 162,
+          "note": 53,
+          "velocity": 103
+        },
+        {
           "tick": 197280,
-          "duration": 198,
-          "note": 62,
+          "duration": 186,
+          "note": 59,
           "velocity": 94
         },
         {
           "tick": 197520,
-          "duration": 212,
-          "note": 67,
+          "duration": 108,
+          "note": 50,
           "velocity": 90
         },
         {
-          "tick": 197774,
-          "duration": 651,
-          "note": 55,
-          "velocity": 108
+          "tick": 197670,
+          "duration": 66,
+          "note": 53,
+          "velocity": 99
         },
         {
-          "tick": 198480,
-          "duration": 462,
-          "note": 67,
+          "tick": 197772,
+          "duration": 414,
+          "note": 55,
+          "velocity": 104
+        },
+        {
+          "tick": 198264,
+          "duration": 162,
+          "note": 59,
+          "velocity": 91
+        },
+        {
+          "tick": 198486,
+          "duration": 372,
+          "note": 50,
           "velocity": 88
         },
         {
-          "tick": 198992,
-          "duration": 178,
-          "note": 62,
-          "velocity": 105
+          "tick": 198972,
+          "duration": 162,
+          "note": 53,
+          "velocity": 104
         },
         {
           "tick": 199200,
-          "duration": 198,
-          "note": 62,
+          "duration": 150,
+          "note": 50,
           "velocity": 94
         },
         {
-          "tick": 199440,
-          "duration": 212,
-          "note": 67,
-          "velocity": 90
+          "tick": 199380,
+          "duration": 132,
+          "note": 59,
+          "velocity": 89
+        },
+        {
+          "tick": 199590,
+          "duration": 66,
+          "note": 53,
+          "velocity": 100
         }
       ]
     },
