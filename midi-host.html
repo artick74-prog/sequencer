@@ -1661,14 +1661,14 @@ body.timeline-ruler-seeking {
   overflow: hidden;
   user-select: none;
 }
-.track-note-canvas {
+.track-note-vector {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 72px;
   z-index: 2;
   pointer-events: none;
-  image-rendering: auto;
+  user-select: none;
 }
 .loop-clip-container {
   position: absolute;
@@ -10062,37 +10062,44 @@ body.timeline-ruler-seeking {
     return resolved || fallback;
   }
 
-  function createTrackNoteCanvas(track, info, length) {
-    const canvas = document.createElement("canvas");
-    canvas.className = "track-note-canvas";
-    const bitmapW = 4096;
-    const bitmapH = 72;
-    canvas.width = bitmapW;
-    canvas.height = bitmapH;
+  function createTrackNoteVector(track, info, length) {
+    const img = document.createElement("img");
+    img.className = "track-note-vector";
+    img.alt = "";
+    img.draggable = false;
 
-    const ctx = canvas.getContext("2d", { alpha: true });
     const notes = track.notes || [];
-    if (!ctx || !notes.length) return canvas;
+    if (!notes.length) return img;
 
     const minN = notes.reduce((m, n) => Math.min(m, Number(n.note) || 0), 127);
     const maxN = notes.reduce((m, n) => Math.max(m, Number(n.note) || 0), 0);
     const span = Math.max(1, maxN - minN);
-    const safeLength = Math.max(1, length || 1);
+    const safeLength = Math.max(1, Number(length) || 1);
+    const color = resolveCanvasColor(info.color);
 
-    ctx.clearRect(0, 0, bitmapW, bitmapH);
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = resolveCanvasColor(info.color);
+    // One vector path per track keeps the DOM tiny like Canvas, but unlike a
+    // stretched bitmap it stays sharp at any timeline zoom level.
+    const path = [];
     for (const n of notes) {
       const tick = Math.max(0, Number(n.tick) || 0);
       const duration = Math.max(1, Number(n.duration) || 1);
-      const note = Number(n.note) || 0;
-      const x = (tick / safeLength) * bitmapW;
-      const w = Math.max(1, (duration / safeLength) * bitmapW);
-      const y = 8 + (1 - (note - minN) / span) * 44;
-      ctx.fillRect(x, y, w, 12);
+      const pitch = Number(n.note) || 0;
+      const y = 8 + (1 - (pitch - minN) / span) * 44;
+      path.push(
+        "M", tick.toFixed(2), " ", y.toFixed(2),
+        "h", duration.toFixed(2),
+        "v12h-", duration.toFixed(2), "Z"
+      );
     }
-    ctx.globalAlpha = 1;
-    return canvas;
+
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" ' +
+      'viewBox="0 0 ' + safeLength + ' 72" preserveAspectRatio="none">' +
+      '<path d="' + path.join("") + '" fill="' + color + '" ' +
+      'fill-opacity=".92" shape-rendering="crispEdges"/>' +
+      '</svg>';
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    return img;
   }
 
   function renderTracks() {
@@ -10234,7 +10241,7 @@ body.timeline-ruler-seeking {
         body.appendChild(slot);
       }
 
-      body.appendChild(createTrackNoteCanvas(track, info, length));
+      body.appendChild(createTrackNoteVector(track, info, length));
 
       const trackClips = (project.clips || []).filter((clip) => clip.targetTrackId === track.id);
       for (let clipIndex = 0; clipIndex < trackClips.length; clipIndex++) {
