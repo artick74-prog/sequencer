@@ -2479,6 +2479,7 @@ body.piano-roll-resizing {
     clipClipboard: null,
     pianoRollClipId: "",
     pianoRollHeight: 290,
+    pianoRollBarW: 96,
     pianoRollResizing: false,
     pianoRollResizeStartY: 0,
     pianoRollResizeStartHeight: 290,
@@ -7292,7 +7293,8 @@ body.piano-roll-resizing {
       meta.textContent =
         clipName + " · project bars " + startBar +
         (endBar !== startBar ? "–" + endBar : "") +
-        " · " + notes.length + " notes · read-only";
+        " · " + notes.length + " notes · " +
+        Math.round(Number(state.pianoRollBarW) || 96) + " px/bar · read-only";
     }
 
     if (!notes.length) {
@@ -7314,7 +7316,8 @@ body.piano-roll-resizing {
     const rows = maxNote - minNote + 1;
     const rollH = Math.max(rows * rowH, visiblePitchHeight);
     const availableW = Math.max(480, (scroll.clientWidth || 760) - keyW - 2);
-    const rollW = Math.max(availableW, Math.max(1, barSpan) * 96);
+    const pxPerBar = Math.max(24, Math.min(640, Number(state.pianoRollBarW) || 96));
+    const rollW = Math.max(availableW, Math.max(1, barSpan) * pxPerBar);
 
     const stage = document.createElement("div");
     stage.className = "piano-roll-stage";
@@ -7438,6 +7441,54 @@ body.piano-roll-resizing {
     );
   }
 
+  function setPianoRollHorizontalZoom(factor, clientX = null) {
+    const scroll = document.getElementById("pianoRollScroll");
+    const grid = document.getElementById("pianoRollGrid");
+    if (!scroll || !grid || !state.pianoRollClipId) return;
+
+    const oldBarW = Math.max(24, Math.min(640, Number(state.pianoRollBarW) || 96));
+    const nextBarW = Math.max(24, Math.min(640, oldBarW * factor));
+    if (Math.abs(nextBarW - oldBarW) < 0.01) return;
+
+    const scrollRect = scroll.getBoundingClientRect();
+    const gridRect = grid.getBoundingClientRect();
+    const oldRollW = Math.max(1, Number(grid.dataset.rollWidth) || grid.offsetWidth || 1);
+
+    const anchorClientX = clientX == null
+      ? scrollRect.left + scroll.clientWidth / 2
+      : clientX;
+    const anchorRatio = Math.max(
+      0,
+      Math.min(1, (anchorClientX - gridRect.left) / oldRollW)
+    );
+    const anchorViewportX = anchorClientX - scrollRect.left;
+
+    state.pianoRollBarW = nextBarW;
+    try {
+      localStorage.setItem("midi_host_piano_roll_bar_w_v1", String(state.pianoRollBarW));
+    } catch {}
+    renderPianoRoll();
+
+    const newGrid = document.getElementById("pianoRollGrid");
+    if (!newGrid) return;
+    const newRollW = Math.max(1, Number(newGrid.dataset.rollWidth) || newGrid.offsetWidth || 1);
+    const keyW = 64;
+    scroll.scrollLeft = Math.max(
+      0,
+      keyW + anchorRatio * newRollW - anchorViewportX
+    );
+  }
+
+  document.getElementById("pianoRollScroll")?.addEventListener("wheel", (event) => {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setPianoRollHorizontalZoom(
+      event.deltaY > 0 ? 1 / 1.2 : 1.2,
+      event.clientX
+    );
+  }, { passive: false });
+
   function updatePianoRollPlayhead(tick) {
     const grid = document.getElementById("pianoRollGrid");
     const playhead = document.getElementById("pianoRollPlayhead");
@@ -7524,6 +7575,10 @@ body.piano-roll-resizing {
     const savedPianoHeight = Number(localStorage.getItem("midi_host_piano_roll_height_v1"));
     if (Number.isFinite(savedPianoHeight) && savedPianoHeight >= 150) {
       state.pianoRollHeight = savedPianoHeight;
+    }
+    const savedPianoBarW = Number(localStorage.getItem("midi_host_piano_roll_bar_w_v1"));
+    if (Number.isFinite(savedPianoBarW) && savedPianoBarW >= 24 && savedPianoBarW <= 640) {
+      state.pianoRollBarW = savedPianoBarW;
     }
   } catch {}
 
