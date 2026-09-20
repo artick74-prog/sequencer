@@ -8627,13 +8627,28 @@ body.timeline-ruler-seeking {
       const startY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
       const additive = event.shiftKey;
       const baseIds = additive ? new Set(state.pianoRollSelectedNoteIds || []) : new Set();
+      const noteBoxes = [...grid.querySelectorAll(".piano-roll-note")].map((el) => {
+        const left = parseFloat(el.style.left) || 0;
+        const top = parseFloat(el.style.top) || 0;
+        const width = parseFloat(el.style.width) || 0;
+        const height = parseFloat(el.style.height) || 0;
+        return {
+          el,
+          id: el.dataset.pianoNoteId,
+          left,
+          top,
+          right: left + width,
+          bottom: top + height,
+        };
+      });
       let moved = false;
+      let selectionActive = true;
       grid.setPointerCapture?.(event.pointerId);
 
-      const onMove = (moveEvent) => {
-        if (!(moveEvent.buttons & 1)) return;
-        const x = Math.max(0, Math.min(rect.width, moveEvent.clientX - rect.left));
-        const y = Math.max(0, Math.min(rect.height, moveEvent.clientY - rect.top));
+      const applyMarquee = (clientX, clientY) => {
+        if (!selectionActive) return;
+        const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
         if (Math.hypot(x - startX, y - startY) >= 4) moved = true;
         if (!moved) return;
 
@@ -8648,19 +8663,26 @@ body.timeline-ruler-seeking {
         selectionBox.style.height = (bottom - top) + "px";
 
         const ids = new Set(baseIds);
-        grid.querySelectorAll(".piano-roll-note").forEach((el) => {
-          const elLeft = parseFloat(el.style.left) || 0;
-          const elTop = parseFloat(el.style.top) || 0;
-          const elRight = elLeft + (parseFloat(el.style.width) || el.offsetWidth || 0);
-          const elBottom = elTop + (parseFloat(el.style.height) || el.offsetHeight || 0);
-          if (elRight >= left && elLeft <= right && elBottom >= top && elTop <= bottom) {
-            ids.add(el.dataset.pianoNoteId);
+        for (const box of noteBoxes) {
+          if (box.right >= left && box.left <= right && box.bottom >= top && box.top <= bottom) {
+            ids.add(box.id);
           }
-        });
-        pianoRollSetSelection([...ids]);
+        }
+        state.pianoRollSelectedNoteIds = [...ids];
+        pianoRollSyncPrimarySelection();
+        for (const box of noteBoxes) box.el.classList.toggle("selected", ids.has(box.id));
+      };
+
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const clientX = moveEvent.clientX;
+        const clientY = moveEvent.clientY;
+        scheduleUiFrame("piano-marquee", () => applyMarquee(clientX, clientY));
       };
 
       const finish = (upEvent) => {
+        applyMarquee(upEvent.clientX, upEvent.clientY);
+        selectionActive = false;
         grid.removeEventListener("pointermove", onMove);
         grid.removeEventListener("pointerup", finish);
         grid.removeEventListener("pointercancel", cancel);
@@ -8679,6 +8701,7 @@ body.timeline-ruler-seeking {
       };
 
       const cancel = (cancelEvent) => {
+        selectionActive = false;
         grid.removeEventListener("pointermove", onMove);
         grid.removeEventListener("pointerup", finish);
         grid.removeEventListener("pointercancel", cancel);
