@@ -46,7 +46,7 @@
     },
     {
       "tick": 149760,
-      "text": "H5 · dominant · low-register new bass"
+      "text": "H5 · dominant · low-register minor v bass"
     },
     {
       "tick": 153600,
@@ -54,7 +54,7 @@
     },
     {
       "tick": 165120,
-      "text": "H6 · dominant · low-register new bass"
+      "text": "H6 · dominant · low-register minor v bass"
     },
     {
       "tick": 168960,
@@ -62,7 +62,7 @@
     },
     {
       "tick": 180480,
-      "text": "H456 · dominant 1 · low-register bass"
+      "text": "H456 · dominant 1 · low-register minor v bass"
     },
     {
       "tick": 184320,
@@ -70,7 +70,7 @@
     },
     {
       "tick": 195840,
-      "text": "H456 · dominant 2 · low-register bass"
+      "text": "H456 · dominant 2 · low-register minor v bass"
     }
   ],
   "loopRange": {
@@ -2121,7 +2121,7 @@
         {
           "tick": 151200,
           "duration": 186,
-          "note": 59,
+          "note": 58,
           "velocity": 94
         },
         {
@@ -2145,7 +2145,7 @@
         {
           "tick": 152184,
           "duration": 162,
-          "note": 59,
+          "note": 58,
           "velocity": 91
         },
         {
@@ -2169,7 +2169,7 @@
         {
           "tick": 153300,
           "duration": 132,
-          "note": 59,
+          "note": 58,
           "velocity": 89
         },
         {
@@ -2379,7 +2379,7 @@
         {
           "tick": 166560,
           "duration": 186,
-          "note": 59,
+          "note": 58,
           "velocity": 94
         },
         {
@@ -2403,7 +2403,7 @@
         {
           "tick": 167544,
           "duration": 162,
-          "note": 59,
+          "note": 58,
           "velocity": 91
         },
         {
@@ -2427,7 +2427,7 @@
         {
           "tick": 168660,
           "duration": 132,
-          "note": 59,
+          "note": 58,
           "velocity": 89
         },
         {
@@ -2637,7 +2637,7 @@
         {
           "tick": 181920,
           "duration": 186,
-          "note": 59,
+          "note": 58,
           "velocity": 94
         },
         {
@@ -2661,7 +2661,7 @@
         {
           "tick": 182904,
           "duration": 162,
-          "note": 59,
+          "note": 58,
           "velocity": 91
         },
         {
@@ -2685,7 +2685,7 @@
         {
           "tick": 184020,
           "duration": 132,
-          "note": 59,
+          "note": 58,
           "velocity": 89
         },
         {
@@ -2895,7 +2895,7 @@
         {
           "tick": 197280,
           "duration": 186,
-          "note": 59,
+          "note": 58,
           "velocity": 94
         },
         {
@@ -2919,7 +2919,7 @@
         {
           "tick": 198264,
           "duration": 162,
-          "note": 59,
+          "note": 58,
           "velocity": 91
         },
         {
@@ -2943,7 +2943,7 @@
         {
           "tick": 199380,
           "duration": 132,
-          "note": 59,
+          "note": 58,
           "velocity": 89
         },
         {
