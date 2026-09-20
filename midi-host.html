@@ -1837,6 +1837,11 @@ body.timeline-ruler-seeking {
   will-change: left;
 }
 
+.playhead,
+.ruler .ruler-playhead {
+  left: var(--playhead-pct, 0%);
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/sf2synth.iife.min.js"></script>
 </head>
@@ -2679,6 +2684,7 @@ body.timeline-ruler-seeking {
     startPerf: 0,
     startTick: 0,
     timer: null,
+    playbackUiFrame: 0,
     playbackTempo: 120,
     playbackPpq: 480,
     playbackToken: 0,
@@ -5859,6 +5865,10 @@ body.timeline-ruler-seeking {
     state.playing = false;
     state.playbackToken++;
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
+    if (state.playbackUiFrame) {
+      cancelAnimationFrame(state.playbackUiFrame);
+      state.playbackUiFrame = 0;
+    }
     clearSf2Timers();
     clearHardwareQueue(output);
 
@@ -6318,8 +6328,6 @@ body.timeline-ruler-seeking {
         );
       }
 
-      const nowTick = currentTransportTick(now);
-      updatePlayheads(nowTick, projectLength);
       if (!state.loop && absoluteTransportTick(now) >= projectLength) {
         stopPlayback(output);
         state.startTick = snapToBar(projectLength - 1);
@@ -6328,7 +6336,10 @@ body.timeline-ruler-seeking {
       }
     };
     pump();
-    if (state.playing) state.timer = setInterval(pump, SCHEDULER_INTERVAL_MS);
+    if (state.playing) {
+      state.timer = setInterval(pump, SCHEDULER_INTERVAL_MS);
+      startPlaybackUiLoop(token, projectLength);
+    }
   }
 
   async function togglePlay() {
@@ -6366,15 +6377,23 @@ body.timeline-ruler-seeking {
     const length = lengthTicks || state.lengthTicks || 1;
     const pct = Math.min(100, Math.max(0, (tick / length) * 100));
     const leftPct = `${pct}%`;
-    for (const el of state.playheadEls) {
-      el.style.display = "block";
-      el.style.left = leftPct;
-    }
-    for (const el of state.rulerPlayheadEls) {
-      el.style.left = leftPct;
-    }
+    document.getElementById("tracks")?.style.setProperty("--playhead-pct", leftPct);
+    document.getElementById("rulerWrap")?.style.setProperty("--playhead-pct", leftPct);
     updateSectionPlaylistActive(tick);
     updatePianoRollPlayhead(tick);
+  }
+
+  function startPlaybackUiLoop(token, projectLength) {
+    if (state.playbackUiFrame) cancelAnimationFrame(state.playbackUiFrame);
+    const draw = () => {
+      if (!state.playing || state.playbackToken !== token) {
+        state.playbackUiFrame = 0;
+        return;
+      }
+      updatePlayheads(currentTransportTick(), projectLength);
+      state.playbackUiFrame = requestAnimationFrame(draw);
+    };
+    state.playbackUiFrame = requestAnimationFrame(draw);
   }
 
   // ─── Timeline / zoom ────────────────────────────────────────────
@@ -9700,12 +9719,13 @@ body.timeline-ruler-seeking {
           " · drag horizontally and between tracks";
       };
 
-      const onMove = (moveEvent) => {
-        if (!(moveEvent.buttons & 1)) return;
-        const deltaBars = Math.round((moveEvent.clientX - originX) / Math.max(1, state.barW));
+      let dragActive = true;
+      const applyPointerMove = (clientX, clientY) => {
+        if (!dragActive) return;
+        const deltaBars = Math.round((clientX - originX) / Math.max(1, state.barW));
         previewStart = Math.max(0, originStart + deltaBars * tpb);
 
-        const hit = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+        const hit = document.elementFromPoint(clientX, clientY);
         const targetBody = hit?.closest?.(".track-body");
         const targetId = targetBody?.dataset?.body || "";
         const foundTrack = state.project?.tracks?.find((item) => item.id === targetId);
@@ -9718,7 +9738,16 @@ body.timeline-ruler-seeking {
         applyPreview(previewStart, previewTrack);
       };
 
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const clientX = moveEvent.clientX;
+        const clientY = moveEvent.clientY;
+        scheduleUiFrame("clip-drag-" + instanceId, () => applyPointerMove(clientX, clientY));
+      };
+
       const finish = (upEvent) => {
+        applyPointerMove(upEvent.clientX, upEvent.clientY);
+        dragActive = false;
         box.removeEventListener("pointermove", onMove);
         box.removeEventListener("pointerup", finish);
         box.removeEventListener("pointercancel", cancel);
@@ -9740,6 +9769,7 @@ body.timeline-ruler-seeking {
       };
 
       const cancel = (cancelEvent) => {
+        dragActive = false;
         box.removeEventListener("pointermove", onMove);
         box.removeEventListener("pointerup", finish);
         box.removeEventListener("pointercancel", cancel);
