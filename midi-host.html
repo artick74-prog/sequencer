@@ -7970,88 +7970,66 @@ body.timeline-ruler-seeking {
 
   function drawPianoRollGridCanvases(grid, ruler, ctx, rollW) {
     if (!grid || !ruler || !ctx) return;
+
+    // The Piano Roll can be hundreds of thousands of CSS pixels wide at deep zoom.
+    // Stretching an 8K canvas across that distance turns 1px grid lines into soft,
+    // wide bands. Use native CSS background tiles instead: the browser keeps the
+    // separators pixel-sharp at any zoom level without creating thousands of DOM nodes.
     const gridCanvas = grid.querySelector(".piano-roll-grid-canvas");
     const rulerCanvas = ruler.querySelector(".piano-roll-ruler-canvas");
-    if (!gridCanvas || !rulerCanvas) return;
+    if (gridCanvas) gridCanvas.style.display = "none";
+    if (rulerCanvas) rulerCanvas.style.display = "none";
 
     const cssW = Math.max(1, Number(rollW) || 1);
-    const bitmapW = Math.max(512, Math.min(8192, Math.round(cssW)));
-    gridCanvas.width = bitmapW;
-    gridCanvas.height = 1;
-    rulerCanvas.width = bitmapW;
-    rulerCanvas.height = 24;
-
-    const g = gridCanvas.getContext("2d", { alpha: true });
-    const r = rulerCanvas.getContext("2d", { alpha: true });
-    if (!g || !r) return;
-    g.clearRect(0, 0, bitmapW, 1);
-    r.clearRect(0, 0, bitmapW, 24);
-
     const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
     const ppq = Math.max(1, ctx.ppq || 480);
     const tpb = ticksPerBar(ppq);
-    const gridStep = Math.max(1, pianoRollSnapTicks(ppq));
-    const firstGridTick = Math.ceil(ctx.startTick / gridStep) * gridStep;
-    const tripletGrid = pianoRollSnapValue().endsWith("T");
-    const eighthTicks = Math.max(1, Math.round(ppq / 2));
-    const sixteenthTicks = Math.max(1, Math.round(ppq / 4));
-    const thirtySecondTicks = Math.max(1, Math.round(ppq / 8));
-    const scaleX = bitmapW / cssW;
+    const snapTicks = Math.max(1, pianoRollSnapTicks(ppq));
 
-    const gridStyle = {
-      bar: "rgba(135,157,188,.58)",
-      beat: "rgba(111,130,155,.42)",
-      eighth: "rgba(103,120,143,.32)",
-      sixteenth: "rgba(90,104,123,.22)",
-      thirtysecond: "rgba(90,104,123,.12)",
-      sixtyfourth: "rgba(90,104,123,.075)",
-      triplet: "rgba(111,130,155,.20)",
-    };
-    const rulerStyle = {
-      bar: ["rgba(180,202,232,.55)", 24, 2],
-      beat: ["rgba(171,191,219,.66)", 12, 1],
-      eighth: ["rgba(153,171,196,.55)", 9, 1],
-      sixteenth: ["rgba(133,149,170,.42)", 7, 1],
-      thirtysecond: ["rgba(126,141,162,.30)", 5, 1],
-      sixtyfourth: ["rgba(120,134,153,.24)", 4, 1],
-      triplet: ["rgba(140,157,181,.36)", 6, 1],
-    };
+    const pxPerTick = cssW / spanTicks;
+    const snapPx = Math.max(2, snapTicks * pxPerTick);
+    const beatPx = Math.max(2, ppq * pxPerTick);
+    const barPx = Math.max(2, tpb * pxPerTick);
 
-    for (let tick = firstGridTick; tick <= ctx.endTick; tick += gridStep) {
-      const isBar = tick % tpb === 0;
-      const isBeat = tick % ppq === 0;
-      const isEighth = tick % eighthTicks === 0;
-      const isSixteenth = tick % sixteenthTicks === 0;
-      const isThirtySecond = tick % thirtySecondTicks === 0;
-      const kind = isBar
-        ? "bar"
-        : isBeat
-          ? "beat"
-          : tripletGrid
-            ? "triplet"
-            : isEighth
-              ? "eighth"
-              : isSixteenth
-                ? "sixteenth"
-                : isThirtySecond
-                  ? "thirtysecond"
-                  : "sixtyfourth";
-      const xCss = ((tick - ctx.startTick) / spanTicks) * cssW;
-      const x = xCss * scaleX;
-      const lineCssW = kind === "bar" ? 2 : 1;
-      const lineW = Math.max(1, lineCssW * scaleX);
+    const firstSnapTick = Math.ceil(ctx.startTick / snapTicks) * snapTicks;
+    const firstBeatTick = Math.ceil(ctx.startTick / ppq) * ppq;
+    const firstBarTick = Math.ceil(ctx.startTick / tpb) * tpb;
 
-      g.fillStyle = gridStyle[kind];
-      g.fillRect(x, 0, lineW, 1);
+    const snapOffset = ((firstSnapTick - ctx.startTick) * pxPerTick);
+    const beatOffset = ((firstBeatTick - ctx.startTick) * pxPerTick);
+    const barOffset = ((firstBarTick - ctx.startTick) * pxPerTick);
 
-      const [color, height, rulerCssW] = rulerStyle[kind];
-      r.fillStyle = color;
-      r.fillRect(x, 24 - height, Math.max(1, rulerCssW * scaleX), height);
-    }
+    grid.style.backgroundImage = [
+      "linear-gradient(90deg, rgba(135,157,188,.62) 0 2px, transparent 2px)",
+      "linear-gradient(90deg, rgba(111,130,155,.44) 0 1px, transparent 1px)",
+      "linear-gradient(90deg, rgba(90,104,123,.24) 0 1px, transparent 1px)"
+    ].join(",");
+    grid.style.backgroundSize = [
+      barPx + "px 100%",
+      beatPx + "px 100%",
+      snapPx + "px 100%"
+    ].join(",");
+    grid.style.backgroundPosition = [
+      barOffset + "px 0",
+      beatOffset + "px 0",
+      snapOffset + "px 0"
+    ].join(",");
+    grid.style.backgroundRepeat = "repeat";
 
-    g.fillStyle = gridStyle.bar;
-    g.fillRect(0, 0, Math.max(1, 2 * scaleX), 1);
-    g.fillRect(Math.max(0, bitmapW - Math.max(1, 2 * scaleX)), 0, Math.max(1, 2 * scaleX), 1);
+    // The ruler gets crisp full-height divisions as well. Bar labels remain DOM text.
+    ruler.style.backgroundImage = [
+      "linear-gradient(90deg, rgba(180,202,232,.52) 0 2px, transparent 2px)",
+      "linear-gradient(90deg, rgba(153,171,196,.38) 0 1px, transparent 1px)"
+    ].join(",");
+    ruler.style.backgroundSize = [
+      barPx + "px 100%",
+      beatPx + "px 100%"
+    ].join(",");
+    ruler.style.backgroundPosition = [
+      barOffset + "px 0",
+      beatOffset + "px 0"
+    ].join(",");
+    ruler.style.backgroundRepeat = "repeat";
   }
 
   function updatePianoRollGeometry({ horizontal = true, vertical = true } = {}) {
@@ -10074,6 +10052,16 @@ body.timeline-ruler-seeking {
     return true;
   }
 
+  function resolveCanvasColor(value, fallback = "#8899aa") {
+    const raw = String(value || "").trim();
+    const match = raw.match(/^var\((--[^)]+)\)$/);
+    if (!match) return raw || fallback;
+    const resolved = getComputedStyle(document.documentElement)
+      .getPropertyValue(match[1])
+      .trim();
+    return resolved || fallback;
+  }
+
   function createTrackNoteCanvas(track, info, length) {
     const canvas = document.createElement("canvas");
     canvas.className = "track-note-canvas";
@@ -10092,8 +10080,8 @@ body.timeline-ruler-seeking {
     const safeLength = Math.max(1, length || 1);
 
     ctx.clearRect(0, 0, bitmapW, bitmapH);
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = info.color;
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = resolveCanvasColor(info.color);
     for (const n of notes) {
       const tick = Math.max(0, Number(n.tick) || 0);
       const duration = Math.max(1, Number(n.duration) || 1);
