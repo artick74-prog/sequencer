@@ -3,7 +3,7 @@
   "id": "acid-rock-1",
   "name": "Acid Rock 1",
   "createdAt": "2026-09-20T02:01:29+00:00",
-  "updatedAt": "2026-09-20T02:02:13+00:00",
+  "updatedAt": "2026-09-20T03:33:15+00:00",
   "editors": {
     "midiHost": true,
     "chiptune": false
@@ -17,8 +17,8 @@
     "tracks": [
       {
         "index": 1,
-        "name": "Bass",
-        "file": "midi-host/tracks/001 - Bass.mid"
+        "name": "Bass A · Kick Lock Long",
+        "file": "midi-host/tracks/001 - Bass A · Kick Lock Long.mid"
       },
       {
         "index": 2,

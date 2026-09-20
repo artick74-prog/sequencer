@@ -3,6 +3,8 @@
   "name": "Acid Rock 1",
   "ppq": 480,
   "tempo": 120,
+  "swing": 24,
+  "masterTranspose": 7,
   "lengthTicks": 61440,
   "minimumLengthTicks": 61440,
   "hardware": {
@@ -26,8 +28,7 @@
   "cloudProject": {
     "id": "acid-rock-1",
     "path": "projects/cloud/acid-rock-1",
-    "savedAt": "2026-09-20T03:19:30.051Z",
-    "dirty": false
+    "savedAt": "2026-09-20T03:33:15+00:00"
   },
   "clips": [
     {
@@ -93,6 +94,7 @@
       "role": "xr20-bass",
       "mute": false,
       "solo": false,
+      "transposeOctaves": -1,
       "cubaseIndex": 0,
       "notes": [
         {
@@ -674,6 +676,7 @@
       "role": "td3",
       "mute": false,
       "solo": false,
+      "transposeOctaves": 0,
       "cubaseIndex": 1,
       "notes": [
         {
@@ -2253,6 +2256,7 @@
       "role": "gm",
       "mute": false,
       "solo": false,
+      "transposeOctaves": 0,
       "cubaseIndex": 2,
       "notes": []
     },
@@ -2263,6 +2267,7 @@
       "role": "gm",
       "mute": false,
       "solo": false,
+      "transposeOctaves": 0,
       "cubaseIndex": 3,
       "notes": []
     },
@@ -2273,6 +2278,7 @@
       "role": "xr20-drums",
       "mute": false,
       "solo": false,
+      "transposeOctaves": 0,
       "cubaseIndex": 4,
       "notes": [
         {
