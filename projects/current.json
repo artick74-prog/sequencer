@@ -98,385 +98,385 @@
         {
           "tick": 0,
           "duration": 300,
-          "note": 36,
+          "note": 48,
           "velocity": 108
         },
         {
           "tick": 720,
           "duration": 180,
-          "note": 36,
+          "note": 48,
           "velocity": 92
         },
         {
           "tick": 960,
           "duration": 240,
-          "note": 43,
+          "note": 55,
           "velocity": 100
         },
         {
           "tick": 1680,
           "duration": 180,
-          "note": 48,
+          "note": 60,
           "velocity": 96
         },
         {
           "tick": 1920,
           "duration": 300,
-          "note": 32,
+          "note": 44,
           "velocity": 108
         },
         {
           "tick": 2640,
           "duration": 180,
-          "note": 32,
+          "note": 44,
           "velocity": 92
         },
         {
           "tick": 2880,
           "duration": 240,
-          "note": 39,
+          "note": 51,
           "velocity": 100
         },
         {
           "tick": 3600,
           "duration": 180,
-          "note": 44,
+          "note": 56,
           "velocity": 96
         },
         {
           "tick": 3840,
           "duration": 300,
-          "note": 39,
+          "note": 51,
           "velocity": 108
         },
         {
           "tick": 4560,
           "duration": 180,
-          "note": 39,
+          "note": 51,
           "velocity": 92
         },
         {
           "tick": 4800,
           "duration": 240,
-          "note": 46,
+          "note": 58,
           "velocity": 100
         },
         {
           "tick": 5520,
           "duration": 180,
-          "note": 51,
+          "note": 63,
           "velocity": 96
         },
         {
           "tick": 5760,
           "duration": 300,
-          "note": 34,
+          "note": 46,
           "velocity": 108
         },
         {
           "tick": 6480,
           "duration": 180,
-          "note": 34,
+          "note": 46,
           "velocity": 92
         },
         {
           "tick": 6720,
           "duration": 240,
-          "note": 41,
+          "note": 53,
           "velocity": 100
         },
         {
           "tick": 7440,
           "duration": 180,
-          "note": 46,
+          "note": 58,
           "velocity": 96
         },
         {
           "tick": 7680,
           "duration": 300,
-          "note": 36,
+          "note": 48,
           "velocity": 108
         },
         {
           "tick": 8400,
           "duration": 180,
-          "note": 36,
+          "note": 48,
           "velocity": 92
         },
         {
           "tick": 8640,
           "duration": 240,
-          "note": 43,
+          "note": 55,
           "velocity": 100
         },
         {
           "tick": 9360,
           "duration": 180,
-          "note": 48,
+          "note": 60,
           "velocity": 96
         },
         {
           "tick": 9600,
           "duration": 300,
-          "note": 32,
+          "note": 44,
           "velocity": 108
         },
         {
           "tick": 10320,
           "duration": 180,
-          "note": 32,
+          "note": 44,
           "velocity": 92
         },
         {
           "tick": 10560,
           "duration": 240,
-          "note": 39,
+          "note": 51,
           "velocity": 100
         },
         {
           "tick": 11280,
           "duration": 180,
-          "note": 44,
+          "note": 56,
           "velocity": 96
         },
         {
           "tick": 11520,
           "duration": 300,
-          "note": 29,
+          "note": 41,
           "velocity": 108
         },
         {
           "tick": 12240,
           "duration": 180,
-          "note": 29,
+          "note": 41,
           "velocity": 92
         },
         {
           "tick": 12480,
           "duration": 240,
-          "note": 36,
+          "note": 48,
           "velocity": 100
         },
         {
           "tick": 13200,
           "duration": 180,
-          "note": 41,
+          "note": 53,
           "velocity": 96
         },
         {
           "tick": 13440,
           "duration": 300,
-          "note": 31,
+          "note": 43,
           "velocity": 108
         },
         {
           "tick": 14160,
           "duration": 180,
-          "note": 31,
+          "note": 43,
           "velocity": 92
         },
         {
           "tick": 14400,
           "duration": 240,
-          "note": 38,
+          "note": 50,
           "velocity": 100
         },
         {
           "tick": 15120,
           "duration": 180,
-          "note": 43,
+          "note": 55,
           "velocity": 96
         },
         {
           "tick": 15360,
           "duration": 300,
-          "note": 36,
+          "note": 48,
           "velocity": 113
         },
         {
           "tick": 16080,
           "duration": 180,
-          "note": 36,
+          "note": 48,
           "velocity": 97
         },
         {
           "tick": 16320,
           "duration": 240,
-          "note": 43,
+          "note": 55,
           "velocity": 105
         },
         {
           "tick": 17040,
           "duration": 180,
-          "note": 48,
+          "note": 60,
           "velocity": 101
         },
         {
           "tick": 17280,
           "duration": 300,
-          "note": 32,
+          "note": 44,
           "velocity": 113
         },
         {
           "tick": 18000,
           "duration": 180,
-          "note": 32,
+          "note": 44,
           "velocity": 97
         },
         {
           "tick": 18240,
           "duration": 240,
-          "note": 39,
+          "note": 51,
           "velocity": 105
         },
         {
           "tick": 18960,
           "duration": 180,
-          "note": 44,
+          "note": 56,
           "velocity": 101
         },
         {
           "tick": 19200,
           "duration": 300,
-          "note": 39,
+          "note": 51,
           "velocity": 113
         },
         {
           "tick": 19920,
           "duration": 180,
-          "note": 39,
+          "note": 51,
           "velocity": 97
         },
         {
           "tick": 20160,
           "duration": 240,
-          "note": 46,
+          "note": 58,
           "velocity": 105
         },
         {
           "tick": 20880,
           "duration": 180,
-          "note": 51,
+          "note": 63,
           "velocity": 101
         },
         {
           "tick": 21120,
           "duration": 300,
-          "note": 34,
+          "note": 46,
           "velocity": 113
         },
         {
           "tick": 21840,
           "duration": 180,
-          "note": 34,
+          "note": 46,
           "velocity": 97
         },
         {
           "tick": 22080,
           "duration": 240,
-          "note": 41,
+          "note": 53,
           "velocity": 105
         },
         {
           "tick": 22800,
           "duration": 180,
-          "note": 46,
+          "note": 58,
           "velocity": 101
         },
         {
           "tick": 23040,
           "duration": 300,
-          "note": 36,
+          "note": 48,
           "velocity": 113
         },
         {
           "tick": 23760,
           "duration": 180,
-          "note": 36,
+          "note": 48,
           "velocity": 97
         },
         {
           "tick": 24000,
           "duration": 240,
-          "note": 43,
+          "note": 55,
           "velocity": 105
         },
         {
           "tick": 24720,
           "duration": 180,
-          "note": 48,
+          "note": 60,
           "velocity": 101
         },
         {
           "tick": 24960,
           "duration": 300,
-          "note": 32,
+          "note": 44,
           "velocity": 113
         },
         {
           "tick": 25680,
           "duration": 180,
-          "note": 32,
+          "note": 44,
           "velocity": 97
         },
         {
           "tick": 25920,
           "duration": 240,
-          "note": 39,
+          "note": 51,
           "velocity": 105
         },
         {
           "tick": 26640,
           "duration": 180,
-          "note": 44,
+          "note": 56,
           "velocity": 101
         },
         {
           "tick": 26880,
           "duration": 300,
-          "note": 29,
+          "note": 41,
           "velocity": 113
         },
         {
           "tick": 27600,
           "duration": 180,
-          "note": 29,
+          "note": 41,
           "velocity": 97
         },
         {
           "tick": 27840,
           "duration": 240,
-          "note": 36,
+          "note": 48,
           "velocity": 105
         },
         {
           "tick": 28560,
           "duration": 180,
-          "note": 41,
+          "note": 53,
           "velocity": 101
         },
         {
           "tick": 28800,
           "duration": 300,
-          "note": 31,
+          "note": 43,
           "velocity": 113
         },
         {
           "tick": 29520,
           "duration": 180,
-          "note": 31,
+          "note": 43,
           "velocity": 97
         },
         {
           "tick": 29760,
           "duration": 240,
-          "note": 38,
+          "note": 50,
           "velocity": 105
         },
         {
           "tick": 30480,
           "duration": 180,
-          "note": 43,
+          "note": 55,
           "velocity": 101
         }
       ]
