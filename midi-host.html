@@ -8163,7 +8163,7 @@ body.timeline-ruler-seeking {
     }
 
     const rowH = Math.max(10, Math.min(48, Number(state.pianoRollRowH) || 18));
-    const keyW = 64;
+    const keyW = 78;
     const rulerH = 24;
 
     // DAW-style pitch canvas: keep the full MIDI 0–127 range available.
@@ -8484,7 +8484,7 @@ body.timeline-ruler-seeking {
     const newGrid = document.getElementById("pianoRollGrid");
     if (!newGrid) return;
     const newRollW = Math.max(1, Number(newGrid.dataset.rollWidth) || newGrid.offsetWidth || 1);
-    const keyW = 64;
+    const keyW = 78;
     scroll.scrollLeft = Math.max(
       0,
       keyW + anchorRatio * newRollW - anchorViewportX
