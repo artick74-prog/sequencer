@@ -3252,7 +3252,7 @@ select, input[type="number"], input[type="text"] {
     if (pitched.some((track) => track.id === keepTarget)) target.value = keepTarget;
 
     const banks = [...new Set(rhythmLibrary.map((pattern) => pattern.bank).filter(Boolean))].sort();
-    const keepBank = bank.value || "__auto__";
+    const keepBank = bank.value;
     bank.innerHTML =
       '<option value="__auto__">Bank · Auto for target</option>' +
       '<option value="">All banks</option>' +
