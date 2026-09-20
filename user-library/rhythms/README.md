@@ -70,14 +70,16 @@ The underlying library is still lossless: the source patterns remain separate en
 The editor shows note length visually and supports exact 4/4 musical-duration presets:
 - `1/32`
 - `1/16`
+- dotted `1/16`
 - `1/8`
+- dotted `1/8`
 - `1/4`
 - dotted `1/4`
 - `1/2`
 - dotted `1/2`
 - `1/1`
 
-Stored `dur` is still expressed in abstract pattern-grid steps. For a 16-step 4/4 pattern, these map to `0.5 / 1 / 2 / 4 / 6 / 8 / 12 / 16` steps. On a 12-step triplet grid the editor converts the same musical values proportionally.
+Stored `dur` is still expressed in abstract pattern-grid steps. For a 16-step 4/4 pattern, these map to `0.5 / 1 / 1.5 / 2 / 3 / 4 / 6 / 8 / 12 / 16` steps. On a 12-step triplet grid the editor converts the same musical values proportionally.
 
 The MIDI Host's global **Gate** remains a playback multiplier after the stored duration. Therefore Gate = 100% means the editor's named duration is literal; Gate 50% halves it, Gate 150% extends it.
 
