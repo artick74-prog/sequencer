@@ -2540,14 +2540,85 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
+  function hostLoopMidiHeader(bytes, offset = 0) {
+    return String.fromCharCode(
+      bytes[offset] || 0,
+      bytes[offset + 1] || 0,
+      bytes[offset + 2] || 0,
+      bytes[offset + 3] || 0
+    );
+  }
+
+  function normalizeHostLoopMidiBuffer(buffer, entry) {
+    const bytes = new Uint8Array(buffer);
+    if (bytes.length >= 14 && hostLoopMidiHeader(bytes) === "MThd") return buffer;
+
+    // Some Windows MIDI collections use RIFF/RMID wrappers rather than a bare
+    // Standard MIDI File. Extract the embedded "data" chunk transparently.
+    if (
+      bytes.length >= 12 &&
+      hostLoopMidiHeader(bytes, 0) === "RIFF" &&
+      hostLoopMidiHeader(bytes, 8) === "RMID"
+    ) {
+      let offset = 12;
+      while (offset + 8 <= bytes.length) {
+        const chunkId = hostLoopMidiHeader(bytes, offset);
+        const chunkLen =
+          bytes[offset + 4] |
+          (bytes[offset + 5] << 8) |
+          (bytes[offset + 6] << 16) |
+          (bytes[offset + 7] << 24);
+        const start = offset + 8;
+        const end = start + Math.max(0, chunkLen >>> 0);
+        if (end > bytes.length) break;
+        if (chunkId === "data" && end - start >= 14 && hostLoopMidiHeader(bytes, start) === "MThd") {
+          return buffer.slice(start, end);
+        }
+        offset = end + (chunkLen & 1);
+      }
+    }
+
+    // A few downloadable datasets/repository snapshots contain Git LFS pointer
+    // files with a .mid extension. They are catalogue metadata, not playable MIDI.
+    const headText = new TextDecoder("utf-8", { fatal: false })
+      .decode(bytes.slice(0, Math.min(bytes.length, 256)));
+    if (headText.startsWith("version https://git-lfs.github.com/spec/v1")) {
+      throw new Error(
+        "Library source contains a Git LFS pointer instead of MIDI data · " +
+        hostLoopDisplayName(entry)
+      );
+    }
+
+    // Be tolerant of a small non-MIDI preamble if a valid SMF header follows.
+    const scanLimit = Math.min(Math.max(0, bytes.length - 14), 4096);
+    for (let offset = 1; offset <= scanLimit; offset++) {
+      if (hostLoopMidiHeader(bytes, offset) === "MThd") {
+        return buffer.slice(offset);
+      }
+    }
+
+    const headHex = Array.from(bytes.slice(0, 8))
+      .map((value) => value.toString(16).padStart(2, "0"))
+      .join(" ")
+      .toUpperCase();
+    throw new Error(
+      "Library item is not playable MIDI (missing MThd)" +
+      (headHex ? " · header " + headHex : "") +
+      " · " + hostLoopDisplayName(entry)
+    );
+  }
+
   async function fetchHostLoopMidi(entry) {
-    const response = await fetch("/api/library/midi?id=" + encodeURIComponent(entry.id));
+    const response = await fetch("/api/library/midi?id=" + encodeURIComponent(entry.id), {
+      cache: "no-store",
+    });
     if (!response.ok) {
       let message = "MIDI load failed";
       try { message = (await response.json()).error || message; } catch {}
       throw new Error(message);
     }
-    return response.arrayBuffer();
+    const buffer = await response.arrayBuffer();
+    return normalizeHostLoopMidiBuffer(buffer, entry);
   }
 
   function hostLoopFallbackProgram(entry) {
