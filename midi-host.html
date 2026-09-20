@@ -2085,6 +2085,8 @@ body.piano-roll-ruler-seeking {
   const BAR_W_DEFAULT = 40;
   const BAR_W_MIN = 3;
   const BAR_W_MAX = 96;
+  const PIANO_ROLL_BAR_W_MIN = 24;
+  const PIANO_ROLL_BAR_W_MAX = 8192;
   const HEAD_W = 280;
   const SCHEDULER_INTERVAL_MS = 20;
   const HARDWARE_LOOKAHEAD_MS = 120;
@@ -7756,7 +7758,7 @@ body.piano-roll-ruler-seeking {
     const rows = maxNote - minNote + 1;
     const rollH = Math.max(rows * rowH, visiblePitchHeight);
     const availableW = Math.max(480, (scroll.clientWidth || 760) - keyW - 2);
-    const pxPerBar = Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96));
+    const pxPerBar = Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(state.pianoRollBarW) || 96));
     const rollW = Math.max(availableW, Math.max(1, barSpan) * pxPerBar);
 
     const stage = document.createElement("div");
@@ -7951,8 +7953,8 @@ body.piano-roll-ruler-seeking {
     const grid = document.getElementById("pianoRollGrid");
     if (!scroll || !grid || !state.pianoRollClipId) return;
 
-    const oldBarW = Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96));
-    const nextBarW = Math.max(24, Math.min(2048, Number(nextValue) || oldBarW));
+    const oldBarW = Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(state.pianoRollBarW) || 96));
+    const nextBarW = Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(nextValue) || oldBarW));
     if (Math.abs(nextBarW - oldBarW) < 0.01) return;
 
     const scrollRect = scroll.getBoundingClientRect();
@@ -7985,7 +7987,7 @@ body.piano-roll-ruler-seeking {
   }
 
   function setPianoRollHorizontalZoom(factor, clientX = null) {
-    const oldBarW = Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96));
+    const oldBarW = Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(state.pianoRollBarW) || 96));
     setPianoRollHorizontalZoomValue(oldBarW * factor, clientX);
   }
 
@@ -8019,7 +8021,7 @@ body.piano-roll-ruler-seeking {
       pointerId: event.pointerId,
       originX: event.clientX,
       originY: event.clientY,
-      originBarW: Math.max(24, Math.min(2048, Number(state.pianoRollBarW) || 96)),
+      originBarW: Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(state.pianoRollBarW) || 96)),
       mode: "pending",
       resumeAfterSeek: !!state.playing,
     };
@@ -8050,11 +8052,13 @@ body.piano-roll-ruler-seeking {
     if (gesture.mode === "zoom") {
       event.preventDefault();
       // Up = wider / zoom in, down = narrower / zoom out.
-      const nextBarW = gesture.originBarW * Math.pow(1.01, -dy);
+      const nextBarW = gesture.originBarW * Math.exp(-dy * 0.006);
       setPianoRollHorizontalZoomValue(nextBarW, gesture.originX);
       setStatus(
         "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
-        " px/bar · drag up/down",
+        " px/bar" +
+        (state.pianoRollBarW >= PIANO_ROLL_BAR_W_MAX ? " · MAX" : "") +
+        " · drag up/down",
         "ok"
       );
     } else if (gesture.mode === "seek") {
@@ -8091,7 +8095,9 @@ body.piano-roll-ruler-seeking {
       state.pianoRollRulerResumeAfterSeek = false;
       setStatus(
         "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
-        " px/bar · Ctrl+wheel also available",
+        " px/bar" +
+        (state.pianoRollBarW >= PIANO_ROLL_BAR_W_MAX ? " · MAX" : "") +
+        " · Ctrl+wheel also available",
         "ok"
       );
     }
@@ -8213,7 +8219,11 @@ body.piano-roll-ruler-seeking {
       state.pianoRollHeight = clampPianoRollHeight(savedPianoHeight);
     }
     const savedPianoBarW = Number(localStorage.getItem("midi_host_piano_roll_bar_w_v1"));
-    if (Number.isFinite(savedPianoBarW) && savedPianoBarW >= 24 && savedPianoBarW <= 2048) {
+    if (
+      Number.isFinite(savedPianoBarW) &&
+      savedPianoBarW >= PIANO_ROLL_BAR_W_MIN &&
+      savedPianoBarW <= PIANO_ROLL_BAR_W_MAX
+    ) {
       state.pianoRollBarW = savedPianoBarW;
     }
     const savedPianoSnap = Number(localStorage.getItem("midi_host_piano_roll_snap_v1"));
