@@ -7654,6 +7654,72 @@ select, input[type="number"], input[type="text"] {
     }
   });
 
+  async function loadUserStyleFromQuery() {
+    const params = new URLSearchParams(location.search);
+    const styleId = params.get("userStyle");
+    if (!styleId) return false;
+
+    try {
+      setStatus("Loading user draft style…");
+      const indexRes = await fetch("user-library/styles/index.json?_=" + Date.now(), { cache: "no-store" });
+      if (!indexRes.ok) throw new Error("Style index HTTP " + indexRes.status);
+      const index = await indexRes.json();
+      const entry = (index.styles || []).find((item) => item.id === styleId);
+      if (!entry?.path) throw new Error("Unknown style: " + styleId);
+
+      const styleRes = await fetch(entry.path + "?_=" + Date.now(), { cache: "no-store" });
+      if (!styleRes.ok) throw new Error("Style HTTP " + styleRes.status);
+      const style = await styleRes.json();
+
+      const ppq = 480;
+      const bars = Math.max(1, Number(style.bars) || 16);
+      const project = buildNewProjectTemplate(style.name || entry.name || styleId);
+      project.ppq = ppq;
+      project.tempo = Number(style.tempo) || 120;
+      project.minimumLengthTicks = bars * ticksPerBar(ppq);
+      project.lengthTicks = project.minimumLengthTicks;
+      project.loopRange = { startBar: 1, endBar: bars };
+      project.cloudProject = null;
+      project.userStyle = {
+        id: style.id || styleId,
+        status: style.status || "draft",
+        family: style.family || "",
+        sourcePath: entry.path,
+      };
+
+      const bass = project.tracks.find((track) => track.id === "bass");
+      const drums = project.tracks.find((track) => track.id === "drums");
+      if (bass) {
+        bass.name = (style.parts?.bass?.patternModel || "Bass") + " · " + (style.name || styleId);
+        bass.channel = Number(style.parts?.bass?.channel) || 1;
+        bass.role = style.parts?.bass?.engine || "xr20-bass";
+        bass.notes = (style.parts?.bass?.realizedNotes || []).map((note) => ({ ...note }));
+      }
+      if (drums) {
+        drums.channel = Number(style.parts?.drums?.channel) || 10;
+        drums.role = style.parts?.drums?.engine || "xr20-drums";
+        drums.notes = (style.parts?.drums?.notes || []).map((note) => ({ ...note }));
+      }
+
+      setProject(normalizeProject(project), {
+        restoreLocal: false,
+        statusText:
+          "Loaded draft style “" + (style.name || styleId) + "” · " +
+          bars + " bars · bass + drums · ready for arrangement.",
+      });
+      state.loop = true;
+      setLoopRangeBars(1, bars);
+      updateLoopButtonUi();
+      updateLoopRangeVisuals();
+      markHostProjectDirty();
+      saveHostAutosaveNow();
+      return true;
+    } catch (err) {
+      setStatus("User style load failed: " + err.message, "err");
+      return false;
+    }
+  }
+
   async function loadLibraryReferenceFromQuery() {
     const params = new URLSearchParams(location.search);
     const libraryId = params.get("library");
@@ -7675,6 +7741,11 @@ select, input[type="number"], input[type="text"] {
 
   window.MidiHost = {
     getProject: () => projectToJson(),
+    loadUserStyle: (id) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set("userStyle", id);
+      window.location.href = url.toString();
+    },
     getOverview: () => (state.project ? buildOverview(state.project) : null),
     setProject: (p) => setProject(normalizeProject(p)),
     sync: () => syncToProjects(),
@@ -7708,6 +7779,7 @@ select, input[type="number"], input[type="text"] {
   restoreProjectsFolder();
   initMidi();
   (async () => {
+    if (await loadUserStyleFromQuery()) return;
     if (await loadLibraryReferenceFromQuery()) return;
     if (restoreHostWorkingProject()) return;
     fetch("projects/current.json")
