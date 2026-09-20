@@ -26,7 +26,8 @@
   "cloudProject": {
     "id": "acid-rock-1",
     "path": "projects/cloud/acid-rock-1",
-    "savedAt": "2026-09-20T02:02:13+00:00"
+    "savedAt": "2026-09-20T03:19:30.051Z",
+    "dirty": false
   },
   "clips": [
     {
@@ -87,13 +88,584 @@
   "tracks": [
     {
       "id": "bass",
-      "name": "Bass",
+      "name": "Bass A · Kick Lock Long",
       "channel": 1,
       "role": "xr20-bass",
       "mute": false,
       "solo": false,
       "cubaseIndex": 0,
-      "notes": []
+      "notes": [
+        {
+          "tick": 14,
+          "duration": 651,
+          "note": 48,
+          "velocity": 108
+        },
+        {
+          "tick": 720,
+          "duration": 462,
+          "note": 60,
+          "velocity": 88
+        },
+        {
+          "tick": 1232,
+          "duration": 178,
+          "note": 55,
+          "velocity": 105
+        },
+        {
+          "tick": 1440,
+          "duration": 198,
+          "note": 55,
+          "velocity": 94
+        },
+        {
+          "tick": 1680,
+          "duration": 212,
+          "note": 60,
+          "velocity": 90
+        },
+        {
+          "tick": 1934,
+          "duration": 651,
+          "note": 44,
+          "velocity": 104
+        },
+        {
+          "tick": 2640,
+          "duration": 447,
+          "note": 56,
+          "velocity": 88
+        },
+        {
+          "tick": 3137,
+          "duration": 185,
+          "note": 51,
+          "velocity": 105
+        },
+        {
+          "tick": 3360,
+          "duration": 90,
+          "note": 44,
+          "velocity": 94
+        },
+        {
+          "tick": 3480,
+          "duration": 246,
+          "note": 51,
+          "velocity": 87
+        },
+        {
+          "tick": 3768,
+          "duration": 65,
+          "note": 51,
+          "velocity": 100
+        },
+        {
+          "tick": 3855,
+          "duration": 650,
+          "note": 51,
+          "velocity": 106
+        },
+        {
+          "tick": 4560,
+          "duration": 449,
+          "note": 63,
+          "velocity": 88
+        },
+        {
+          "tick": 5059,
+          "duration": 185,
+          "note": 58,
+          "velocity": 104
+        },
+        {
+          "tick": 5280,
+          "duration": 198,
+          "note": 58,
+          "velocity": 94
+        },
+        {
+          "tick": 5520,
+          "duration": 120,
+          "note": 63,
+          "velocity": 90
+        },
+        {
+          "tick": 5677,
+          "duration": 72,
+          "note": 46,
+          "velocity": 101
+        },
+        {
+          "tick": 5771,
+          "duration": 654,
+          "note": 46,
+          "velocity": 105
+        },
+        {
+          "tick": 6480,
+          "duration": 449,
+          "note": 58,
+          "velocity": 88
+        },
+        {
+          "tick": 6979,
+          "duration": 185,
+          "note": 53,
+          "velocity": 105
+        },
+        {
+          "tick": 7200,
+          "duration": 90,
+          "note": 46,
+          "velocity": 94
+        },
+        {
+          "tick": 7320,
+          "duration": 248,
+          "note": 53,
+          "velocity": 87
+        },
+        {
+          "tick": 7610,
+          "duration": 68,
+          "note": 48,
+          "velocity": 100
+        },
+        {
+          "tick": 7700,
+          "duration": 645,
+          "note": 48,
+          "velocity": 105
+        },
+        {
+          "tick": 8400,
+          "duration": 454,
+          "note": 60,
+          "velocity": 88
+        },
+        {
+          "tick": 8904,
+          "duration": 185,
+          "note": 55,
+          "velocity": 105
+        },
+        {
+          "tick": 9120,
+          "duration": 198,
+          "note": 55,
+          "velocity": 94
+        },
+        {
+          "tick": 9360,
+          "duration": 108,
+          "note": 60,
+          "velocity": 90
+        },
+        {
+          "tick": 9498,
+          "duration": 77,
+          "note": 44,
+          "velocity": 100
+        },
+        {
+          "tick": 9597,
+          "duration": 668,
+          "note": 44,
+          "velocity": 105
+        },
+        {
+          "tick": 10320,
+          "duration": 443,
+          "note": 56,
+          "velocity": 88
+        },
+        {
+          "tick": 10813,
+          "duration": 185,
+          "note": 51,
+          "velocity": 105
+        },
+        {
+          "tick": 11040,
+          "duration": 90,
+          "note": 44,
+          "velocity": 94
+        },
+        {
+          "tick": 11160,
+          "duration": 217,
+          "note": 51,
+          "velocity": 87
+        },
+        {
+          "tick": 11419,
+          "duration": 76,
+          "note": 41,
+          "velocity": 101
+        },
+        {
+          "tick": 11517,
+          "duration": 668,
+          "note": 41,
+          "velocity": 105
+        },
+        {
+          "tick": 12240,
+          "duration": 441,
+          "note": 53,
+          "velocity": 88
+        },
+        {
+          "tick": 12731,
+          "duration": 185,
+          "note": 48,
+          "velocity": 105
+        },
+        {
+          "tick": 12960,
+          "duration": 198,
+          "note": 48,
+          "velocity": 94
+        },
+        {
+          "tick": 13200,
+          "duration": 116,
+          "note": 53,
+          "velocity": 90
+        },
+        {
+          "tick": 13346,
+          "duration": 72,
+          "note": 43,
+          "velocity": 100
+        },
+        {
+          "tick": 13440,
+          "duration": 665,
+          "note": 43,
+          "velocity": 104
+        },
+        {
+          "tick": 14160,
+          "duration": 436,
+          "note": 55,
+          "velocity": 88
+        },
+        {
+          "tick": 14646,
+          "duration": 185,
+          "note": 50,
+          "velocity": 105
+        },
+        {
+          "tick": 14880,
+          "duration": 90,
+          "note": 43,
+          "velocity": 94
+        },
+        {
+          "tick": 15000,
+          "duration": 238,
+          "note": 50,
+          "velocity": 87
+        },
+        {
+          "tick": 15280,
+          "duration": 70,
+          "note": 48,
+          "velocity": 100
+        },
+        {
+          "tick": 15372,
+          "duration": 653,
+          "note": 48,
+          "velocity": 105
+        },
+        {
+          "tick": 16080,
+          "duration": 438,
+          "note": 60,
+          "velocity": 88
+        },
+        {
+          "tick": 16568,
+          "duration": 185,
+          "note": 55,
+          "velocity": 105
+        },
+        {
+          "tick": 16800,
+          "duration": 198,
+          "note": 55,
+          "velocity": 94
+        },
+        {
+          "tick": 17040,
+          "duration": 106,
+          "note": 60,
+          "velocity": 90
+        },
+        {
+          "tick": 17176,
+          "duration": 78,
+          "note": 44,
+          "velocity": 101
+        },
+        {
+          "tick": 17276,
+          "duration": 669,
+          "note": 44,
+          "velocity": 105
+        },
+        {
+          "tick": 18000,
+          "duration": 441,
+          "note": 56,
+          "velocity": 88
+        },
+        {
+          "tick": 18491,
+          "duration": 185,
+          "note": 51,
+          "velocity": 105
+        },
+        {
+          "tick": 18720,
+          "duration": 90,
+          "note": 44,
+          "velocity": 94
+        },
+        {
+          "tick": 18840,
+          "duration": 226,
+          "note": 51,
+          "velocity": 87
+        },
+        {
+          "tick": 19108,
+          "duration": 73,
+          "note": 51,
+          "velocity": 100
+        },
+        {
+          "tick": 19203,
+          "duration": 662,
+          "note": 51,
+          "velocity": 105
+        },
+        {
+          "tick": 19920,
+          "duration": 435,
+          "note": 63,
+          "velocity": 88
+        },
+        {
+          "tick": 20405,
+          "duration": 185,
+          "note": 58,
+          "velocity": 105
+        },
+        {
+          "tick": 20640,
+          "duration": 198,
+          "note": 58,
+          "velocity": 94
+        },
+        {
+          "tick": 20880,
+          "duration": 111,
+          "note": 63,
+          "velocity": 90
+        },
+        {
+          "tick": 21021,
+          "duration": 77,
+          "note": 46,
+          "velocity": 101
+        },
+        {
+          "tick": 21120,
+          "duration": 665,
+          "note": 46,
+          "velocity": 106
+        },
+        {
+          "tick": 21840,
+          "duration": 443,
+          "note": 58,
+          "velocity": 88
+        },
+        {
+          "tick": 22333,
+          "duration": 185,
+          "note": 53,
+          "velocity": 104
+        },
+        {
+          "tick": 22560,
+          "duration": 90,
+          "note": 46,
+          "velocity": 94
+        },
+        {
+          "tick": 22680,
+          "duration": 214,
+          "note": 53,
+          "velocity": 87
+        },
+        {
+          "tick": 22936,
+          "duration": 79,
+          "note": 48,
+          "velocity": 101
+        },
+        {
+          "tick": 23037,
+          "duration": 668,
+          "note": 48,
+          "velocity": 105
+        },
+        {
+          "tick": 23760,
+          "duration": 439,
+          "note": 60,
+          "velocity": 88
+        },
+        {
+          "tick": 24249,
+          "duration": 185,
+          "note": 55,
+          "velocity": 105
+        },
+        {
+          "tick": 24480,
+          "duration": 198,
+          "note": 55,
+          "velocity": 94
+        },
+        {
+          "tick": 24720,
+          "duration": 92,
+          "note": 60,
+          "velocity": 90
+        },
+        {
+          "tick": 24842,
+          "duration": 87,
+          "note": 44,
+          "velocity": 101
+        },
+        {
+          "tick": 24951,
+          "duration": 674,
+          "note": 44,
+          "velocity": 105
+        },
+        {
+          "tick": 25680,
+          "duration": 423,
+          "note": 56,
+          "velocity": 88
+        },
+        {
+          "tick": 26153,
+          "duration": 205,
+          "note": 51,
+          "velocity": 105
+        },
+        {
+          "tick": 26400,
+          "duration": 90,
+          "note": 44,
+          "velocity": 94
+        },
+        {
+          "tick": 26520,
+          "duration": 211,
+          "note": 51,
+          "velocity": 87
+        },
+        {
+          "tick": 26773,
+          "duration": 73,
+          "note": 41,
+          "velocity": 100
+        },
+        {
+          "tick": 26868,
+          "duration": 677,
+          "note": 41,
+          "velocity": 104
+        },
+        {
+          "tick": 27600,
+          "duration": 429,
+          "note": 53,
+          "velocity": 88
+        },
+        {
+          "tick": 28079,
+          "duration": 199,
+          "note": 48,
+          "velocity": 105
+        },
+        {
+          "tick": 28320,
+          "duration": 198,
+          "note": 48,
+          "velocity": 94
+        },
+        {
+          "tick": 28560,
+          "duration": 95,
+          "note": 53,
+          "velocity": 90
+        },
+        {
+          "tick": 28685,
+          "duration": 82,
+          "note": 43,
+          "velocity": 101
+        },
+        {
+          "tick": 28789,
+          "duration": 676,
+          "note": 43,
+          "velocity": 105
+        },
+        {
+          "tick": 29520,
+          "duration": 435,
+          "note": 55,
+          "velocity": 88
+        },
+        {
+          "tick": 30005,
+          "duration": 185,
+          "note": 50,
+          "velocity": 105
+        },
+        {
+          "tick": 30240,
+          "duration": 90,
+          "note": 43,
+          "velocity": 94
+        },
+        {
+          "tick": 30360,
+          "duration": 221,
+          "note": 50,
+          "velocity": 87
+        },
+        {
+          "tick": 30623,
+          "duration": 430,
+          "note": 48,
+          "velocity": 101
+        }
+      ]
     },
     {
       "id": "acid",
