@@ -2092,9 +2092,9 @@ body.timeline-ruler-seeking {
   const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
   const BAR_W_DEFAULT = 40;
   const BAR_W_MIN = 3;
-  const BAR_W_MAX = 96;
   const PIANO_ROLL_BAR_W_MIN = 24;
   const PIANO_ROLL_BAR_W_MAX = 8192;
+  const BAR_W_MAX = PIANO_ROLL_BAR_W_MAX;
   const HEAD_W = 280;
   const SCHEDULER_INTERVAL_MS = 20;
   const HARDWARE_LOOKAHEAD_MS = 120;
@@ -7094,7 +7094,7 @@ body.timeline-ruler-seeking {
     ruler.style.width = `${totalW}px`;
     ruler.style.setProperty("--bar-w", `${state.barW}px`);
     for (let b = 1; b <= bars; b++) {
-      if (b === 1 || b % labelEvery === 1 || b === bars) {
+      if (b === 1 || (b - 1) % labelEvery === 0 || b === bars) {
         const n = document.createElement("span");
         n.className = "bar-num";
         n.textContent = String(b);
