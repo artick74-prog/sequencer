@@ -1022,7 +1022,7 @@ select, input[type="number"], input[type="text"] {
   flex: 0 0 auto;
   height: 290px;
   min-height: 150px;
-  max-height: 70%;
+  max-height: none;
   margin-top: 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -7309,6 +7309,22 @@ body.piano-roll-resizing {
     if (!silent) setStatus("Piano Roll closed.", "");
   }
 
+  function pianoRollMaxHeight() {
+    const dock = document.getElementById("pianoRollDock");
+    const main = dock?.closest(".main");
+    if (!main) return 290;
+    const zoomBar = main.querySelector(".zoom-bar");
+    const zoomHeight = zoomBar?.getBoundingClientRect().height || 0;
+    // Keep only the top sequencer toolbar visible; the timeline itself may
+    // collapse almost completely so Piano Roll can occupy the working area.
+    const reserved = zoomHeight + 18;
+    return Math.max(180, Math.floor(main.clientHeight - reserved));
+  }
+
+  function clampPianoRollHeight(value) {
+    return Math.max(150, Math.min(pianoRollMaxHeight(), Number(value) || 290));
+  }
+
   function openPianoRollForClip(clip, track) {
     if (!state.project || !clip || !track) return;
     const index = Math.max(0, (state.project.clips || []).indexOf(clip));
@@ -7322,7 +7338,8 @@ body.piano-roll-resizing {
     if (dock) {
       dock.classList.add("open");
       dock.setAttribute("aria-hidden", "false");
-      dock.style.height = Math.max(150, Number(state.pianoRollHeight) || 290) + "px";
+      state.pianoRollHeight = clampPianoRollHeight(state.pianoRollHeight);
+      dock.style.height = state.pianoRollHeight + "px";
     }
     renderPianoRoll({ centerPitch: true });
     setStatus(
@@ -7688,7 +7705,8 @@ body.piano-roll-resizing {
 
     dock.classList.add("open");
     dock.setAttribute("aria-hidden", "false");
-    dock.style.height = Math.max(150, Number(state.pianoRollHeight) || 290) + "px";
+    state.pianoRollHeight = clampPianoRollHeight(state.pianoRollHeight);
+    dock.style.height = state.pianoRollHeight + "px";
 
     const { clip, track, ppq, startTick, endTick, notes } = ctx;
     const tpb = ticksPerBar(ppq);
@@ -8053,7 +8071,7 @@ body.piano-roll-resizing {
     const main = dock?.closest(".main");
     if (!dock || !main) return;
     const delta = state.pianoRollResizeStartY - event.clientY;
-    const maxHeight = Math.max(180, main.clientHeight - 110);
+    const maxHeight = pianoRollMaxHeight();
     const next = Math.max(
       150,
       Math.min(maxHeight, state.pianoRollResizeStartHeight + delta)
@@ -8105,7 +8123,7 @@ body.piano-roll-resizing {
   try {
     const savedPianoHeight = Number(localStorage.getItem("midi_host_piano_roll_height_v1"));
     if (Number.isFinite(savedPianoHeight) && savedPianoHeight >= 150) {
-      state.pianoRollHeight = savedPianoHeight;
+      state.pianoRollHeight = clampPianoRollHeight(savedPianoHeight);
     }
     const savedPianoBarW = Number(localStorage.getItem("midi_host_piano_roll_bar_w_v1"));
     if (Number.isFinite(savedPianoBarW) && savedPianoBarW >= 24 && savedPianoBarW <= 2048) {
