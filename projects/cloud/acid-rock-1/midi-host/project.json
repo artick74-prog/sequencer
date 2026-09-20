@@ -28,7 +28,7 @@
   "cloudProject": {
     "id": "acid-rock-1",
     "path": "projects/cloud/acid-rock-1",
-    "savedAt": "2026-09-20T03:33:15+00:00"
+    "savedAt": "2026-09-20T03:45:32+00:00"
   },
   "clips": [
     {
@@ -793,14 +793,7 @@
         },
         {
           "tick": 2160,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "clip-mu9225zk-v6kggy"
-        },
-        {
-          "tick": 2280,
-          "duration": 72,
+          "duration": 200,
           "note": 36,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -816,6 +809,13 @@
           "tick": 2521,
           "duration": 186,
           "note": 24,
+          "velocity": 127,
+          "clipId": "clip-mu9225zk-v6kggy"
+        },
+        {
+          "tick": 2640,
+          "duration": 72,
+          "note": 36,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
         },
@@ -912,7 +912,7 @@
         },
         {
           "tick": 4441,
-          "duration": 186,
+          "duration": 220,
           "note": 24,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -947,7 +947,7 @@
         },
         {
           "tick": 5161,
-          "duration": 185,
+          "duration": 220,
           "note": 48,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -961,7 +961,7 @@
         },
         {
           "tick": 5520,
-          "duration": 135,
+          "duration": 112,
           "note": 58,
           "velocity": 64,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -975,14 +975,7 @@
         },
         {
           "tick": 5760,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "clip-mu9225zk-v6kggy"
-        },
-        {
-          "tick": 5882,
-          "duration": 64,
+          "duration": 200,
           "note": 48,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -1012,6 +1005,13 @@
           "tick": 6361,
           "duration": 186,
           "note": 24,
+          "velocity": 127,
+          "clipId": "clip-mu9225zk-v6kggy"
+        },
+        {
+          "tick": 6480,
+          "duration": 64,
+          "note": 48,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
         },
@@ -1051,8 +1051,8 @@
           "clipId": "clip-mu9225zk-v6kggy"
         },
         {
-          "tick": 7319,
-          "duration": 67,
+          "tick": 7200,
+          "duration": 200,
           "note": 48,
           "velocity": 64,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -1185,14 +1185,7 @@
         },
         {
           "tick": 9840,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "clip-mu9225zk-v6kggy"
-        },
-        {
-          "tick": 9960,
-          "duration": 72,
+          "duration": 200,
           "note": 36,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -1208,6 +1201,13 @@
           "tick": 10201,
           "duration": 186,
           "note": 24,
+          "velocity": 127,
+          "clipId": "clip-mu9225zk-v6kggy"
+        },
+        {
+          "tick": 10320,
+          "duration": 72,
+          "note": 36,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
         },
@@ -1304,7 +1304,7 @@
         },
         {
           "tick": 12121,
-          "duration": 186,
+          "duration": 220,
           "note": 24,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -1339,7 +1339,7 @@
         },
         {
           "tick": 12841,
-          "duration": 185,
+          "duration": 220,
           "note": 48,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -1353,7 +1353,7 @@
         },
         {
           "tick": 13200,
-          "duration": 135,
+          "duration": 112,
           "note": 58,
           "velocity": 64,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -1367,14 +1367,7 @@
         },
         {
           "tick": 13440,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "clip-mu9225zk-v6kggy"
-        },
-        {
-          "tick": 13562,
-          "duration": 64,
+          "duration": 200,
           "note": 48,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -1404,6 +1397,13 @@
           "tick": 14041,
           "duration": 186,
           "note": 24,
+          "velocity": 127,
+          "clipId": "clip-mu9225zk-v6kggy"
+        },
+        {
+          "tick": 14160,
+          "duration": 64,
+          "note": 48,
           "velocity": 127,
           "clipId": "clip-mu9225zk-v6kggy"
         },
@@ -1443,8 +1443,8 @@
           "clipId": "clip-mu9225zk-v6kggy"
         },
         {
-          "tick": 14999,
-          "duration": 67,
+          "tick": 14880,
+          "duration": 200,
           "note": 48,
           "velocity": 64,
           "clipId": "clip-mu9225zk-v6kggy"
@@ -1577,14 +1577,7 @@
         },
         {
           "tick": 17520,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "clip-mu95k0is-rtqfvj"
-        },
-        {
-          "tick": 17640,
-          "duration": 72,
+          "duration": 200,
           "note": 36,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -1600,6 +1593,13 @@
           "tick": 17881,
           "duration": 186,
           "note": 24,
+          "velocity": 127,
+          "clipId": "clip-mu95k0is-rtqfvj"
+        },
+        {
+          "tick": 18000,
+          "duration": 72,
+          "note": 36,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
         },
@@ -1696,7 +1696,7 @@
         },
         {
           "tick": 19801,
-          "duration": 186,
+          "duration": 220,
           "note": 24,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -1731,7 +1731,7 @@
         },
         {
           "tick": 20521,
-          "duration": 185,
+          "duration": 220,
           "note": 48,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -1745,7 +1745,7 @@
         },
         {
           "tick": 20880,
-          "duration": 135,
+          "duration": 112,
           "note": 58,
           "velocity": 64,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -1759,14 +1759,7 @@
         },
         {
           "tick": 21120,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "clip-mu95k0is-rtqfvj"
-        },
-        {
-          "tick": 21242,
-          "duration": 64,
+          "duration": 200,
           "note": 48,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -1796,6 +1789,13 @@
           "tick": 21721,
           "duration": 186,
           "note": 24,
+          "velocity": 127,
+          "clipId": "clip-mu95k0is-rtqfvj"
+        },
+        {
+          "tick": 21840,
+          "duration": 64,
+          "note": 48,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
         },
@@ -1835,8 +1835,8 @@
           "clipId": "clip-mu95k0is-rtqfvj"
         },
         {
-          "tick": 22679,
-          "duration": 67,
+          "tick": 22560,
+          "duration": 200,
           "note": 48,
           "velocity": 64,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -1969,14 +1969,7 @@
         },
         {
           "tick": 25200,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "clip-mu95k0is-rtqfvj"
-        },
-        {
-          "tick": 25320,
-          "duration": 72,
+          "duration": 200,
           "note": 36,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -1992,6 +1985,13 @@
           "tick": 25561,
           "duration": 186,
           "note": 24,
+          "velocity": 127,
+          "clipId": "clip-mu95k0is-rtqfvj"
+        },
+        {
+          "tick": 25680,
+          "duration": 72,
+          "note": 36,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
         },
@@ -2088,7 +2088,7 @@
         },
         {
           "tick": 27481,
-          "duration": 186,
+          "duration": 220,
           "note": 24,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -2123,7 +2123,7 @@
         },
         {
           "tick": 28201,
-          "duration": 185,
+          "duration": 220,
           "note": 48,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -2137,7 +2137,7 @@
         },
         {
           "tick": 28560,
-          "duration": 135,
+          "duration": 112,
           "note": 58,
           "velocity": 64,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -2151,14 +2151,7 @@
         },
         {
           "tick": 28800,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "clip-mu95k0is-rtqfvj"
-        },
-        {
-          "tick": 28922,
-          "duration": 64,
+          "duration": 200,
           "note": 48,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
@@ -2188,6 +2181,13 @@
           "tick": 29401,
           "duration": 186,
           "note": 24,
+          "velocity": 127,
+          "clipId": "clip-mu95k0is-rtqfvj"
+        },
+        {
+          "tick": 29520,
+          "duration": 64,
+          "note": 48,
           "velocity": 127,
           "clipId": "clip-mu95k0is-rtqfvj"
         },
@@ -2227,8 +2227,8 @@
           "clipId": "clip-mu95k0is-rtqfvj"
         },
         {
-          "tick": 30359,
-          "duration": 67,
+          "tick": 30240,
+          "duration": 200,
           "note": 48,
           "velocity": 64,
           "clipId": "clip-mu95k0is-rtqfvj"

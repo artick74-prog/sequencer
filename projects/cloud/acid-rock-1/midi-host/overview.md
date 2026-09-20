@@ -17,7 +17,7 @@
 ### Start (bars 1–32)
 Heatmap (all tracks, avg density):
 ```
-x.o.ooo.|xoo.ooo.|xoo.#oo.|xoo.xoxo
+x.o.ooo.|xoo.xoo.|xoo.#oo.|xoo.xoxo
 ```
 **Bass A · Kick Lock Long** (ch 1, 95 notes)
 - bars 17–32:
@@ -41,23 +41,25 @@ x.......|....x...|....x...|x...x.xx
   pitches: G#3 D#3 G#2 D#3 F2 F2
 
 **Acid** (ch 2, 224 notes)
-2-bar loop (dominant):
-```
-A X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
-B X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
-```
-- A pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3
-- B pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3
-- Covers: 1–16 (8×)
-- bars 1–16:
-```
-X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
-```
-  pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 - bars 17–32:
 ```
 ........|........|........|........
 ```
+- bars 1, 3, 5, 7, 9, 11, 13, 15:
+```
+X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
+```
+  pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
+- bars 2, 6, 10, 14:
+```
+X.X.X...|x.X.X.X.|x.X.X.X.|..x.x.x.
+```
+  pitches: C3 C3 C2 C3 C1 C2 C3 C3 C2 C1 C3 C3 A#3 C3
+- bars 4, 8, 12, 16:
+```
+X...X.X.|x.X.X.X.|x.X.X.X.|x...x.x.
+```
+  pitches: C3 C2 C2 C3 C1 C3 C3 C3 C2 C1 C3 C3 A#3 C3
 
 **Drums** (ch 10, 207 notes)
 - bars 17–32:

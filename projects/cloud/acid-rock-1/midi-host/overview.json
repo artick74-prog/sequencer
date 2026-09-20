@@ -328,7 +328,7 @@
       "startBar": 1,
       "endBar": 32,
       "heatmap32": {
-        "ascii": "x.o.ooo.|xoo.ooo.|xoo.#oo.|xoo.xoxo",
+        "ascii": "x.o.ooo.|xoo.xoo.|xoo.#oo.|xoo.xoxo",
         "max": 3.8,
         "barsSampled": 16
       },
@@ -428,9 +428,16 @@
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "1–16",
+              "ascii": "........|........|........|........",
+              "bars": "17–32",
               "barCount": 16,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+              "bars": "1, 3, 5, 7, 9, 11, 13, 15",
+              "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
                 "C3",
@@ -450,47 +457,51 @@
               ]
             },
             {
-              "ascii": "........|........|........|........",
-              "bars": "17–32",
-              "barCount": 16,
+              "ascii": "X.X.X...|x.X.X.X.|x.X.X.X.|..x.x.x.",
+              "bars": "2, 6, 10, 14",
+              "barCount": 4,
               "hardOffNotes": 0,
-              "pitches": []
+              "pitches": [
+                "C3",
+                "C3",
+                "C2",
+                "C3",
+                "C1",
+                "C2",
+                "C3",
+                "C3",
+                "C2",
+                "C1",
+                "C3",
+                "C3",
+                "A#3",
+                "C3"
+              ]
+            },
+            {
+              "ascii": "X...X.X.|x.X.X.X.|x.X.X.X.|x...x.x.",
+              "bars": "4, 8, 12, 16",
+              "barCount": 4,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C2",
+                "C2",
+                "C3",
+                "C1",
+                "C3",
+                "C3",
+                "C3",
+                "C2",
+                "C1",
+                "C3",
+                "C3",
+                "A#3",
+                "C3"
+              ]
             }
           ],
-          "twoBarLoop": {
-            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "repeats": 8,
-            "bars": "1–16"
-          }
+          "twoBarLoop": null
         },
         {
           "trackId": "drums",
