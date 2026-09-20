@@ -1211,6 +1211,8 @@ select, input[type="number"], input[type="text"] {
   cursor: crosshair;
   user-select: none;
 }
+.piano-roll-grid.tool-select { cursor: default; }
+.piano-roll-grid.tool-draw { cursor: crosshair; }
 .piano-roll-row {
   position: absolute;
   left: 0;
@@ -2072,7 +2074,7 @@ body.timeline-ruler-seeking {
         <div class="piano-roll-resizer" id="pianoRollResizer" title="Drag to resize Piano Roll"></div>
         <div class="piano-roll-head">
           <strong id="pianoRollTitle">Piano Roll</strong>
-          <span class="piano-roll-badge" title="Box select · copy/paste · duplicate · transpose · undo/redo · H/V zoom">EDIT · v0.5</span>
+          <span class="piano-roll-badge" title="1 = Select · 5 = Draw · Ctrl temporarily selects while drawing">EDIT · v0.6 · DRAW</span>
           <span class="piano-roll-meta" id="pianoRollMeta">Double-click a Project Clip on the timeline.</span>
           <label class="piano-roll-snap" title="Snap notes and Piano Roll ruler to the selected grid">
             Snap to Grid
@@ -2090,12 +2092,6 @@ body.timeline-ruler-seeking {
             <button class="btn" id="pianoUndo" type="button" title="Undo · Ctrl+Z">↶</button>
             <button class="btn" id="pianoRedo" type="button" title="Redo · Ctrl+Y / Ctrl+Shift+Z">↷</button>
             <button class="btn" id="pianoDup" type="button" title="Duplicate selected notes · Ctrl+D">Dup</button>
-            <button class="btn" id="pianoDown12" type="button" title="Transpose selected notes down one octave">−12</button>
-            <button class="btn" id="pianoDown1" type="button" title="Transpose selected notes down one semitone">−1</button>
-            <button class="btn" id="pianoUp1" type="button" title="Transpose selected notes up one semitone">+1</button>
-            <button class="btn" id="pianoUp12" type="button" title="Transpose selected notes up one octave">+12</button>
-            <button class="btn" id="pianoVOut" type="button" title="Vertical zoom out · Alt+wheel up">V−</button>
-            <button class="btn" id="pianoVIn" type="button" title="Vertical zoom in · Alt+wheel down">V+</button>
           </span>
           <button class="btn" id="btnClosePianoRoll" type="button" title="Close Piano Roll">Close</button>
         </div>
@@ -2638,6 +2634,7 @@ body.timeline-ruler-seeking {
     pianoRollUndoStack: [],
     pianoRollRedoStack: [],
     pianoRollRowH: 18,
+    pianoRollTool: "draw",
     pianoRollNoteIdCounter: 0,
     lastClipClickId: "",
     lastClipClickAt: 0,
@@ -7471,7 +7468,7 @@ body.timeline-ruler-seeking {
     setStatus(
       "Piano Roll VIEW · " + (track.name || "Track") +
       " · " + (clip.name || clip.originalName || "Project Clip") +
-      " · box select · Ctrl+C/V/D · arrows move/transpose · Shift+Up/Down ±12 · Ctrl+Z/Y · Alt+wheel vertical zoom · snap " + pianoRollSnapLabel(),
+      " · 1 Select · 5 Draw · Ctrl temporarily Select · arrows transpose/move · Shift+Up/Down ±12 · Ctrl+C/V/D/Z/Y · Ctrl+wheel on keys = vertical zoom · snap " + pianoRollSnapLabel(),
       "ok"
     );
   }
@@ -7778,6 +7775,25 @@ body.timeline-ruler-seeking {
     if (!newScroll) return;
     const rulerH = 24;
     newScroll.scrollTop = Math.max(0, rulerH + rowFromTop * nextRowH - anchorViewportY);
+  }
+
+  function setPianoRollTool(tool, { silent = false } = {}) {
+    const next = tool === "select" ? "select" : "draw";
+    state.pianoRollTool = next;
+    const badge = document.querySelector(".piano-roll-badge");
+    if (badge) badge.textContent = "EDIT · v0.6 · " + (next === "select" ? "SELECT" : "DRAW");
+    const grid = document.getElementById("pianoRollGrid");
+    if (grid) {
+      grid.classList.toggle("tool-select", next === "select");
+      grid.classList.toggle("tool-draw", next === "draw");
+    }
+    if (!silent) {
+      setStatus(
+        "Piano Roll · " + (next === "select" ? "Select/Arrow tool [1]" : "Draw/Paint tool [5]") +
+        (next === "draw" ? " · hold Ctrl for temporary Select" : ""),
+        "ok"
+      );
+    }
   }
 
   function auditionPianoRollNote(track, rawNote, velocity = 100) {
@@ -8100,6 +8116,8 @@ body.timeline-ruler-seeking {
     const clipName = clip.name || clip.originalName || "Project Clip";
 
     if (title) title.textContent = "Piano Roll · " + track.name;
+    const badge = document.querySelector(".piano-roll-badge");
+    if (badge) badge.textContent = "EDIT · v0.6 · " + (state.pianoRollTool === "select" ? "SELECT" : "DRAW");
     const snapSelect = document.getElementById("pianoRollSnap");
     if (snapSelect) snapSelect.value = pianoRollSnapValue();
     if (meta) {
@@ -8148,7 +8166,7 @@ body.timeline-ruler-seeking {
     keys.className = "piano-roll-keys";
 
     const grid = document.createElement("div");
-    grid.className = "piano-roll-grid";
+    grid.className = "piano-roll-grid " + (state.pianoRollTool === "select" ? "tool-select" : "tool-draw");
     grid.id = "pianoRollGrid";
     grid.dataset.startTick = String(startTick);
     grid.dataset.endTick = String(endTick);
@@ -8293,10 +8311,21 @@ body.timeline-ruler-seeking {
     grid.addEventListener("pointerdown", (event) => {
       if (event.button !== 0 || event.target.closest(".piano-roll-note")) return;
       event.preventDefault();
+
+      const temporarySelect = event.ctrlKey || event.metaKey;
+      const selectMode = state.pianoRollTool === "select" || temporarySelect;
+
+      if (!selectMode) {
+        // Paint/Draw tool: a click on empty grid creates one snapped note.
+        createPianoRollNoteAt(event, grid);
+        return;
+      }
+
+      // Arrow/Select tool: click clears, drag creates a marquee selection.
       const rect = grid.getBoundingClientRect();
       const startX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
       const startY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
-      const additive = event.ctrlKey || event.metaKey;
+      const additive = event.shiftKey;
       const baseIds = additive ? new Set(state.pianoRollSelectedNoteIds || []) : new Set();
       let moved = false;
       grid.setPointerCapture?.(event.pointerId);
@@ -8340,7 +8369,7 @@ body.timeline-ruler-seeking {
 
         if (!moved) {
           if (!additive) pianoRollSetSelection([]);
-          createPianoRollNoteAt(upEvent, grid);
+          setStatus("Piano Roll · Select tool · drag a box around notes", "");
         } else {
           setStatus(
             "Piano Roll · selected " + (state.pianoRollSelectedNoteIds || []).length + " note(s)",
@@ -8571,15 +8600,18 @@ body.timeline-ruler-seeking {
   });
 
   document.getElementById("pianoRollScroll")?.addEventListener("wheel", (event) => {
-    if (event.altKey && !event.ctrlKey && !event.metaKey) {
-      event.preventDefault();
-      event.stopPropagation();
-      setPianoRollVerticalZoom(event.deltaY > 0 ? 1.12 : 1 / 1.12, event.clientY);
-      return;
-    }
     if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
     event.stopPropagation();
+
+    if (event.target.closest?.(".piano-roll-keys, .piano-roll-key")) {
+      setPianoRollVerticalZoom(
+        event.deltaY > 0 ? 1.12 : 1 / 1.12,
+        event.clientY
+      );
+      return;
+    }
+
     setPianoRollHorizontalZoom(
       event.deltaY > 0 ? 1.2 : 1 / 1.2,
       event.clientX
@@ -8678,12 +8710,6 @@ body.timeline-ruler-seeking {
   document.getElementById("pianoUndo")?.addEventListener("click", pianoRollUndo);
   document.getElementById("pianoRedo")?.addEventListener("click", pianoRollRedo);
   document.getElementById("pianoDup")?.addEventListener("click", duplicateSelectedPianoRollNotes);
-  document.getElementById("pianoDown12")?.addEventListener("click", () => transposeSelectedPianoRollNotes(-12));
-  document.getElementById("pianoDown1")?.addEventListener("click", () => transposeSelectedPianoRollNotes(-1));
-  document.getElementById("pianoUp1")?.addEventListener("click", () => transposeSelectedPianoRollNotes(1));
-  document.getElementById("pianoUp12")?.addEventListener("click", () => transposeSelectedPianoRollNotes(12));
-  document.getElementById("pianoVOut")?.addEventListener("click", () => setPianoRollVerticalZoom(1 / 1.2));
-  document.getElementById("pianoVIn")?.addEventListener("click", () => setPianoRollVerticalZoom(1.2));
 
   document.getElementById("btnClosePianoRoll")?.addEventListener("click", () => {
     closePianoRoll();
@@ -8753,6 +8779,59 @@ body.timeline-ruler-seeking {
     clip.baseLengthTicks = baseLengthTicks;
     clip.repeatCount = repeatCount;
     return { baseLengthTicks, repeatCount };
+  }
+
+  function createEmptyHostClip(track, requestedStartTick) {
+    if (!state.project || !track) return null;
+    if (state.playing) stopPlayback();
+
+    const ppq = state.project.ppq || 480;
+    const tpb = ticksPerBar(ppq);
+    const startTick = Math.max(0, Math.round((Number(requestedStartTick) || 0) / tpb) * tpb);
+    const endTick = startTick + tpb;
+    const instanceId = newHostClipInstanceId();
+    const clip = {
+      id: "manual-midi-part",
+      instanceId,
+      name: "MIDI Part",
+      originalName: "MIDI Part",
+      source: "manual",
+      genre: "",
+      role: inferTrackRole(track, track.channel || 1),
+      targetTrackId: track.id,
+      targetTrackName: track.name,
+      startTick,
+      endTick,
+      baseLengthTicks: tpb,
+      repeatCount: 1,
+      noteCount: 0,
+      edited: true,
+      createdAt: new Date().toISOString(),
+      insertedAt: new Date().toISOString(),
+    };
+
+    state.project.clips = Array.isArray(state.project.clips) ? state.project.clips : [];
+    state.project.clips.push(clip);
+    state.project.minimumLengthTicks = Math.max(
+      Number(state.project.minimumLengthTicks) || 0,
+      endTick
+    );
+    state.selectedClipId = instanceId;
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    openPianoRollForClip(clip, track);
+    setPianoRollTool("draw", { silent: true });
+    setStatus(
+      "Created empty MIDI Part · " + track.name +
+      " · bar " + tickToBar(startTick, ppq) +
+      " · Draw tool [5] active",
+      "ok"
+    );
+    return clip;
   }
 
   function duplicateHostLoopClip(clip, track, requestedStartTick = null) {
@@ -9687,6 +9766,17 @@ body.timeline-ruler-seeking {
           setStatus("Loop drop failed: " + err.message, "err");
           hostLoopSetStatus("Drop error: " + err.message);
         }
+      });
+
+      body.addEventListener("dblclick", (event) => {
+        if (
+          event.button !== 0 ||
+          event.target.closest(".loop-clip-container, .note-block, button, .loop-clip-actions")
+        ) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const pos = hostLoopDropPosition(body, event.clientX);
+        createEmptyHostClip(track, pos.tick);
       });
 
       const trackLoopRegion = document.createElement("div");
@@ -11151,15 +11241,15 @@ body.timeline-ruler-seeking {
       closeRhythmEditor();
     }
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
-      const key = String(e.key || "").toLowerCase();
-      if (key === "n") {
+      const code = e.code;
+      if (code === "KeyN") {
         e.preventDefault();
         createNewProject();
-      } else if (key === "o") {
+      } else if (code === "KeyO") {
         e.preventDefault();
         closeFileMenu();
         showCloudProjects();
-      } else if (key === "s") {
+      } else if (code === "KeyS") {
         e.preventDefault();
         closeFileMenu();
         saveProjectToCloud();
@@ -11298,73 +11388,86 @@ body.timeline-ruler-seeking {
     const clipContext = selectedHostClipContext();
 
     if (state.pianoRollClipId) {
-      const key = String(e.key || "").toLowerCase();
+      const code = e.code;
       const mod = e.ctrlKey || e.metaKey;
       const selectedNotes = pianoRollSelectedNotes();
 
-      if (mod && key === "z") {
+      // Studio One / Fender Studio style tools. KeyboardEvent.code keeps
+      // these physical shortcuts identical in English and Russian layouts.
+      if (!mod && !e.altKey && (code === "Digit1" || code === "Numpad1")) {
+        e.preventDefault();
+        setPianoRollTool("select");
+        return;
+      }
+      if (!mod && !e.altKey && (code === "Digit5" || code === "Numpad5")) {
+        e.preventDefault();
+        setPianoRollTool("draw");
+        return;
+      }
+
+      if (mod && code === "KeyZ") {
         e.preventDefault();
         if (e.shiftKey) pianoRollRedo();
         else pianoRollUndo();
         return;
       }
-      if (mod && key === "y") {
+      if (mod && code === "KeyY") {
         e.preventDefault();
         pianoRollRedo();
         return;
       }
-      if (mod && key === "a") {
+      if (mod && code === "KeyA") {
         e.preventDefault();
         const ctx = pianoRollContext();
         pianoRollSetSelection((ctx?.notes || []).map(pianoRollNoteId));
         setStatus("Piano Roll · selected all " + (ctx?.notes.length || 0) + " note(s)", "ok");
         return;
       }
-      if (mod && key === "c") {
+      if (mod && code === "KeyC") {
         e.preventDefault();
         if (!copySelectedPianoRollNotes()) {
           setStatus("Piano Roll · select note(s) to copy", "");
         }
         return;
       }
-      if (mod && key === "v") {
+      if (mod && code === "KeyV") {
         e.preventDefault();
         if (!pastePianoRollNotes()) {
           setStatus("Piano Roll · note clipboard is empty", "");
         }
         return;
       }
-      if (mod && key === "d") {
+      if (mod && code === "KeyD") {
         e.preventDefault();
         if (!duplicateSelectedPianoRollNotes()) {
           setStatus("Piano Roll · select note(s) to duplicate", "");
         }
         return;
       }
-      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      if (code === "ArrowUp" || code === "ArrowDown") {
         e.preventDefault();
         if (selectedNotes.length) {
           const amount = e.shiftKey ? 12 : 1;
-          transposeSelectedPianoRollNotes(e.key === "ArrowUp" ? amount : -amount);
+          transposeSelectedPianoRollNotes(code === "ArrowUp" ? amount : -amount);
         }
         return;
       }
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      if (code === "ArrowLeft" || code === "ArrowRight") {
         e.preventDefault();
         if (selectedNotes.length) {
           const step = pianoRollSnapTicks(state.project?.ppq || 480);
-          moveSelectedPianoRollNotes(e.key === "ArrowLeft" ? -step : step);
+          moveSelectedPianoRollNotes(code === "ArrowLeft" ? -step : step);
         }
         return;
       }
     }
 
-    if (state.pianoRollClipId && (e.key === "Delete" || e.key === "Backspace")) {
+    if (state.pianoRollClipId && (e.code === "Delete" || e.code === "Backspace")) {
       e.preventDefault();
       deleteSelectedPianoRollNote();
       return;
     }
-    if (state.pianoRollClipId && e.key === "Escape" && (state.pianoRollSelectedNoteIds || []).length) {
+    if (state.pianoRollClipId && e.code === "Escape" && (state.pianoRollSelectedNoteIds || []).length) {
       e.preventDefault();
       pianoRollSetSelection([]);
       renderPianoRoll();
@@ -11372,26 +11475,26 @@ body.timeline-ruler-seeking {
       return;
     }
 
-    if (clipContext && (e.ctrlKey || e.metaKey) && !e.altKey && String(e.key || "").toLowerCase() === "d") {
+    if (clipContext && (e.ctrlKey || e.metaKey) && !e.altKey && e.code === "KeyD") {
       e.preventDefault();
       duplicateHostLoopClip(clipContext.clip, clipContext.track);
       return;
     }
-    if (clipContext && (e.ctrlKey || e.metaKey) && !e.altKey && String(e.key || "").toLowerCase() === "c") {
+    if (clipContext && (e.ctrlKey || e.metaKey) && !e.altKey && e.code === "KeyC") {
       e.preventDefault();
       copyHostLoopClipToClipboard(clipContext.clip, clipContext.track);
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && !e.altKey && String(e.key || "").toLowerCase() === "v") {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.code === "KeyV") {
       e.preventDefault();
       pasteHostLoopClipboard();
       return;
     }
 
-    if (clipContext && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+    if (clipContext && (e.code === "ArrowLeft" || e.code === "ArrowRight")) {
       e.preventDefault();
       const step = ticksPerBar(state.project.ppq || 480);
-      const direction = e.key === "ArrowLeft" ? -1 : 1;
+      const direction = e.code === "ArrowLeft" ? -1 : 1;
       moveHostLoopClip(
         clipContext.clip,
         clipContext.track,
@@ -11399,7 +11502,7 @@ body.timeline-ruler-seeking {
       );
       return;
     }
-    if (clipContext && (e.key === "Delete" || e.key === "Backspace")) {
+    if (clipContext && (e.code === "Delete" || e.code === "Backspace")) {
       e.preventDefault();
       removeHostLoopClip(clipContext.clip, clipContext.track);
       return;
