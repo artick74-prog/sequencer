@@ -96,6 +96,58 @@ a { color: var(--accent); }
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+.performance-field input[type="range"] {
+  width: 86px;
+  accent-color: var(--accent);
+}
+.performance-value {
+  min-width: 32px;
+  color: var(--text);
+  font: 11px ui-monospace, Consolas, monospace;
+  text-align: center;
+}
+.performance-value.wide { min-width: 38px; }
+.transport-transpose,
+.octave-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.transport-transpose {
+  color: var(--dim);
+  font-size: 12px;
+}
+.transport-transpose-label { margin-right: 2px; }
+.pitch-step-btn {
+  width: 23px;
+  min-width: 23px;
+  height: 23px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #1c2430;
+  color: var(--text);
+  font: 700 12px/21px "Segoe UI", sans-serif;
+  text-align: center;
+  cursor: pointer;
+}
+.pitch-step-btn:hover { border-color: var(--accent-dim); color: #fff; }
+.pitch-step-btn:disabled { opacity: .3; cursor: default; }
+.octave-control {
+  margin-left: auto;
+  color: var(--dim);
+  font: 10px ui-monospace, Consolas, monospace;
+}
+.octave-control .performance-value {
+  min-width: 21px;
+  font-size: 10px;
+}
+.octave-control .pitch-step-btn {
+  width: 21px;
+  min-width: 21px;
+  height: 23px;
+  font-size: 11px;
+}
 .btn {
   background: #1c2430;
   color: var(--text);
@@ -889,7 +941,11 @@ select, input[type="number"], input[type="text"] {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+}
+.track-actions-row > .btn {
+  padding: 5px 7px;
+  font-size: 11px;
 }
 .track-mix {
   display: inline-flex;
@@ -1137,6 +1193,16 @@ select, input[type="number"], input[type="text"] {
     <label class="field">BPM
       <input type="number" id="tempo" min="40" max="240" value="120" step="1">
     </label>
+    <label class="field performance-field" title="16th-note swing, same 0–50% range as Chiptune Sequencer">Swing
+      <input type="range" id="swing" min="0" max="50" value="0" step="1">
+      <span class="performance-value" id="swingValue">0%</span>
+    </label>
+    <span class="transport-transpose" title="Master semitone transpose. Drums / percussion are never transposed.">
+      <span class="transport-transpose-label">Transpose</span>
+      <button class="pitch-step-btn" id="masterTransposeDown" type="button" title="Master transpose −1 semitone">−</button>
+      <span class="performance-value wide" id="masterTransposeValue">0 st</span>
+      <button class="pitch-step-btn" id="masterTransposeUp" type="button" title="Master transpose +1 semitone">+</button>
+    </span>
     <label class="field">MIDI Out
       <select id="midiOut"><option value="">— request access —</option></select>
     </label>
@@ -1685,14 +1751,18 @@ select, input[type="number"], input[type="text"] {
       });
       const ch = ((track.channel || 1) - 1) & 0x0f;
       for (const n of track.notes || []) {
+        const swingOffset = projectSwingOffsetTicks(project, n.tick, ppq);
+        const startTick = Math.max(0, Math.round(n.tick + swingOffset));
+        const endTick = Math.max(startTick + 1, Math.round(n.tick + Math.max(1, n.duration) + swingOffset));
+        const pitch = projectPlaybackNote(project, track, n.note);
         events.push({
-          tick: n.tick, order: order++,
-          bytes: [0x90 | ch, n.note & 0x7f, n.velocity & 0x7f],
+          tick: startTick, order: order++,
+          bytes: [0x90 | ch, pitch & 0x7f, n.velocity & 0x7f],
         });
         events.push({
-          tick: n.tick + Math.max(1, n.duration),
+          tick: endTick,
           order: order++,
-          bytes: [0x80 | ch, n.note & 0x7f, 0x00],
+          bytes: [0x80 | ch, pitch & 0x7f, 0x00],
         });
       }
       trackChunks.push(mtrkChunk(eventsToTrackBytes(events)));
@@ -1740,15 +1810,19 @@ select, input[type="number"], input[type="text"] {
 
     const ch = ((track.channel || 1) - 1) & 0x0f;
     for (const note of track.notes || []) {
+      const swingOffset = projectSwingOffsetTicks(project, note.tick, ppq);
+      const startTick = Math.max(0, Math.round(note.tick + swingOffset));
+      const endTick = Math.max(startTick + 1, Math.round(note.tick + Math.max(1, note.duration) + swingOffset));
+      const pitch = projectPlaybackNote(project, track, note.note);
       events.push({
-        tick: note.tick,
+        tick: startTick,
         order: order++,
-        bytes: [0x90 | ch, note.note & 0x7f, note.velocity & 0x7f],
+        bytes: [0x90 | ch, pitch & 0x7f, note.velocity & 0x7f],
       });
       events.push({
-        tick: note.tick + Math.max(1, note.duration),
+        tick: endTick,
         order: order++,
-        bytes: [0x80 | ch, note.note & 0x7f, 0x00],
+        bytes: [0x80 | ch, pitch & 0x7f, 0x00],
       });
     }
 
@@ -3189,6 +3263,8 @@ select, input[type="number"], input[type="text"] {
       project: {
         name: projectName,
         tempo,
+        swing: Math.max(0, Math.min(50, Number(state.project.swing) || 0)),
+        masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(state.project.masterTranspose) || 0))),
         cloudProject: state.project.cloudProject ? {...state.project.cloudProject} : null,
         tracks: state.project.tracks.map((track, index) => ({
           id: track.id || "",
@@ -3198,6 +3274,7 @@ select, input[type="number"], input[type="text"] {
           role: track.role || inferTrackRole(track, track.channel || 1),
           mute: !!track.mute,
           solo: !!track.solo,
+          transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(track.transposeOctaves) || 0))),
         })),
       },
       ui: {
@@ -3273,6 +3350,12 @@ select, input[type="number"], input[type="text"] {
 
     if (saved.project.name) project.name = saved.project.name;
     if (Number.isFinite(Number(saved.project.tempo))) project.tempo = Number(saved.project.tempo);
+    if (Number.isFinite(Number(saved.project.swing))) {
+      project.swing = Math.max(0, Math.min(50, Number(saved.project.swing)));
+    }
+    if (Number.isFinite(Number(saved.project.masterTranspose))) {
+      project.masterTranspose = Math.max(-36, Math.min(36, Math.round(Number(saved.project.masterTranspose))));
+    }
     if (saved.project.cloudProject && typeof saved.project.cloudProject === "object") {
       project.cloudProject = {...saved.project.cloudProject};
     }
@@ -3293,6 +3376,9 @@ select, input[type="number"], input[type="text"] {
       track.role = match.role || inferTrackRole(track, track.channel || 1);
       track.mute = !!match.mute;
       track.solo = !!match.solo;
+      if (Number.isFinite(Number(match.transposeOctaves))) {
+        track.transposeOctaves = Math.max(-3, Math.min(3, Math.round(Number(match.transposeOctaves))));
+      }
     }
     return true;
   }
@@ -3743,7 +3829,7 @@ select, input[type="number"], input[type="text"] {
       if (route !== "hw" && route !== "both") continue;
       if (!trackIsAudible(track, project)) continue;
       for (const note of track.notes || []) {
-        const pitch = Number(note.note);
+        const pitch = projectPlaybackNote(project, track, note.note);
         if (Number.isFinite(pitch)) notes.add(Math.max(0, Math.min(127, pitch | 0)));
       }
     }
@@ -3933,6 +4019,94 @@ select, input[type="number"], input[type="text"] {
     return wasPlaying;
   }
 
+  function trackIsPercussion(track) {
+    if (!track) return false;
+    if ((Number(track.channel) || 1) === 10) return true;
+    const role = String(track.role || "").toLowerCase();
+    return role.includes("drum") || role.includes("percussion");
+  }
+
+  function projectPlaybackNote(project, track, midiNote) {
+    const raw = Number(midiNote) || 0;
+    if (trackIsPercussion(track)) return Math.max(0, Math.min(127, raw | 0));
+    const master = Math.max(-36, Math.min(36, Math.round(Number(project?.masterTranspose) || 0)));
+    const octaves = Math.max(-3, Math.min(3, Math.round(Number(track?.transposeOctaves) || 0)));
+    return Math.max(0, Math.min(127, Math.round(raw + master + octaves * 12)));
+  }
+
+  function projectSwingOffsetTicks(project, noteStartTick, ppq = project?.ppq || 480) {
+    const swing = Math.max(0, Math.min(50, Number(project?.swing) || 0));
+    if (!swing) return 0;
+    const stepTicks = Math.max(1, ppq / 4); // 1/16 note, matching Chiptune Sequencer
+    const nearestStep = Math.round(Number(noteStartTick || 0) / stepTicks);
+    if ((nearestStep & 1) === 0) return 0;
+    return (swing / 100) * stepTicks * 0.5;
+  }
+
+  function updatePerformanceControlsUi() {
+    const project = state.project;
+    const swing = Math.max(0, Math.min(50, Number(project?.swing) || 0));
+    const transpose = Math.max(-36, Math.min(36, Math.round(Number(project?.masterTranspose) || 0)));
+    const swingEl = document.getElementById("swing");
+    const swingValue = document.getElementById("swingValue");
+    const transposeValue = document.getElementById("masterTransposeValue");
+    if (swingEl) swingEl.value = String(swing);
+    if (swingValue) swingValue.textContent = Math.round(swing) + "%";
+    if (transposeValue) transposeValue.textContent = (transpose > 0 ? "+" : "") + transpose + " st";
+  }
+
+  function restartPlaybackForPerformanceChange() {
+    if (!state.playing) return;
+    const tick = currentTransportTick();
+    stopPlayback();
+    state.startTick = tick;
+    runScheduler(tick);
+  }
+
+  function setMasterTranspose(value) {
+    if (!state.project) return;
+    const wasPlaying = state.playing;
+    const tick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
+    if (wasPlaying) stopPlayback();
+    state.project.masterTranspose = Math.max(-36, Math.min(36, Math.round(Number(value) || 0)));
+    updatePerformanceControlsUi();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    if (wasPlaying) {
+      state.startTick = tick;
+      runScheduler(tick);
+    }
+    setStatus(
+      "Master transpose: " +
+      (state.project.masterTranspose > 0 ? "+" : "") +
+      state.project.masterTranspose +
+      " semitone(s) · drums unchanged",
+      "ok"
+    );
+  }
+
+  function setTrackOctave(track, value) {
+    if (!state.project || !track || trackIsPercussion(track)) return;
+    const wasPlaying = state.playing;
+    const tick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
+    if (wasPlaying) stopPlayback();
+    track.transposeOctaves = Math.max(-3, Math.min(3, Math.round(Number(value) || 0)));
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderTracks();
+    updatePlayheads(tick, state.lengthTicks || 1);
+    if (wasPlaying) {
+      state.startTick = tick;
+      runScheduler(tick);
+    }
+    setStatus(
+      track.name + " · octave " +
+      (track.transposeOctaves > 0 ? "+" : "") +
+      track.transposeOctaves,
+      "ok"
+    );
+  }
+
   function buildEventQueue(project, range = null) {
     const queue = [];
     for (const track of project.tracks) {
@@ -3944,10 +4118,18 @@ select, input[type="number"], input[type="text"] {
         const noteEnd = n.tick + Math.max(1, n.duration);
         if (range && (noteStart < range.start || noteStart >= range.end)) continue;
         const offTick = range ? Math.min(noteEnd, range.end) : noteEnd;
+        const swingOffset = projectSwingOffsetTicks(project, noteStart, project.ppq || 480);
+        const playbackStart = range
+          ? Math.min(range.end - 1, noteStart + swingOffset)
+          : noteStart + swingOffset;
+        const playbackEnd = range
+          ? Math.min(range.end, offTick + swingOffset)
+          : offTick + swingOffset;
+        const playbackNote = projectPlaybackNote(project, track, n.note);
         queue.push({
-          tick: noteStart,
+          tick: playbackStart,
           type: "on",
-          note: n.note,
+          note: playbackNote,
           velocity: n.velocity,
           ch,
           route,
@@ -3955,9 +4137,9 @@ select, input[type="number"], input[type="text"] {
           trackId: track.id,
         });
         queue.push({
-          tick: offTick,
+          tick: Math.max(playbackStart + 1, playbackEnd),
           type: "off",
-          note: n.note,
+          note: playbackNote,
           velocity: 0,
           ch,
           route,
@@ -4288,6 +4470,8 @@ select, input[type="number"], input[type="text"] {
       name: data.name || fallbackName || "untitled",
       ppq: data.ppq || 480,
       tempo: data.tempo || 120,
+      swing: Math.max(0, Math.min(50, Number(data.swing) || 0)),
+      masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(data.masterTranspose) || 0))),
       lengthTicks: data.lengthTicks || 0,
       minimumLengthTicks: Math.max(0, Number(data.minimumLengthTicks) || 0),
       markers: data.markers || [],
@@ -4311,6 +4495,7 @@ select, input[type="number"], input[type="text"] {
           role: t.role || inferTrackRole({ name, role: t.role }, channel),
           mute: !!t.mute,
           solo: !!t.solo,
+          transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(t.transposeOctaves) || 0))),
           cubaseIndex: t.cubaseIndex ?? i,
           notes: (t.notes || []).map((n) => ({
             tick: n.tick | 0,
@@ -4363,6 +4548,7 @@ select, input[type="number"], input[type="text"] {
     const restored = restoreLocal ? applyHostAutosaveToProject(project) : false;
     document.getElementById("projectName").value = project.name || "untitled";
     document.getElementById("tempo").value = project.tempo || 120;
+    updatePerformanceControlsUi();
     updateLoopButtonUi();
     renderAll();
     updatePlayheads(0, state.lengthTicks);
@@ -5105,7 +5291,8 @@ select, input[type="number"], input[type="text"] {
       if (otherCh !== channelZeroBased) return false;
       return (other.notes || []).some((note) => {
         const end = note.tick + Math.max(1, note.duration);
-        return note.note === midiNote && note.tick <= tick && tick < end;
+        return projectPlaybackNote(project, other, note.note) === midiNote &&
+          note.tick <= tick && tick < end;
       });
     });
   }
@@ -5123,20 +5310,21 @@ select, input[type="number"], input[type="text"] {
       for (const note of track.notes || []) {
         const end = note.tick + Math.max(1, note.duration);
         if (!(note.tick <= tick && tick < end)) continue;
-        const key = `${ch}:${note.note}`;
+        const playbackNote = projectPlaybackNote(state.project, track, note.note);
+        const key = `${ch}:${playbackNote}`;
         if (seen.has(key)) continue;
         seen.add(key);
 
         // Several split drum tracks often share channel 10. Do not send NOTE OFF
         // if an audible sibling track is currently holding the same pitch.
-        if (audibleTrackStillHoldsPitch(ch, note.note, tick, excludedIds)) continue;
+        if (audibleTrackStillHoldsPitch(ch, playbackNote, tick, excludedIds)) continue;
 
-        if (sf2) sf2NoteOff(ch, note.note);
+        if (sf2) sf2NoteOff(ch, playbackNote);
         if (hw && out) {
           try {
             midiSend(
               out,
-              [0x80 | ch, note.note, 0],
+              [0x80 | ch, playbackNote, 0],
               performance.now(),
               "mute · " + track.name
             );
@@ -6156,6 +6344,11 @@ select, input[type="number"], input[type="text"] {
               <button class="mix-btn solo ${track.solo ? "active" : ""}" type="button" data-solo="${track.id}" title="Solo">S</button>
               <button class="mix-btn mute ${track.mute ? "active" : ""}" type="button" data-mute="${track.id}" title="Mute">M</button>
             </span>
+            <span class="octave-control" title="${trackIsPercussion(track) ? "Drums/percussion are not transposed" : "Track octave transpose"}">
+              <button class="pitch-step-btn" type="button" data-oct-down="${track.id}" ${trackIsPercussion(track) ? "disabled" : ""} title="Octave down">−</button>
+              <span class="performance-value">${trackIsPercussion(track) ? "dr" : ((track.transposeOctaves || 0) > 0 ? "+" : "") + (track.transposeOctaves || 0)}</span>
+              <button class="pitch-step-btn" type="button" data-oct-up="${track.id}" ${trackIsPercussion(track) ? "disabled" : ""} title="Octave up">+</button>
+            </span>
             <button class="btn" type="button" data-preview="${track.id}">Preview</button>
             <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
             <button class="btn track-delete" type="button" data-delete-track="${track.id}" title="Delete this MIDI track">×</button>
@@ -6345,6 +6538,12 @@ select, input[type="number"], input[type="text"] {
       el.querySelector(`[data-mute="${track.id}"]`).addEventListener("click", () => {
         setTrackMixState(track, "mute");
       });
+      el.querySelector(`[data-oct-down="${track.id}"]`)?.addEventListener("click", () => {
+        setTrackOctave(track, (track.transposeOctaves || 0) - 1);
+      });
+      el.querySelector(`[data-oct-up="${track.id}"]`)?.addEventListener("click", () => {
+        setTrackOctave(track, (track.transposeOctaves || 0) + 1);
+      });
       el.querySelector(`[data-ch="${track.id}"]`).addEventListener("change", (e) => {
         track.channel = Number(e.target.value);
         if (!isGmTrack(track)) track.role = roleForChannel(track.channel).role;
@@ -6524,7 +6723,8 @@ select, input[type="number"], input[type="text"] {
 
   async function previewTrack(track) {
     const ch = ((track.channel || 1) - 1) & 0x0f;
-    const note = track.channel === 10 ? 36 : 67;
+    const baseNote = track.channel === 10 ? 36 : 67;
+    const note = projectPlaybackNote(state.project, track, baseNote);
     if (isGmTrack(track) || (useSf2Output() && !useHwOutput())) {
       if (!(await ensureSf2Loaded())) return;
       applySf2Programs({ tracks: [track] });
@@ -6535,7 +6735,8 @@ select, input[type="number"], input[type="text"] {
     }
     const out = getOutput();
     if (!out) { setStatus("Select MIDI Out or enable Browser audio (SF2).", "err"); return; }
-    const hwNote = track.channel === 10 ? 36 : 40;
+    const hwBaseNote = track.channel === 10 ? 36 : 40;
+    const hwNote = projectPlaybackNote(state.project, track, hwBaseNote);
     const now = performance.now();
     midiSend(out, [0x90 | ch, hwNote, 100], now, "track preview · " + track.name);
     midiSend(out, [0x80 | ch, hwNote, 0], now + 200, "track preview · " + track.name);
@@ -6968,6 +7169,8 @@ select, input[type="number"], input[type="text"] {
       name: p.name,
       ppq: p.ppq,
       tempo: p.tempo,
+      swing: Math.max(0, Math.min(50, Number(p.swing) || 0)),
+      masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(p.masterTranspose) || 0))),
       lengthTicks: p.lengthTicks,
       minimumLengthTicks: Math.max(0, Number(p.minimumLengthTicks) || 0),
       hardware: {
@@ -6990,6 +7193,7 @@ select, input[type="number"], input[type="text"] {
         role: t.role,
         mute: !!t.mute,
         solo: !!t.solo,
+        transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(t.transposeOctaves) || 0))),
         cubaseIndex: t.cubaseIndex,
         notes: t.notes.map((n) => ({
           tick: n.tick,
@@ -7588,6 +7792,27 @@ select, input[type="number"], input[type="text"] {
       state.startTick = tick;
       runScheduler(tick);
     }
+  });
+
+  document.getElementById("swing")?.addEventListener("input", (e) => {
+    if (!state.project) return;
+    state.project.swing = Math.max(0, Math.min(50, Number(e.target.value) || 0));
+    updatePerformanceControlsUi();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+  });
+  document.getElementById("swing")?.addEventListener("change", () => {
+    if (!state.project) return;
+    restartPlaybackForPerformanceChange();
+    setStatus("Swing: " + Math.round(Number(state.project.swing) || 0) + "%", "ok");
+  });
+  document.getElementById("masterTransposeDown")?.addEventListener("click", () => {
+    if (!state.project) return;
+    setMasterTranspose((Number(state.project.masterTranspose) || 0) - 1);
+  });
+  document.getElementById("masterTransposeUp")?.addEventListener("click", () => {
+    if (!state.project) return;
+    setMasterTranspose((Number(state.project.masterTranspose) || 0) + 1);
   });
 
   document.addEventListener("keydown", (e) => {
