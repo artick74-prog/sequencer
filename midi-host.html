@@ -531,6 +531,21 @@ a { color: var(--accent); }
   font-size: 11px;
 }
 .rhythm-editor-summary strong { color: var(--text); }
+.rhythm-editor-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+  font: 700 10px/1 ui-monospace, Consolas, monospace;
+  letter-spacing: .04em;
+}
+.rhythm-editor-live::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
 .rhythm-editor-grid {
   --rhythm-editor-cols: 16;
   display: grid;
@@ -1520,6 +1535,7 @@ select, input[type="number"], input[type="text"] {
       <div class="cloud-modal-head">
         <strong id="rhythmEditorTitle">Rhythm Editor</strong>
         <span id="rhythmEditorVersion" style="color:var(--dim);font-size:11px"></span>
+        <span class="rhythm-editor-live" id="rhythmEditorLive">LIVE</span>
         <span class="spacer"></span>
         <button class="btn" id="rhythmEditorClose" type="button">Close</button>
       </div>
@@ -1527,7 +1543,7 @@ select, input[type="number"], input[type="text"] {
         <div class="rhythm-editor-summary" id="rhythmEditorSummary"></div>
         <div class="rhythm-editor-grid" id="rhythmEditorGrid"></div>
         <div class="rhythm-editor-hint">
-          Click an empty step to add an attack; click a hit to remove it. Drag a hit left/right to move it while preserving its duration, velocity and guitar articulation metadata.
+          LIVE preview is always on. Click an empty step to add an attack; click a hit to remove it. Drag a hit left/right to move it while preserving its duration, velocity and guitar articulation metadata. Changes are heard immediately but are not saved until you press Save as new revision.
         </div>
       </div>
       <div class="rhythm-editor-actions">
@@ -3451,6 +3467,111 @@ select, input[type="number"], input[type="text"] {
     return cloneRhythmEvents(bucket.revisions[rhythmEditorState.sourceCursor - 1]?.events || base.events);
   }
 
+  async function swapRhythmAuditionPatternLive(pattern, { startIfNeeded = true } = {}) {
+    if (!state.project || !pattern) return false;
+    const targetTrack = rhythmTargetTrack();
+    if (!targetTrack) return false;
+
+    const sameAudition =
+      state.playing &&
+      rhythmAudition?.active &&
+      rhythmAudition.patternId === pattern.id &&
+      rhythmAudition.targetTrackId === targetTrack.id &&
+      hostLoopPreview?.entryId === "rhythm:" + pattern.id;
+
+    if (!sameAudition) {
+      if (startIfNeeded) {
+        await previewRhythmPattern(pattern);
+        return !!rhythmAudition?.active;
+      }
+      return false;
+    }
+
+    const ppq = state.project.ppq || 480;
+    const startBar = rhythmAudition.startBar;
+    const startTick = barToTick(startBar, ppq);
+    const rawNotes = rhythmRawNotes(pattern, targetTrack);
+    const notes = rhythmPlaybackNotes(rawNotes, targetTrack, startTick);
+    const preview = hostLoopPreview;
+    if (!preview) return false;
+
+    // SF2 preview timers can be cancelled. Stop the preview channel first so
+    // cancelling an already-created NOTE OFF cannot leave a hanging note.
+    if (preview.route?.type === "sf2") {
+      clearHostLoopNoteTimers();
+      const synth = sf2Synth();
+      if (synth && Number.isInteger(preview.sf2Channel)) {
+        synth.allSoundOff(preview.sf2Channel);
+      }
+    }
+
+    hostLoopPreviewToken++;
+    if (hostLoopPreviewTimer) {
+      clearInterval(hostLoopPreviewTimer);
+      hostLoopPreviewTimer = null;
+    }
+    const token = hostLoopPreviewToken;
+
+    const now = performance.now();
+    const cycleMs = Math.max(100, Number(preview.cycleMs) || 100);
+    const visualStart = Number(preview.visualStart);
+    const origin = Number.isFinite(visualStart) ? visualStart : now;
+    let cycleStart = origin;
+    if (now > origin) {
+      cycleStart = origin + Math.floor((now - origin) / cycleMs) * cycleMs;
+    }
+
+    // Hardware messages are already queued a little ahead and cannot be
+    // cancelled safely while the project transport is running. Start the new
+    // version just beyond that lookahead window to avoid duplicate hits.
+    const safeAheadMs = preview.route?.type === "hardware" ? 100 : 5;
+    const phaseTargetMs = Math.max(0, now - cycleStart + safeAheadMs);
+    let noteIndex = notes.findIndex((item) =>
+      ticksToMs(item.tick, preview.tempo, preview.ppq) >= phaseTargetMs
+    );
+    if (noteIndex < 0) {
+      cycleStart += cycleMs;
+      noteIndex = 0;
+    }
+
+    rhythmAudition.rawNotes = rawNotes;
+    rhythmAudition.patternId = pattern.id;
+    rhythmSelectedId = pattern.id;
+
+    hostLoopPreview = {
+      ...preview,
+      entryId: "rhythm:" + pattern.id,
+      notes,
+      noteIndex,
+      cycleStart,
+      visualStart: origin,
+    };
+
+    renderTracks();
+    pumpHostLoopPreview(token);
+    hostLoopPreviewTimer = setInterval(() => pumpHostLoopPreview(token), 20);
+
+    const nowEl = document.getElementById("rhythmNow");
+    if (nowEl) {
+      nowEl.innerHTML =
+        '<strong>' + escapeHtml(pattern.name) + '</strong> → ' +
+        escapeHtml(targetTrack.name) +
+        ' · LIVE edit · ' + rawNotes.length + ' attacks';
+    }
+    return true;
+  }
+
+  async function previewRhythmEditorDraft() {
+    if (!rhythmEditorState) return;
+    const draft = {
+      ...rhythmEditorState.draft,
+      id: rhythmEditorState.patternId,
+      name: (rhythmEditorState.draft.name || "Rhythm") + " · edit",
+      events: cloneRhythmEvents(rhythmEditorState.draft.events),
+    };
+    await swapRhythmAuditionPatternLive(draft, { startIfNeeded: true });
+  }
+
   function openRhythmEditor(patternId) {
     const base = rhythmBasePatternById(patternId);
     if (!base) return;
@@ -3468,13 +3589,20 @@ select, input[type="number"], input[type="text"] {
     const modal = document.getElementById("rhythmEditorModal");
     modal?.classList.add("open");
     modal?.setAttribute("aria-hidden", "false");
+    previewRhythmEditorDraft();
   }
 
-  function closeRhythmEditor() {
+  async function closeRhythmEditor({ restorePreview = true } = {}) {
+    const patternId = rhythmEditorState?.patternId || "";
     const modal = document.getElementById("rhythmEditorModal");
     modal?.classList.remove("open");
     modal?.setAttribute("aria-hidden", "true");
     rhythmEditorState = null;
+
+    if (restorePreview && patternId && rhythmAudition?.active && rhythmAudition.patternId === patternId) {
+      const saved = rhythmPatternById(patternId);
+      if (saved) await swapRhythmAuditionPatternLive(saved, { startIfNeeded: false });
+    }
   }
 
   function rhythmEditorToggleStep(pos) {
@@ -3505,7 +3633,8 @@ select, input[type="number"], input[type="text"] {
           };
       rhythmEditorState.draft.events = [...events, event].sort((a,b) => Number(a.pos) - Number(b.pos));
     }
-    renderRhythmEditorGrid();
+    renderRhythmEditor();
+    previewRhythmEditorDraft();
   }
 
   function rhythmEditorMoveStep(fromPos, toPos) {
@@ -3517,7 +3646,8 @@ select, input[type="number"], input[type="text"] {
     for (const event of from) event.pos = toPos;
     for (const event of to) event.pos = fromPos;
     rhythmEditorState.draft.events = events.sort((a,b) => Number(a.pos) - Number(b.pos));
-    renderRhythmEditorGrid();
+    renderRhythmEditor();
+    previewRhythmEditorDraft();
   }
 
   function renderRhythmEditorGrid() {
@@ -3584,14 +3714,14 @@ select, input[type="number"], input[type="text"] {
     });
     bucket.cursor = bucket.revisions.length;
     persistRhythmUserData();
-    closeRhythmEditor();
+    await closeRhythmEditor({ restorePreview: false });
     renderRhythmBrowser();
     setStatus(
       "Saved " + base.name + " revision V" + bucket.cursor + "/" + bucket.revisions.length + ".",
       "ok"
     );
     const pattern = rhythmPatternById(base.id);
-    if (pattern && rhythmTargetTrack()) await previewRhythmPattern(pattern);
+    if (pattern && rhythmTargetTrack()) await swapRhythmAuditionPatternLive(pattern, { startIfNeeded: true });
   }
 
   async function deleteRhythmEditorRevision() {
@@ -3604,11 +3734,11 @@ select, input[type="number"], input[type="text"] {
     bucket.revisions.splice(cursor - 1, 1);
     bucket.cursor = Math.max(0, Math.min(bucket.revisions.length, cursor - 1));
     persistRhythmUserData();
-    closeRhythmEditor();
+    await closeRhythmEditor({ restorePreview: false });
     renderRhythmBrowser();
     setStatus("Deleted rhythm revision. " + bucket.revisions.length + " revision(s) remain.", "ok");
     const pattern = rhythmPatternById(base.id);
-    if (pattern && rhythmTargetTrack()) await previewRhythmPattern(pattern);
+    if (pattern && rhythmTargetTrack()) await swapRhythmAuditionPatternLive(pattern, { startIfNeeded: true });
   }
 
   function rhythmSuggestedBankForTrack(track) {
