@@ -3161,6 +3161,383 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
+  async function loadRhythmLibrary() {
+    if (rhythmLibraryLoaded) return rhythmLibrary;
+    const res = await fetch("user-library/rhythms/index.json?_=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("Rhythm Library HTTP " + res.status);
+    const data = await res.json();
+    rhythmLibrary = Array.isArray(data.patterns) ? data.patterns : [];
+    rhythmLibraryLoaded = true;
+    return rhythmLibrary;
+  }
+
+  function rhythmTargetTrack() {
+    const id = document.getElementById("rhythmTarget")?.value || "";
+    return state.project?.tracks?.find((track) => track.id === id) || null;
+  }
+
+  function rhythmPatternById(id = rhythmSelectedId) {
+    return rhythmLibrary.find((pattern) => pattern.id === id) || null;
+  }
+
+  function rhythmFilteredPatterns() {
+    const q = String(document.getElementById("rhythmSearch")?.value || "").trim().toLowerCase();
+    const category = document.getElementById("rhythmCategory")?.value || "";
+    return rhythmLibrary.filter((pattern) => {
+      if (category && pattern.category !== category) return false;
+      if (!q) return true;
+      const hay = [
+        pattern.name, pattern.category, pattern.family,
+        ...(pattern.tags || []), ...(pattern.worksFor || [])
+      ].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  function rhythmGridPreviewHtml(pattern) {
+    const cells = 16;
+    const hit = new Set();
+    const steps = Math.max(1, Number(pattern.stepsPerBar) || 16);
+    for (const event of pattern.events || []) {
+      const local = ((Number(event.pos) || 0) % steps + steps) % steps;
+      const cell = Math.max(0, Math.min(cells - 1, Math.floor(local / steps * cells)));
+      hit.add(cell);
+    }
+    return Array.from({length:cells},(_,i)=>'<span class="' + (hit.has(i) ? 'hit' : '') + '"></span>').join("");
+  }
+
+  function populateRhythmControls() {
+    const target = document.getElementById("rhythmTarget");
+    const category = document.getElementById("rhythmCategory");
+    if (!target || !category) return;
+
+    const keepTarget = target.value;
+    const pitched = (state.project?.tracks || []).filter((track) => !trackIsPercussion(track));
+    target.innerHTML = pitched.length
+      ? pitched.map((track) =>
+          '<option value="' + escapeHtml(track.id) + '">' +
+          escapeHtml(track.name) + ' · CH' + track.channel + '</option>'
+        ).join("")
+      : '<option value="">No pitched tracks</option>';
+    if (pitched.some((track) => track.id === keepTarget)) target.value = keepTarget;
+
+    const categories = [...new Set(rhythmLibrary.map((pattern) => pattern.category).filter(Boolean))].sort();
+    const keepCategory = category.value;
+    category.innerHTML =
+      '<option value="">All categories</option>' +
+      categories.map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>').join("");
+    if (categories.includes(keepCategory)) category.value = keepCategory;
+
+    const start = document.getElementById("rhythmStartBar");
+    if (start && state.project) {
+      start.max = String(totalBars());
+      if (!Number(start.value) || Number(start.value) > totalBars()) {
+        start.value = String(Math.max(1, tickToBar(state.startTick || 0, state.project.ppq || 480)));
+      }
+    }
+  }
+
+  function renderRhythmBrowser() {
+    populateRhythmControls();
+    const list = document.getElementById("rhythmList");
+    if (!list) return;
+    const rows = rhythmFilteredPatterns();
+    list.innerHTML = "";
+
+    for (const pattern of rows) {
+      const active = rhythmSelectedId === pattern.id;
+      const card = document.createElement("div");
+      card.className = "loop-card rhythm-card" + (active ? " active" : "");
+      card.innerHTML =
+        '<button class="loop-preview ' + (active && rhythmAudition?.active ? 'active' : '') +
+        '" type="button" title="Audition">▶</button>' +
+        '<div><div class="loop-card-name">' + escapeHtml(pattern.name) + '</div>' +
+        '<div class="loop-card-meta">' +
+        escapeHtml(pattern.category || "") + ' · ' +
+        escapeHtml(pattern.family || "") + ' · ' +
+        escapeHtml(String(pattern.bars || 1)) + ' bar' + ((pattern.bars || 1) === 1 ? '' : 's') +
+        ' · grid ' + escapeHtml(String(pattern.stepsPerBar || 16)) +
+        '</div></div>' +
+        '<div class="rhythm-grid-preview">' + rhythmGridPreviewHtml(pattern) + '</div>';
+      card.addEventListener("click", () => previewRhythmPattern(pattern));
+      card.querySelector("button")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        previewRhythmPattern(pattern);
+      });
+      list.appendChild(card);
+    }
+
+    document.getElementById("rhythmCount").textContent = rows.length + " rhythm" + (rows.length === 1 ? "" : "s");
+    const apply = document.getElementById("rhythmApply");
+    if (apply) apply.disabled = !rhythmAudition?.active || !rhythmPatternById();
+  }
+
+  function rhythmRawNotes(pattern, targetTrack) {
+    if (!state.project || !pattern || !targetTrack) return [];
+    const ppq = state.project.ppq || 480;
+    const tpb = ticksPerBar(ppq);
+    const stepsPerBar = Math.max(1, Number(pattern.stepsPerBar) || 16);
+    const stepTicks = tpb / stepsPerBar;
+    const startBar = Math.max(
+      1,
+      Math.min(totalBars(), Math.round(Number(document.getElementById("rhythmStartBar")?.value) || 1))
+    );
+    const startTick = barToTick(startBar, ppq);
+    const bars = Math.max(1, Math.round(Number(pattern.bars) || 1));
+    const endTick = Math.min(state.lengthTicks || (startTick + bars * tpb), startTick + bars * tpb);
+    const pitch = Math.max(0, Math.min(127, Math.round(Number(document.getElementById("rhythmPitch")?.value) || 48)));
+    const gate = Math.max(.25, Math.min(1.5, (Number(document.getElementById("rhythmGate")?.value) || 100) / 100));
+
+    return (pattern.events || []).map((event) => {
+      const localTick = Math.max(0, Math.round((Number(event.pos) || 0) * stepTicks));
+      const tick = startTick + localTick;
+      const duration = Math.max(1, Math.round((Number(event.dur) || .8) * stepTicks * gate));
+      return {
+        tick,
+        duration: Math.min(duration, Math.max(1, endTick - tick)),
+        note: pitch,
+        velocity: Math.max(1, Math.min(127, Math.round(Number(event.vel) || 100))),
+      };
+    }).filter((note) => note.tick >= startTick && note.tick < endTick)
+      .sort((a,b)=>a.tick-b.tick || a.note-b.note);
+  }
+
+  function rhythmPlaybackNotes(rawNotes, targetTrack, startTick) {
+    if (!state.project) return [];
+    const ppq = state.project.ppq || 480;
+    return rawNotes.map((note) => {
+      const local = note.tick - startTick;
+      const swing = projectSwingOffsetTicks(state.project, local, ppq);
+      return {
+        tick: Math.max(0, Math.round(local + swing)),
+        duration: Math.max(1, note.duration),
+        note: projectPlaybackNote(state.project, targetTrack, note.note),
+        velocity: note.velocity,
+        channel: targetTrack.channel || 1,
+      };
+    });
+  }
+
+  function rhythmRouteForTrack(track) {
+    const route = trackRoute(track);
+    if (route === "sf2") return { type:"sf2", channel:track.channel || 1 };
+    if (route === "hw" || route === "both") return { type:"hardware", channel:track.channel || 1 };
+    if (isGmTrack(track) && useSf2Output()) return { type:"sf2", channel:track.channel || 1 };
+    if (getOutput()) return { type:"hardware", channel:track.channel || 1 };
+    return null;
+  }
+
+  function stopRhythmAudition({ restartTarget = false } = {}) {
+    const wasActive = !!rhythmAudition?.active;
+    const wasPlaying = state.playing;
+    const tick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
+    hostLoopStopPreview({ rerender:false });
+    rhythmAudition = null;
+    if (wasActive && restartTarget && wasPlaying && state.project) {
+      stopPlayback();
+      state.startTick = tick;
+      runScheduler(tick);
+    }
+    if (state.project) {
+      renderTracks();
+      updatePlayheads(state.startTick || 0, state.lengthTicks || 1);
+    }
+    renderRhythmBrowser();
+  }
+
+  async function previewRhythmPattern(pattern) {
+    if (!state.project || !pattern) return;
+    const targetTrack = rhythmTargetTrack();
+    if (!targetTrack) {
+      setStatus("Rhythm Browser: choose a pitched target track.", "err");
+      return;
+    }
+
+    const route = rhythmRouteForTrack(targetTrack);
+    if (!route) {
+      setStatus("Rhythm Browser: enable SF2 or select MIDI Out.", "err");
+      return;
+    }
+    if (route.type === "sf2" && !(await ensureSf2Loaded())) return;
+    if (route.type === "hardware" && !getOutput()) {
+      setStatus("Rhythm Browser: select MIDI Out first.", "err");
+      return;
+    }
+
+    if (state.playing) stopPlayback();
+    hostLoopStopPreview({ rerender:false });
+
+    rhythmSelectedId = pattern.id;
+    const ppq = state.project.ppq || 480;
+    const startBar = Math.max(
+      1,
+      Math.min(totalBars(), Math.round(Number(document.getElementById("rhythmStartBar")?.value) || 1))
+    );
+    const bars = Math.max(1, Math.round(Number(pattern.bars) || 1));
+    const endBar = Math.min(totalBars(), startBar + bars - 1);
+    const rawNotes = rhythmRawNotes(pattern, targetTrack);
+    const startTick = barToTick(startBar, ppq);
+
+    rhythmAudition = {
+      active: true,
+      patternId: pattern.id,
+      targetTrackId: targetTrack.id,
+      startBar,
+      endBar,
+      bars: endBar - startBar + 1,
+      rawNotes,
+    };
+
+    state.loop = true;
+    setLoopRangeBars(startBar, endBar);
+    state.startTick = startTick;
+    updateLoopButtonUi();
+    updateLoopRangeVisuals();
+
+    runScheduler(startTick);
+    if (!state.playing) {
+      rhythmAudition = null;
+      renderRhythmBrowser();
+      return;
+    }
+
+    if (route.type === "sf2") applySf2Programs(state.project);
+
+    const notes = rhythmPlaybackNotes(rawNotes, targetTrack, startTick);
+    const cycleTicks = Math.max(ticksPerBar(ppq), (endBar - startBar + 1) * ticksPerBar(ppq));
+    const cycleMs = Math.max(100, ticksToMs(cycleTicks, state.playbackTempo || state.project.tempo || 120, ppq));
+    const token = hostLoopPreviewToken;
+    hostLoopPreview = {
+      entryId: "rhythm:" + pattern.id,
+      notes,
+      noteIndex: 0,
+      ppq,
+      tempo: state.playbackTempo || state.project.tempo || 120,
+      cycleMs,
+      visualCycleMs: cycleMs,
+      cycleStart: state.startPerf,
+      visualStart: state.startPerf,
+      route,
+      sf2Channel: route.type === "sf2" ? (((targetTrack.channel || 1) - 1) & 0x0f) : null,
+      oneShotHardware: false,
+      syncMode: "rhythm",
+      sourceBars: endBar - startBar + 1,
+    };
+
+    if (route.type === "hardware" && Number(route.channel) === 2) {
+      resetTd3Gate(getOutput(), state.project, Math.max(performance.now(), state.startPerf - 8), "rhythm audition · TD-3");
+    }
+
+    renderTracks();
+    renderRhythmBrowser();
+    pumpHostLoopPreview(token);
+    hostLoopPreviewTimer = setInterval(() => pumpHostLoopPreview(token), 20);
+
+    document.getElementById("rhythmNow").innerHTML =
+      '<strong>' + escapeHtml(pattern.name) + '</strong> → ' +
+      escapeHtml(targetTrack.name) +
+      ' · bar ' + startBar + (endBar > startBar ? '–' + endBar : '') +
+      ' · pitch ' + escapeHtml(midiToName(rawNotes[0]?.note ?? 48)) +
+      ' · gate ' + escapeHtml(document.getElementById("rhythmGate")?.value || "100") + '%';
+    setStatus(
+      "Rhythm audition: " + pattern.name + " → " + targetTrack.name +
+      " · project loop " + startBar + (endBar > startBar ? "–" + endBar : "") +
+      " · original target notes temporarily suppressed",
+      "ok"
+    );
+  }
+
+  function stepRhythm(direction) {
+    const rows = rhythmFilteredPatterns();
+    if (!rows.length) return;
+    let index = rows.findIndex((pattern) => pattern.id === rhythmSelectedId);
+    if (index < 0) index = direction > 0 ? -1 : 0;
+    index = (index + direction + rows.length) % rows.length;
+    previewRhythmPattern(rows[index]);
+  }
+
+  function detachOverlappingClipsForRhythm(track, startTick, endTick) {
+    const removedIds = new Set();
+    state.project.clips = (state.project.clips || []).filter((clip) => {
+      if (clip.targetTrackId !== track.id) return true;
+      const a = Number(clip.startTick) || 0;
+      const b = Math.max(a + 1, Number(clip.endTick) || a + 1);
+      const overlap = a < endTick && b > startTick;
+      if (overlap && clip.instanceId) removedIds.add(clip.instanceId);
+      return !overlap;
+    });
+    if (removedIds.size) {
+      for (const note of track.notes || []) {
+        if (note.clipId && removedIds.has(note.clipId)) delete note.clipId;
+      }
+    }
+  }
+
+  function applyRhythmAudition() {
+    if (!state.project || !rhythmAudition?.active) return;
+    const pattern = rhythmPatternById(rhythmAudition.patternId);
+    const track = state.project.tracks.find((item) => item.id === rhythmAudition.targetTrackId);
+    if (!pattern || !track) return;
+
+    const ppq = state.project.ppq || 480;
+    const startTick = barToTick(rhythmAudition.startBar, ppq);
+    const endTick = barToTick(rhythmAudition.endBar + 1, ppq);
+    const notes = rhythmRawNotes(pattern, track);
+
+    if (!window.confirm(
+      "Apply “" + pattern.name + "” to “" + track.name + "” at bar " +
+      rhythmAudition.startBar + (rhythmAudition.endBar > rhythmAudition.startBar ? "–" + rhythmAudition.endBar : "") +
+      "?\n\nExisting note onsets inside that audition slot will be replaced."
+    )) return;
+
+    if (state.playing) stopPlayback();
+    hostLoopStopPreview({ rerender:false });
+    detachOverlappingClipsForRhythm(track, startTick, endTick);
+    track.notes = (track.notes || []).filter((note) => note.tick < startTick || note.tick >= endTick);
+    track.notes.push(...notes.map((note) => ({...note})));
+    track.notes.sort((a,b)=>a.tick-b.tick || a.note-b.note);
+
+    rhythmAudition = null;
+    recomputeLength(state.project);
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Applied rhythm “" + pattern.name + "” → " + track.name +
+      " · bar " + tickToBar(startTick, ppq) + " · UNSAVED cloud changes",
+      "ok"
+    );
+    renderRhythmBrowser();
+  }
+
+  async function openRhythmBrowser() {
+    closeHostLoopBrowser();
+    const drawer = document.getElementById("rhythmBrowser");
+    drawer?.classList.add("open");
+    drawer?.setAttribute("aria-hidden", "false");
+    document.getElementById("btnRhythms")?.classList.add("active");
+    try {
+      await loadRhythmLibrary();
+      populateRhythmControls();
+      const start = document.getElementById("rhythmStartBar");
+      if (start && state.project) {
+        start.value = String(Math.max(1, tickToBar(state.startTick || 0, state.project.ppq || 480)));
+      }
+      renderRhythmBrowser();
+      setStatus("Rhythm Browser ready · click any pattern to audition it on the selected track.", "ok");
+    } catch (err) {
+      setStatus("Rhythm Library error: " + err.message, "err");
+    }
+  }
+
+  function closeRhythmBrowser() {
+    const drawer = document.getElementById("rhythmBrowser");
+    drawer?.classList.remove("open");
+    drawer?.setAttribute("aria-hidden", "true");
+    document.getElementById("btnRhythms")?.classList.remove("active");
+    stopRhythmAudition({ restartTarget:true });
+  }
+
   function openHostLoopBrowser() {
     const drawer = document.getElementById("hostLoopBrowser");
     drawer?.classList.add("open");
