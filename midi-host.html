@@ -2168,6 +2168,31 @@ body.timeline-ruler-seeking {
   const HARDWARE_LOOKAHEAD_MS = 120;
   const SF2_LOOKAHEAD_MS = 80;
 
+  // UI work can receive pointer/wheel events far faster than a display can draw.
+  // Coalesce "latest wins" visual work into one callback per animation frame.
+  const uiFrameQueue = new Map();
+  let uiFrameHandle = 0;
+  function scheduleUiFrame(key, callback) {
+    uiFrameQueue.set(key, callback);
+    if (uiFrameHandle) return;
+    uiFrameHandle = requestAnimationFrame(() => {
+      uiFrameHandle = 0;
+      const jobs = [...uiFrameQueue.values()];
+      uiFrameQueue.clear();
+      for (const job of jobs) job();
+    });
+  }
+
+  const deferredStorageTimers = new Map();
+  function scheduleLocalStorageSet(key, value, delay = 220) {
+    const previous = deferredStorageTimers.get(key);
+    if (previous) clearTimeout(previous);
+    deferredStorageTimers.set(key, setTimeout(() => {
+      deferredStorageTimers.delete(key);
+      try { localStorage.setItem(key, String(value)); } catch {}
+    }, delay));
+  }
+
   function midiToName(n) {
     return NOTE_NAMES[n % 12] + (Math.floor(n / 12) - 1);
   }
@@ -2682,6 +2707,8 @@ body.timeline-ruler-seeking {
     loopLocatorDragRect: null,
     loopRangeResumeTick: 0,
     resumeAfterLoopRangeSelect: false,
+    sectionMarkerTicks: [],
+    lastSectionPlaylistIndex: -1,
   };
 
   // ─── Embedded Style Library / drag-and-drop loops ───────────────
@@ -5233,8 +5260,13 @@ body.timeline-ruler-seeking {
 
   function scheduleHostAutosave() {
     clearTimeout(hostAutosaveTimer);
-    hostAutosaveTimer = setTimeout(saveHostAutosaveNow, 120);
+    hostAutosaveTimer = setTimeout(saveHostAutosaveNow, 350);
   }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") saveHostAutosaveNow();
+  });
+  window.addEventListener("beforeunload", saveHostAutosaveNow);
 
   function restoreHostWorkingProject() {
     const saved = readHostAutosave();
@@ -6337,6 +6369,14 @@ body.timeline-ruler-seeking {
     if (el) el.textContent = `${Math.round(state.barW * 10) / 10} px/bar`;
   }
 
+  function updateTrackZoomGeometry() {
+    const totalW = timelineWidth();
+    document.querySelectorAll(".track-body").forEach((body) => {
+      body.style.width = totalW + "px";
+      body.style.setProperty("--bar-w", state.barW + "px");
+    });
+  }
+
   function setZoom(nextBarW, { anchorRatio = null } = {}) {
     const scroll = document.getElementById("timelineScroll");
     const oldW = timelineWidth();
@@ -6347,7 +6387,7 @@ body.timeline-ruler-seeking {
     state.barW = Math.min(BAR_W_MAX, Math.max(BAR_W_MIN, nextBarW));
     scheduleHostAutosave();
     renderRuler();
-    renderTracks();
+    updateTrackZoomGeometry();
     renderMarkerGuides();
     updatePlayheads(state.startTick || 0, state.lengthTicks || 1);
     updateZoomLabel();
@@ -6997,13 +7037,15 @@ body.timeline-ruler-seeking {
   function updateSectionPlaylistActive(tick) {
     const box = document.getElementById("overviewBox");
     if (!box || !state.project) return;
-    const markers = normalizedMarkers(state.project);
-    if (!markers.length) return;
+    const ticks = state.sectionMarkerTicks || [];
+    if (!ticks.length) return;
     let activeIndex = 0;
-    for (let i = 0; i < markers.length; i++) {
-      if (markers[i].tick <= tick) activeIndex = i;
+    for (let i = 0; i < ticks.length; i++) {
+      if (ticks[i] <= tick) activeIndex = i;
       else break;
     }
+    if (activeIndex === state.lastSectionPlaylistIndex) return;
+    state.lastSectionPlaylistIndex = activeIndex;
     box.querySelectorAll(".section-item").forEach((el, i) => {
       el.classList.toggle("active", i === activeIndex);
     });
@@ -7037,12 +7079,16 @@ body.timeline-ruler-seeking {
     if (!state.project) {
       box.innerHTML = '<div class="section-empty">Load a MIDI with markers to build the playlist.</div>';
       state.lastOverview = null;
+      state.sectionMarkerTicks = [];
+      state.lastSectionPlaylistIndex = -1;
       return;
     }
 
     const ov = buildOverview(state.project);
     state.lastOverview = ov;
     const markers = normalizedMarkers(state.project);
+    state.sectionMarkerTicks = markers.map((marker) => marker.tick);
+    state.lastSectionPlaylistIndex = -1;
 
     if (!markers.length) {
       box.innerHTML =
@@ -7279,13 +7325,15 @@ body.timeline-ruler-seeking {
     guides.style.display = "block";
     guides.style.left = `${HEAD_W}px`;
     guides.style.width = `${totalW}px`;
+    const fragment = document.createDocumentFragment();
     for (const m of normalizedMarkers(project)) {
       const g = document.createElement("div");
       g.className = "marker-guide";
       g.style.left = `${(m.tick / length) * totalW}px`;
       g.title = `${m.text} · bar ${m.bar}`;
-      guides.appendChild(g);
+      fragment.appendChild(g);
     }
+    guides.appendChild(fragment);
   }
 
   function audibleTrackStillHoldsPitch(channelZeroBased, midiNote, tick, excludedIds) {
@@ -7803,7 +7851,7 @@ body.timeline-ruler-seeking {
     const rowFromTop = Math.max(0, (anchorClientY - gridRect.top) / oldRowH);
 
     state.pianoRollRowH = nextRowH;
-    try { localStorage.setItem("midi_host_piano_roll_row_h_v1", String(nextRowH)); } catch {}
+    scheduleLocalStorageSet("midi_host_piano_roll_row_h_v1", nextRowH);
     renderPianoRoll();
 
     const newScroll = document.getElementById("pianoRollScroll");
@@ -8478,9 +8526,7 @@ body.timeline-ruler-seeking {
     const anchorViewportX = anchorClientX - scrollRect.left;
 
     state.pianoRollBarW = nextBarW;
-    try {
-      localStorage.setItem("midi_host_piano_roll_bar_w_v1", String(state.pianoRollBarW));
-    } catch {}
+    scheduleLocalStorageSet("midi_host_piano_roll_bar_w_v1", state.pianoRollBarW);
     renderPianoRoll();
 
     const newGrid = document.getElementById("pianoRollGrid");
@@ -9387,7 +9433,7 @@ body.timeline-ruler-seeking {
       };
 
       const applyPreview = (tick, targetTrack) => {
-        const dx = ((tick - originStart) / Math.max(1, length)) * totalW;
+        const dx = ((tick - originStart) / Math.max(1, length)) * timelineWidth();
         box.style.transform = "translateX(" + dx + "px)";
         for (const el of noteEls) el.style.transform = "translateX(" + dx + "px)";
         clearTrackTarget();
@@ -9715,6 +9761,7 @@ body.timeline-ruler-seeking {
 
     root.innerHTML = "";
     root.style.setProperty("--head-w", `${HEAD_W}px`);
+    const fragment = document.createDocumentFragment();
 
     for (const track of project.tracks) {
       const info = trackDisplayInfo(track);
@@ -10005,8 +10052,9 @@ body.timeline-ruler-seeking {
         exportSingleTrackMidi(track);
       });
 
-      root.appendChild(el);
+      fragment.appendChild(el);
     }
+    root.appendChild(fragment);
     updateLoopRangeVisuals();
   }
 
