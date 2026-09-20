@@ -1154,6 +1154,15 @@ def build_library_catalog(force: bool = False, prefer_packs: bool = True) -> dic
             LIBRARY_LOCATORS = locators
             LIBRARY_MODE = "raw"
 
+        set_library_progress(
+            active=False,
+            stage="ready",
+            current=len(entries),
+            total=len(entries),
+            percent=100,
+            catalog_total=len(entries),
+            message="MIDI library ready",
+        )
         return catalog_payload(entries, "raw")
 
 
@@ -1711,6 +1720,12 @@ class Handler(SimpleHTTPRequestHandler):
             try:
                 self._send_json(200, build_library_catalog())
             except Exception as exc:
+                set_library_progress(
+                    active=False,
+                    stage="error",
+                    percent=0,
+                    message=f"MIDI library error: {exc}",
+                )
                 self._send_json(500, {"ok": False, "error": str(exc)})
             return
         if path == "/api/library/midi":
