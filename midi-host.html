@@ -3624,6 +3624,29 @@ select, input[type="number"], input[type="text"] {
     for (const timer of state.sf2Timers) clearTimeout(timer);
     state.sf2Timers.clear();
   }
+  function primeTd3Gate(output, project) {
+    if (!output || !project) return 0;
+
+    const notes = new Set();
+    for (const track of project.tracks || []) {
+      if ((Number(track.channel) || 1) !== 2) continue;
+      if (!trackIsAudible(track, project)) continue;
+      for (const note of track.notes || []) {
+        const pitch = Number(note.note);
+        if (Number.isFinite(pitch)) notes.add(Math.max(0, Math.min(127, pitch | 0)));
+      }
+    }
+
+    if (!notes.size) return 0;
+
+    // Experimental TD-3 gate reset: ordinary NOTE OFF messages only.
+    // This intentionally does not use CC123/All Notes Off.
+    for (const note of [...notes].sort((a, b) => a - b)) {
+      midiSend(output, [0x81, note, 0], null, "TD-3 prime");
+    }
+    return notes.size;
+  }
+
   function allNotesOff(output) {
     if (output) {
       try {
@@ -3943,14 +3966,13 @@ select, input[type="number"], input[type="text"] {
     );
     state.playing = true;
 
-    // Give the first hardware events the same timestamped look-ahead that all
-    // subsequent loop events already get. Without this, tick-0 events are sent
-    // immediately in one burst on transport start. Dense CH10 drum hits can then
-    // arrive at the TD-3 USB/MIDI-thru path at the exact same instant as CH2 acid
-    // notes. Starting from a later bar appeared fine because the bar-1 events were
-    // scheduled ahead on the following loop pass.
-    const startupLeadMs = hw ? HARDWARE_LOOKAHEAD_MS : 35;
-    state.startPerf = performance.now() + startupLeadMs;
+    // Experimental TD-3 start prime.
+    // The previous 120 ms startup-lookahead experiment has been removed.
+    // Before the first real CH2 note, send NOTE OFF for every pitch used by the
+    // audible CH2 track(s), then start the project a few milliseconds later.
+    const td3PrimeCount = hw ? primeTd3Gate(output, project) : 0;
+    const td3PrimeLeadMs = td3PrimeCount ? 12 : 0;
+    state.startPerf = performance.now() + td3PrimeLeadMs;
     state.startTick = scheduleStart;
     state.playbackTempo = tempo;
     state.playbackPpq = ppq;
@@ -3962,7 +3984,12 @@ select, input[type="number"], input[type="text"] {
       .filter(Boolean)
       .join(" + ");
     const loopText = loopRange ? ("Loop " + loopRange.startBar + "–" + loopRange.endBar + " · ") : "";
-    setStatus(loopText + `Playing from bar ${tickToBar(scheduleStart, ppq)} → ${dest}`, "ok");
+    setStatus(
+      loopText +
+      `Playing from bar ${tickToBar(scheduleStart, ppq)} → ${dest}` +
+      (td3PrimeCount ? ` · TD-3 prime ${td3PrimeCount} note-off(s)` : ""),
+      "ok"
+    );
 
     if (state.timer) clearInterval(state.timer);
     const pump = () => {
