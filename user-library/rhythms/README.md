@@ -2,12 +2,42 @@
 
 Pitch-free rhythmic cells for the MIDI Host Rhythm Browser.
 
+## Schema
+
 Each pattern stores:
 - `bars` and `stepsPerBar` (abstract grid; independent of MIDI PPQ);
 - event `pos`, `dur`, and `vel`;
-- category/family/tags/worksFor metadata.
+- `bank`, `instrument`, `category`, `family`, `variant`, `tags`, and `worksFor` metadata.
+
+Guitar events may also carry future-facing performance metadata:
+- `attack`: `CHORD`, `CHOKE`, `MUTE`, or `SUSTAIN`;
+- `stroke`: `DOWN` or `UP`.
+
+The current MIDI Host intentionally ignores `attack` and `stroke` for note generation, so these fields do not change pitch or articulation yet. They are preserved in the library for future guitar voicing/articulation support.
+
+## Banks
+
+The expanded library contains **278 patterns**:
+- **Core** — 20 universal rhythmic cells;
+- **Guitar** — 144 patterns across Rock, Chug/Metal, Punk/Indie, Funk, Ska/Reggae, Disco/Pop, Blues/Boogie, Latin/Bossa, and Stabs/Syncopation;
+- **Bass** — 42 patterns;
+- **Acid** — 36 TB-303-oriented rhythmic shapes;
+- **Keys** — 36 comping/stab patterns.
+
+Many instrument-bank families include musically related variants such as Base, Tight/Short, Push, Sparse, Busy, Offbeat Shift/Rotate, Backbeat Accent, and 2-bar Turnaround. These are deterministic variations of curated seed rhythms rather than random note generation.
+
+## MIDI Host behavior
 
 The browser converts these cells into temporary audition notes on a selected target track.
 Audition does not edit the project until **Apply to track** is pressed.
+
+The **Bank** filter defaults to **Auto for target**:
+- TD-3 / acid tracks → Acid;
+- XR20 bass / GM Bass → Bass;
+- GM Guitar → Guitar;
+- GM Piano/Chromatic Percussion/Organ families → Keys;
+- unknown pitched tracks → all banks.
+
+The user can always switch Bank to **All banks** or a specific bank manually.
 
 Global MIDI Host Swing remains a separate groove layer. The Rhythm Browser's Gate control scales the pattern's stored durations without changing its onset positions.
