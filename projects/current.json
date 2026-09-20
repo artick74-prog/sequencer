@@ -83,24 +83,6 @@
       "sourcePpq": 480,
       "noteCount": 112,
       "insertedAt": "2026-09-20T01:43:27.652Z"
-    },
-    {
-      "id": "42b5e3a809988329d6d6",
-      "instanceId": "clip-mu976vwo-7bdp3h",
-      "name": "1003290_nrgcp_dataset.mid",
-      "originalName": "1003290_nrgcp_dataset.mid",
-      "source": "nrgcp_midi_dataset",
-      "genre": "edm",
-      "role": "chords",
-      "targetTrackId": "keys",
-      "targetTrackName": "4 Electric Piano 1",
-      "startTick": 0,
-      "endTick": 15360,
-      "baseLengthTicks": 15360,
-      "repeatCount": 1,
-      "sourcePpq": 96,
-      "noteCount": 102,
-      "insertedAt": "2026-09-20T02:29:14.376Z"
     }
   ],
   "tracks": [
@@ -112,7 +94,392 @@
       "mute": false,
       "solo": false,
       "cubaseIndex": 0,
-      "notes": []
+      "notes": [
+        {
+          "tick": 0,
+          "duration": 300,
+          "note": 36,
+          "velocity": 108
+        },
+        {
+          "tick": 720,
+          "duration": 180,
+          "note": 36,
+          "velocity": 92
+        },
+        {
+          "tick": 960,
+          "duration": 240,
+          "note": 43,
+          "velocity": 100
+        },
+        {
+          "tick": 1680,
+          "duration": 180,
+          "note": 48,
+          "velocity": 96
+        },
+        {
+          "tick": 1920,
+          "duration": 300,
+          "note": 32,
+          "velocity": 108
+        },
+        {
+          "tick": 2640,
+          "duration": 180,
+          "note": 32,
+          "velocity": 92
+        },
+        {
+          "tick": 2880,
+          "duration": 240,
+          "note": 39,
+          "velocity": 100
+        },
+        {
+          "tick": 3600,
+          "duration": 180,
+          "note": 44,
+          "velocity": 96
+        },
+        {
+          "tick": 3840,
+          "duration": 300,
+          "note": 39,
+          "velocity": 108
+        },
+        {
+          "tick": 4560,
+          "duration": 180,
+          "note": 39,
+          "velocity": 92
+        },
+        {
+          "tick": 4800,
+          "duration": 240,
+          "note": 46,
+          "velocity": 100
+        },
+        {
+          "tick": 5520,
+          "duration": 180,
+          "note": 51,
+          "velocity": 96
+        },
+        {
+          "tick": 5760,
+          "duration": 300,
+          "note": 34,
+          "velocity": 108
+        },
+        {
+          "tick": 6480,
+          "duration": 180,
+          "note": 34,
+          "velocity": 92
+        },
+        {
+          "tick": 6720,
+          "duration": 240,
+          "note": 41,
+          "velocity": 100
+        },
+        {
+          "tick": 7440,
+          "duration": 180,
+          "note": 46,
+          "velocity": 96
+        },
+        {
+          "tick": 7680,
+          "duration": 300,
+          "note": 36,
+          "velocity": 108
+        },
+        {
+          "tick": 8400,
+          "duration": 180,
+          "note": 36,
+          "velocity": 92
+        },
+        {
+          "tick": 8640,
+          "duration": 240,
+          "note": 43,
+          "velocity": 100
+        },
+        {
+          "tick": 9360,
+          "duration": 180,
+          "note": 48,
+          "velocity": 96
+        },
+        {
+          "tick": 9600,
+          "duration": 300,
+          "note": 32,
+          "velocity": 108
+        },
+        {
+          "tick": 10320,
+          "duration": 180,
+          "note": 32,
+          "velocity": 92
+        },
+        {
+          "tick": 10560,
+          "duration": 240,
+          "note": 39,
+          "velocity": 100
+        },
+        {
+          "tick": 11280,
+          "duration": 180,
+          "note": 44,
+          "velocity": 96
+        },
+        {
+          "tick": 11520,
+          "duration": 300,
+          "note": 29,
+          "velocity": 108
+        },
+        {
+          "tick": 12240,
+          "duration": 180,
+          "note": 29,
+          "velocity": 92
+        },
+        {
+          "tick": 12480,
+          "duration": 240,
+          "note": 36,
+          "velocity": 100
+        },
+        {
+          "tick": 13200,
+          "duration": 180,
+          "note": 41,
+          "velocity": 96
+        },
+        {
+          "tick": 13440,
+          "duration": 300,
+          "note": 31,
+          "velocity": 108
+        },
+        {
+          "tick": 14160,
+          "duration": 180,
+          "note": 31,
+          "velocity": 92
+        },
+        {
+          "tick": 14400,
+          "duration": 240,
+          "note": 38,
+          "velocity": 100
+        },
+        {
+          "tick": 15120,
+          "duration": 180,
+          "note": 43,
+          "velocity": 96
+        },
+        {
+          "tick": 15360,
+          "duration": 300,
+          "note": 36,
+          "velocity": 113
+        },
+        {
+          "tick": 16080,
+          "duration": 180,
+          "note": 36,
+          "velocity": 97
+        },
+        {
+          "tick": 16320,
+          "duration": 240,
+          "note": 43,
+          "velocity": 105
+        },
+        {
+          "tick": 17040,
+          "duration": 180,
+          "note": 48,
+          "velocity": 101
+        },
+        {
+          "tick": 17280,
+          "duration": 300,
+          "note": 32,
+          "velocity": 113
+        },
+        {
+          "tick": 18000,
+          "duration": 180,
+          "note": 32,
+          "velocity": 97
+        },
+        {
+          "tick": 18240,
+          "duration": 240,
+          "note": 39,
+          "velocity": 105
+        },
+        {
+          "tick": 18960,
+          "duration": 180,
+          "note": 44,
+          "velocity": 101
+        },
+        {
+          "tick": 19200,
+          "duration": 300,
+          "note": 39,
+          "velocity": 113
+        },
+        {
+          "tick": 19920,
+          "duration": 180,
+          "note": 39,
+          "velocity": 97
+        },
+        {
+          "tick": 20160,
+          "duration": 240,
+          "note": 46,
+          "velocity": 105
+        },
+        {
+          "tick": 20880,
+          "duration": 180,
+          "note": 51,
+          "velocity": 101
+        },
+        {
+          "tick": 21120,
+          "duration": 300,
+          "note": 34,
+          "velocity": 113
+        },
+        {
+          "tick": 21840,
+          "duration": 180,
+          "note": 34,
+          "velocity": 97
+        },
+        {
+          "tick": 22080,
+          "duration": 240,
+          "note": 41,
+          "velocity": 105
+        },
+        {
+          "tick": 22800,
+          "duration": 180,
+          "note": 46,
+          "velocity": 101
+        },
+        {
+          "tick": 23040,
+          "duration": 300,
+          "note": 36,
+          "velocity": 113
+        },
+        {
+          "tick": 23760,
+          "duration": 180,
+          "note": 36,
+          "velocity": 97
+        },
+        {
+          "tick": 24000,
+          "duration": 240,
+          "note": 43,
+          "velocity": 105
+        },
+        {
+          "tick": 24720,
+          "duration": 180,
+          "note": 48,
+          "velocity": 101
+        },
+        {
+          "tick": 24960,
+          "duration": 300,
+          "note": 32,
+          "velocity": 113
+        },
+        {
+          "tick": 25680,
+          "duration": 180,
+          "note": 32,
+          "velocity": 97
+        },
+        {
+          "tick": 25920,
+          "duration": 240,
+          "note": 39,
+          "velocity": 105
+        },
+        {
+          "tick": 26640,
+          "duration": 180,
+          "note": 44,
+          "velocity": 101
+        },
+        {
+          "tick": 26880,
+          "duration": 300,
+          "note": 29,
+          "velocity": 113
+        },
+        {
+          "tick": 27600,
+          "duration": 180,
+          "note": 29,
+          "velocity": 97
+        },
+        {
+          "tick": 27840,
+          "duration": 240,
+          "note": 36,
+          "velocity": 105
+        },
+        {
+          "tick": 28560,
+          "duration": 180,
+          "note": 41,
+          "velocity": 101
+        },
+        {
+          "tick": 28800,
+          "duration": 300,
+          "note": 31,
+          "velocity": 113
+        },
+        {
+          "tick": 29520,
+          "duration": 180,
+          "note": 31,
+          "velocity": 97
+        },
+        {
+          "tick": 29760,
+          "duration": 240,
+          "note": 38,
+          "velocity": 105
+        },
+        {
+          "tick": 30480,
+          "duration": 180,
+          "note": 43,
+          "velocity": 101
+        }
+      ]
     },
     {
       "id": "acid",
@@ -1705,7 +2072,7 @@
     },
     {
       "id": "keys",
-      "name": "4 Electric Piano 1",
+      "name": "0 Acoustic Grand Piano",
       "channel": 4,
       "role": "gm",
       "mute": false,
@@ -1714,717 +2081,1358 @@
       "notes": [
         {
           "tick": 0,
-          "duration": 240,
-          "note": 36,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 48,
+          "velocity": 101
         },
         {
           "tick": 0,
-          "duration": 240,
+          "duration": 300,
           "note": 55,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 106
         },
         {
           "tick": 0,
-          "duration": 240,
+          "duration": 300,
           "note": 60,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 106
         },
         {
           "tick": 0,
-          "duration": 240,
-          "note": 64,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 63,
+          "velocity": 106
+        },
+        {
+          "tick": 360,
+          "duration": 180,
+          "note": 67,
+          "velocity": 88
         },
         {
           "tick": 720,
-          "duration": 240,
-          "note": 36,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 55,
+          "velocity": 87
         },
         {
           "tick": 720,
-          "duration": 240,
-          "note": 55,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 60,
+          "velocity": 92
         },
         {
           "tick": 720,
-          "duration": 240,
-          "note": 60,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 63,
+          "velocity": 92
         },
         {
-          "tick": 720,
-          "duration": 240,
-          "note": 64,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 1440,
-          "duration": 240,
-          "note": 36,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 1440,
+          "tick": 1200,
           "duration": 240,
           "note": 55,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 93
         },
         {
-          "tick": 1440,
+          "tick": 1200,
           "duration": 240,
           "note": 60,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 98
         },
         {
-          "tick": 1440,
+          "tick": 1200,
           "duration": 240,
-          "note": 64,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "note": 63,
+          "velocity": 98
         },
         {
-          "tick": 2160,
-          "duration": 240,
-          "note": 36,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 1320,
+          "duration": 180,
+          "note": 65,
+          "velocity": 88
         },
         {
-          "tick": 2160,
-          "duration": 240,
+          "tick": 1680,
+          "duration": 180,
+          "note": 48,
+          "velocity": 91
+        },
+        {
+          "tick": 1680,
+          "duration": 180,
           "note": 55,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 96
         },
         {
-          "tick": 2160,
+          "tick": 1680,
+          "duration": 180,
+          "note": 60,
+          "velocity": 96
+        },
+        {
+          "tick": 1680,
+          "duration": 180,
+          "note": 63,
+          "velocity": 96
+        },
+        {
+          "tick": 1920,
+          "duration": 300,
+          "note": 44,
+          "velocity": 101
+        },
+        {
+          "tick": 1920,
+          "duration": 300,
+          "note": 51,
+          "velocity": 106
+        },
+        {
+          "tick": 1920,
+          "duration": 300,
+          "note": 56,
+          "velocity": 106
+        },
+        {
+          "tick": 1920,
+          "duration": 300,
+          "note": 60,
+          "velocity": 106
+        },
+        {
+          "tick": 2280,
+          "duration": 180,
+          "note": 63,
+          "velocity": 88
+        },
+        {
+          "tick": 2640,
+          "duration": 210,
+          "note": 51,
+          "velocity": 87
+        },
+        {
+          "tick": 2640,
+          "duration": 210,
+          "note": 56,
+          "velocity": 92
+        },
+        {
+          "tick": 2640,
+          "duration": 210,
+          "note": 60,
+          "velocity": 92
+        },
+        {
+          "tick": 3120,
+          "duration": 240,
+          "note": 51,
+          "velocity": 93
+        },
+        {
+          "tick": 3120,
+          "duration": 240,
+          "note": 56,
+          "velocity": 98
+        },
+        {
+          "tick": 3120,
           "duration": 240,
           "note": 60,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 98
         },
         {
-          "tick": 2160,
-          "duration": 240,
-          "note": 64,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 2880,
-          "duration": 240,
-          "note": 36,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 2880,
-          "duration": 240,
-          "note": 55,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 2880,
-          "duration": 240,
+          "tick": 3240,
+          "duration": 180,
           "note": 60,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 88
         },
         {
-          "tick": 2880,
-          "duration": 240,
-          "note": 64,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 3600,
+          "duration": 180,
+          "note": 44,
+          "velocity": 91
         },
         {
-          "tick": 3360,
-          "duration": 240,
-          "note": 36,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 3600,
+          "duration": 180,
+          "note": 51,
+          "velocity": 96
         },
         {
-          "tick": 3360,
-          "duration": 240,
-          "note": 55,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 3600,
+          "duration": 180,
+          "note": 56,
+          "velocity": 96
         },
         {
-          "tick": 3360,
-          "duration": 240,
+          "tick": 3600,
+          "duration": 180,
           "note": 60,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 3360,
-          "duration": 240,
-          "note": 64,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 96
         },
         {
           "tick": 3840,
-          "duration": 240,
-          "note": 43,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 51,
+          "velocity": 101
         },
         {
           "tick": 3840,
-          "duration": 240,
-          "note": 55,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 58,
+          "velocity": 106
         },
         {
           "tick": 3840,
-          "duration": 240,
-          "note": 59,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 63,
+          "velocity": 106
         },
         {
           "tick": 3840,
-          "duration": 240,
-          "note": 62,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 67,
+          "velocity": 106
+        },
+        {
+          "tick": 4200,
+          "duration": 180,
+          "note": 67,
+          "velocity": 88
         },
         {
           "tick": 4560,
-          "duration": 240,
-          "note": 43,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 58,
+          "velocity": 87
         },
         {
           "tick": 4560,
-          "duration": 240,
-          "note": 55,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 63,
+          "velocity": 92
         },
         {
           "tick": 4560,
-          "duration": 240,
-          "note": 59,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 67,
+          "velocity": 92
         },
         {
-          "tick": 4560,
+          "tick": 5040,
+          "duration": 240,
+          "note": 58,
+          "velocity": 93
+        },
+        {
+          "tick": 5040,
+          "duration": 240,
+          "note": 63,
+          "velocity": 98
+        },
+        {
+          "tick": 5040,
+          "duration": 240,
+          "note": 67,
+          "velocity": 98
+        },
+        {
+          "tick": 5160,
+          "duration": 180,
+          "note": 70,
+          "velocity": 88
+        },
+        {
+          "tick": 5520,
+          "duration": 180,
+          "note": 51,
+          "velocity": 91
+        },
+        {
+          "tick": 5520,
+          "duration": 180,
+          "note": 58,
+          "velocity": 96
+        },
+        {
+          "tick": 5520,
+          "duration": 180,
+          "note": 63,
+          "velocity": 96
+        },
+        {
+          "tick": 5520,
+          "duration": 180,
+          "note": 67,
+          "velocity": 96
+        },
+        {
+          "tick": 5760,
+          "duration": 300,
+          "note": 46,
+          "velocity": 101
+        },
+        {
+          "tick": 5760,
+          "duration": 300,
+          "note": 53,
+          "velocity": 106
+        },
+        {
+          "tick": 5760,
+          "duration": 300,
+          "note": 58,
+          "velocity": 106
+        },
+        {
+          "tick": 5760,
+          "duration": 300,
+          "note": 62,
+          "velocity": 106
+        },
+        {
+          "tick": 6120,
+          "duration": 180,
+          "note": 65,
+          "velocity": 88
+        },
+        {
+          "tick": 6480,
+          "duration": 210,
+          "note": 53,
+          "velocity": 87
+        },
+        {
+          "tick": 6480,
+          "duration": 210,
+          "note": 58,
+          "velocity": 92
+        },
+        {
+          "tick": 6480,
+          "duration": 210,
+          "note": 62,
+          "velocity": 92
+        },
+        {
+          "tick": 6960,
+          "duration": 240,
+          "note": 53,
+          "velocity": 93
+        },
+        {
+          "tick": 6960,
+          "duration": 240,
+          "note": 58,
+          "velocity": 98
+        },
+        {
+          "tick": 6960,
           "duration": 240,
           "note": 62,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 98
         },
         {
-          "tick": 5280,
-          "duration": 240,
-          "note": 43,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 5280,
-          "duration": 240,
-          "note": 55,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 5280,
-          "duration": 240,
-          "note": 59,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 5280,
-          "duration": 240,
+          "tick": 7080,
+          "duration": 180,
           "note": 62,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 88
         },
         {
-          "tick": 6000,
-          "duration": 240,
-          "note": 43,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 7440,
+          "duration": 180,
+          "note": 46,
+          "velocity": 91
         },
         {
-          "tick": 6000,
-          "duration": 240,
-          "note": 55,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 7440,
+          "duration": 180,
+          "note": 53,
+          "velocity": 96
         },
         {
-          "tick": 6000,
-          "duration": 240,
-          "note": 59,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 7440,
+          "duration": 180,
+          "note": 58,
+          "velocity": 96
         },
         {
-          "tick": 6000,
-          "duration": 240,
+          "tick": 7440,
+          "duration": 180,
           "note": 62,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 6720,
-          "duration": 240,
-          "note": 43,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 6720,
-          "duration": 240,
-          "note": 55,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 6720,
-          "duration": 240,
-          "note": 59,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 6720,
-          "duration": 240,
-          "note": 62,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 7200,
-          "duration": 240,
-          "note": 43,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 7200,
-          "duration": 240,
-          "note": 55,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 7200,
-          "duration": 240,
-          "note": 59,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 7200,
-          "duration": 240,
-          "note": 62,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 96
         },
         {
           "tick": 7680,
-          "duration": 240,
-          "note": 41,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 48,
+          "velocity": 101
         },
         {
           "tick": 7680,
-          "duration": 240,
+          "duration": 300,
           "note": 55,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 106
         },
         {
           "tick": 7680,
-          "duration": 240,
-          "note": 57,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 60,
+          "velocity": 106
         },
         {
           "tick": 7680,
-          "duration": 240,
-          "note": 60,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 63,
+          "velocity": 106
         },
         {
-          "tick": 7680,
-          "duration": 240,
-          "note": 64,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 8400,
-          "duration": 240,
-          "note": 41,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 8040,
+          "duration": 180,
+          "note": 67,
+          "velocity": 88
         },
         {
           "tick": 8400,
-          "duration": 240,
+          "duration": 210,
           "note": 55,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 87
         },
         {
           "tick": 8400,
-          "duration": 240,
-          "note": 57,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 60,
+          "velocity": 92
         },
         {
           "tick": 8400,
-          "duration": 240,
-          "note": 60,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 63,
+          "velocity": 92
         },
         {
-          "tick": 8400,
-          "duration": 240,
-          "note": 64,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 9120,
-          "duration": 240,
-          "note": 41,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 9120,
+          "tick": 8880,
           "duration": 240,
           "note": 55,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 93
         },
         {
-          "tick": 9120,
-          "duration": 240,
-          "note": 57,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 9120,
+          "tick": 8880,
           "duration": 240,
           "note": 60,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 98
         },
         {
-          "tick": 9120,
+          "tick": 8880,
           "duration": 240,
-          "note": 64,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "note": 63,
+          "velocity": 98
         },
         {
-          "tick": 9840,
-          "duration": 240,
-          "note": 41,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 9000,
+          "duration": 180,
+          "note": 63,
+          "velocity": 88
         },
         {
-          "tick": 9840,
-          "duration": 240,
+          "tick": 9360,
+          "duration": 180,
+          "note": 48,
+          "velocity": 91
+        },
+        {
+          "tick": 9360,
+          "duration": 180,
           "note": 55,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 96
         },
         {
-          "tick": 9840,
+          "tick": 9360,
+          "duration": 180,
+          "note": 60,
+          "velocity": 96
+        },
+        {
+          "tick": 9360,
+          "duration": 180,
+          "note": 63,
+          "velocity": 96
+        },
+        {
+          "tick": 9600,
+          "duration": 300,
+          "note": 44,
+          "velocity": 101
+        },
+        {
+          "tick": 9600,
+          "duration": 300,
+          "note": 51,
+          "velocity": 106
+        },
+        {
+          "tick": 9600,
+          "duration": 300,
+          "note": 56,
+          "velocity": 106
+        },
+        {
+          "tick": 9600,
+          "duration": 300,
+          "note": 60,
+          "velocity": 106
+        },
+        {
+          "tick": 9960,
+          "duration": 180,
+          "note": 68,
+          "velocity": 88
+        },
+        {
+          "tick": 10320,
+          "duration": 210,
+          "note": 51,
+          "velocity": 87
+        },
+        {
+          "tick": 10320,
+          "duration": 210,
+          "note": 56,
+          "velocity": 92
+        },
+        {
+          "tick": 10320,
+          "duration": 210,
+          "note": 60,
+          "velocity": 92
+        },
+        {
+          "tick": 10800,
           "duration": 240,
-          "note": 57,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "note": 51,
+          "velocity": 93
         },
         {
-          "tick": 9840,
+          "tick": 10800,
+          "duration": 240,
+          "note": 56,
+          "velocity": 98
+        },
+        {
+          "tick": 10800,
           "duration": 240,
           "note": 60,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 98
         },
         {
-          "tick": 9840,
-          "duration": 240,
-          "note": 64,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 10920,
+          "duration": 180,
+          "note": 63,
+          "velocity": 88
         },
         {
-          "tick": 10560,
-          "duration": 240,
-          "note": 41,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 11280,
+          "duration": 180,
+          "note": 44,
+          "velocity": 91
         },
         {
-          "tick": 10560,
-          "duration": 240,
-          "note": 55,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 11280,
+          "duration": 180,
+          "note": 51,
+          "velocity": 96
         },
         {
-          "tick": 10560,
-          "duration": 240,
-          "note": 57,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 11280,
+          "duration": 180,
+          "note": 56,
+          "velocity": 96
         },
         {
-          "tick": 10560,
-          "duration": 240,
+          "tick": 11280,
+          "duration": 180,
           "note": 60,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 10560,
-          "duration": 240,
-          "note": 64,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 11040,
-          "duration": 240,
-          "note": 41,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 11040,
-          "duration": 240,
-          "note": 55,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 11040,
-          "duration": 240,
-          "note": 57,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 11040,
-          "duration": 240,
-          "note": 60,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 11040,
-          "duration": 240,
-          "note": 64,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 96
         },
         {
           "tick": 11520,
-          "duration": 240,
-          "note": 36,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 41,
+          "velocity": 101
         },
         {
           "tick": 11520,
-          "duration": 240,
-          "note": 55,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 48,
+          "velocity": 106
         },
         {
           "tick": 11520,
-          "duration": 240,
-          "note": 60,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 53,
+          "velocity": 106
         },
         {
           "tick": 11520,
-          "duration": 240,
-          "note": 64,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 300,
+          "note": 56,
+          "velocity": 106
+        },
+        {
+          "tick": 11880,
+          "duration": 180,
+          "note": 65,
+          "velocity": 88
         },
         {
           "tick": 12240,
-          "duration": 240,
-          "note": 36,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 48,
+          "velocity": 87
         },
         {
           "tick": 12240,
-          "duration": 240,
-          "note": 55,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 53,
+          "velocity": 92
         },
         {
           "tick": 12240,
-          "duration": 240,
-          "note": 60,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "duration": 210,
+          "note": 56,
+          "velocity": 92
         },
         {
-          "tick": 12240,
+          "tick": 12720,
           "duration": 240,
-          "note": 64,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "note": 48,
+          "velocity": 93
         },
         {
-          "tick": 12960,
+          "tick": 12720,
           "duration": 240,
-          "note": 36,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "note": 53,
+          "velocity": 98
         },
         {
-          "tick": 12960,
+          "tick": 12720,
+          "duration": 240,
+          "note": 56,
+          "velocity": 98
+        },
+        {
+          "tick": 12840,
+          "duration": 180,
+          "note": 63,
+          "velocity": 88
+        },
+        {
+          "tick": 13200,
+          "duration": 180,
+          "note": 41,
+          "velocity": 91
+        },
+        {
+          "tick": 13200,
+          "duration": 180,
+          "note": 48,
+          "velocity": 96
+        },
+        {
+          "tick": 13200,
+          "duration": 180,
+          "note": 53,
+          "velocity": 96
+        },
+        {
+          "tick": 13200,
+          "duration": 180,
+          "note": 56,
+          "velocity": 96
+        },
+        {
+          "tick": 13440,
+          "duration": 300,
+          "note": 43,
+          "velocity": 101
+        },
+        {
+          "tick": 13440,
+          "duration": 300,
+          "note": 50,
+          "velocity": 106
+        },
+        {
+          "tick": 13440,
+          "duration": 300,
+          "note": 55,
+          "velocity": 106
+        },
+        {
+          "tick": 13440,
+          "duration": 300,
+          "note": 58,
+          "velocity": 106
+        },
+        {
+          "tick": 13800,
+          "duration": 180,
+          "note": 62,
+          "velocity": 88
+        },
+        {
+          "tick": 14160,
+          "duration": 210,
+          "note": 50,
+          "velocity": 87
+        },
+        {
+          "tick": 14160,
+          "duration": 210,
+          "note": 55,
+          "velocity": 92
+        },
+        {
+          "tick": 14160,
+          "duration": 210,
+          "note": 58,
+          "velocity": 92
+        },
+        {
+          "tick": 14640,
+          "duration": 240,
+          "note": 50,
+          "velocity": 93
+        },
+        {
+          "tick": 14640,
           "duration": 240,
           "note": 55,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 98
         },
         {
-          "tick": 12960,
+          "tick": 14640,
           "duration": 240,
-          "note": 60,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "note": 58,
+          "velocity": 98
         },
         {
-          "tick": 12960,
-          "duration": 240,
-          "note": 64,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 14760,
+          "duration": 180,
+          "note": 58,
+          "velocity": 88
         },
         {
-          "tick": 13680,
-          "duration": 240,
-          "note": 36,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 15120,
+          "duration": 180,
+          "note": 43,
+          "velocity": 107
         },
         {
-          "tick": 13680,
-          "duration": 240,
+          "tick": 15120,
+          "duration": 180,
+          "note": 50,
+          "velocity": 112
+        },
+        {
+          "tick": 15120,
+          "duration": 180,
           "note": 55,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 112
         },
         {
-          "tick": 13680,
-          "duration": 240,
-          "note": 60,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 15120,
+          "duration": 180,
+          "note": 58,
+          "velocity": 112
+        }
+      ]
+    },
+    {
+      "id": "supersaw",
+      "name": "81 Lead 2 (sawtooth)",
+      "channel": 5,
+      "role": "gm",
+      "mute": false,
+      "solo": false,
+      "cubaseIndex": 4,
+      "notes": [
+        {
+          "tick": 15360,
+          "duration": 360,
+          "note": 48,
+          "velocity": 111
         },
         {
-          "tick": 13680,
-          "duration": 240,
-          "note": 64,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 14400,
-          "duration": 240,
-          "note": 36,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 14400,
-          "duration": 240,
+          "tick": 15360,
+          "duration": 360,
           "note": 55,
-          "velocity": 94,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 116
         },
         {
-          "tick": 14400,
-          "duration": 240,
+          "tick": 15360,
+          "duration": 360,
           "note": 60,
-          "velocity": 92,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 116
         },
         {
-          "tick": 14400,
-          "duration": 240,
-          "note": 64,
-          "velocity": 93,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 16080,
+          "duration": 180,
+          "note": 48,
+          "velocity": 91
         },
         {
-          "tick": 14880,
-          "duration": 240,
-          "note": 36,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
-        },
-        {
-          "tick": 14880,
-          "duration": 240,
+          "tick": 16080,
+          "duration": 180,
           "note": 55,
-          "velocity": 95,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 96
         },
         {
-          "tick": 14880,
-          "duration": 240,
+          "tick": 16080,
+          "duration": 180,
           "note": 60,
-          "velocity": 91,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "velocity": 96
         },
         {
-          "tick": 14880,
-          "duration": 240,
-          "note": 64,
-          "velocity": 90,
-          "clipId": "clip-mu976vwo-7bdp3h"
+          "tick": 16320,
+          "duration": 300,
+          "note": 48,
+          "velocity": 103
+        },
+        {
+          "tick": 16320,
+          "duration": 300,
+          "note": 55,
+          "velocity": 108
+        },
+        {
+          "tick": 16320,
+          "duration": 300,
+          "note": 60,
+          "velocity": 108
+        },
+        {
+          "tick": 17040,
+          "duration": 180,
+          "note": 48,
+          "velocity": 95
+        },
+        {
+          "tick": 17040,
+          "duration": 180,
+          "note": 55,
+          "velocity": 100
+        },
+        {
+          "tick": 17040,
+          "duration": 180,
+          "note": 60,
+          "velocity": 100
+        },
+        {
+          "tick": 17280,
+          "duration": 360,
+          "note": 44,
+          "velocity": 111
+        },
+        {
+          "tick": 17280,
+          "duration": 360,
+          "note": 51,
+          "velocity": 116
+        },
+        {
+          "tick": 17280,
+          "duration": 360,
+          "note": 56,
+          "velocity": 116
+        },
+        {
+          "tick": 18000,
+          "duration": 180,
+          "note": 44,
+          "velocity": 91
+        },
+        {
+          "tick": 18000,
+          "duration": 180,
+          "note": 51,
+          "velocity": 96
+        },
+        {
+          "tick": 18000,
+          "duration": 180,
+          "note": 56,
+          "velocity": 96
+        },
+        {
+          "tick": 18240,
+          "duration": 300,
+          "note": 44,
+          "velocity": 103
+        },
+        {
+          "tick": 18240,
+          "duration": 300,
+          "note": 51,
+          "velocity": 108
+        },
+        {
+          "tick": 18240,
+          "duration": 300,
+          "note": 56,
+          "velocity": 108
+        },
+        {
+          "tick": 18960,
+          "duration": 180,
+          "note": 44,
+          "velocity": 95
+        },
+        {
+          "tick": 18960,
+          "duration": 180,
+          "note": 51,
+          "velocity": 100
+        },
+        {
+          "tick": 18960,
+          "duration": 180,
+          "note": 56,
+          "velocity": 100
+        },
+        {
+          "tick": 19200,
+          "duration": 360,
+          "note": 51,
+          "velocity": 111
+        },
+        {
+          "tick": 19200,
+          "duration": 360,
+          "note": 58,
+          "velocity": 116
+        },
+        {
+          "tick": 19200,
+          "duration": 360,
+          "note": 63,
+          "velocity": 116
+        },
+        {
+          "tick": 19920,
+          "duration": 180,
+          "note": 51,
+          "velocity": 91
+        },
+        {
+          "tick": 19920,
+          "duration": 180,
+          "note": 58,
+          "velocity": 96
+        },
+        {
+          "tick": 19920,
+          "duration": 180,
+          "note": 63,
+          "velocity": 96
+        },
+        {
+          "tick": 20160,
+          "duration": 300,
+          "note": 51,
+          "velocity": 103
+        },
+        {
+          "tick": 20160,
+          "duration": 300,
+          "note": 58,
+          "velocity": 108
+        },
+        {
+          "tick": 20160,
+          "duration": 300,
+          "note": 63,
+          "velocity": 108
+        },
+        {
+          "tick": 20880,
+          "duration": 180,
+          "note": 51,
+          "velocity": 95
+        },
+        {
+          "tick": 20880,
+          "duration": 180,
+          "note": 58,
+          "velocity": 100
+        },
+        {
+          "tick": 20880,
+          "duration": 180,
+          "note": 63,
+          "velocity": 100
+        },
+        {
+          "tick": 21120,
+          "duration": 360,
+          "note": 46,
+          "velocity": 111
+        },
+        {
+          "tick": 21120,
+          "duration": 360,
+          "note": 53,
+          "velocity": 116
+        },
+        {
+          "tick": 21120,
+          "duration": 360,
+          "note": 58,
+          "velocity": 116
+        },
+        {
+          "tick": 21840,
+          "duration": 180,
+          "note": 46,
+          "velocity": 91
+        },
+        {
+          "tick": 21840,
+          "duration": 180,
+          "note": 53,
+          "velocity": 96
+        },
+        {
+          "tick": 21840,
+          "duration": 180,
+          "note": 58,
+          "velocity": 96
+        },
+        {
+          "tick": 22080,
+          "duration": 300,
+          "note": 46,
+          "velocity": 103
+        },
+        {
+          "tick": 22080,
+          "duration": 300,
+          "note": 53,
+          "velocity": 108
+        },
+        {
+          "tick": 22080,
+          "duration": 300,
+          "note": 58,
+          "velocity": 108
+        },
+        {
+          "tick": 22800,
+          "duration": 180,
+          "note": 46,
+          "velocity": 95
+        },
+        {
+          "tick": 22800,
+          "duration": 180,
+          "note": 53,
+          "velocity": 100
+        },
+        {
+          "tick": 22800,
+          "duration": 180,
+          "note": 58,
+          "velocity": 100
+        },
+        {
+          "tick": 23040,
+          "duration": 360,
+          "note": 48,
+          "velocity": 111
+        },
+        {
+          "tick": 23040,
+          "duration": 360,
+          "note": 55,
+          "velocity": 116
+        },
+        {
+          "tick": 23040,
+          "duration": 360,
+          "note": 60,
+          "velocity": 116
+        },
+        {
+          "tick": 23760,
+          "duration": 180,
+          "note": 48,
+          "velocity": 91
+        },
+        {
+          "tick": 23760,
+          "duration": 180,
+          "note": 55,
+          "velocity": 96
+        },
+        {
+          "tick": 23760,
+          "duration": 180,
+          "note": 60,
+          "velocity": 96
+        },
+        {
+          "tick": 24000,
+          "duration": 300,
+          "note": 48,
+          "velocity": 103
+        },
+        {
+          "tick": 24000,
+          "duration": 300,
+          "note": 55,
+          "velocity": 108
+        },
+        {
+          "tick": 24000,
+          "duration": 300,
+          "note": 60,
+          "velocity": 108
+        },
+        {
+          "tick": 24720,
+          "duration": 180,
+          "note": 48,
+          "velocity": 95
+        },
+        {
+          "tick": 24720,
+          "duration": 180,
+          "note": 55,
+          "velocity": 100
+        },
+        {
+          "tick": 24720,
+          "duration": 180,
+          "note": 60,
+          "velocity": 100
+        },
+        {
+          "tick": 24960,
+          "duration": 360,
+          "note": 44,
+          "velocity": 111
+        },
+        {
+          "tick": 24960,
+          "duration": 360,
+          "note": 51,
+          "velocity": 116
+        },
+        {
+          "tick": 24960,
+          "duration": 360,
+          "note": 56,
+          "velocity": 116
+        },
+        {
+          "tick": 25680,
+          "duration": 180,
+          "note": 44,
+          "velocity": 91
+        },
+        {
+          "tick": 25680,
+          "duration": 180,
+          "note": 51,
+          "velocity": 96
+        },
+        {
+          "tick": 25680,
+          "duration": 180,
+          "note": 56,
+          "velocity": 96
+        },
+        {
+          "tick": 25920,
+          "duration": 300,
+          "note": 44,
+          "velocity": 103
+        },
+        {
+          "tick": 25920,
+          "duration": 300,
+          "note": 51,
+          "velocity": 108
+        },
+        {
+          "tick": 25920,
+          "duration": 300,
+          "note": 56,
+          "velocity": 108
+        },
+        {
+          "tick": 26640,
+          "duration": 180,
+          "note": 44,
+          "velocity": 95
+        },
+        {
+          "tick": 26640,
+          "duration": 180,
+          "note": 51,
+          "velocity": 100
+        },
+        {
+          "tick": 26640,
+          "duration": 180,
+          "note": 56,
+          "velocity": 100
+        },
+        {
+          "tick": 26880,
+          "duration": 360,
+          "note": 41,
+          "velocity": 111
+        },
+        {
+          "tick": 26880,
+          "duration": 360,
+          "note": 48,
+          "velocity": 116
+        },
+        {
+          "tick": 26880,
+          "duration": 360,
+          "note": 53,
+          "velocity": 116
+        },
+        {
+          "tick": 27600,
+          "duration": 180,
+          "note": 41,
+          "velocity": 91
+        },
+        {
+          "tick": 27600,
+          "duration": 180,
+          "note": 48,
+          "velocity": 96
+        },
+        {
+          "tick": 27600,
+          "duration": 180,
+          "note": 53,
+          "velocity": 96
+        },
+        {
+          "tick": 27840,
+          "duration": 300,
+          "note": 41,
+          "velocity": 103
+        },
+        {
+          "tick": 27840,
+          "duration": 300,
+          "note": 48,
+          "velocity": 108
+        },
+        {
+          "tick": 27840,
+          "duration": 300,
+          "note": 53,
+          "velocity": 108
+        },
+        {
+          "tick": 28560,
+          "duration": 180,
+          "note": 41,
+          "velocity": 95
+        },
+        {
+          "tick": 28560,
+          "duration": 180,
+          "note": 48,
+          "velocity": 100
+        },
+        {
+          "tick": 28560,
+          "duration": 180,
+          "note": 53,
+          "velocity": 100
+        },
+        {
+          "tick": 28800,
+          "duration": 360,
+          "note": 43,
+          "velocity": 111
+        },
+        {
+          "tick": 28800,
+          "duration": 360,
+          "note": 50,
+          "velocity": 116
+        },
+        {
+          "tick": 28800,
+          "duration": 360,
+          "note": 55,
+          "velocity": 116
+        },
+        {
+          "tick": 29520,
+          "duration": 180,
+          "note": 43,
+          "velocity": 91
+        },
+        {
+          "tick": 29520,
+          "duration": 180,
+          "note": 50,
+          "velocity": 96
+        },
+        {
+          "tick": 29520,
+          "duration": 180,
+          "note": 55,
+          "velocity": 96
+        },
+        {
+          "tick": 29760,
+          "duration": 300,
+          "note": 43,
+          "velocity": 103
+        },
+        {
+          "tick": 29760,
+          "duration": 300,
+          "note": 50,
+          "velocity": 108
+        },
+        {
+          "tick": 29760,
+          "duration": 300,
+          "note": 55,
+          "velocity": 108
+        },
+        {
+          "tick": 30480,
+          "duration": 180,
+          "note": 43,
+          "velocity": 115
+        },
+        {
+          "tick": 30480,
+          "duration": 180,
+          "note": 50,
+          "velocity": 120
+        },
+        {
+          "tick": 30480,
+          "duration": 180,
+          "note": 55,
+          "velocity": 120
         }
       ]
     },
@@ -2435,7 +3443,7 @@
       "role": "xr20-drums",
       "mute": false,
       "solo": false,
-      "cubaseIndex": 4,
+      "cubaseIndex": 5,
       "notes": [
         {
           "tick": 14,
