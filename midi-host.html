@@ -7422,7 +7422,7 @@ body.timeline-ruler-seeking {
     setStatus(
       "Piano Roll VIEW · " + (track.name || "Track") +
       " · " + (clip.name || clip.originalName || "Project Clip") +
-      " · ruler: click/horizontal drag = cue · vertical drag = zoom · click empty grid = add · drag note = move · right edge = resize · Delete = remove · snap " + pianoRollSnapLabel(),
+      " · ruler: click/horizontal drag = cue · vertical drag = zoom + left/right pan · click empty grid = add · drag note = move · right edge = resize · Delete = remove · snap " + pianoRollSnapLabel(),
       "ok"
     );
   }
@@ -7841,7 +7841,7 @@ body.timeline-ruler-seeking {
     const ruler = document.createElement("div");
     ruler.className = "piano-roll-ruler";
     ruler.id = "pianoRollRuler";
-    ruler.title = "Click/drag horizontally = cue · drag vertically = horizontal zoom";
+    ruler.title = "Click/horizontal drag = cue · start vertical drag = zoom, then left/right pans";
 
     const keys = document.createElement("div");
     keys.className = "piano-roll-keys";
@@ -8087,6 +8087,7 @@ body.timeline-ruler-seeking {
       pointerId: event.pointerId,
       originX: event.clientX,
       originY: event.clientY,
+      lastX: event.clientX,
       originBarW: Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(state.pianoRollBarW) || 96)),
       mode: "pending",
       resumeAfterSeek: !!state.playing,
@@ -8118,13 +8119,29 @@ body.timeline-ruler-seeking {
     if (gesture.mode === "zoom") {
       event.preventDefault();
       // Down = wider / zoom in, up = narrower / zoom out.
+      // Studio One-style direct manipulation while held:
+      // mouse right = content moves right, mouse left = content moves left.
       const nextBarW = gesture.originBarW * Math.exp(dy * 0.006);
       setPianoRollHorizontalZoomValue(nextBarW, gesture.originX);
+
+      const scroll = document.getElementById("pianoRollScroll");
+      const panDx = event.clientX - gesture.lastX;
+      gesture.lastX = event.clientX;
+      if (scroll && Math.abs(panDx) > 0.01) {
+        scroll.scrollLeft = Math.max(
+          0,
+          Math.min(
+            Math.max(0, scroll.scrollWidth - scroll.clientWidth),
+            scroll.scrollLeft - panDx
+          )
+        );
+      }
+
       setStatus(
         "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
         " px/bar" +
         (state.pianoRollBarW >= PIANO_ROLL_BAR_W_MAX ? " · MAX" : "") +
-        " · drag up/down",
+        " · down/up = zoom · left/right = pan",
         "ok"
       );
     } else if (gesture.mode === "seek") {
@@ -8163,7 +8180,7 @@ body.timeline-ruler-seeking {
         "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
         " px/bar" +
         (state.pianoRollBarW >= PIANO_ROLL_BAR_W_MAX ? " · MAX" : "") +
-        " · Ctrl+wheel also available",
+        " · left/right pan while held · Ctrl+wheel also available",
         "ok"
       );
     }
