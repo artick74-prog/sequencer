@@ -8004,6 +8004,20 @@ body.timeline-ruler-seeking {
     return owned;
   }
 
+  function cloneMidiControlEvent(event, tick, clipId) {
+    return {
+      tick: Math.max(0, Number(tick) || 0),
+      type: String(event?.type || "cc"),
+      ...(event?.controller != null ? { controller: Math.max(0, Math.min(127, Number(event.controller) || 0)) } : {}),
+      ...(event?.note != null ? { note: Math.max(0, Math.min(127, Number(event.note) || 0)) } : {}),
+      value: Math.max(
+        0,
+        Math.min(event?.type === "pitchBend" ? 16383 : 127, Number(event?.value) || 0)
+      ),
+      clipId: String(clipId || ""),
+    };
+  }
+
   function selectedHostClipContext() {
     if (!state.project || !state.selectedClipId) return null;
     const clip = (state.project.clips || []).find(
@@ -10361,6 +10375,7 @@ body.timeline-ruler-seeking {
       Math.max(0, (state.project.clips || []).indexOf(clip))
     );
     const owned = hostClipOwnedNotes(clip, track);
+    const ownedControls = hostClipOwnedMidiControls(clip, track);
     const sourceStart = Math.max(0, Number(clip.startTick) || 0);
     const sourceEnd = Math.max(sourceStart + 1, Number(clip.endTick) || (sourceStart + tpb));
     const meta = ensureHostClipRepeatMeta(clip, ppq);
@@ -10378,10 +10393,17 @@ body.timeline-ruler-seeking {
       duration: Math.max(1, note.duration | 0),
       note: note.note | 0,
       velocity: note.velocity | 0,
+      td3Slide: !!note.td3Slide,
       clipId: nextId,
     }));
+    const newControls = ownedControls.map((event) =>
+      cloneMidiControlEvent(event, nextStart + (event.tick - sourceStart), nextId)
+    );
     track.notes.push(...newNotes);
     track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+    track.midiControls = Array.isArray(track.midiControls) ? track.midiControls : [];
+    track.midiControls.push(...newControls);
+    track.midiControls.sort((a, b) => a.tick - b.tick);
 
     const copy = {
       ...clip,
@@ -10427,6 +10449,7 @@ body.timeline-ruler-seeking {
     const repeats = Math.max(1, Math.min(128, Math.round(Number(requestedRepeats) || 1)));
     const start = Math.max(0, Number(clip.startTick) || 0);
     const owned = hostClipOwnedNotes(clip, track);
+    const ownedControls = hostClipOwnedMidiControls(clip, track);
 
     let baseNotes = owned.filter(
       (note) => note.tick >= start && note.tick < start + baseLengthTicks
@@ -10438,7 +10461,14 @@ body.timeline-ruler-seeking {
       duration: Math.max(1, note.duration | 0),
       note: note.note | 0,
       velocity: note.velocity | 0,
+      td3Slide: !!note.td3Slide,
     }));
+    const controlTemplate = ownedControls
+      .filter((event) => event.tick >= start && event.tick < start + baseLengthTicks)
+      .map((event) => ({
+        event,
+        offset: Math.max(0, event.tick - start),
+      }));
 
     const ownedSet = new Set(owned);
     const untouched = track.notes.filter((note) => !ownedSet.has(note));
@@ -10451,13 +10481,32 @@ body.timeline-ruler-seeking {
           duration: note.duration,
           note: note.note,
           velocity: note.velocity,
+          td3Slide: !!note.td3Slide,
           clipId: instanceId,
         });
       }
     }
 
+    const ownedControlSet = new Set(ownedControls);
+    const untouchedControls = (track.midiControls || []).filter((event) => !ownedControlSet.has(event));
+    const repeatedControls = [];
+    for (let cycle = 0; cycle < repeats; cycle++) {
+      const cycleOffset = cycle * baseLengthTicks;
+      for (const item of controlTemplate) {
+        repeatedControls.push(
+          cloneMidiControlEvent(
+            item.event,
+            start + cycleOffset + item.offset,
+            instanceId
+          )
+        );
+      }
+    }
+
     track.notes = untouched.concat(repeated)
       .sort((a, b) => a.tick - b.tick || a.note - b.note);
+    track.midiControls = untouchedControls.concat(repeatedControls)
+      .sort((a, b) => a.tick - b.tick);
 
     clip.baseLengthTicks = baseLengthTicks;
     clip.repeatCount = repeats;
@@ -10482,6 +10531,7 @@ body.timeline-ruler-seeking {
   function copyHostLoopClipToClipboard(clip, track) {
     if (!state.project || !clip || !track) return false;
     const owned = hostClipOwnedNotes(clip, track);
+    const ownedControls = hostClipOwnedMidiControls(clip, track);
     const start = Math.max(0, Number(clip.startTick) || 0);
     const meta = ensureHostClipRepeatMeta(clip, state.project.ppq || 480);
     state.clipClipboard = {
@@ -10496,6 +10546,14 @@ body.timeline-ruler-seeking {
         duration: Math.max(1, note.duration | 0),
         note: note.note | 0,
         velocity: note.velocity | 0,
+        td3Slide: !!note.td3Slide,
+      })),
+      midiControls: ownedControls.map((event) => ({
+        offset: event.tick - start,
+        type: String(event.type || "cc"),
+        ...(event.controller != null ? { controller: Number(event.controller) } : {}),
+        ...(event.note != null ? { note: Number(event.note) } : {}),
+        value: Number(event.value) || 0,
       })),
     };
     setStatus(
@@ -10536,10 +10594,17 @@ body.timeline-ruler-seeking {
       duration: note.duration,
       note: note.note,
       velocity: note.velocity,
+      td3Slide: !!note.td3Slide,
       clipId: nextId,
     }));
+    const midiControls = (data.midiControls || []).map((event) =>
+      cloneMidiControlEvent(event, start + (Number(event.offset) || 0), nextId)
+    );
     track.notes.push(...notes);
     track.notes.sort((a, b) => a.tick - b.tick || a.note - b.note);
+    track.midiControls = Array.isArray(track.midiControls) ? track.midiControls : [];
+    track.midiControls.push(...midiControls);
+    track.midiControls.sort((a, b) => a.tick - b.tick);
 
     const pastedClip = {
       ...sourceClip,
