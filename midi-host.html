@@ -9133,6 +9133,8 @@ body.timeline-ruler-seeking {
     if (wasPlaying) stopPlayback();
 
     ctx.track.notes.sort((a,b) => Number(a.tick) - Number(b.tick) || Number(a.note) - Number(b.note));
+    ctx.track.midiControls = Array.isArray(ctx.track.midiControls) ? ctx.track.midiControls : [];
+    ctx.track.midiControls.sort((a,b) => Number(a.tick) - Number(b.tick));
     ctx.clip.noteCount = hostClipOwnedNotes(ctx.clip, ctx.track).length;
     ctx.clip.edited = true;
     ctx.clip.editedAt = new Date().toISOString();
@@ -10144,6 +10146,16 @@ body.timeline-ruler-seeking {
     updatePianoRollGeometry({ horizontal: false, vertical: true });
   });
 
+  document.getElementById("pianoRollParameterSelect")?.addEventListener("change", (event) => {
+    state.pianoRollParameterMode = String(event.target.value || "velocity");
+    event.target.title = event.target.selectedOptions[0]?.textContent || "MIDI parameter";
+    scheduleLocalStorageSet(
+      "midi_host_piano_roll_parameter_mode_v1",
+      state.pianoRollParameterMode
+    );
+    renderPianoRollParameterLane();
+  });
+
   document.getElementById("pianoRollSnap")?.addEventListener("change", (event) => {
     const value = String(event.target.value || "16");
     if (!["4","8","8T","16","16T","32","64"].includes(value)) return;
@@ -10227,6 +10239,18 @@ body.timeline-ruler-seeking {
     );
     if (Number.isFinite(savedParameterLaneHeight) && savedParameterLaneHeight >= 64) {
       state.pianoRollParameterLaneHeight = Math.min(320, savedParameterLaneHeight);
+    }
+    const savedParameterMode = String(
+      localStorage.getItem("midi_host_piano_roll_parameter_mode_v1") || ""
+    );
+    if (
+      savedParameterMode === "velocity" ||
+      savedParameterMode === "td3Slide" ||
+      savedParameterMode === "pitchBend" ||
+      savedParameterMode === "channelPressure" ||
+      /^cc:(?:[0-9]|[1-9][0-9]|1[01][0-9])$/.test(savedParameterMode)
+    ) {
+      state.pianoRollParameterMode = savedParameterMode;
     }
   } catch {}
 
