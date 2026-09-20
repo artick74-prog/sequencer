@@ -2346,10 +2346,14 @@ select, input[type="number"], input[type="text"] {
     const preview = hostLoopPreview;
     if (!preview || preview.entryId !== entryId || !preview.cycleMs) return 0;
     const visualStart = Number(preview.visualStart ?? preview.cycleStart);
+    const visualCycleMs = Math.max(
+      1,
+      Number(preview.visualCycleMs) || Number(preview.cycleMs) || 1
+    );
     const elapsed = now - visualStart;
     if (elapsed <= 0) return 0;
-    const phase = ((elapsed % preview.cycleMs) + preview.cycleMs) % preview.cycleMs;
-    return Math.max(0, Math.min(100, (phase / preview.cycleMs) * 100));
+    const phase = ((elapsed % visualCycleMs) + visualCycleMs) % visualCycleMs;
+    return Math.max(0, Math.min(100, (phase / visualCycleMs) * 100));
   }
 
   function updateHostLoopProgressBars(now = performance.now()) {
@@ -2896,6 +2900,18 @@ select, input[type="number"], input[type="text"] {
           : 0;
 
       const cycleMs = Math.max(100, ticksToMs(cycleTicks, tempo, ppq));
+      // The audio scheduler follows the project/master cycle, but the card's
+      // progress bar should show the audible loop's own cycle. A 4-bar preview
+      // inside a 16-bar project therefore fills and restarts every 4 bars while
+      // the project continues through bars 5–16. If the project loop is shorter
+      // than the source, the master boundary remains the audible reset point.
+      const sourceCycleHostTicks = Math.max(
+        1,
+        Math.round(sourceCycleTicks * (ppq / Math.max(1, sourcePpq)))
+      );
+      const sourceCycleMs = Math.max(1, ticksToMs(sourceCycleHostTicks, tempo, ppq));
+      const visualCycleMs = Math.min(cycleMs, sourceCycleMs);
+
       hostLoopPreviewMeta.set(entry.id, {
         bars: sourceCycleTicks / sourceBarTicks,
         seconds: ticksToMs(sourceCycleTicks, tempo, sourcePpq) / 1000,
@@ -2908,6 +2924,7 @@ select, input[type="number"], input[type="text"] {
         ppq,
         tempo,
         cycleMs,
+        visualCycleMs,
         cycleStart: previewStart,
         visualStart: previewStart,
         route,
