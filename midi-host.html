@@ -8766,18 +8766,40 @@ body.timeline-ruler-seeking {
       if (event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
+
+      // DAW-style multi-note resize: if the grabbed note is already selected,
+      // resize every selected note by the same duration delta.
       if (!pianoRollSelectedIdSet().has(noteId)) pianoRollSelectNote(noteId);
 
       const liveLayout = pianoRollEditorLayout(ctx);
       if (!liveLayout) return;
       const { rollW, spanTicks } = liveLayout;
+      const selectedNotes = pianoRollSelectedNotes(ctx);
+      if (!selectedNotes.length) return;
+
+      const origins = selectedNotes.map((item) => {
+        const id = pianoRollNoteId(item);
+        return {
+          note: item,
+          id,
+          tick: Number(item.tick) || 0,
+          duration: Math.max(1, Number(item.duration) || 1),
+          maxDuration: Math.max(1, ctx.endTick - (Number(item.tick) || 0)),
+          el: document.querySelector(
+            '.piano-roll-note[data-piano-note-id="' + CSS.escape(id) + '"]'
+          ),
+        };
+      });
+
+      const minDelta = Math.max(...origins.map((item) => 1 - item.duration));
+      const maxDelta = Math.min(...origins.map(
+        (item) => item.maxDuration - item.duration
+      ));
       const originX = event.clientX;
-      const originDuration = Math.max(1, Number(note.duration) || 1);
-      const maxDuration = Math.max(1, ctx.endTick - (Number(note.tick) || 0));
-      let previewDuration = originDuration;
+      let previewDeltaTicks = 0;
       let changed = false;
 
-      block.classList.add("resizing");
+      for (const origin of origins) origin.el?.classList.add("resizing");
       resizeHandle.setPointerCapture?.(event.pointerId);
 
       let resizeActive = true;
@@ -8786,11 +8808,27 @@ body.timeline-ruler-seeking {
         const dx = clientX - originX;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
         const editStep = pianoRollEditStepTicks(ctx.ppq);
-        const deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
-        previewDuration = Math.max(1, Math.min(maxDuration, originDuration + deltaTicks));
-        changed = changed || previewDuration !== originDuration;
-        block.style.width = Math.max(3, (previewDuration / Math.max(1, spanTicks)) * rollW) + "px";
+        let deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
+        deltaTicks = Math.max(minDelta, Math.min(maxDelta, deltaTicks));
+        previewDeltaTicks = deltaTicks;
+        changed = deltaTicks !== 0;
+
+        for (const origin of origins) {
+          const el = origin.el;
+          if (!el) continue;
+          const duration = origin.duration + deltaTicks;
+          const clippedStart = Math.max(ctx.startTick, origin.tick);
+          const clippedEnd = Math.min(ctx.endTick, origin.tick + duration);
+          const visibleDuration = Math.max(1, clippedEnd - clippedStart);
+          el.style.width =
+            Math.max(3, (visibleDuration / Math.max(1, spanTicks)) * rollW) + "px";
+        }
       };
+
+      const clearResizeClasses = () => {
+        for (const origin of origins) origin.el?.classList.remove("resizing");
+      };
+
       const onMove = (moveEvent) => {
         if (!(moveEvent.buttons & 1)) return;
         const clientX = moveEvent.clientX;
@@ -8804,15 +8842,19 @@ body.timeline-ruler-seeking {
         resizeHandle.removeEventListener("pointerup", finish);
         resizeHandle.removeEventListener("pointercancel", cancel);
         try { resizeHandle.releasePointerCapture?.(upEvent.pointerId); } catch {}
-        block.classList.remove("resizing");
+        clearResizeClasses();
 
         if (changed) {
           pianoRollPushUndo(ctx);
-          note.duration = previewDuration;
+          for (const origin of origins) {
+            origin.note.duration = origin.duration + previewDeltaTicks;
+          }
           commitPianoRollEdit(
             ctx,
-            "Resized " + midiToName(note.note) +
-            " → " + (note.duration / Math.max(1, ctx.ppq)).toFixed(2) + " beats"
+            "Resized " + origins.length + " note(s) · " +
+            (previewDeltaTicks > 0 ? "+" : "") +
+            (previewDeltaTicks / Math.max(1, ctx.ppq)).toFixed(2) +
+            " beats"
           );
         }
       };
@@ -8823,7 +8865,7 @@ body.timeline-ruler-seeking {
         resizeHandle.removeEventListener("pointerup", finish);
         resizeHandle.removeEventListener("pointercancel", cancel);
         try { resizeHandle.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
-        block.classList.remove("resizing");
+        clearResizeClasses();
         updatePianoRollGeometry();
       };
 
