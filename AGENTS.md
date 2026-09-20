@@ -290,6 +290,25 @@ Playback в Style Library использует короткий lookahead schedu
 
 ---
 
+## User Style Library (arranger-style drafts)
+
+Отдельно от внешней MIDI Reference Library существует собственная библиотека переиспользуемых стилей:
+
+- индекс: `user-library/styles/index.json`;
+- документация схемы: `user-library/styles/README.md`;
+- черновики: `user-library/styles/drafts/<style-id>/style.json`.
+- В `style-library.html` кнопка **My Styles** показывает эти заготовки отдельно от внешних MIDI loops.
+- Кнопка открытия draft style ведёт в `midi-host.html?userStyle=<id>`; MIDI Host создаёт самостоятельную 16-тактовую заготовку с bass + drums из style JSON.
+- Draft style хранит одновременно:
+  - готовые `realizedNotes` для немедленного воспроизведения;
+  - `events` баса в бар-относительном виде (`bar`, `tick`, `duration`, `rootRef`, `interval`, `velocity`) для будущего reharmonize;
+  - default harmony и provenance исходного drum loop.
+- Жизненный цикл: `draft` → `mature`. Позже mature style может получить arranger-секции Main A/B/C/D, Fill, Break, Intro, Ending.
+- Первые заготовки:
+  - **Acid Rock 1** — текущий rock drum groove + Tresillo Rock bass;
+  - **Acid Rock 2** — тот же drum family + Kick Lock Long bass.
+- Не путать cloud project и user style: project — конкретная аранжировка, style — переиспользуемый шаблон.
+
 ## GM-оркестровка (скетч-дорожки)
 
 Для разнообразия длинных партий (например Acid → духовые / фортепиано) добавляй **отдельные дорожки** под General MIDI. **Program Change не используем** — один трек = один инструмент навсегда.
