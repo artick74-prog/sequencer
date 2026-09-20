@@ -2732,6 +2732,7 @@ body.timeline-ruler-seeking {
     resumeAfterLoopRangeSelect: false,
     sectionMarkerTicks: [],
     lastSectionPlaylistIndex: -1,
+    rulerLabelEvery: 0,
   };
 
   // ─── Embedded Style Library / drag-and-drop loops ───────────────
@@ -6409,9 +6410,9 @@ body.timeline-ruler-seeking {
 
     state.barW = Math.min(BAR_W_MAX, Math.max(BAR_W_MIN, nextBarW));
     scheduleHostAutosave();
-    renderRuler();
+    updateRulerZoomGeometry();
     updateTrackZoomGeometry();
-    renderMarkerGuides();
+    updateMarkerGuideGeometry();
 
     if (scroll) {
       const newW = timelineWidth();
@@ -7167,6 +7168,7 @@ body.timeline-ruler-seeking {
     const length = state.lengthTicks || 1;
     const labelEvery = state.barW >= 28 ? 1 : state.barW >= 14 ? 2 : state.barW >= 7 ? 4 : 8;
     const markers = normalizedMarkers(project);
+    state.rulerLabelEvery = labelEvery;
 
     wrap.innerHTML = "";
     wrap.style.setProperty("--head-w", `${HEAD_W}px`);
@@ -7207,11 +7209,13 @@ body.timeline-ruler-seeking {
         const x = (m.tick / length) * totalW;
         const tick = document.createElement("div");
         tick.className = "marker-tick";
+        tick.dataset.tick = String(m.tick);
         tick.style.left = `${x}px`;
         mRuler.appendChild(tick);
 
         const lab = document.createElement("span");
         lab.className = "marker-label";
+        lab.dataset.tick = String(m.tick);
         lab.textContent = `${m.bar} · ${m.text}`;
         lab.title = `${m.text} · bar ${m.bar} — click to seek`;
         lab.style.left = `${x + 4}px`;
@@ -7238,6 +7242,7 @@ body.timeline-ruler-seeking {
       if (b === 1 || (b - 1) % labelEvery === 0 || b === bars) {
         const n = document.createElement("span");
         n.className = "bar-num";
+        n.dataset.bar = String(b);
         n.textContent = String(b);
         n.style.left = `${(b - 1) * state.barW + 2}px`;
         ruler.appendChild(n);
@@ -7332,6 +7337,46 @@ body.timeline-ruler-seeking {
     updatePlayheads(state.startTick || 0, length);
   }
 
+  function updateRulerZoomGeometry() {
+    const project = state.project;
+    const wrap = document.getElementById("rulerWrap");
+    const barsRuler = wrap?.querySelector(".ruler.bars-ruler");
+    if (!project || !wrap || !barsRuler) {
+      renderRuler();
+      return;
+    }
+
+    const labelEvery = state.barW >= 28 ? 1 : state.barW >= 14 ? 2 : state.barW >= 7 ? 4 : 8;
+    if (labelEvery !== state.rulerLabelEvery) {
+      renderRuler();
+      return;
+    }
+
+    const totalW = timelineWidth();
+    const length = Math.max(1, state.lengthTicks || 1);
+    barsRuler.style.width = totalW + "px";
+    barsRuler.style.setProperty("--bar-w", state.barW + "px");
+    barsRuler.querySelectorAll(".bar-num[data-bar]").forEach((el) => {
+      const bar = Math.max(1, Number(el.dataset.bar) || 1);
+      el.style.left = ((bar - 1) * state.barW + 2) + "px";
+    });
+
+    const markerRuler = wrap.querySelector(".ruler.markers-ruler");
+    if (markerRuler) {
+      markerRuler.style.width = totalW + "px";
+      markerRuler.querySelectorAll(".marker-tick[data-tick]").forEach((el) => {
+        el.style.left = ((Number(el.dataset.tick) || 0) / length * totalW) + "px";
+      });
+      markerRuler.querySelectorAll(".marker-label[data-tick]").forEach((el) => {
+        el.style.left = (((Number(el.dataset.tick) || 0) / length * totalW) + 4) + "px";
+      });
+    }
+
+    updateLoopRangeVisuals();
+    updateZoomLabel();
+    updatePlayheads(state.startTick || 0, length);
+  }
+
   function renderMarkerGuides() {
     const guides = document.getElementById("markerGuides");
     if (!guides) return;
@@ -7350,11 +7395,35 @@ body.timeline-ruler-seeking {
     for (const m of normalizedMarkers(project)) {
       const g = document.createElement("div");
       g.className = "marker-guide";
+      g.dataset.tick = String(m.tick);
       g.style.left = `${(m.tick / length) * totalW}px`;
       g.title = `${m.text} · bar ${m.bar}`;
       fragment.appendChild(g);
     }
     guides.appendChild(fragment);
+  }
+
+  function updateMarkerGuideGeometry() {
+    const guides = document.getElementById("markerGuides");
+    const project = state.project;
+    if (!guides || !project?.markers?.length) {
+      if (guides) guides.style.display = "none";
+      return;
+    }
+    const markerGuides = [...guides.querySelectorAll(".marker-guide[data-tick]")];
+    const markers = normalizedMarkers(project);
+    if (markerGuides.length !== markers.length) {
+      renderMarkerGuides();
+      return;
+    }
+    const totalW = timelineWidth();
+    const length = Math.max(1, state.lengthTicks || 1);
+    guides.style.display = "block";
+    guides.style.left = HEAD_W + "px";
+    guides.style.width = totalW + "px";
+    markerGuides.forEach((el) => {
+      el.style.left = ((Number(el.dataset.tick) || 0) / length * totalW) + "px";
+    });
   }
 
   function audibleTrackStillHoldsPitch(channelZeroBased, midiNote, tick, excludedIds) {
