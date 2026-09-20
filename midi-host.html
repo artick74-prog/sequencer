@@ -1160,10 +1160,21 @@ select, input[type="number"], input[type="text"] {
   color: var(--text);
   font: 12px/1.25 ui-monospace, Consolas, monospace;
 }
-.piano-roll-parameter-head strong {
+.piano-roll-parameter-select {
+  width: 100%;
+  min-width: 0;
+  height: 25px;
+  padding: 2px 3px;
+  border: 1px solid #596474;
+  border-radius: 3px;
+  background: #0f151c;
   color: var(--accent);
-  font-size: 14px;
-  line-height: 1.1;
+  font: 12px/1.1 ui-monospace, Consolas, monospace;
+  cursor: pointer;
+}
+.piano-roll-parameter-select:focus {
+  outline: 1px solid var(--accent);
+  outline-offset: 0;
 }
 .piano-roll-parameter-head span {
   display: block;
@@ -1219,6 +1230,44 @@ select, input[type="number"], input[type="text"] {
 .piano-roll-velocity-bar.dragging {
   z-index: 4;
   filter: brightness(1.18);
+}
+.piano-roll-control-bar {
+  position: absolute;
+  bottom: 0;
+  width: 7px;
+  min-height: 3px;
+  border: 1px solid rgba(255,255,255,.26);
+  border-radius: 2px 2px 0 0;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  opacity: .9;
+}
+.piano-roll-control-bar:hover,
+.piano-roll-control-bar.dragging {
+  filter: brightness(1.16);
+  opacity: 1;
+}
+.piano-roll-slide-step {
+  position: absolute;
+  bottom: 7px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border: 1px solid #7d8998;
+  border-radius: 2px;
+  background: #111820;
+  cursor: pointer;
+  touch-action: none;
+}
+.piano-roll-slide-step.on {
+  height: calc(100% - 14px);
+  border-color: var(--accent);
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(255,255,255,.18) 0 4px,
+    rgba(255,255,255,.05) 4px 8px
+  );
 }
 .piano-roll-stage {
   --pr-key-w: 78px;
@@ -2278,10 +2327,11 @@ body.timeline-ruler-seeking {
           <div class="piano-roll-empty">Double-click a Project Clip to inspect its notes.</div>
         </div>
         <div class="piano-roll-parameter-resizer" id="pianoRollParameterResizer"
-          title="Drag to resize Velocity lane"></div>
+          title="Drag to resize parameter lane"></div>
         <div class="piano-roll-parameter-lane" id="pianoRollParameterLane" aria-label="Piano Roll parameter lane">
           <div class="piano-roll-parameter-head">
-            <strong id="pianoRollParameterName">Velocity</strong>
+            <select class="piano-roll-parameter-select" id="pianoRollParameterSelect"
+              aria-label="Piano Roll MIDI parameter"></select>
             <span id="pianoRollParameterMeta">1–127</span>
           </div>
           <div class="piano-roll-parameter-viewport" id="pianoRollParameterViewport">
@@ -2344,6 +2394,73 @@ body.timeline-ruler-seeking {
     110:"Undefined", 111:"Undefined", 112:"Undefined", 113:"Undefined", 114:"Undefined",
     115:"Undefined", 116:"Undefined", 117:"Undefined", 118:"Undefined", 119:"Undefined",
   };
+  function midiCcLabel(controller) {
+    const cc = Math.max(0, Math.min(127, Number(controller) || 0));
+    return "CC" + cc + " " + (MIDI_CC_NAMES[cc] || "Undefined");
+  }
+
+  function pianoRollParameterSpec(mode = state?.pianoRollParameterMode || "velocity") {
+    const key = String(mode || "velocity");
+    if (key === "velocity") {
+      return { key, kind:"velocity", label:"Velocity", min:1, max:127, defaultValue:100, meta:"1–127" };
+    }
+    if (key === "td3Slide") {
+      return { key, kind:"slide", label:"TD-3 Slide", min:0, max:1, defaultValue:0, meta:"off / on" };
+    }
+    if (key === "pitchBend") {
+      return { key, kind:"control", type:"pitchBend", label:"Pitch Bend", min:0, max:16383, defaultValue:8192, meta:"±8192" };
+    }
+    if (key === "channelPressure") {
+      return { key, kind:"control", type:"channelPressure", label:"Aftertouch", min:0, max:127, defaultValue:0, meta:"0–127" };
+    }
+    const ccMatch = key.match(/^cc:(\d{1,3})$/);
+    if (ccMatch) {
+      const controller = Math.max(0, Math.min(119, Number(ccMatch[1]) || 0));
+      return {
+        key:"cc:" + controller,
+        kind:"control",
+        type:"cc",
+        controller,
+        label:midiCcLabel(controller),
+        min:0,
+        max:127,
+        defaultValue:0,
+        meta:"0–127",
+      };
+    }
+    return { key:"velocity", kind:"velocity", label:"Velocity", min:1, max:127, defaultValue:100, meta:"1–127" };
+  }
+
+  function populatePianoRollParameterSelect(track = pianoRollContext()?.track) {
+    const select = document.getElementById("pianoRollParameterSelect");
+    if (!select) return;
+    const requested = String(state.pianoRollParameterMode || "velocity");
+    const options = [
+      { value:"velocity", text:"Velocity" },
+      ...(track && (track.role === "td3" || Number(track.channel) === 2)
+        ? [{ value:"td3Slide", text:"TD-3 Slide" }]
+        : []),
+      { value:"pitchBend", text:"Pitch Bend" },
+      { value:"channelPressure", text:"Aftertouch" },
+    ];
+    for (let cc = 0; cc <= 119; cc++) {
+      options.push({ value:"cc:" + cc, text:midiCcLabel(cc) });
+    }
+    select.innerHTML = "";
+    const fragment = document.createDocumentFragment();
+    for (const optionInfo of options) {
+      const option = document.createElement("option");
+      option.value = optionInfo.value;
+      option.textContent = optionInfo.text;
+      fragment.appendChild(option);
+    }
+    select.appendChild(fragment);
+    const allowed = options.some((option) => option.value === requested);
+    state.pianoRollParameterMode = allowed ? requested : "velocity";
+    select.value = state.pianoRollParameterMode;
+    select.title = select.selectedOptions[0]?.textContent || "MIDI parameter";
+  }
+
   const BAR_W_DEFAULT = 40;
   const BAR_W_MIN = 3;
   const PIANO_ROLL_BAR_W_MIN = 24;
