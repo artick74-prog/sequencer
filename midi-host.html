@@ -1840,6 +1840,34 @@ select, input[type="number"], input[type="text"] {
     return /(^|[^a-z0-9])(drum[-_ ]?fill|fills?)([^a-z0-9]|$)/i.test(text);
   }
 
+  const GMD_ROLAND_TO_GM_DRUM = new Map([
+    [36,36],
+    [38,38],[40,38],[37,38],
+    [48,50],[50,50],
+    [45,47],[47,47],
+    [43,43],[58,43],
+    [46,46],[26,46],
+    [42,42],[22,42],[44,42],
+    [49,49],[55,49],[57,49],[52,49],
+    [51,51],[59,51],[53,51],
+  ]);
+
+  function hostLoopIsGrooveDataset(entry) {
+    const text = [
+      entry?.source,
+      entry?.member,
+      entry?.container,
+      entry?.name,
+    ].filter(Boolean).join(" ").toLowerCase();
+    return text.includes("groove-v1.0.0") || text.includes("groove-midi");
+  }
+
+  function hostLoopMapDrumNote(entry, note) {
+    const n = Number(note) | 0;
+    if (!hostLoopIsGrooveDataset(entry)) return n;
+    return GMD_ROLAND_TO_GM_DRUM.get(n) ?? n;
+  }
+
   function hostLoopRole(entry) {
     const roles = [...new Set((entry.classificationRoles || [])
       .map(String)
@@ -2521,12 +2549,14 @@ select, input[type="number"], input[type="text"] {
     hostLoopNoteTimers.add(onTimer);
   }
 
-  function scheduleHostLoopHardware(channel, note, velocity, targetTime, durationMs) {
+  function scheduleHostLoopHardware(channel, note, velocity, targetTime, durationMs, oneShot = false) {
     const output = getOutput();
     if (!output) throw new Error("Select MIDI Out first");
     const ch = (Number(channel) - 1) & 0x0f;
     output.send([0x90 | ch, note & 0x7f, Math.max(1, Math.min(127, velocity || 100))], targetTime);
-    output.send([0x80 | ch, note & 0x7f, 0], targetTime + Math.max(25, durationMs));
+    if (!oneShot) {
+      output.send([0x80 | ch, note & 0x7f, 0], targetTime + Math.max(25, durationMs));
+    }
   }
 
   function pumpHostLoopPreview(token) {
@@ -2569,7 +2599,8 @@ select, input[type="number"], input[type="text"] {
             item.note,
             item.velocity || 100,
             Math.max(now, target),
-            durationMs
+            durationMs,
+            !!preview.oneShotHardware
           );
         } else {
           scheduleHostLoopSf2(
@@ -2620,28 +2651,36 @@ select, input[type="number"], input[type="text"] {
       const sourcePpq = parsed.ppq || 480;
       const sourceBarTicks = sourcePpq * 4;
       const maxTicks = sourceBarTicks * 16;
-      let sourceLength = sourceBarTicks;
+      const previewRole = hostLoopRole(entry);
+      const previewAsDrums = previewRole === "drums" || previewRole === "drum-fill";
+
+      let sourceEnd = sourceBarTicks;
+      let lastNoteOn = 0;
       for (const track of parsed.tracks) {
         for (const note of track.notes) {
-          sourceLength = Math.max(sourceLength, note.tick + note.duration);
+          lastNoteOn = Math.max(lastNoteOn, note.tick);
+          sourceEnd = Math.max(sourceEnd, note.tick + note.duration);
         }
       }
 
-      // Browser loops are musical bar units, so do not cycle at the last note-off
-      // a fraction before the bar line.
+      // Drum MIDI often leaves a note-off a few milliseconds beyond the bar line.
+      // For percussion, derive musical length from the last HIT, not from its note-off;
+      // otherwise a one-bar groove can incorrectly become a two-bar preview.
+      const musicalEnd = previewAsDrums ? Math.max(1, lastNoteOn + 1) : sourceEnd;
       const sourceCycleTicks = Math.min(
         maxTicks,
-        Math.max(sourceBarTicks, Math.ceil(sourceLength / sourceBarTicks) * sourceBarTicks)
+        Math.max(sourceBarTicks, Math.ceil(musicalEnd / sourceBarTicks) * sourceBarTicks)
       );
-      const previewRole = hostLoopRole(entry);
-      const previewAsDrums = previewRole === "drums" || previewRole === "drum-fill";
+
       const sourceNotes = parsed.tracks.flatMap((track) =>
         track.notes
           .filter((note) => note.tick < sourceCycleTicks)
           .map((note) => ({
             tick: note.tick,
-            duration: Math.min(note.duration, Math.max(1, sourceCycleTicks - note.tick)),
-            note: note.note,
+            duration: previewAsDrums
+              ? Math.min(Math.max(1, Math.round(sourcePpq / 16)), Math.max(1, sourceCycleTicks - note.tick))
+              : Math.min(note.duration, Math.max(1, sourceCycleTicks - note.tick)),
+            note: previewAsDrums ? hostLoopMapDrumNote(entry, note.note) : note.note,
             velocity: note.velocity,
             channel: previewAsDrums ? 10 : (track.channel || 1),
           }))
@@ -2723,6 +2762,7 @@ select, input[type="number"], input[type="text"] {
         visualStart: previewStart,
         route,
         sf2Channel,
+        oneShotHardware: previewAsDrums && route.type === "hardware" && route.channel === 10,
         syncMode: syncContext ? requestedSyncMode : "free",
         sourceBars: sourceCycleTicks / sourceBarTicks,
       };
@@ -2852,7 +2892,13 @@ select, input[type="number"], input[type="text"] {
       return {
         tick,
         duration,
-        note: Math.max(0, Math.min(127, note.note | 0)),
+        note: Math.max(
+          0,
+          Math.min(
+            127,
+            targetIsDrums ? hostLoopMapDrumNote(entry, note.note) : (note.note | 0)
+          )
+        ),
         velocity: Math.max(1, Math.min(127, note.velocity | 0)),
         clipId: clipInstanceId,
       };
