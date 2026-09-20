@@ -314,6 +314,9 @@ Playback в Style Library использует короткий lookahead schedu
 - После появления редакций карточка показывает **‹ / ›** и счётчик: `O · N` = оригинал + N редакций, `V3/10` = выбранная 3-я из 10. Стрелки сразу audition'ят выбранную версию.
 - В редакторе attack можно добавить/удалить кликом; существующий hit можно drag-and-drop передвинуть по сетке с сохранением `dur/vel` и guitar articulation metadata.
 - **LIVE preview в Rhythm Editor** включён всегда: открытие ✎ запускает/продолжает audition, а каждый click/drag немедленно подменяет временный rhythm overlay без перезапуска backing transport. Cancel/Close возвращает сохранённую Original/revision; Save передаёт audition уже новой сохранённой revision.
+- Browser presentation теперь группирует built-in patterns с **одинаковыми onset positions** внутри одного bank/family/bar/grid в одну карточку. Разные `dur/vel` исполнения этой же ритмической формы листаются отдельными **Variant ‹ / ›**; source entries в `index.json` при этом не удаляются.
+- В Rhythm Editor выбранный hit имеет музыкальные duration presets `1/32, 1/16, 1/8, 1/4, 1/4·, 1/2, 1/2·, 1/1`; ширина зелёного блока визуально отражает stored `dur`. Для 16-step 4/4 это соответственно `0.5,1,2,4,6,8,12,16` grid steps; для 12-step triplet grid значения пересчитываются пропорционально.
+- Global Rhythm **Gate** остаётся отдельным playback multiplier поверх stored duration: при 100% длительность соответствует выбранной музыкальной величине.
 - Кнопка **▣** на выбранной редакции сохраняет её как отдельный custom rhythm. Редакции и custom rhythms сейчас живут в browser localStorage (`midi_host_rhythm_revisions_v1`, `midi_host_custom_rhythms_v1`) и переживают обычный refresh / one-click Update; built-in `index.json` не переписывается.
 
 ## User Style Library (arranger-style drafts)
