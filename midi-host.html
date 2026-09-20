@@ -3942,7 +3942,15 @@ select, input[type="number"], input[type="text"] {
       scheduleStart
     );
     state.playing = true;
-    state.startPerf = performance.now();
+
+    // Give the first hardware events the same timestamped look-ahead that all
+    // subsequent loop events already get. Without this, tick-0 events are sent
+    // immediately in one burst on transport start. Dense CH10 drum hits can then
+    // arrive at the TD-3 USB/MIDI-thru path at the exact same instant as CH2 acid
+    // notes. Starting from a later bar appeared fine because the bar-1 events were
+    // scheduled ahead on the following loop pass.
+    const startupLeadMs = hw ? HARDWARE_LOOKAHEAD_MS : 35;
+    state.startPerf = performance.now() + startupLeadMs;
     state.startTick = scheduleStart;
     state.playbackTempo = tempo;
     state.playbackPpq = ppq;
