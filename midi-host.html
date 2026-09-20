@@ -1153,20 +1153,23 @@ select, input[type="number"], input[type="text"] {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
+  gap: 5px;
   padding: 7px 8px;
   border-right: 1px solid #6f7780;
   background: #151b22;
   color: var(--text);
-  font: 11px/1.2 ui-monospace, Consolas, monospace;
+  font: 12px/1.25 ui-monospace, Consolas, monospace;
 }
 .piano-roll-parameter-head strong {
   color: var(--accent);
-  font-size: 11px;
+  font-size: 14px;
+  line-height: 1.1;
 }
 .piano-roll-parameter-head span {
-  color: var(--dim);
-  font-size: 9px;
+  color: #aab6c6;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 .piano-roll-parameter-viewport {
   min-width: 0;
@@ -1191,7 +1194,7 @@ select, input[type="number"], input[type="text"] {
 }
 .piano-roll-velocity-bar {
   position: absolute;
-  bottom: 8px;
+  bottom: 0;
   width: 7px;
   min-height: 3px;
   border: 1px solid rgba(255,255,255,.26);
@@ -2850,6 +2853,7 @@ body.timeline-ruler-seeking {
     pianoRollParameterResizing: false,
     pianoRollParameterResizeStartY: 0,
     pianoRollParameterResizeStartHeight: 92,
+    pianoRollParameterResizeMaxHeight: 320,
     pianoRollParameterResizeRenderFrame: 0,
     pianoRollSelectedNoteId: "",
     pianoRollSelectedNoteIds: [],
@@ -7943,41 +7947,21 @@ body.timeline-ruler-seeking {
   }
 
   function pianoRollVelocityDrawableHeight() {
-    return Math.max(36, clampPianoRollParameterLaneHeight(state.pianoRollParameterLaneHeight) - 20);
+    return Math.max(36, Number(state.pianoRollParameterLaneHeight) || 92);
   }
 
-  function applyPianoRollParameterLaneHeight({ refreshBars = true } = {}) {
+  function applyPianoRollParameterLaneHeight() {
     const lane = document.getElementById("pianoRollParameterLane");
     if (!lane) return;
     state.pianoRollParameterLaneHeight =
       clampPianoRollParameterLaneHeight(state.pianoRollParameterLaneHeight);
     lane.style.height = state.pianoRollParameterLaneHeight + "px";
-    if (refreshBars) {
-      const ctx = pianoRollContext();
-      if (ctx) {
-        for (const note of ctx.notes) {
-          const bar = document.querySelector(
-            '.piano-roll-velocity-bar[data-piano-note-id="' +
-            CSS.escape(pianoRollNoteId(note)) + '"]'
-          );
-          if (bar) updatePianoRollVelocityBar(bar, note);
-        }
-      }
-    }
-  }
-
-  function pianoRollVelocityHeight(value) {
-    const velocity = Math.max(1, Math.min(127, Number(value) || 1));
-    return Math.max(
-      3,
-      Math.round((velocity / 127) * pianoRollVelocityDrawableHeight())
-    );
   }
 
   function updatePianoRollVelocityBar(bar, note) {
     if (!bar || !note) return;
     const velocity = Math.max(1, Math.min(127, Number(note.velocity) || 100));
-    bar.style.height = pianoRollVelocityHeight(velocity) + "px";
+    bar.style.height = ((velocity / 127) * 100).toFixed(3) + "%";
     bar.dataset.velocity = String(velocity);
     bar.title = midiToName(Number(note.note) || 0) + " · velocity " + velocity + " · drag vertically";
   }
@@ -8065,8 +8049,8 @@ body.timeline-ruler-seeking {
         if (meta) {
           const current = Math.max(1, Math.min(127, Number(note.velocity) || 100));
           meta.textContent =
-            (origins.length > 1 ? origins.length + " notes · " : "") +
-            "velocity " + current;
+            (origins.length > 1 ? origins.length + " notes · " : "vel ") +
+            current;
         }
       };
 
@@ -8092,7 +8076,7 @@ body.timeline-ruler-seeking {
           );
         } else {
           const meta = document.getElementById("pianoRollParameterMeta");
-          if (meta) meta.textContent = trackIsPercussion(ctx.track) ? "per hit · 1–127" : "1–127";
+          if (meta) meta.textContent = "range 1–127";
         }
       };
 
@@ -8109,7 +8093,7 @@ body.timeline-ruler-seeking {
           if (origin.bar) updatePianoRollVelocityBar(origin.bar, origin.note);
         }
         const meta = document.getElementById("pianoRollParameterMeta");
-        if (meta) meta.textContent = trackIsPercussion(ctx.track) ? "per hit · 1–127" : "1–127";
+        if (meta) meta.textContent = "range 1–127";
       };
 
       bar.addEventListener("pointermove", onMove);
@@ -8127,8 +8111,8 @@ body.timeline-ruler-seeking {
     if (!ctx) return;
 
     if (name) name.textContent = "Velocity";
-    if (meta) meta.textContent = trackIsPercussion(ctx.track) ? "per hit · 1–127" : "1–127";
-    applyPianoRollParameterLaneHeight({ refreshBars: false });
+    if (meta) meta.textContent = "range 1–127";
+    applyPianoRollParameterLaneHeight();
 
     const grid = document.getElementById("pianoRollGrid");
     const width = Math.max(
