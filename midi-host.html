@@ -3624,12 +3624,14 @@ select, input[type="number"], input[type="text"] {
     for (const timer of state.sf2Timers) clearTimeout(timer);
     state.sf2Timers.clear();
   }
-  function primeTd3Gate(output, project) {
+  function resetTd3Gate(output, project) {
     if (!output || !project) return 0;
 
     const notes = new Set();
     for (const track of project.tracks || []) {
       if ((Number(track.channel) || 1) !== 2) continue;
+      const route = trackRoute(track);
+      if (route !== "hw" && route !== "both") continue;
       if (!trackIsAudible(track, project)) continue;
       for (const note of track.notes || []) {
         const pitch = Number(note.note);
@@ -3639,10 +3641,12 @@ select, input[type="number"], input[type="text"] {
 
     if (!notes.size) return 0;
 
-    // Experimental TD-3 gate reset: ordinary NOTE OFF messages only.
-    // This intentionally does not use CC123/All Notes Off.
+    // TD-3 transport-start guard.
+    // A normal Note Off sweep on the pitches used by the active CH2 hardware
+    // track clears the mono gate state more reliably than CC123 on this setup.
+    // Keep these as ordinary Note Off messages: they are intentionally silent.
     for (const note of [...notes].sort((a, b) => a - b)) {
-      midiSend(output, [0x81, note, 0], null, "TD-3 prime");
+      midiSend(output, [0x81, note, 0], null, "TD-3 gate reset");
     }
     return notes.size;
   }
@@ -3966,13 +3970,14 @@ select, input[type="number"], input[type="text"] {
     );
     state.playing = true;
 
-    // Experimental TD-3 start prime.
-    // The previous 120 ms startup-lookahead experiment has been removed.
-    // Before the first real CH2 note, send NOTE OFF for every pitch used by the
-    // audible CH2 track(s), then start the project a few milliseconds later.
-    const td3PrimeCount = hw ? primeTd3Gate(output, project) : 0;
-    const td3PrimeLeadMs = td3PrimeCount ? 12 : 0;
-    state.startPerf = performance.now() + td3PrimeLeadMs;
+    // TD-3 transport-start guard.
+    // Before the first real CH2 note, clear the mono gate with ordinary Note Off
+    // messages for the pitches used by the active hardware track, then start a
+    // few milliseconds later. This avoids the TD-3 occasionally choking when a
+    // dense drum clip starts on the same transport boundary.
+    const td3ResetCount = hw ? resetTd3Gate(output, project) : 0;
+    const td3ResetLeadMs = td3ResetCount ? 12 : 0;
+    state.startPerf = performance.now() + td3ResetLeadMs;
     state.startTick = scheduleStart;
     state.playbackTempo = tempo;
     state.playbackPpq = ppq;
@@ -3984,12 +3989,7 @@ select, input[type="number"], input[type="text"] {
       .filter(Boolean)
       .join(" + ");
     const loopText = loopRange ? ("Loop " + loopRange.startBar + "–" + loopRange.endBar + " · ") : "";
-    setStatus(
-      loopText +
-      `Playing from bar ${tickToBar(scheduleStart, ppq)} → ${dest}` +
-      (td3PrimeCount ? ` · TD-3 prime ${td3PrimeCount} note-off(s)` : ""),
-      "ok"
-    );
+    setStatus(loopText + `Playing from bar ${tickToBar(scheduleStart, ppq)} → ${dest}`, "ok");
 
     if (state.timer) clearInterval(state.timer);
     const pump = () => {
