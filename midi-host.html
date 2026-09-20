@@ -447,6 +447,68 @@ a { color: var(--accent); }
 }
 .loop-card:hover { border-color: var(--accent-dim); }
 .loop-card.dragging { opacity: .55; border-color: var(--accent); }
+.rhythm-card { cursor: pointer; grid-template-columns: 28px 1fr; }
+.rhythm-card.active { border-color: var(--accent); background: rgba(61,220,151,.08); }
+.rhythm-grid-preview {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 1px;
+  height: 16px;
+  margin-top: 4px;
+  opacity: .9;
+}
+.rhythm-grid-preview span { border-radius: 2px; background: #202a38; }
+.rhythm-grid-preview span.hit { background: var(--accent-dim); }
+.rhythm-audition-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--border);
+}
+.rhythm-audition-actions .wide { grid-column: 1 / -1; }
+.rhythm-now {
+  min-height: 34px;
+  padding: 7px 11px;
+  border-bottom: 1px solid var(--border);
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.rhythm-now strong { color: var(--accent); }
+.rhythm-audition-slot {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  z-index: 12;
+  border: 1px dashed var(--accent);
+  border-radius: 4px;
+  background: rgba(61,220,151,.12);
+  pointer-events: none;
+  overflow: hidden;
+}
+.rhythm-audition-slot .label {
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  z-index: 2;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(6,15,12,.86);
+  color: #bff9e4;
+  font: 9px/13px ui-monospace, Consolas, monospace;
+  white-space: nowrap;
+}
+.rhythm-audition-hit {
+  position: absolute;
+  bottom: 5px;
+  height: 10px;
+  min-width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: .8;
+}
 .loop-preview {
   width: 28px;
   height: 28px;
@@ -1226,6 +1288,7 @@ select, input[type="number"], input[type="text"] {
       </div>
     </div>
     <button class="btn" id="btnLoops" type="button" title="Browse, preview and drag MIDI loops into the arrangement">♫ Loops</button>
+    <button class="btn" id="btnRhythms" type="button" title="Audition pitch-free rhythm patterns on any track without editing the project">♬ Rhythms</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
     <input class="file-hidden" id="fileJson" type="file" accept=".json">
     <input class="file-hidden" id="fileSf2" type="file" accept=".sf2,.SF2">
@@ -1288,6 +1351,42 @@ select, input[type="number"], input[type="text"] {
     <div class="loop-drawer-foot">
       <span id="hostLoopCount">—</span>
       <span>Preview · drag onto a track/bar</span>
+    </div>
+  </aside>
+
+  <aside class="loop-drawer" id="rhythmBrowser" aria-hidden="true">
+    <div class="loop-drawer-head">
+      <div class="loop-drawer-title">
+        <strong>♬ RHYTHM BROWSER</strong>
+        <span class="spacer"></span>
+        <button class="btn" id="btnCloseRhythms" type="button">Close</button>
+      </div>
+      <div class="loop-filters">
+        <select class="wide" id="rhythmTarget" title="Target track is temporarily replaced during audition"></select>
+        <input id="rhythmSearch" type="search" placeholder="Search rhythms…">
+        <select id="rhythmCategory"><option value="">All categories</option></select>
+        <label class="field">Start bar
+          <input id="rhythmStartBar" type="number" min="1" value="1" step="1" style="width:72px">
+        </label>
+        <label class="field">Pitch
+          <input id="rhythmPitch" type="number" min="0" max="127" value="48" step="1" style="width:72px">
+        </label>
+        <label class="field wide">Gate
+          <input id="rhythmGate" type="range" min="25" max="150" value="100" step="5" style="flex:1">
+          <span id="rhythmGateValue" class="performance-value wide">100%</span>
+        </label>
+      </div>
+    </div>
+    <div class="rhythm-audition-actions">
+      <button class="btn" id="rhythmPrev" type="button">← Previous</button>
+      <button class="btn" id="rhythmNext" type="button">Next →</button>
+      <button class="btn primary wide" id="rhythmApply" type="button" disabled>Apply to track</button>
+    </div>
+    <div class="rhythm-now" id="rhythmNow">Choose a target track, then click a rhythm. Original target notes are muted only during audition.</div>
+    <div class="loop-list" id="rhythmList"></div>
+    <div class="loop-drawer-foot">
+      <span id="rhythmCount">—</span>
+      <span>Click = audition · pattern sets project loop</span>
     </div>
   </aside>
 
@@ -1926,6 +2025,11 @@ select, input[type="number"], input[type="text"] {
   let hostLoopRenderObserver = null;
   const hostLoopNoteTimers = new Set();
   const hostLoopPreviewMeta = new Map();
+
+  let rhythmLibrary = [];
+  let rhythmLibraryLoaded = false;
+  let rhythmSelectedId = "";
+  let rhythmAudition = null;
 
   try { hostLoopRatings = JSON.parse(localStorage.getItem(HOST_LOOP_RATINGS_KEY) || "{}") || {}; }
   catch { hostLoopRatings = {}; }
@@ -4153,7 +4257,13 @@ select, input[type="number"], input[type="text"] {
   }
 
   function eventIsAudible(event) {
-    return event.type === "off" || trackIsAudible(event.track, state.project);
+    if (event.type === "off") return true;
+    if (
+      rhythmAudition?.active &&
+      event.trackId &&
+      event.trackId === rhythmAudition.targetTrackId
+    ) return false;
+    return trackIsAudible(event.track, state.project);
   }
 
   function createScheduleCursor(events, fromTick) {
