@@ -342,10 +342,10 @@ Playback в Style Library использует короткий lookahead schedu
 ## Project Clip Piano Roll
 
 - Loop Browser остаётся только источником preview/drag-and-drop. После drop MIDI становится **Project Clip** на timeline; Piano Roll никогда не редактирует Library Loop напрямую.
-- **Piano Roll v0.1** — read-only фундамент: двойной клик по Project Clip открывает нижний dock с нотами только этого clip instance.
+- **Piano Roll v0.2** — минимальный настоящий редактор: двойной клик по Project Clip открывает нижний dock с нотами только этого clip instance; клик по пустой сетке добавляет ноту, клик по ноте выделяет её, drag двигает по времени/высоте, drag правого края меняет duration, Delete/Backspace удаляет выбранную ноту.
 - Dock показывает track + имя clip, project bar range, note count, вертикальные MIDI note labels, bar/beat grid, реальную высоту/start/duration нот и playhead, синхронизированный с главным transport.
 - Нижний Piano Roll можно закрыть и менять по высоте drag'ом верхнего разделителя; высота сохраняется в localStorage `midi_host_piano_roll_height_v1`. Pitch canvas всегда содержит полный MIDI-диапазон 0–127; при открытии viewport центрируется на нотах clip, колесо мыши прокручивает регистр вверх/вниз, а увеличение высоты dock просто показывает больше строк одновременно без пустого поля. Live resize перерисовывается через `requestAnimationFrame`. Горизонтальный zoom внутри Piano Roll: `Ctrl/Cmd + wheel`; браузерный zoom при наведении на Piano Roll блокируется, масштаб хранится отдельно в `midi_host_piano_roll_bar_w_v1` (24–640 px/bar), zoom якорится около позиции курсора.
-- Редактирование нот пока намеренно отсутствует. Следующая итерация: select/create/move/resize/delete нот внутри конкретного Project Clip.
+- На v0.2 редактирование работает с фиксированным snap `1/16`; новые ноты создаются длиной `1/16` и velocity 100. Move/resize остаются внутри границ Project Clip; правка помечает clip как `edited`/`editedAt`, сохраняя source/provenance. Если transport играет, после завершения правки scheduler перезапускается с текущего tick, чтобы изменение сразу стало слышно; при остановленном transport новая/перемещённая нота коротко audition'ится по route дорожки. Следующая итерация — snap selector, multi-select, copy/paste, transpose, undo/redo и дальнейшие editor controls.
 - Source/provenance Library Loop сохраняется у Project Clip, но объектом будущего редактирования является конкретный instance на timeline, а не исходный MIDI в библиотеке.
 
 
