@@ -1148,6 +1148,11 @@ select, input[type="number"], input[type="text"] {
           <option value="constructor">Constructors · over 16 bars</option>
           <option value="">All material</option>
         </select>
+        <select id="hostLoopSyncMode" title="How Browser preview joins the project transport">
+          <option value="next" selected>Sync · next cycle</option>
+          <option value="restart">Sync · restart cycle</option>
+          <option value="free">Preview · free</option>
+        </select>
         <select id="hostLoopGenre"><option value="">All styles</option></select>
         <select id="hostLoopRole"><option value="">All roles</option></select>
         <select id="hostLoopFamily"><option value="">All instrument families</option></select>
@@ -1752,6 +1757,7 @@ select, input[type="number"], input[type="text"] {
   const HOST_LOOP_RATINGS_KEY = "chiptune_loop_ratings_v1";
   const HOST_LOOP_ALIASES_KEY = "chiptune_loop_aliases_v1";
   const HOST_LOOP_PREVIEW_ROUTE_KEY = "midi_host_loop_preview_route_v1";
+  const HOST_LOOP_SYNC_MODE_KEY = "midi_host_loop_sync_mode_v1";
   const HOST_LOOP_FAMILIES = [
     "Piano", "Chromatic Percussion", "Organ", "Guitar",
     "Bass", "Strings", "Ensemble", "Brass",
@@ -1892,6 +1898,97 @@ select, input[type="number"], input[type="text"] {
       return "CH " + route.channel;
     }
     return "SoundFont";
+  }
+
+  function hostLoopSyncMode() {
+    const value = document.getElementById("hostLoopSyncMode")?.value || "next";
+    return ["free", "restart", "next"].includes(value) ? value : "next";
+  }
+
+  function hostLoopSyncModeLabel(mode = hostLoopSyncMode()) {
+    if (mode === "restart") return "restart cycle";
+    if (mode === "next") return "next cycle";
+    return "free";
+  }
+
+  function hostLoopPreviewSf2Channel() {
+    const used = new Set(
+      (state.project?.tracks || [])
+        .map((track) => ((Number(track.channel) || 1) - 1) & 0x0f)
+    );
+    const preferred = [15, 14, 13, 12, 11, 10, 8, 7, 6, 5, 4, 3, 2];
+    return preferred.find((ch) => !used.has(ch)) ?? 15;
+  }
+
+  function hostLoopSyncContext(mode, atPerf = performance.now()) {
+    if (mode === "free" || !state.project || !state.loop) return null;
+    const range = loopRangeBounds();
+    if (!range?.span) return null;
+
+    const ppq = state.project.ppq || 480;
+    const tempo =
+      Number(document.getElementById("tempo")?.value) ||
+      state.project.tempo ||
+      state.playbackTempo ||
+      120;
+
+    if (mode === "restart" || !state.playing) {
+      if (state.playing) stopPlayback();
+      state.startTick = range.start;
+      runScheduler(range.start);
+      if (!state.playing) return null;
+      return {
+        mode,
+        range,
+        ppq,
+        tempo,
+        anchorPerf: state.startPerf,
+      };
+    }
+
+    const now = atPerf;
+    const playbackPpq = state.playbackPpq || ppq;
+    const playbackTempo = state.playbackTempo || tempo;
+    const absoluteTick = absoluteTransportTick(now);
+    const phase = ((absoluteTick - range.start) % range.span + range.span) % range.span;
+    const remainingTicks = phase < 1 ? 0 : (range.span - phase);
+    const anchorPerf = now + ticksToMs(remainingTicks, playbackTempo, playbackPpq);
+
+    return {
+      mode,
+      range,
+      ppq,
+      tempo: playbackTempo,
+      anchorPerf,
+    };
+  }
+
+  function buildHostSyncedPreviewNotes(notes, sourcePpq, sourceCycleTicks, hostPpq, hostSpanTicks) {
+    const scale = hostPpq / Math.max(1, sourcePpq);
+    const sourceCycleHostTicks = Math.max(1, Math.round(sourceCycleTicks * scale));
+    const template = notes.map((item) => ({
+      tick: Math.max(0, Math.round(item.tick * scale)),
+      duration: Math.max(1, Math.round(item.duration * scale)),
+      note: item.note,
+      velocity: item.velocity,
+      channel: item.channel,
+    }));
+    const out = [];
+
+    for (let offset = 0; offset < hostSpanTicks; offset += sourceCycleHostTicks) {
+      for (const item of template) {
+        const tick = offset + item.tick;
+        if (tick >= hostSpanTicks) continue;
+        out.push({
+          ...item,
+          tick,
+          duration: Math.min(item.duration, Math.max(1, hostSpanTicks - tick)),
+        });
+      }
+    }
+
+    out.sort((a, b) => a.tick - b.tick || a.note - b.note);
+    return out;
   }
 
   const HOST_LOOP_ROLE_LABELS = {
@@ -2366,6 +2463,12 @@ select, input[type="number"], input[type="text"] {
   function stopHostLoopHardwarePreview(channel) {
     const output = getOutput();
     if (!output || !channel) return;
+
+    // When the project transport is playing, do not clear the shared Web MIDI
+    // queue or send channel-wide note kills: either action could cut project notes.
+    // Browser preview events are only scheduled slightly ahead, so they finish naturally.
+    if (state.playing) return;
+
     clearHardwareQueue(output);
     const ch = (Number(channel) - 1) & 0x0f;
     try {
@@ -2392,7 +2495,12 @@ select, input[type="number"], input[type="text"] {
       if (stoppedPreview.route?.type === "hardware") {
         stopHostLoopHardwarePreview(stoppedPreview.route.channel);
       } else {
-        allNotesOffSf2();
+        const synth = sf2Synth();
+        if (synth && Number.isInteger(stoppedPreview.sf2Channel)) {
+          synth.allSoundOff(stoppedPreview.sf2Channel);
+        } else if (!state.playing) {
+          allNotesOffSf2();
+        }
       }
     }
     if (rerender && hostLoopCatalogLoaded) renderHostLoopBrowser();
@@ -2465,7 +2573,7 @@ select, input[type="number"], input[type="text"] {
           );
         } else {
           scheduleHostLoopSf2(
-            item.channel === 10 ? 9 : 0,
+            Number.isInteger(preview.sf2Channel) ? preview.sf2Channel : (item.channel === 10 ? 9 : 0),
             item.note,
             item.velocity || 100,
             target - now,
@@ -2488,14 +2596,15 @@ select, input[type="number"], input[type="text"] {
       return;
     }
 
-    if (state.playing) stopPlayback();
     hostLoopStopPreview();
     const token = hostLoopPreviewToken;
     const route = hostLoopPreviewRoute();
+    const requestedSyncMode = hostLoopSyncMode();
 
     try {
       hostLoopSetStatus(
-        "Preview loading → " + hostLoopPreviewRouteLabel(route) + " · " + hostLoopDisplayName(entry)
+        "Preview loading → " + hostLoopPreviewRouteLabel(route) +
+        " · " + hostLoopDisplayName(entry)
       );
 
       if (route.type === "sf2") {
@@ -2508,47 +2617,101 @@ select, input[type="number"], input[type="text"] {
       if (token !== hostLoopPreviewToken) return;
 
       const parsed = parseMidi(buffer);
-      const ppq = parsed.ppq || 480;
-      const tempo = Number(document.getElementById("tempo")?.value) || state.project?.tempo || parsed.tempo || 120;
-      const maxTicks = ppq * 4 * 8;
-      let sourceLength = ppq * 4;
+      const sourcePpq = parsed.ppq || 480;
+      const sourceBarTicks = sourcePpq * 4;
+      const maxTicks = sourceBarTicks * 16;
+      let sourceLength = sourceBarTicks;
       for (const track of parsed.tracks) {
         for (const note of track.notes) {
           sourceLength = Math.max(sourceLength, note.tick + note.duration);
         }
       }
-      const cycleTicks = Math.min(sourceLength, maxTicks);
-      const previewAsDrums = hostLoopRole(entry) === "drums";
-      const notes = parsed.tracks.flatMap((track) =>
+
+      // Browser loops are musical bar units, so do not cycle at the last note-off
+      // a fraction before the bar line.
+      const sourceCycleTicks = Math.min(
+        maxTicks,
+        Math.max(sourceBarTicks, Math.ceil(sourceLength / sourceBarTicks) * sourceBarTicks)
+      );
+      const previewRole = hostLoopRole(entry);
+      const previewAsDrums = previewRole === "drums" || previewRole === "drum-fill";
+      const sourceNotes = parsed.tracks.flatMap((track) =>
         track.notes
-          .filter((note) => note.tick < cycleTicks)
+          .filter((note) => note.tick < sourceCycleTicks)
           .map((note) => ({
             tick: note.tick,
-            duration: Math.min(note.duration, Math.max(1, cycleTicks - note.tick)),
+            duration: Math.min(note.duration, Math.max(1, sourceCycleTicks - note.tick)),
             note: note.note,
             velocity: note.velocity,
             channel: previewAsDrums ? 10 : (track.channel || 1),
           }))
       ).sort((a, b) => a.tick - b.tick || a.note - b.note);
 
-      if (!notes.length) throw new Error("No playable notes in this MIDI");
+      if (!sourceNotes.length) throw new Error("No playable notes in this MIDI");
 
+      let sf2Channel = null;
       if (route.type === "sf2") {
         const synth = sf2Synth();
+        sf2Channel = hostLoopPreviewSf2Channel();
         const program = hostLoopFallbackProgram(entry);
         if (synth) {
-          synth.setPercussionPart(0, false);
-          synth.programChange(0, program);
-          synth.setPercussionPart(9, true);
+          synth.setPercussionPart(sf2Channel, previewAsDrums);
+          if (!previewAsDrums) synth.programChange(sf2Channel, program);
         }
+      }
+
+      let syncContext = null;
+      if (requestedSyncMode !== "free") {
+        syncContext = hostLoopSyncContext(requestedSyncMode);
+      }
+
+      let notes = sourceNotes;
+      let ppq = sourcePpq;
+      let tempo =
+        Number(document.getElementById("tempo")?.value) ||
+        state.project?.tempo ||
+        parsed.tempo ||
+        120;
+      let cycleTicks = sourceCycleTicks;
+      let previewStart = performance.now() + 60;
+      let syncDetail = "";
+
+      if (syncContext) {
+        ppq = syncContext.ppq;
+        tempo = syncContext.tempo;
+        cycleTicks = syncContext.range.span;
+        notes = buildHostSyncedPreviewNotes(
+          sourceNotes,
+          sourcePpq,
+          sourceCycleTicks,
+          ppq,
+          cycleTicks
+        );
+        previewStart = syncContext.anchorPerf;
+
+        const sourceBars = sourceCycleTicks / sourceBarTicks;
+        const hostBars = cycleTicks / (ppq * 4);
+        if (sourceBars < hostBars) {
+          const repeats = hostBars / Math.max(0.001, sourceBars);
+          syncDetail =
+            " · " + sourceBars + "-bar preview repeats inside " + hostBars + "-bar project cycle" +
+            (Number.isInteger(repeats) ? " ×" + repeats : "");
+        } else if (sourceBars > hostBars) {
+          syncDetail =
+            " · " + sourceBars + "-bar preview resets every " + hostBars + " project bars";
+        } else {
+          syncDetail = " · " + hostBars + "-bar cycles match";
+        }
+      } else if (requestedSyncMode !== "free") {
+        syncDetail = " · Sync needs project Loop ON; previewing free";
       }
 
       const cycleMs = Math.max(100, ticksToMs(cycleTicks, tempo, ppq));
       hostLoopPreviewMeta.set(entry.id, {
-        bars: cycleTicks / (ppq * 4),
-        seconds: cycleMs / 1000,
+        bars: sourceCycleTicks / sourceBarTicks,
+        seconds: ticksToMs(sourceCycleTicks, tempo, sourcePpq) / 1000,
       });
-      const previewStart = performance.now() + 60;
+
       hostLoopPreview = {
         entryId: entry.id,
         notes,
@@ -2559,16 +2722,32 @@ select, input[type="number"], input[type="text"] {
         cycleStart: previewStart,
         visualStart: previewStart,
         route,
+        sf2Channel,
+        syncMode: syncContext ? requestedSyncMode : "free",
+        sourceBars: sourceCycleTicks / sourceBarTicks,
       };
 
       renderHostLoopBrowser();
       pumpHostLoopPreview(token);
       hostLoopPreviewTimer = setInterval(() => pumpHostLoopPreview(token), 20);
-      hostLoopSetStatus(
-        "Looping → " + hostLoopPreviewRouteLabel(route) + " · " + hostLoopDisplayName(entry) +
-        " · " + hostLoopFormatDuration(hostLoopPreviewMeta.get(entry.id)),
-        true
-      );
+
+      if (syncContext?.mode === "next" && previewStart > performance.now() + 120) {
+        const waitMs = Math.max(0, previewStart - performance.now());
+        hostLoopSetStatus(
+          "Queued → next project cycle in " + (waitMs / 1000).toFixed(1) + "s" +
+          " · " + hostLoopDisplayName(entry) + syncDetail,
+          true
+        );
+      } else {
+        hostLoopSetStatus(
+          (syncContext ? "Synced " + hostLoopSyncModeLabel(syncContext.mode) : "Looping free") +
+          " → " + hostLoopPreviewRouteLabel(route) +
+          " · " + hostLoopDisplayName(entry) +
+          " · " + hostLoopFormatDuration(hostLoopPreviewMeta.get(entry.id)) +
+          syncDetail,
+          true
+        );
+      }
     } catch (err) {
       hostLoopStopPreview();
       hostLoopSetStatus("Preview error: " + err.message);
@@ -6670,6 +6849,29 @@ select, input[type="number"], input[type="text"] {
         }
       }
       hostLoopSetStatus("Preview output → " + hostLoopPreviewRouteLabel(), true);
+    });
+  }
+
+  const hostLoopSyncModeSelect = document.getElementById("hostLoopSyncMode");
+  if (hostLoopSyncModeSelect) {
+    const savedSyncMode = localStorage.getItem(HOST_LOOP_SYNC_MODE_KEY);
+    if (["free", "restart", "next"].includes(savedSyncMode)) {
+      hostLoopSyncModeSelect.value = savedSyncMode;
+    }
+    hostLoopSyncModeSelect.addEventListener("change", async () => {
+      const activeEntryId = hostLoopPreview?.entryId || "";
+      localStorage.setItem(HOST_LOOP_SYNC_MODE_KEY, hostLoopSyncModeSelect.value);
+      hostLoopStopPreview({ rerender: false });
+      if (hostLoopCatalogLoaded) renderHostLoopBrowser();
+
+      if (activeEntryId) {
+        const entry = hostLoopCatalog.find((item) => item.id === activeEntryId);
+        if (entry) {
+          await previewHostLoop(entry);
+          return;
+        }
+      }
+      hostLoopSetStatus("Preview sync → " + hostLoopSyncModeLabel(), true);
     });
   }
 
