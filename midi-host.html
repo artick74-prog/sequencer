@@ -7867,6 +7867,15 @@ body.timeline-ruler-seeking {
     state.pianoRollSelectedNoteId = ids.length ? ids[ids.length - 1] : "";
   }
 
+  function pianoRollApplySelectionClasses(ids = pianoRollSelectedIdSet()) {
+    document.querySelectorAll(".piano-roll-note").forEach((el) => {
+      el.classList.toggle("selected", ids.has(el.dataset.pianoNoteId));
+    });
+    document.querySelectorAll(".piano-roll-velocity-bar").forEach((el) => {
+      el.classList.toggle("selected", ids.has(el.dataset.pianoNoteId));
+    });
+  }
+
   function pianoRollSelectNote(noteOrId, { toggle = false, add = false } = {}) {
     const id = typeof noteOrId === "string" ? noteOrId : pianoRollNoteId(noteOrId);
     if (!id) return;
@@ -7882,19 +7891,13 @@ body.timeline-ruler-seeking {
     }
     state.pianoRollSelectedNoteIds = [...ids];
     pianoRollSyncPrimarySelection();
-
-    document.querySelectorAll(".piano-roll-note").forEach((el) => {
-      el.classList.toggle("selected", ids.has(el.dataset.pianoNoteId));
-    });
+    pianoRollApplySelectionClasses(ids);
   }
 
   function pianoRollSetSelection(ids) {
     state.pianoRollSelectedNoteIds = [...new Set((ids || []).filter(Boolean))];
     pianoRollSyncPrimarySelection();
-    const selected = pianoRollSelectedIdSet();
-    document.querySelectorAll(".piano-roll-note").forEach((el) => {
-      el.classList.toggle("selected", selected.has(el.dataset.pianoNoteId));
-    });
+    pianoRollApplySelectionClasses();
   }
 
   function pianoRollSelectedNotes(ctx = pianoRollContext()) {
@@ -7910,6 +7913,198 @@ body.timeline-ruler-seeking {
       pianoRollNoteId(item) === state.pianoRollSelectedNoteId
     );
     return note ? { ...ctx, note } : null;
+  }
+
+  function pianoRollVelocityHeight(value) {
+    const velocity = Math.max(1, Math.min(127, Number(value) || 1));
+    return Math.max(3, Math.round((velocity / 127) * 72));
+  }
+
+  function updatePianoRollVelocityBar(bar, note) {
+    if (!bar || !note) return;
+    const velocity = Math.max(1, Math.min(127, Number(note.velocity) || 100));
+    bar.style.height = pianoRollVelocityHeight(velocity) + "px";
+    bar.dataset.velocity = String(velocity);
+    bar.title = midiToName(Number(note.note) || 0) + " · velocity " + velocity + " · drag vertically";
+  }
+
+  function syncPianoRollParameterLaneScroll() {
+    const scroll = document.getElementById("pianoRollScroll");
+    const content = document.getElementById("pianoRollParameterContent");
+    if (!scroll || !content) return;
+    content.style.transform = "translate3d(" + (-scroll.scrollLeft) + "px,0,0)";
+  }
+
+  function updatePianoRollParameterLaneGeometry(ctx = pianoRollContext(), rollW = null) {
+    const content = document.getElementById("pianoRollParameterContent");
+    if (!ctx || !content) return;
+    const grid = document.getElementById("pianoRollGrid");
+    const width = Math.max(
+      1,
+      Number(rollW) ||
+      Number(grid?.dataset.rollWidth) ||
+      grid?.offsetWidth ||
+      1
+    );
+    const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
+    content.style.width = width + "px";
+    content.querySelectorAll(".piano-roll-velocity-bar[data-note-tick]").forEach((bar) => {
+      const tick = Number(bar.dataset.noteTick) || 0;
+      const x = ((tick - ctx.startTick) / spanTicks) * width;
+      bar.style.left = Math.max(0, x - 3) + "px";
+    });
+    syncPianoRollParameterLaneScroll();
+  }
+
+  function attachPianoRollVelocityEditor(bar, note, ctx) {
+    const noteId = pianoRollNoteId(note);
+    bar.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const modifier = event.ctrlKey || event.metaKey;
+      if (modifier) pianoRollSelectNote(noteId, { toggle: true });
+      else if (!pianoRollSelectedIdSet().has(noteId)) pianoRollSelectNote(noteId);
+      if (!pianoRollSelectedIdSet().has(noteId)) return;
+
+      const selectedNotes = pianoRollSelectedNotes(ctx);
+      const origins = selectedNotes.map((item) => ({
+        note: item,
+        id: pianoRollNoteId(item),
+        velocity: Math.max(1, Math.min(127, Number(item.velocity) || 100)),
+        bar: document.querySelector(
+          '.piano-roll-velocity-bar[data-piano-note-id="' +
+          CSS.escape(pianoRollNoteId(item)) + '"]'
+        ),
+      }));
+      if (!origins.length) return;
+
+      const originY = event.clientY;
+      let lastDelta = 0;
+      let changed = false;
+      let undoPushed = false;
+      let active = true;
+      bar.classList.add("dragging");
+      bar.setPointerCapture?.(event.pointerId);
+
+      const applyVelocity = (clientY) => {
+        if (!active) return;
+        const delta = Math.round(((originY - clientY) / 72) * 127);
+        if (delta === lastDelta) return;
+        lastDelta = delta;
+        if (delta !== 0 && !undoPushed) {
+          pianoRollPushUndo(ctx);
+          undoPushed = true;
+        }
+
+        for (const origin of origins) {
+          const velocity = Math.max(1, Math.min(127, origin.velocity + delta));
+          if (velocity !== origin.note.velocity) changed = true;
+          origin.note.velocity = velocity;
+          if (origin.bar) updatePianoRollVelocityBar(origin.bar, origin.note);
+        }
+
+        const meta = document.getElementById("pianoRollParameterMeta");
+        if (meta) {
+          const current = Math.max(1, Math.min(127, Number(note.velocity) || 100));
+          meta.textContent =
+            (origins.length > 1 ? origins.length + " notes · " : "") +
+            "velocity " + current;
+        }
+      };
+
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const clientY = moveEvent.clientY;
+        scheduleUiFrame("piano-velocity-" + noteId, () => applyVelocity(clientY));
+      };
+
+      const finish = (upEvent) => {
+        applyVelocity(upEvent.clientY);
+        active = false;
+        bar.removeEventListener("pointermove", onMove);
+        bar.removeEventListener("pointerup", finish);
+        bar.removeEventListener("pointercancel", cancel);
+        try { bar.releasePointerCapture?.(upEvent.pointerId); } catch {}
+        bar.classList.remove("dragging");
+
+        if (changed && undoPushed) {
+          commitPianoRollEdit(
+            ctx,
+            "Velocity · " + origins.length + " note(s)"
+          );
+        } else {
+          const meta = document.getElementById("pianoRollParameterMeta");
+          if (meta) meta.textContent = trackIsPercussion(ctx.track) ? "per hit · 1–127" : "1–127";
+        }
+      };
+
+      const cancel = (cancelEvent) => {
+        active = false;
+        bar.removeEventListener("pointermove", onMove);
+        bar.removeEventListener("pointerup", finish);
+        bar.removeEventListener("pointercancel", cancel);
+        try { bar.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
+        bar.classList.remove("dragging");
+        if (undoPushed) state.pianoRollUndoStack.pop();
+        for (const origin of origins) {
+          origin.note.velocity = origin.velocity;
+          if (origin.bar) updatePianoRollVelocityBar(origin.bar, origin.note);
+        }
+        const meta = document.getElementById("pianoRollParameterMeta");
+        if (meta) meta.textContent = trackIsPercussion(ctx.track) ? "per hit · 1–127" : "1–127";
+      };
+
+      bar.addEventListener("pointermove", onMove);
+      bar.addEventListener("pointerup", finish);
+      bar.addEventListener("pointercancel", cancel);
+    });
+  }
+
+  function renderPianoRollParameterLane(ctx = pianoRollContext(), rollW = null) {
+    const content = document.getElementById("pianoRollParameterContent");
+    const name = document.getElementById("pianoRollParameterName");
+    const meta = document.getElementById("pianoRollParameterMeta");
+    if (!content) return;
+    content.innerHTML = "";
+    if (!ctx) return;
+
+    if (name) name.textContent = "Velocity";
+    if (meta) meta.textContent = trackIsPercussion(ctx.track) ? "per hit · 1–127" : "1–127";
+
+    const grid = document.getElementById("pianoRollGrid");
+    const width = Math.max(
+      1,
+      Number(rollW) ||
+      Number(grid?.dataset.rollWidth) ||
+      grid?.offsetWidth ||
+      1
+    );
+    const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
+    const selected = pianoRollSelectedIdSet();
+    const info = trackDisplayInfo(ctx.track);
+    content.style.width = width + "px";
+    const fragment = document.createDocumentFragment();
+
+    for (const note of ctx.notes) {
+      const tick = Number(note.tick) || 0;
+      if (tick < ctx.startTick || tick >= ctx.endTick) continue;
+      const id = pianoRollNoteId(note);
+      const x = ((tick - ctx.startTick) / spanTicks) * width;
+      const bar = document.createElement("div");
+      bar.className =
+        "piano-roll-velocity-bar" + (selected.has(id) ? " selected" : "");
+      bar.dataset.pianoNoteId = id;
+      bar.dataset.noteTick = String(tick);
+      bar.style.left = Math.max(0, x - 3) + "px";
+      bar.style.background = info.color;
+      updatePianoRollVelocityBar(bar, note);
+      attachPianoRollVelocityEditor(bar, note, ctx);
+      fragment.appendChild(bar);
+    }
+    content.appendChild(fragment);
+    syncPianoRollParameterLaneScroll();
   }
 
   function pianoRollCloneNotes(notes) {
