@@ -1364,6 +1364,10 @@ select, input[type="number"], input[type="text"] {
       <div class="loop-filters">
         <select class="wide" id="rhythmTarget" title="Target track is temporarily replaced during audition"></select>
         <input id="rhythmSearch" type="search" placeholder="Search rhythms…">
+        <select id="rhythmBank" title="Auto follows the selected target instrument">
+          <option value="__auto__" selected>Bank · Auto for target</option>
+          <option value="">All banks</option>
+        </select>
         <select id="rhythmCategory"><option value="">All categories</option></select>
         <label class="field">Start bar
           <input id="rhythmStartBar" type="number" min="1" value="1" step="1" style="width:72px">
@@ -3180,14 +3184,39 @@ select, input[type="number"], input[type="text"] {
     return rhythmLibrary.find((pattern) => pattern.id === id) || null;
   }
 
+  function rhythmSuggestedBankForTrack(track) {
+    if (!track) return "";
+    const role = String(track.role || "").toLowerCase();
+    const name = String(track.name || "").toLowerCase();
+    const program = gmProgramFromTrack(track);
+
+    if (role === "td3" || /\bacid\b|303/.test(name)) return "Acid";
+    if (role === "xr20-bass" || /\bbass\b/.test(name)) return "Bass";
+    if (Number.isInteger(program)) {
+      if (program >= 24 && program <= 31) return "Guitar";
+      if (program >= 32 && program <= 39) return "Bass";
+      if (program >= 0 && program <= 23) return "Keys";
+    }
+    if (/guitar|strat|tele|nylon|steel/.test(name)) return "Guitar";
+    if (/piano|organ|keys|keyboard|clav|epiano|rhodes|wurli/.test(name)) return "Keys";
+    return "";
+  }
+
+  function rhythmEffectiveBank() {
+    const selected = document.getElementById("rhythmBank")?.value ?? "__auto__";
+    return selected === "__auto__" ? rhythmSuggestedBankForTrack(rhythmTargetTrack()) : selected;
+  }
+
   function rhythmFilteredPatterns() {
     const q = String(document.getElementById("rhythmSearch")?.value || "").trim().toLowerCase();
+    const bank = rhythmEffectiveBank();
     const category = document.getElementById("rhythmCategory")?.value || "";
     return rhythmLibrary.filter((pattern) => {
+      if (bank && pattern.bank !== bank) return false;
       if (category && pattern.category !== category) return false;
       if (!q) return true;
       const hay = [
-        pattern.name, pattern.category, pattern.family,
+        pattern.name, pattern.bank, pattern.instrument, pattern.category, pattern.family, pattern.variant,
         ...(pattern.tags || []), ...(pattern.worksFor || [])
       ].join(" ").toLowerCase();
       return hay.includes(q);
@@ -3208,8 +3237,9 @@ select, input[type="number"], input[type="text"] {
 
   function populateRhythmControls() {
     const target = document.getElementById("rhythmTarget");
+    const bank = document.getElementById("rhythmBank");
     const category = document.getElementById("rhythmCategory");
-    if (!target || !category) return;
+    if (!target || !bank || !category) return;
 
     const keepTarget = target.value;
     const pitched = (state.project?.tracks || []).filter((track) => !trackIsPercussion(track));
@@ -3221,12 +3251,27 @@ select, input[type="number"], input[type="text"] {
       : '<option value="">No pitched tracks</option>';
     if (pitched.some((track) => track.id === keepTarget)) target.value = keepTarget;
 
-    const categories = [...new Set(rhythmLibrary.map((pattern) => pattern.category).filter(Boolean))].sort();
+    const banks = [...new Set(rhythmLibrary.map((pattern) => pattern.bank).filter(Boolean))].sort();
+    const keepBank = bank.value || "__auto__";
+    bank.innerHTML =
+      '<option value="__auto__">Bank · Auto for target</option>' +
+      '<option value="">All banks</option>' +
+      banks.map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>').join("");
+    bank.value = keepBank === "__auto__" || keepBank === "" || banks.includes(keepBank) ? keepBank : "__auto__";
+
+    const activeBank = rhythmEffectiveBank();
+    const categories = [...new Set(
+      rhythmLibrary
+        .filter((pattern) => !activeBank || pattern.bank === activeBank)
+        .map((pattern) => pattern.category)
+        .filter(Boolean)
+    )].sort();
     const keepCategory = category.value;
     category.innerHTML =
       '<option value="">All categories</option>' +
       categories.map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>').join("");
     if (categories.includes(keepCategory)) category.value = keepCategory;
+    else category.value = "";
 
     const start = document.getElementById("rhythmStartBar");
     if (start && state.project) {
@@ -3253,6 +3298,7 @@ select, input[type="number"], input[type="text"] {
         '" type="button" title="Audition">▶</button>' +
         '<div><div class="loop-card-name">' + escapeHtml(pattern.name) + '</div>' +
         '<div class="loop-card-meta">' +
+        escapeHtml(pattern.bank || "Core") + ' · ' +
         escapeHtml(pattern.category || "") + ' · ' +
         escapeHtml(pattern.family || "") + ' · ' +
         escapeHtml(String(pattern.bars || 1)) + ' bar' + ((pattern.bars || 1) === 1 ? '' : 's') +
@@ -8119,6 +8165,7 @@ select, input[type="number"], input[type="text"] {
   document.getElementById("rhythmNext")?.addEventListener("click", () => stepRhythm(1));
   document.getElementById("rhythmApply")?.addEventListener("click", applyRhythmAudition);
   document.getElementById("rhythmSearch")?.addEventListener("input", renderRhythmBrowser);
+  document.getElementById("rhythmBank")?.addEventListener("change", renderRhythmBrowser);
   document.getElementById("rhythmCategory")?.addEventListener("change", renderRhythmBrowser);
   document.getElementById("rhythmGate")?.addEventListener("input", (event) => {
     document.getElementById("rhythmGateValue").textContent = event.target.value + "%";
@@ -8132,8 +8179,13 @@ select, input[type="number"], input[type="text"] {
     if (pattern && rhythmAudition?.active) previewRhythmPattern(pattern);
   });
   document.getElementById("rhythmTarget")?.addEventListener("change", () => {
-    const pattern = rhythmPatternById();
-    if (pattern && rhythmAudition?.active) previewRhythmPattern(pattern);
+    const wasAuditioning = !!rhythmAudition?.active;
+    renderRhythmBrowser();
+    if (!wasAuditioning) return;
+    const rows = rhythmFilteredPatterns();
+    const selected = rhythmPatternById();
+    const pattern = selected && rows.some((item) => item.id === selected.id) ? selected : rows[0];
+    if (pattern) previewRhythmPattern(pattern);
   });
   document.getElementById("rhythmStartBar")?.addEventListener("change", () => {
     const pattern = rhythmPatternById();
