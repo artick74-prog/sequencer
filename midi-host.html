@@ -794,6 +794,23 @@ select, input[type="number"], input[type="text"] {
 .track-main-row .field {
   flex: 0 1 auto;
 }
+.gm-program-select {
+  min-width: 112px;
+  max-width: 150px;
+  background: #0b1016;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 5px;
+  font-size: 10px;
+}
+.gm-program-select:focus,
+.gm-program-select:hover { border-color: var(--accent-dim); outline: none; }
+.track-delete { color: var(--danger); }
+.track-delete:hover {
+  border-color: var(--danger) !important;
+  color: #fff !important;
+}
 .track-actions-row {
   width: 100%;
   display: flex;
@@ -1138,6 +1155,7 @@ select, input[type="number"], input[type="text"] {
     </aside>
     <main class="main">
       <div class="zoom-bar">
+        <button class="btn primary" id="btnAddGmTrack" type="button" title="Add a SoundFont / General MIDI track. New tracks start as GM 33 Electric Bass (finger).">+ MIDI Track</button>
         <button class="btn" id="btnZoomOut" type="button" title="Zoom out">−</button>
         <button class="btn" id="btnZoomIn" type="button" title="Zoom in">+</button>
         <button class="btn" id="btnZoomFit" type="button" title="Fit arrangement in view">Fit</button>
@@ -1250,6 +1268,7 @@ select, input[type="number"], input[type="text"] {
       const data = await res.json();
       if (Array.isArray(data.programs) && data.programs.length === 128) {
         GM_PROGRAMS = data.programs;
+        if (state.project) renderTracks();
       }
     } catch {
       /* offline or missing file */
@@ -4808,6 +4827,82 @@ select, input[type="number"], input[type="text"] {
     });
   }
 
+  function nextTrackId(project = state.project) {
+    const existing = new Set((project?.tracks || []).map((track) => String(track.id)));
+    let n = (project?.tracks || []).length + 1;
+    while (existing.has("t" + n)) n++;
+    return "t" + n + "-" + Date.now().toString(36).slice(-5);
+  }
+
+  function addGmTrack(program = 33) {
+    if (!state.project) {
+      setStatus("Create or open a project first.", "err");
+      return false;
+    }
+    const p = Math.max(0, Math.min(127, Number(program) | 0));
+    const channel = nextFreeGmChannel(state.project.tracks);
+    const track = {
+      id: nextTrackId(state.project),
+      name: formatGmTrackName(p, gmProgramName(p)),
+      channel,
+      role: "gm",
+      mute: false,
+      solo: false,
+      cubaseIndex: state.project.tracks.length,
+      notes: [],
+    };
+    state.project.tracks.push(track);
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Added SoundFont MIDI track · " + track.name +
+      " · ch " + channel + " · choose any GM instrument in the track header",
+      "ok"
+    );
+    return true;
+  }
+
+  function setGmTrackProgram(track, program) {
+    if (!track) return;
+    const p = Math.max(0, Math.min(127, Number(program) | 0));
+    track.role = "gm";
+    track.name = formatGmTrackName(p, gmProgramName(p));
+    if (state.sf2Ready && sf2Synth()) applySf2Programs({ tracks: [track] });
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderTracks();
+    setStatus("Instrument → " + track.name + " · SoundFont", "ok");
+  }
+
+  function removeMidiTrack(track) {
+    if (!state.project || !track) return false;
+    const clips = (state.project.clips || []).filter((clip) => clip.targetTrackId === track.id);
+    const noteCount = (track.notes || []).length;
+    if ((noteCount || clips.length) && !window.confirm(
+      "Delete track “" + track.name + "”?\n\n" +
+      noteCount + " MIDI note(s) and " + clips.length + " loop clip(s) on this track will also be deleted."
+    )) {
+      return false;
+    }
+
+    if (state.playing) stopPlayback();
+    state.project.tracks = state.project.tracks.filter((item) => item.id !== track.id);
+    state.project.clips = (state.project.clips || []).filter((clip) => clip.targetTrackId !== track.id);
+    if (state.selectedClipId && clips.some((clip, index) => hostClipInstanceId(clip, index) === state.selectedClipId)) {
+      state.selectedClipId = "";
+    }
+    state.project.tracks.forEach((item, index) => { item.cubaseIndex = index; });
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus("Deleted MIDI track “" + track.name + "”.", "ok");
+    return true;
+  }
+
   function renderTracks() {
     const root = document.getElementById("tracks");
     state.playheadEls = [];
@@ -4825,7 +4920,15 @@ select, input[type="number"], input[type="text"] {
 
     for (const track of project.tracks) {
       const info = trackDisplayInfo(track);
-      const gmTag = info.program != null ? `<span class="meta role-gm">GM ${info.program}</span>` : "";
+      const gmProgram = gmProgramFromTrack(track);
+      const gmProgramOptions = isGmTrack(track)
+        ? Array.from({ length: 128 }, (_, program) =>
+            `<option value="${program}" ${gmProgram === program ? "selected" : ""}>GM ${program} · ${escapeHtml(gmProgramName(program))}</option>`
+          ).join("")
+        : "";
+      const gmTag = isGmTrack(track)
+        ? `<select class="gm-program-select" data-gm-program="${track.id}" title="SoundFont / General MIDI instrument">${gmProgramOptions}</select>`
+        : "";
       const el = document.createElement("div");
       el.className = "track";
       el.dataset.trackId = track.id;
@@ -4853,6 +4956,7 @@ select, input[type="number"], input[type="text"] {
             </span>
             <button class="btn" type="button" data-preview="${track.id}">Preview</button>
             <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
+            <button class="btn track-delete" type="button" data-delete-track="${track.id}" title="Delete this MIDI track">×</button>
           </div>
         </div>
         <div class="track-body" data-body="${track.id}" style="--bar-w:${state.barW}px;width:${totalW}px"></div>
@@ -5021,8 +5125,15 @@ select, input[type="number"], input[type="text"] {
       el.querySelector(`[data-ch="${track.id}"]`).addEventListener("change", (e) => {
         track.channel = Number(e.target.value);
         if (!isGmTrack(track)) track.role = roleForChannel(track.channel).role;
+        markHostProjectDirty();
         scheduleHostAutosave();
         renderTracks();
+      });
+      el.querySelector(`[data-gm-program="${track.id}"]`)?.addEventListener("change", (e) => {
+        setGmTrackProgram(track, Number(e.target.value));
+      });
+      el.querySelector(`[data-delete-track="${track.id}"]`)?.addEventListener("click", () => {
+        removeMidiTrack(track);
       });
       el.querySelector(`[data-preview="${track.id}"]`).addEventListener("click", () => {
         previewTrack(track);
@@ -5947,6 +6058,9 @@ select, input[type="number"], input[type="text"] {
         );
       }
     }
+  });
+  document.getElementById("btnAddGmTrack")?.addEventListener("click", () => {
+    addGmTrack(33);
   });
   document.getElementById("btnZoomOut").addEventListener("click", () => zoomBy(1 / 1.35));
   document.getElementById("btnZoomIn").addEventListener("click", () => zoomBy(1.35));
