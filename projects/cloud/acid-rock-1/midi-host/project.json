@@ -46,7 +46,7 @@
     },
     {
       "tick": 149760,
-      "text": "H5 · dominant · low-register minor v bass"
+      "text": "H5 · dominant · low-register new bass"
     },
     {
       "tick": 153600,
@@ -54,7 +54,7 @@
     },
     {
       "tick": 165120,
-      "text": "H6 · dominant · low-register minor v bass"
+      "text": "H6 · dominant · low-register new bass"
     },
     {
       "tick": 168960,
@@ -62,7 +62,7 @@
     },
     {
       "tick": 180480,
-      "text": "H456 · dominant 1 · low-register minor v bass"
+      "text": "H456 · dominant 1 · low-register bass"
     },
     {
       "tick": 184320,
@@ -70,7 +70,7 @@
     },
     {
       "tick": 195840,
-      "text": "H456 · dominant 2 · low-register minor v bass"
+      "text": "H456 · dominant 2 · low-register bass"
     }
   ],
   "loopRange": {
@@ -80,8 +80,7 @@
   "cloudProject": {
     "id": "acid-rock-1",
     "path": "projects/cloud/acid-rock-1",
-    "savedAt": "2026-09-20T03:46:06.669Z",
-    "dirty": true
+    "savedAt": "2026-09-20T05:27:36+00:00"
   },
   "clips": [
     {
@@ -2121,7 +2120,7 @@
         {
           "tick": 151200,
           "duration": 186,
-          "note": 58,
+          "note": 59,
           "velocity": 94
         },
         {
@@ -2145,7 +2144,7 @@
         {
           "tick": 152184,
           "duration": 162,
-          "note": 58,
+          "note": 59,
           "velocity": 91
         },
         {
@@ -2169,7 +2168,7 @@
         {
           "tick": 153300,
           "duration": 132,
-          "note": 58,
+          "note": 59,
           "velocity": 89
         },
         {
@@ -2379,7 +2378,7 @@
         {
           "tick": 166560,
           "duration": 186,
-          "note": 58,
+          "note": 59,
           "velocity": 94
         },
         {
@@ -2403,7 +2402,7 @@
         {
           "tick": 167544,
           "duration": 162,
-          "note": 58,
+          "note": 59,
           "velocity": 91
         },
         {
@@ -2427,7 +2426,7 @@
         {
           "tick": 168660,
           "duration": 132,
-          "note": 58,
+          "note": 59,
           "velocity": 89
         },
         {
@@ -2637,7 +2636,7 @@
         {
           "tick": 181920,
           "duration": 186,
-          "note": 58,
+          "note": 59,
           "velocity": 94
         },
         {
@@ -2661,7 +2660,7 @@
         {
           "tick": 182904,
           "duration": 162,
-          "note": 58,
+          "note": 59,
           "velocity": 91
         },
         {
@@ -2685,7 +2684,7 @@
         {
           "tick": 184020,
           "duration": 132,
-          "note": 58,
+          "note": 59,
           "velocity": 89
         },
         {
@@ -2895,7 +2894,7 @@
         {
           "tick": 197280,
           "duration": 186,
-          "note": 58,
+          "note": 59,
           "velocity": 94
         },
         {
@@ -2919,7 +2918,7 @@
         {
           "tick": 198264,
           "duration": 162,
-          "note": 58,
+          "note": 59,
           "velocity": 91
         },
         {
@@ -2943,7 +2942,7 @@
         {
           "tick": 199380,
           "duration": 132,
-          "note": 58,
+          "note": 59,
           "velocity": 89
         },
         {
