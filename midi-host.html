@@ -936,7 +936,8 @@ select, input[type="number"], input[type="text"] {
   box-shadow: 0 0 0 1px rgba(114, 239, 194, 0.15), inset 0 0 10px rgba(49, 211, 155, 0.06);
 }
 .loop-clip-container.moving,
-.loop-clip-container.repeating {
+.loop-clip-container.repeating,
+.loop-clip-container.trimming {
   cursor: grabbing;
   border-style: dashed;
   background: rgba(49, 211, 155, 0.16);
@@ -960,7 +961,7 @@ select, input[type="number"], input[type="text"] {
 }
 .loop-clip-container.selected .loop-clip-label,
 .loop-clip-container:hover .loop-clip-label {
-  max-width: calc(100% - 52px);
+  max-width: calc(100% - 72px);
 }
 .loop-clip-actions {
   position: absolute;
@@ -999,7 +1000,7 @@ select, input[type="number"], input[type="text"] {
   position: absolute;
   right: -1px;
   top: 0;
-  bottom: 0;
+  bottom: 15px;
   width: 11px;
   z-index: 8;
   cursor: ew-resize;
@@ -1014,6 +1015,30 @@ select, input[type="number"], input[type="text"] {
 }
 .loop-clip-container:hover .loop-clip-repeat-handle,
 .loop-clip-container.selected .loop-clip-repeat-handle {
+  opacity: 1;
+}
+.loop-clip-trim-handle {
+  position: absolute;
+  bottom: -1px;
+  width: 11px;
+  height: 15px;
+  z-index: 9;
+  cursor: ew-resize;
+  background: rgba(232, 193, 112, .95);
+  border: 1px solid rgba(255, 224, 153, .85);
+  box-shadow: 0 0 4px rgba(232, 193, 112, .3);
+  opacity: .72;
+}
+.loop-clip-trim-handle.start {
+  left: -1px;
+  border-radius: 0 4px 0 0;
+}
+.loop-clip-trim-handle.end {
+  right: -1px;
+  border-radius: 4px 0 0 0;
+}
+.loop-clip-container:hover .loop-clip-trim-handle,
+.loop-clip-container.selected .loop-clip-trim-handle {
   opacity: 1;
 }
 .loop-repeat-divider {
@@ -4744,6 +4769,187 @@ select, input[type="number"], input[type="text"] {
     return true;
   }
 
+  function cropOwnedClipNotes(clip, track, newStart, newEnd) {
+    const instanceId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project?.clips || []).indexOf(clip))
+    );
+    clip.instanceId = instanceId;
+    const owned = hostClipOwnedNotes(clip, track);
+    const ownedSet = new Set(owned);
+    const kept = [];
+
+    for (const note of owned) {
+      const noteStart = Number(note.tick) || 0;
+      const noteEnd = noteStart + Math.max(1, Number(note.duration) || 1);
+      const clippedStart = Math.max(noteStart, newStart);
+      const clippedEnd = Math.min(noteEnd, newEnd);
+      if (clippedEnd <= clippedStart) continue;
+      kept.push({
+        tick: clippedStart,
+        duration: Math.max(1, clippedEnd - clippedStart),
+        note: note.note | 0,
+        velocity: note.velocity | 0,
+        clipId: instanceId,
+      });
+    }
+
+    track.notes = track.notes
+      .filter((note) => !ownedSet.has(note))
+      .concat(kept)
+      .sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    return kept;
+  }
+
+  function trimHostLoopClip(clip, track, requestedStartTick, requestedEndTick) {
+    if (!state.project || !clip || !track) return false;
+    if (state.playing) stopPlayback();
+
+    const ppq = state.project.ppq || 480;
+    const tpb = ticksPerBar(ppq);
+    const oldStart = Math.max(0, Number(clip.startTick) || 0);
+    const oldEnd = Math.max(oldStart + tpb, Number(clip.endTick) || (oldStart + tpb));
+
+    let newStart = Math.max(oldStart, Math.round(Number(requestedStartTick) / tpb) * tpb);
+    let newEnd = Math.min(oldEnd, Math.round(Number(requestedEndTick) / tpb) * tpb);
+
+    if (newEnd - newStart < tpb) {
+      if (newStart !== oldStart) newStart = Math.max(oldStart, newEnd - tpb);
+      else newEnd = Math.min(oldEnd, newStart + tpb);
+    }
+    if (newStart === oldStart && newEnd === oldEnd) return false;
+
+    const kept = cropOwnedClipNotes(clip, track, newStart, newEnd);
+    const span = Math.max(tpb, newEnd - newStart);
+
+    clip.startTick = newStart;
+    clip.endTick = newEnd;
+    clip.baseLengthTicks = span;
+    clip.repeatCount = 1;
+    clip.noteCount = kept.length;
+    clip.trimmed = true;
+    state.selectedClipId = clip.instanceId;
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Trimmed loop “" + (clip.name || clip.originalName || "MIDI loop") +
+      "” → bars " + tickToBar(newStart, ppq) + "–" + Math.max(tickToBar(newStart, ppq), tickToBar(newEnd - 1, ppq)) +
+      " · " + kept.length + " notes kept · UNSAVED cloud changes",
+      "ok"
+    );
+    return true;
+  }
+
+  function splitHostLoopClipAtPlayhead(clip, track) {
+    if (!state.project || !clip || !track) return false;
+    if (state.playing) stopPlayback();
+
+    const ppq = state.project.ppq || 480;
+    const tpb = ticksPerBar(ppq);
+    const start = Math.max(0, Number(clip.startTick) || 0);
+    const end = Math.max(start + tpb, Number(clip.endTick) || (start + tpb));
+    const split = Math.max(0, Math.round((state.startTick || 0) / tpb) * tpb);
+
+    if (split <= start || split >= end) {
+      setStatus(
+        "Put the red playhead inside the selected loop, then click ✂ to split it.",
+        "err"
+      );
+      return false;
+    }
+
+    const leftId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project.clips || []).indexOf(clip))
+    );
+    clip.instanceId = leftId;
+    const rightId = newHostClipInstanceId();
+    const owned = hostClipOwnedNotes(clip, track);
+    const ownedSet = new Set(owned);
+    const leftNotes = [];
+    const rightNotes = [];
+
+    for (const note of owned) {
+      const noteStart = Number(note.tick) || 0;
+      const noteEnd = noteStart + Math.max(1, Number(note.duration) || 1);
+
+      if (noteStart < split && noteEnd > start) {
+        const leftStart = Math.max(start, noteStart);
+        const leftEnd = Math.min(split, noteEnd);
+        if (leftEnd > leftStart) {
+          leftNotes.push({
+            tick: leftStart,
+            duration: Math.max(1, leftEnd - leftStart),
+            note: note.note | 0,
+            velocity: note.velocity | 0,
+            clipId: leftId,
+          });
+        }
+      }
+
+      if (noteEnd > split && noteStart < end) {
+        const rightStart = Math.max(split, noteStart);
+        const rightEnd = Math.min(end, noteEnd);
+        if (rightEnd > rightStart) {
+          rightNotes.push({
+            tick: rightStart,
+            duration: Math.max(1, rightEnd - rightStart),
+            note: note.note | 0,
+            velocity: note.velocity | 0,
+            clipId: rightId,
+          });
+        }
+      }
+    }
+
+    track.notes = track.notes
+      .filter((note) => !ownedSet.has(note))
+      .concat(leftNotes, rightNotes)
+      .sort((a, b) => a.tick - b.tick || a.note - b.note);
+
+    const leftSpan = split - start;
+    const rightSpan = end - split;
+    clip.endTick = split;
+    clip.baseLengthTicks = leftSpan;
+    clip.repeatCount = 1;
+    clip.noteCount = leftNotes.length;
+    clip.trimmed = true;
+
+    const rightClip = {
+      ...clip,
+      instanceId: rightId,
+      startTick: split,
+      endTick: end,
+      baseLengthTicks: rightSpan,
+      repeatCount: 1,
+      noteCount: rightNotes.length,
+      insertedAt: new Date().toISOString(),
+      splitFrom: leftId,
+    };
+    state.project.clips = Array.isArray(state.project.clips) ? state.project.clips : [];
+    state.project.clips.push(rightClip);
+    state.selectedClipId = rightId;
+
+    recomputeLength(state.project);
+    updateHostProjectMeta();
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    setStatus(
+      "Split loop at bar " + tickToBar(split, ppq) +
+      " · left " + Math.max(1, Math.round(leftSpan / tpb)) + " bars" +
+      " · right " + Math.max(1, Math.round(rightSpan / tpb)) + " bars" +
+      " · delete whichever part you do not need",
+      "ok"
+    );
+    return true;
+  }
+
   function moveHostLoopClip(clip, track, requestedStartTick, destinationTrack = track) {
     if (!state.project || !clip || !track || !destinationTrack) return false;
     if (state.playing) stopPlayback();
@@ -4909,7 +5115,7 @@ select, input[type="number"], input[type="text"] {
         } else {
           setStatus(
             "Selected loop “" + (clip.name || clip.originalName || "MIDI loop") +
-            "” · drag = move · striped right edge = repeat · Ctrl+D = duplicate · Ctrl+C/V = copy/paste · Delete = remove",
+            "” · drag = move · gold bottom edges = trim · ✂ = split at playhead · striped edge = repeat · Ctrl+D duplicate · Delete remove",
             "ok"
           );
         }
@@ -4929,6 +5135,95 @@ select, input[type="number"], input[type="text"] {
       box.addEventListener("pointermove", onMove);
       box.addEventListener("pointerup", finish);
       box.addEventListener("pointercancel", cancel);
+    });
+  }
+
+  function attachHostLoopTrimDrag(handle, side, box, clip, track, ppq) {
+    handle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const instanceId = hostClipInstanceId(
+        clip,
+        Math.max(0, (state.project?.clips || []).indexOf(clip))
+      );
+      clip.instanceId = instanceId;
+      selectHostLoopClip(instanceId);
+
+      const tpb = ticksPerBar(ppq);
+      const originStart = Math.max(0, Number(clip.startTick) || 0);
+      const originEnd = Math.max(originStart + tpb, Number(clip.endTick) || (originStart + tpb));
+      const originX = event.clientX;
+      let previewStart = originStart;
+      let previewEnd = originEnd;
+
+      box.classList.add("trimming");
+      handle.setPointerCapture?.(event.pointerId);
+
+      const applyPreview = () => {
+        const length = Math.max(1, state.lengthTicks || originEnd);
+        box.style.left = ((previewStart / length) * 100) + "%";
+        box.style.width = (Math.max(1, previewEnd - previewStart) / length * 100) + "%";
+        box.title =
+          "Trim “" + (clip.name || clip.originalName || "MIDI loop") +
+          "” → bars " + tickToBar(previewStart, ppq) +
+          "–" + Math.max(tickToBar(previewStart, ppq), tickToBar(previewEnd - 1, ppq)) +
+          " · release to apply";
+      };
+
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const deltaBars = Math.round((moveEvent.clientX - originX) / Math.max(1, state.barW));
+        if (side === "start") {
+          previewStart = Math.max(
+            originStart,
+            Math.min(originEnd - tpb, originStart + deltaBars * tpb)
+          );
+        } else {
+          previewEnd = Math.min(
+            originEnd,
+            Math.max(originStart + tpb, originEnd + deltaBars * tpb)
+          );
+        }
+        applyPreview();
+      };
+
+      const finish = (upEvent) => {
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", finish);
+        handle.removeEventListener("pointercancel", cancel);
+        try { handle.releasePointerCapture?.(upEvent.pointerId); } catch {}
+        box.classList.remove("trimming");
+        box.style.left = "";
+        box.style.width = "";
+
+        if (previewStart !== originStart || previewEnd !== originEnd) {
+          trimHostLoopClip(clip, track, previewStart, previewEnd);
+        } else {
+          renderTracks();
+          setStatus(
+            "Selected loop “" + (clip.name || clip.originalName || "MIDI loop") +
+            "” · gold bottom handles trim start/end · ✂ splits at red playhead",
+            "ok"
+          );
+        }
+      };
+
+      const cancel = (cancelEvent) => {
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", finish);
+        handle.removeEventListener("pointercancel", cancel);
+        try { handle.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
+        box.classList.remove("trimming");
+        box.style.left = "";
+        box.style.width = "";
+        renderTracks();
+      };
+
+      handle.addEventListener("pointermove", onMove);
+      handle.addEventListener("pointerup", finish);
+      handle.addEventListener("pointercancel", cancel);
     });
   }
 
@@ -5235,7 +5530,7 @@ select, input[type="number"], input[type="text"] {
           (clip.name || clip.originalName || "MIDI loop") +
           " · bar " + tickToBar(startTick, ppq) +
           (repeatCount > 1 ? " · ×" + repeatCount : "") +
-          " · drag to move · striped right edge repeats · Ctrl+D duplicate · Delete removes";
+          " · drag = move · gold bottom edges = trim · ✂ = split at playhead · striped right edge = repeat";
 
         for (let cycle = 1; cycle < repeatCount; cycle++) {
           const divider = document.createElement("div");
@@ -5258,12 +5553,17 @@ select, input[type="number"], input[type="text"] {
         duplicateBtn.className = "loop-clip-action";
         duplicateBtn.textContent = "⧉";
         duplicateBtn.title = "Duplicate loop to the right (Ctrl+D)";
+        const splitBtn = document.createElement("button");
+        splitBtn.type = "button";
+        splitBtn.className = "loop-clip-action";
+        splitBtn.textContent = "✂";
+        splitBtn.title = "Split loop at the red playhead";
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.className = "loop-clip-action delete";
         deleteBtn.textContent = "×";
         deleteBtn.title = "Delete loop (Delete)";
-        actions.append(duplicateBtn, deleteBtn);
+        actions.append(duplicateBtn, splitBtn, deleteBtn);
         box.appendChild(actions);
 
         const repeatHandle = document.createElement("div");
@@ -5271,7 +5571,15 @@ select, input[type="number"], input[type="text"] {
         repeatHandle.title = "Drag right to repeat / left to shorten repeats (ACID-style)";
         box.appendChild(repeatHandle);
 
-        for (const control of [duplicateBtn, deleteBtn, repeatHandle]) {
+        const trimStartHandle = document.createElement("div");
+        trimStartHandle.className = "loop-clip-trim-handle start";
+        trimStartHandle.title = "Trim the beginning · drag right by whole bars";
+        const trimEndHandle = document.createElement("div");
+        trimEndHandle.className = "loop-clip-trim-handle end";
+        trimEndHandle.title = "Trim the end · drag left by whole bars";
+        box.append(trimStartHandle, trimEndHandle);
+
+        for (const control of [duplicateBtn, splitBtn, deleteBtn, repeatHandle, trimStartHandle, trimEndHandle]) {
           control.addEventListener("pointerdown", (event) => event.stopPropagation());
         }
         duplicateBtn.addEventListener("click", (event) => {
@@ -5279,6 +5587,12 @@ select, input[type="number"], input[type="text"] {
           event.stopPropagation();
           selectHostLoopClip(instanceId);
           duplicateHostLoopClip(clip, track);
+        });
+        splitBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          selectHostLoopClip(instanceId);
+          splitHostLoopClipAtPlayhead(clip, track);
         });
         deleteBtn.addEventListener("click", (event) => {
           event.preventDefault();
@@ -5289,6 +5603,8 @@ select, input[type="number"], input[type="text"] {
 
         body.appendChild(box);
         attachHostLoopClipDrag(box, clip, track, body, length, totalW, ppq);
+        attachHostLoopTrimDrag(trimStartHandle, "start", box, clip, track, ppq);
+        attachHostLoopTrimDrag(trimEndHandle, "end", box, clip, track, ppq);
         attachHostLoopRepeatDrag(repeatHandle, box, label, clip, track, ppq);
       }
 
