@@ -776,7 +776,13 @@ def load_pack_catalog_locked() -> dict:
     # Pack indexes can outlive classifier improvements. Re-tag entries while
     # loading so a one-click app update immediately exposes corrected styles
     # without forcing a costly repack of the local MIDI library.
-    entries = [dict(item) for item in payload["entries"]]
+    entries = [
+        dict(item)
+        for item in payload["entries"]
+        if not is_macos_metadata_midi(
+            item.get("member") or item.get("packMember") or item.get("name") or ""
+        )
+    ]
     locators: dict[str, tuple[str, str, str | None]] = {}
     for item in entries:
         pack_rel = item.get("pack")
@@ -955,6 +961,15 @@ def infer_library_tags(source: str, member: str) -> tuple[str, str]:
     return genre, kind
 
 
+def is_macos_metadata_midi(value: str | Path) -> bool:
+    """Reject AppleDouble/resource-fork files that merely end in .mid/.midi."""
+    text = str(value).replace("\\", "/")
+    parts = [part for part in text.split("/") if part]
+    if any(part.lower() == "__macosx" for part in parts):
+        return True
+    return bool(parts and parts[-1].startswith("._"))
+
+
 def library_source_name(path: Path) -> str:
     name = path.name
     low = name.lower()
@@ -1008,7 +1023,8 @@ def build_library_catalog(force: bool = False, prefer_packs: bool = True) -> dic
                 for path in files:
                     low = path.name.lower()
                     if low.endswith((".mid", ".midi")):
-                        loose_paths.append(path)
+                        if not is_macos_metadata_midi(path):
+                            loose_paths.append(path)
                     elif low.endswith((".zip", ".tar.gz", ".tgz", ".tar")):
                         archive_paths.append(path)
 
@@ -1065,6 +1081,7 @@ def build_library_catalog(force: bool = False, prefer_packs: bool = True) -> dic
                                     for info in zf.infolist()
                                     if not info.is_dir()
                                     and info.filename.lower().endswith((".mid", ".midi"))
+                                    and not is_macos_metadata_midi(info.filename)
                                 ]
                                 for info in members:
                                     member = info.filename
@@ -1112,6 +1129,7 @@ def build_library_catalog(force: bool = False, prefer_packs: bool = True) -> dic
                                     if (
                                         not tar_member.isfile()
                                         or not tar_member.name.lower().endswith((".mid", ".midi"))
+                                        or is_macos_metadata_midi(tar_member.name)
                                     ):
                                         continue
                                     member = tar_member.name
