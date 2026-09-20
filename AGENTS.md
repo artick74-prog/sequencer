@@ -341,6 +341,8 @@ Playback в Style Library использует короткий lookahead schedu
 
 
 ## Main timeline ruler gesture
+- Горизонтальный zoom основного timeline теперь имеет тот же максимум, что Piano Roll: `BAR_W_MAX = PIANO_ROLL_BAR_W_MAX = 8192 px/bar`. Нумерация тактов исправлена: при достаточном zoom (`labelEvery=1`) подписывается каждый такт; при сильном zoom-out подписи по-прежнему прореживаются, чтобы не наслаиваться.
+
 
 - Основная линейка секвенсора теперь повторяет Piano Roll: обычный click или преимущественно horizontal drag двигает cue/playhead по тактам; преимущественно vertical drag меняет горизонтальный zoom.
 - Направление одинаковое с Piano Roll: drag вниз = шире/zoom in, drag вверх = уже/zoom out. `Ctrl/Cmd + wheel` использует то же направление: wheel down = шире, wheel up = уже.
