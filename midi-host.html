@@ -3539,6 +3539,7 @@ select, input[type="number"], input[type="text"] {
   }
 
   function openHostLoopBrowser() {
+    if (document.getElementById("rhythmBrowser")?.classList.contains("open")) closeRhythmBrowser();
     const drawer = document.getElementById("hostLoopBrowser");
     drawer?.classList.add("open");
     drawer?.setAttribute("aria-hidden", "false");
@@ -6892,6 +6893,28 @@ select, input[type="number"], input[type="text"] {
       trackLoopRegion.className = "track-loop-region" + (state.loop ? " active" : "");
       body.appendChild(trackLoopRegion);
 
+      if (rhythmAudition?.active && rhythmAudition.targetTrackId === track.id) {
+        const slotStart = barToTick(rhythmAudition.startBar, ppq);
+        const slotEnd = barToTick(rhythmAudition.endBar + 1, ppq);
+        const slot = document.createElement("div");
+        slot.className = "rhythm-audition-slot";
+        slot.style.left = ((slotStart / Math.max(1, length)) * 100) + "%";
+        slot.style.width = (((slotEnd - slotStart) / Math.max(1, length)) * 100) + "%";
+        const pattern = rhythmPatternById(rhythmAudition.patternId);
+        const label = document.createElement("span");
+        label.className = "label";
+        label.textContent = "RHYTHM · " + (pattern?.name || "audition");
+        slot.appendChild(label);
+        for (const note of rhythmAudition.rawNotes || []) {
+          const hit = document.createElement("span");
+          hit.className = "rhythm-audition-hit";
+          hit.style.left = (((note.tick - slotStart) / Math.max(1, slotEnd - slotStart)) * 100) + "%";
+          hit.style.width = Math.max(1.2, (note.duration / Math.max(1, slotEnd - slotStart)) * 100) + "%";
+          slot.appendChild(hit);
+        }
+        body.appendChild(slot);
+      }
+
       const notes = track.notes;
       const minN = notes.length ? notes.reduce((m, n) => Math.min(m, n.note), 127) : 60;
       const maxN = notes.length ? notes.reduce((m, n) => Math.max(m, n.note), 0) : 60;
@@ -8086,6 +8109,36 @@ select, input[type="number"], input[type="text"] {
   document.getElementById("btnCloseLoops").addEventListener("click", () => {
     closeHostLoopBrowser();
   });
+  document.getElementById("btnRhythms")?.addEventListener("click", () => {
+    const open = document.getElementById("rhythmBrowser")?.classList.contains("open");
+    if (open) closeRhythmBrowser();
+    else openRhythmBrowser();
+  });
+  document.getElementById("btnCloseRhythms")?.addEventListener("click", closeRhythmBrowser);
+  document.getElementById("rhythmPrev")?.addEventListener("click", () => stepRhythm(-1));
+  document.getElementById("rhythmNext")?.addEventListener("click", () => stepRhythm(1));
+  document.getElementById("rhythmApply")?.addEventListener("click", applyRhythmAudition);
+  document.getElementById("rhythmSearch")?.addEventListener("input", renderRhythmBrowser);
+  document.getElementById("rhythmCategory")?.addEventListener("change", renderRhythmBrowser);
+  document.getElementById("rhythmGate")?.addEventListener("input", (event) => {
+    document.getElementById("rhythmGateValue").textContent = event.target.value + "%";
+  });
+  document.getElementById("rhythmGate")?.addEventListener("change", () => {
+    const pattern = rhythmPatternById();
+    if (pattern && rhythmAudition?.active) previewRhythmPattern(pattern);
+  });
+  document.getElementById("rhythmPitch")?.addEventListener("change", () => {
+    const pattern = rhythmPatternById();
+    if (pattern && rhythmAudition?.active) previewRhythmPattern(pattern);
+  });
+  document.getElementById("rhythmTarget")?.addEventListener("change", () => {
+    const pattern = rhythmPatternById();
+    if (pattern && rhythmAudition?.active) previewRhythmPattern(pattern);
+  });
+  document.getElementById("rhythmStartBar")?.addEventListener("change", () => {
+    const pattern = rhythmPatternById();
+    if (pattern && rhythmAudition?.active) previewRhythmPattern(pattern);
+  });
 
   const hostLoopPreviewRouteSelect = document.getElementById("hostLoopPreviewRoute");
   if (hostLoopPreviewRouteSelect) {
@@ -8492,6 +8545,7 @@ select, input[type="number"], input[type="text"] {
       return project;
     },
     openLoops: () => openHostLoopBrowser(),
+    openRhythms: () => openRhythmBrowser(),
     insertLibraryLoop: (id, trackId, startTick = 0) => {
       const entry = hostLoopCatalog.find((item) => item.id === id);
       const track = state.project?.tracks?.find((item) => item.id === trackId);
