@@ -465,6 +465,34 @@ a { color: var(--accent); }
   gap: 3px;
   flex-shrink: 0;
 }
+.rhythm-builtins-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  min-height: 22px;
+  color: var(--dim);
+  font-size: 10px;
+}
+.rhythm-builtins-row .label {
+  color: #728093;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-size: 9px;
+}
+.rhythm-builtins-name {
+  min-width: 72px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font: 10px/20px ui-monospace, Consolas, monospace;
+}
+.rhythm-builtins-count {
+  color: var(--dim);
+  font: 9px/20px ui-monospace, Consolas, monospace;
+}
 .rhythm-mini-btn {
   height: 22px;
   min-width: 22px;
@@ -490,15 +518,33 @@ a { color: var(--accent); }
 .rhythm-saved-tag { color: var(--gm); }
 .rhythm-grid-preview {
   grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  gap: 1px;
-  height: 16px;
-  margin-top: 4px;
-  opacity: .9;
+  position: relative;
+  height: 18px;
+  margin-top: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  opacity: .95;
 }
-.rhythm-grid-preview span { border-radius: 2px; background: #202a38; }
-.rhythm-grid-preview span.hit { background: var(--accent-dim); }
+.rhythm-preview-cells {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--preview-cols, 16), 1fr);
+  gap: 1px;
+}
+.rhythm-preview-cell {
+  border-radius: 2px;
+  background: #202a38;
+}
+.rhythm-preview-hit {
+  position: absolute;
+  top: 2px;
+  height: 14px;
+  min-width: 3px;
+  border-radius: 2px;
+  background: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px rgba(61,220,151,.14);
+}
 .rhythm-audition-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -531,6 +577,50 @@ a { color: var(--accent); }
   font-size: 11px;
 }
 .rhythm-editor-summary strong { color: var(--text); }
+.rhythm-duration-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 8px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0c1117;
+}
+.rhythm-duration-panel .caption {
+  color: var(--dim);
+  font-size: 10px;
+  margin-right: 2px;
+}
+.rhythm-duration-panel .selected-info {
+  min-width: 98px;
+  color: var(--text);
+  font: 10px/22px ui-monospace, Consolas, monospace;
+}
+.rhythm-duration-btn {
+  height: 24px;
+  min-width: 42px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #141c26;
+  color: var(--dim);
+  font: 600 10px/22px ui-monospace, Consolas, monospace;
+  cursor: pointer;
+}
+.rhythm-duration-btn:hover { border-color: var(--accent-dim); color: #fff; }
+.rhythm-duration-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(61,220,151,.08);
+}
+.rhythm-duration-btn:disabled { opacity: .35; cursor: default; }
+.rhythm-duration-remove {
+  margin-left: auto;
+  color: var(--danger);
+  border-color: #633;
+}
 .rhythm-editor-live {
   display: inline-flex;
   align-items: center;
@@ -571,10 +661,14 @@ a { color: var(--accent); }
 .rhythm-editor-step.beat { border-left-color: #526173; }
 .rhythm-editor-step:hover { border-color: var(--accent-dim); }
 .rhythm-editor-step.hit {
-  background: rgba(61,220,151,.22);
+  background: rgba(61,220,151,.16);
   border-color: var(--accent-dim);
   color: #dffbf1;
   cursor: grab;
+}
+.rhythm-editor-step.selected {
+  outline: 2px solid var(--gm);
+  outline-offset: 1px;
 }
 .rhythm-editor-step.hit:active { cursor: grabbing; }
 .rhythm-editor-step .step-num {
@@ -587,11 +681,14 @@ a { color: var(--accent); }
 .rhythm-editor-step .hit-mark {
   position: absolute;
   left: 4px;
-  right: 4px;
   top: 8px;
+  width: calc((100% + 4px) * var(--dur-steps, 1) - 8px);
+  max-width: calc((100% + 4px) * 16);
   height: 12px;
   border-radius: 3px;
   background: var(--accent);
+  pointer-events: none;
+  z-index: 3;
 }
 .rhythm-editor-step.drag-over {
   outline: 2px solid var(--gm);
@@ -1541,9 +1638,22 @@ select, input[type="number"], input[type="text"] {
       </div>
       <div class="rhythm-editor-body">
         <div class="rhythm-editor-summary" id="rhythmEditorSummary"></div>
+        <div class="rhythm-duration-panel" id="rhythmDurationPanel">
+          <span class="caption">Selected hit</span>
+          <span class="selected-info" id="rhythmDurationSelected">none</span>
+          <button class="rhythm-duration-btn" type="button" data-rhythm-duration="32" title="Very short · 1/32 note">1/32</button>
+          <button class="rhythm-duration-btn" type="button" data-rhythm-duration="16" title="Short · 1/16 note">1/16</button>
+          <button class="rhythm-duration-btn" type="button" data-rhythm-duration="8" title="Medium · 1/8 note">1/8</button>
+          <button class="rhythm-duration-btn" type="button" data-rhythm-duration="4" title="Long · 1/4 note">1/4</button>
+          <button class="rhythm-duration-btn" type="button" data-rhythm-duration="4." title="Dotted quarter note">1/4·</button>
+          <button class="rhythm-duration-btn" type="button" data-rhythm-duration="2" title="Half note">1/2</button>
+          <button class="rhythm-duration-btn" type="button" data-rhythm-duration="2." title="Dotted half note">1/2·</button>
+          <button class="rhythm-duration-btn" type="button" data-rhythm-duration="1" title="Whole note">1/1</button>
+          <button class="rhythm-duration-btn rhythm-duration-remove" id="rhythmDurationRemove" type="button">Remove hit</button>
+        </div>
         <div class="rhythm-editor-grid" id="rhythmEditorGrid"></div>
         <div class="rhythm-editor-hint">
-          LIVE preview is always on. Click an empty step to add an attack; click a hit to remove it. Drag a hit left/right to move it while preserving its duration, velocity and guitar articulation metadata. Changes are heard immediately but are not saved until you press Save as new revision.
+          LIVE preview is always on. Click an empty step to add an attack; click a hit to select it. Drag a hit left/right to move it. Use the length buttons for 1/32, 1/16, 1/8, 1/4, dotted 1/4 and longer values. The global Gate control still scales these stored lengths during playback. Changes are heard immediately but are not saved until you press Save as new revision.
         </div>
       </div>
       <div class="rhythm-editor-actions">
@@ -2192,12 +2302,14 @@ select, input[type="number"], input[type="text"] {
 
   const RHYTHM_REVISIONS_KEY = "midi_host_rhythm_revisions_v1";
   const RHYTHM_CUSTOM_KEY = "midi_host_custom_rhythms_v1";
+  const RHYTHM_VARIANTS_KEY = "midi_host_rhythm_variant_cursors_v1";
   let rhythmLibrary = [];
   let rhythmLibraryLoaded = false;
   let rhythmSelectedId = "";
   let rhythmAudition = null;
   let rhythmRevisions = {};
   let rhythmCustomPatterns = [];
+  let rhythmVariantCursors = {};
   let rhythmEditorState = null;
   let rhythmEditorDragMoved = false;
 
@@ -2207,6 +2319,8 @@ select, input[type="number"], input[type="text"] {
     const saved = JSON.parse(localStorage.getItem(RHYTHM_CUSTOM_KEY) || "[]");
     rhythmCustomPatterns = Array.isArray(saved) ? saved : [];
   } catch { rhythmCustomPatterns = []; }
+  try { rhythmVariantCursors = JSON.parse(localStorage.getItem(RHYTHM_VARIANTS_KEY) || "{}") || {}; }
+  catch { rhythmVariantCursors = {}; }
 
   try { hostLoopRatings = JSON.parse(localStorage.getItem(HOST_LOOP_RATINGS_KEY) || "{}") || {}; }
   catch { hostLoopRatings = {}; }
@@ -3345,6 +3459,7 @@ select, input[type="number"], input[type="text"] {
   function persistRhythmUserData() {
     localStorage.setItem(RHYTHM_REVISIONS_KEY, JSON.stringify(rhythmRevisions));
     localStorage.setItem(RHYTHM_CUSTOM_KEY, JSON.stringify(rhythmCustomPatterns));
+    localStorage.setItem(RHYTHM_VARIANTS_KEY, JSON.stringify(rhythmVariantCursors));
   }
 
   function rhythmRevisionBucket(patternId) {
@@ -3580,6 +3695,7 @@ select, input[type="number"], input[type="text"] {
     rhythmEditorState = {
       patternId,
       sourceCursor: bucket.cursor,
+      selectedPos: current.events?.length ? Number(current.events[0].pos) : null,
       draft: {
         ...current,
         events: cloneRhythmEvents(current.events),
@@ -3605,33 +3721,102 @@ select, input[type="number"], input[type="text"] {
     }
   }
 
-  function rhythmEditorToggleStep(pos) {
-    if (!rhythmEditorState) return;
-    const events = rhythmEditorState.draft.events || [];
-    const existing = events.filter((event) => Number(event.pos) === pos);
-    if (existing.length) {
-      rhythmEditorState.draft.events = events.filter((event) => Number(event.pos) !== pos);
-    } else {
-      let nearest = null;
-      let nearestDistance = Infinity;
-      for (const event of events) {
-        const distance = Math.abs(Number(event.pos) - pos);
-        if (distance < nearestDistance) {
-          nearest = event;
-          nearestDistance = distance;
-        }
+  const RHYTHM_DURATION_PRESETS = [
+    { key:"32", label:"1/32", denominator:32, dotted:false },
+    { key:"16", label:"1/16", denominator:16, dotted:false },
+    { key:"8", label:"1/8", denominator:8, dotted:false },
+    { key:"4", label:"1/4", denominator:4, dotted:false },
+    { key:"4.", label:"1/4·", denominator:4, dotted:true },
+    { key:"2", label:"1/2", denominator:2, dotted:false },
+    { key:"2.", label:"1/2·", denominator:2, dotted:true },
+    { key:"1", label:"1/1", denominator:1, dotted:false },
+  ];
+
+  function rhythmDurationSteps(pattern, denominator, dotted = false) {
+    const stepsPerBar = Math.max(1, Number(pattern?.stepsPerBar) || 16);
+    const base = stepsPerBar / Math.max(1, Number(denominator) || 16);
+    return base * (dotted ? 1.5 : 1);
+  }
+
+  function rhythmDurationPresetFor(pattern, dur) {
+    const value = Number(dur);
+    if (!Number.isFinite(value)) return null;
+    let best = null;
+    let bestDiff = Infinity;
+    for (const preset of RHYTHM_DURATION_PRESETS) {
+      const steps = rhythmDurationSteps(pattern, preset.denominator, preset.dotted);
+      const diff = Math.abs(steps - value);
+      if (diff < bestDiff) {
+        best = preset;
+        bestDiff = diff;
       }
-      const event = nearest
-        ? { ...nearest, pos }
-        : {
-            pos,
-            dur: 0.8,
-            vel: 100,
-            ...(rhythmEditorState.draft.instrument === "guitar"
-              ? { attack: "CHORD", stroke: (pos % 2 ? "UP" : "DOWN") }
-              : {}),
-          };
-      rhythmEditorState.draft.events = [...events, event].sort((a,b) => Number(a.pos) - Number(b.pos));
+    }
+    return bestDiff <= 0.08 ? best : null;
+  }
+
+  function rhythmEditorEventsAt(pos) {
+    if (!rhythmEditorState) return [];
+    return (rhythmEditorState.draft.events || []).filter((event) => Number(event.pos) === Number(pos));
+  }
+
+  function rhythmEditorSelectOrAddStep(pos) {
+    if (!rhythmEditorState) return;
+    const existing = rhythmEditorEventsAt(pos);
+    if (existing.length) {
+      rhythmEditorState.selectedPos = pos;
+      renderRhythmEditor();
+      return;
+    }
+
+    const events = rhythmEditorState.draft.events || [];
+    let nearest = null;
+    let nearestDistance = Infinity;
+    for (const event of events) {
+      const distance = Math.abs(Number(event.pos) - pos);
+      if (distance < nearestDistance) {
+        nearest = event;
+        nearestDistance = distance;
+      }
+    }
+    const defaultDur = rhythmDurationSteps(rhythmEditorState.draft, 16, false);
+    const event = nearest
+      ? { ...nearest, pos }
+      : {
+          pos,
+          dur: defaultDur,
+          vel: 100,
+          ...(rhythmEditorState.draft.instrument === "guitar"
+            ? { attack: "CHORD", stroke: (pos % 2 ? "UP" : "DOWN") }
+            : {}),
+        };
+    rhythmEditorState.draft.events = [...events, event].sort((a,b) => Number(a.pos) - Number(b.pos));
+    rhythmEditorState.selectedPos = pos;
+    renderRhythmEditor();
+    previewRhythmEditorDraft();
+  }
+
+  function rhythmEditorRemoveSelected() {
+    if (!rhythmEditorState || rhythmEditorState.selectedPos == null) return;
+    const pos = Number(rhythmEditorState.selectedPos);
+    rhythmEditorState.draft.events =
+      (rhythmEditorState.draft.events || []).filter((event) => Number(event.pos) !== pos);
+    rhythmEditorState.selectedPos = null;
+    renderRhythmEditor();
+    previewRhythmEditorDraft();
+  }
+
+  function rhythmEditorSetDuration(presetKey) {
+    if (!rhythmEditorState || rhythmEditorState.selectedPos == null) return;
+    const preset = RHYTHM_DURATION_PRESETS.find((item) => item.key === String(presetKey));
+    if (!preset) return;
+    const dur = rhythmDurationSteps(
+      rhythmEditorState.draft,
+      preset.denominator,
+      preset.dotted
+    );
+    const pos = Number(rhythmEditorState.selectedPos);
+    for (const event of rhythmEditorState.draft.events || []) {
+      if (Number(event.pos) === pos) event.dur = dur;
     }
     renderRhythmEditor();
     previewRhythmEditorDraft();
@@ -3645,6 +3830,7 @@ select, input[type="number"], input[type="text"] {
     const to = events.filter((event) => Number(event.pos) === toPos);
     for (const event of from) event.pos = toPos;
     for (const event of to) event.pos = fromPos;
+    rhythmEditorState.selectedPos = toPos;
     rhythmEditorState.draft.events = events.sort((a,b) => Number(a.pos) - Number(b.pos));
     renderRhythmEditor();
     previewRhythmEditorDraft();
@@ -3658,17 +3844,53 @@ select, input[type="number"], input[type="text"] {
     const stepsPerBar = Math.max(1, Math.round(Number(pattern.stepsPerBar) || 16));
     const bars = Math.max(1, Math.round(Number(pattern.bars) || 1));
     const total = stepsPerBar * bars;
-    const hitPositions = new Set((pattern.events || []).map((event) => Number(event.pos)));
+    const firstAt = new Map();
+    for (const event of pattern.events || []) {
+      const pos = Number(event.pos);
+      if (!firstAt.has(pos)) firstAt.set(pos, event);
+    }
     grid.style.setProperty("--rhythm-editor-cols", String(stepsPerBar));
     grid.innerHTML = Array.from({length: total}, (_, pos) => {
-      const hit = hitPositions.has(pos);
+      const event = firstAt.get(pos);
+      const hit = !!event;
+      const selected = Number(rhythmEditorState.selectedPos) === pos;
       const beatSize = Math.max(1, stepsPerBar / 4);
       const beat = Math.abs((pos % stepsPerBar) % beatSize) < 0.001;
-      return '<button class="rhythm-editor-step ' + (hit ? 'hit ' : '') + (beat ? 'beat' : '') +
+      const dur = hit ? Math.max(.2, Number(event.dur) || 1) : 1;
+      return '<button class="rhythm-editor-step ' +
+        (hit ? 'hit ' : '') + (beat ? 'beat ' : '') + (selected ? 'selected' : '') +
         '" type="button" data-pos="' + pos + '" draggable="' + (hit ? 'true' : 'false') + '">' +
-        (hit ? '<span class="hit-mark"></span>' : '') +
+        (hit ? '<span class="hit-mark" style="--dur-steps:' + dur.toFixed(3) + '"></span>' : '') +
         '<span class="step-num">' + (pos + 1) + '</span></button>';
     }).join("");
+  }
+
+  function renderRhythmDurationPanel() {
+    if (!rhythmEditorState) return;
+    const selected = rhythmEditorState.selectedPos;
+    const events = selected == null ? [] : rhythmEditorEventsAt(selected);
+    const event = events[0] || null;
+    const info = document.getElementById("rhythmDurationSelected");
+    if (info) {
+      if (!event) info.textContent = "none";
+      else {
+        const preset = rhythmDurationPresetFor(rhythmEditorState.draft, event.dur);
+        info.textContent =
+          "step " + (Number(selected) + 1) + " · " +
+          (preset?.label || ((Number(event.dur) || 0).toFixed(2) + " steps"));
+      }
+    }
+
+    document.querySelectorAll("[data-rhythm-duration]").forEach((button) => {
+      button.disabled = !event;
+      const preset = RHYTHM_DURATION_PRESETS.find((item) => item.key === button.dataset.rhythmDuration);
+      const current = event && preset
+        ? rhythmDurationPresetFor(rhythmEditorState.draft, event.dur)?.key === preset.key
+        : false;
+      button.classList.toggle("active", !!current);
+    });
+    const remove = document.getElementById("rhythmDurationRemove");
+    if (remove) remove.disabled = !event;
   }
 
   function renderRhythmEditor() {
@@ -3689,6 +3911,7 @@ select, input[type="number"], input[type="text"] {
       '<span>' + (rhythmEditorState.draft.events || []).length + ' attacks</span>';
     const del = document.getElementById("rhythmEditorDelete");
     if (del) del.hidden = rhythmEditorState.sourceCursor <= 0;
+    renderRhythmDurationPanel();
     renderRhythmEditorGrid();
   }
 
@@ -3780,16 +4003,99 @@ select, input[type="number"], input[type="text"] {
     });
   }
 
-  function rhythmGridPreviewHtml(pattern) {
-    const cells = 16;
-    const hit = new Set();
-    const steps = Math.max(1, Number(pattern.stepsPerBar) || 16);
-    for (const event of pattern.events || []) {
-      const local = ((Number(event.pos) || 0) % steps + steps) % steps;
-      const cell = Math.max(0, Math.min(cells - 1, Math.floor(local / steps * cells)));
-      hit.add(cell);
+  function rhythmOnsetSignature(pattern) {
+    const positions = [...new Set((pattern.events || [])
+      .map((event) => Number(event.pos))
+      .filter(Number.isFinite))]
+      .sort((a,b)=>a-b)
+      .map((pos)=>Number(pos.toFixed(4)));
+    return [
+      pattern.bank || "Core",
+      pattern.family || "",
+      Number(pattern.bars) || 1,
+      Number(pattern.stepsPerBar) || 16,
+      positions.join(","),
+    ].join("|");
+  }
+
+  function rhythmGroupKey(pattern) {
+    if (pattern.userSaved) return "user|" + pattern.id;
+    return rhythmOnsetSignature(pattern);
+  }
+
+  function rhythmGroupedPatterns(rows = rhythmFilteredPatterns()) {
+    const groups = [];
+    const byKey = new Map();
+    for (const pattern of rows) {
+      const key = rhythmGroupKey(pattern);
+      let group = byKey.get(key);
+      if (!group) {
+        group = { key, variants: [] };
+        byKey.set(key, group);
+        groups.push(group);
+      }
+      group.variants.push(pattern);
     }
-    return Array.from({length:cells},(_,i)=>'<span class="' + (hit.has(i) ? 'hit' : '') + '"></span>').join("");
+    return groups;
+  }
+
+  function rhythmGroupVariantIndex(group) {
+    if (!group?.variants?.length) return 0;
+    const selectedIndex = group.variants.findIndex((pattern) => pattern.id === rhythmSelectedId);
+    if (selectedIndex >= 0) {
+      rhythmVariantCursors[group.key] = selectedIndex;
+      return selectedIndex;
+    }
+    const saved = Math.round(Number(rhythmVariantCursors[group.key]) || 0);
+    return Math.max(0, Math.min(group.variants.length - 1, saved));
+  }
+
+  function rhythmGroupPattern(group) {
+    return group?.variants?.[rhythmGroupVariantIndex(group)] || null;
+  }
+
+  function rhythmVariantLabel(pattern) {
+    if (!pattern) return "";
+    if (pattern.variant) return String(pattern.variant);
+    const name = String(pattern.name || "");
+    return name.includes(" · ") ? name.split(" · ").slice(1).join(" · ") : "Original";
+  }
+
+  function rhythmGroupDisplayName(group) {
+    const pattern = group?.variants?.[0];
+    if (!pattern) return "Rhythm";
+    const name = String(pattern.name || "Rhythm");
+    return name.includes(" · ") ? name.split(" · ")[0] : name;
+  }
+
+  async function shiftRhythmBuiltInVariant(group, direction) {
+    if (!group?.variants?.length || group.variants.length < 2) return;
+    let index = rhythmGroupVariantIndex(group);
+    index = (index + direction + group.variants.length) % group.variants.length;
+    rhythmVariantCursors[group.key] = index;
+    persistRhythmUserData();
+    const pattern = rhythmResolvedPattern(group.variants[index]);
+    rhythmSelectedId = group.variants[index].id;
+    renderRhythmBrowser();
+    if (pattern) await previewRhythmPattern(pattern);
+  }
+
+  function rhythmGridPreviewHtml(pattern) {
+    const stepsPerBar = Math.max(1, Number(pattern.stepsPerBar) || 16);
+    const bars = Math.max(1, Number(pattern.bars) || 1);
+    const totalSteps = Math.max(1, stepsPerBar * bars);
+    const cells = Math.min(32, Math.max(8, Math.round(totalSteps)));
+    const cellHtml = Array.from({length:cells},()=>'<span class="rhythm-preview-cell"></span>').join("");
+    const hits = (pattern.events || []).map((event) => {
+      const pos = Math.max(0, Math.min(totalSteps, Number(event.pos) || 0));
+      const dur = Math.max(.15, Number(event.dur) || .8);
+      const left = (pos / totalSteps) * 100;
+      const width = Math.max(0.8, Math.min(100 - left, (dur / totalSteps) * 100));
+      return '<span class="rhythm-preview-hit" style="left:' + left.toFixed(3) +
+        '%;width:' + width.toFixed(3) + '%"></span>';
+    }).join("");
+    return '<span class="rhythm-preview-cells" style="--preview-cols:' + cells + '">' +
+      cellHtml + '</span>' + hits;
   }
 
   function populateRhythmControls() {
@@ -3844,14 +4150,21 @@ select, input[type="number"], input[type="text"] {
     const list = document.getElementById("rhythmList");
     if (!list) return;
     const rows = rhythmFilteredPatterns();
+    const groups = rhythmGroupedPatterns(rows);
     list.innerHTML = "";
 
-    for (const pattern of rows) {
+    for (const group of groups) {
+      const pattern = rhythmGroupPattern(group);
+      if (!pattern) continue;
       const displayPattern = rhythmResolvedPattern(pattern);
       const bucket = rhythmRevisionBucket(pattern.id);
       const active = rhythmSelectedId === pattern.id;
       const hasRevisions = bucket.revisions.length > 0;
       const revisionLabel = rhythmRevisionLabel(pattern.id);
+      const variantIndex = rhythmGroupVariantIndex(group);
+      const variantLabel = rhythmVariantLabel(pattern);
+      const baseName = rhythmGroupDisplayName(group);
+
       const card = document.createElement("div");
       card.className =
         "loop-card rhythm-card" +
@@ -3863,19 +4176,28 @@ select, input[type="number"], input[type="text"] {
         '" type="button" title="Audition">▶</button>' +
         '<div class="rhythm-card-body">' +
           '<div class="rhythm-card-title-row">' +
-            '<div class="loop-card-name">' + escapeHtml(pattern.name) + '</div>' +
+            '<div class="loop-card-name">' + escapeHtml(baseName) + '</div>' +
             '<div class="rhythm-card-tools">' +
               (hasRevisions
-                ? '<button class="rhythm-mini-btn rhythm-rev-btn rhythm-rev-prev" type="button" title="Previous revision / Original">‹</button>' +
+                ? '<button class="rhythm-mini-btn rhythm-rev-btn rhythm-rev-prev" type="button" title="Previous manual revision / Original">‹</button>' +
                   '<span class="rhythm-revision-label">' + escapeHtml(revisionLabel) + '</span>' +
-                  '<button class="rhythm-mini-btn rhythm-rev-btn rhythm-rev-next" type="button" title="Next revision">›</button>'
+                  '<button class="rhythm-mini-btn rhythm-rev-btn rhythm-rev-next" type="button" title="Next manual revision">›</button>'
                 : '') +
               '<button class="rhythm-mini-btn rhythm-edit-btn" type="button" title="Edit rhythm">✎</button>' +
               (bucket.cursor > 0
-                ? '<button class="rhythm-mini-btn rhythm-save-btn" type="button" title="Save this revision as a standalone rhythm">▣</button>'
+                ? '<button class="rhythm-mini-btn rhythm-save-btn" type="button" title="Save this manual revision as a standalone rhythm">▣</button>'
                 : '') +
             '</div>' +
           '</div>' +
+          (group.variants.length > 1
+            ? '<div class="rhythm-builtins-row">' +
+                '<span class="label">Variant</span>' +
+                '<button class="rhythm-mini-btn rhythm-built-prev" type="button" title="Previous built-in performance variant">‹</button>' +
+                '<span class="rhythm-builtins-name">' + escapeHtml(variantLabel) + '</span>' +
+                '<span class="rhythm-builtins-count">' + (variantIndex + 1) + '/' + group.variants.length + '</span>' +
+                '<button class="rhythm-mini-btn rhythm-built-next" type="button" title="Next built-in performance variant">›</button>' +
+              '</div>'
+            : '') +
           '<div class="loop-card-meta">' +
             escapeHtml(pattern.bank || "Core") + ' · ' +
             escapeHtml(pattern.category || "") + ' · ' +
@@ -3889,15 +4211,26 @@ select, input[type="number"], input[type="text"] {
 
       card.addEventListener("click", (event) => {
         if (event.target.closest("button")) return;
+        rhythmSelectedId = pattern.id;
         previewRhythmPattern(rhythmPatternById(pattern.id));
       });
       card.querySelector(".rhythm-play")?.addEventListener("click", (event) => {
         event.stopPropagation();
+        rhythmSelectedId = pattern.id;
         previewRhythmPattern(rhythmPatternById(pattern.id));
       });
       card.querySelector(".rhythm-edit-btn")?.addEventListener("click", (event) => {
         event.stopPropagation();
+        rhythmSelectedId = pattern.id;
         openRhythmEditor(pattern.id);
+      });
+      card.querySelector(".rhythm-built-prev")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        shiftRhythmBuiltInVariant(group, -1);
+      });
+      card.querySelector(".rhythm-built-next")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        shiftRhythmBuiltInVariant(group, 1);
       });
       card.querySelector(".rhythm-rev-prev")?.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -3914,7 +4247,9 @@ select, input[type="number"], input[type="text"] {
       list.appendChild(card);
     }
 
-    document.getElementById("rhythmCount").textContent = rows.length + " rhythm" + (rows.length === 1 ? "" : "s");
+    document.getElementById("rhythmCount").textContent =
+      groups.length + " card" + (groups.length === 1 ? "" : "s") +
+      (rows.length !== groups.length ? " · " + rows.length + " variants" : "");
     const apply = document.getElementById("rhythmApply");
     if (apply) apply.disabled = !rhythmAudition?.active || !rhythmPatternById();
   }
@@ -4095,12 +4430,17 @@ select, input[type="number"], input[type="text"] {
   }
 
   function stepRhythm(direction) {
-    const rows = rhythmFilteredPatterns();
-    if (!rows.length) return;
-    let index = rows.findIndex((pattern) => pattern.id === rhythmSelectedId);
+    const groups = rhythmGroupedPatterns();
+    if (!groups.length) return;
+    let index = groups.findIndex((group) =>
+      group.variants.some((pattern) => pattern.id === rhythmSelectedId)
+    );
     if (index < 0) index = direction > 0 ? -1 : 0;
-    index = (index + direction + rows.length) % rows.length;
-    previewRhythmPattern(rhythmResolvedPattern(rows[index]));
+    index = (index + direction + groups.length) % groups.length;
+    const pattern = rhythmGroupPattern(groups[index]);
+    if (!pattern) return;
+    rhythmSelectedId = pattern.id;
+    previewRhythmPattern(rhythmResolvedPattern(pattern));
   }
 
   function detachOverlappingClipsForRhythm(track, startTick, endTick) {
@@ -8779,7 +9119,17 @@ select, input[type="number"], input[type="text"] {
   document.getElementById("rhythmEditorGrid")?.addEventListener("click", (event) => {
     const step = event.target.closest(".rhythm-editor-step");
     if (!step || rhythmEditorDragMoved) return;
-    rhythmEditorToggleStep(Number(step.dataset.pos));
+    rhythmEditorSelectOrAddStep(Number(step.dataset.pos));
+  });
+  document.getElementById("rhythmDurationPanel")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-rhythm-duration]");
+    if (button) {
+      rhythmEditorSetDuration(button.dataset.rhythmDuration);
+      return;
+    }
+    if (event.target.closest("#rhythmDurationRemove")) {
+      rhythmEditorRemoveSelected();
+    }
   });
   document.getElementById("rhythmEditorGrid")?.addEventListener("dragstart", (event) => {
     const step = event.target.closest(".rhythm-editor-step.hit");
@@ -9248,6 +9598,7 @@ select, input[type="number"], input[type="text"] {
     getRhythmUserData: () => ({
       revisions: JSON.parse(JSON.stringify(rhythmRevisions)),
       customPatterns: JSON.parse(JSON.stringify(rhythmCustomPatterns)),
+      variantCursors: JSON.parse(JSON.stringify(rhythmVariantCursors)),
     }),
     insertLibraryLoop: (id, trackId, startTick = 0) => {
       const entry = hostLoopCatalog.find((item) => item.id === id);
