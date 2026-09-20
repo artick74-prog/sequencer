@@ -80,3 +80,12 @@ The editor shows note length visually and supports exact 4/4 musical-duration pr
 Stored `dur` is still expressed in abstract pattern-grid steps. For a 16-step 4/4 pattern, these map to `0.5 / 1 / 2 / 4 / 6 / 8 / 12 / 16` steps. On a 12-step triplet grid the editor converts the same musical values proportionally.
 
 The MIDI Host's global **Gate** remains a playback multiplier after the stored duration. Therefore Gate = 100% means the editor's named duration is literal; Gate 50% halves it, Gate 150% extends it.
+
+
+### Automatic no-overlap trimming
+
+The Rhythm Editor is monophonic in time: edited note lengths are never allowed to run through a later attack.
+
+When a hit is added or moved inside the span of an earlier note, the earlier note is automatically shortened so its end lands exactly on the new attack. Choosing a duration preset that would extend through the next attack is also capped at that next attack. The final note in a pattern is capped at the pattern boundary.
+
+Example on a 16-step 4/4 grid: a stored quarter note is 4 steps. If a new attack is inserted 2 steps later, the quarter is automatically reduced to 2 steps (an eighth note). Removing the later attack does not automatically lengthen the earlier note again; the editor preserves the shortened value unless the user chooses a longer duration.
