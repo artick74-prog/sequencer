@@ -1795,10 +1795,25 @@ select, input[type="number"], input[type="text"] {
     return [...new Set(hostLoopPrograms(entry).map(hostLoopFamilyForProgram).filter(Boolean))];
   }
 
+  function hostLoopLooksLikeDrumFill(entry) {
+    const kind = String(entry?.kind || "").toLowerCase();
+    const roles = new Set((entry?.classificationRoles || []).map((role) => String(role).toLowerCase()));
+    const isDrums = kind === "drums" || kind === "drum-fill" || roles.has("drums");
+    if (!isDrums) return false;
+    const text = [
+      entry?.name,
+      entry?.member,
+      entry?.container,
+      entry?.source,
+    ].filter(Boolean).join(" ").toLowerCase();
+    return /(^|[^a-z0-9])(drum[-_ ]?fill|fills?)([^a-z0-9]|$)/i.test(text);
+  }
+
   function hostLoopRole(entry) {
     const roles = [...new Set((entry.classificationRoles || [])
       .map(String)
       .filter((role) => role && role !== "acid" && role !== "unclassified"))];
+    if (hostLoopLooksLikeDrumFill(entry)) return "drum-fill";
     if (roles.includes("drums") && roles.length === 1) return "drums";
     const pitched = roles.filter((role) => role !== "drums");
     if (pitched.length > 1) return "arrangement";
@@ -1852,6 +1867,22 @@ select, input[type="number"], input[type="text"] {
       return "CH " + route.channel;
     }
     return "SoundFont";
+  }
+
+  const HOST_LOOP_ROLE_LABELS = {
+    "drums": "Drums",
+    "drum-fill": "Drum fills",
+    "bass": "Bass",
+    "chords": "Chords",
+    "melody": "Melody",
+    "arrangement": "Arrangement",
+    "midi": "MIDI",
+    "other": "Other",
+    "unclassified": "Unclassified"
+  };
+
+  function hostLoopRoleLabel(value) {
+    return HOST_LOOP_ROLE_LABELS[value] || String(value || "");
   }
 
   const HOST_LOOP_STYLE_LABELS = {
@@ -2010,7 +2041,8 @@ select, input[type="number"], input[type="text"] {
         fillHostLoopSelect(
           document.getElementById("hostLoopRole"),
           new Set(hostLoopCatalog.map(hostLoopRole).filter(Boolean)),
-          "All roles"
+          "All roles",
+          hostLoopRoleLabel
         );
         fillHostLoopSelect(
           document.getElementById("hostLoopFamily"),
@@ -2187,7 +2219,7 @@ select, input[type="number"], input[type="text"] {
       meta.textContent =
         [
           hostLoopStyleLabel(entry.genre),
-          hostLoopRole(entry),
+          hostLoopRoleLabel(hostLoopRole(entry)),
           hostLoopMaterialLabel(entry),
           barsText,
           familyText,
