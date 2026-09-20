@@ -339,6 +339,12 @@ Playback в Style Library использует короткий lookahead schedu
   - **Acid Rock 2** — тот же drum family + Kick Lock Long bass.
 - Не путать cloud project и user style: project — конкретная аранжировка, style — переиспользуемый шаблон.
 
+
+## Main timeline ruler gesture
+
+- Основная линейка секвенсора теперь повторяет Piano Roll: обычный click или преимущественно horizontal drag двигает cue/playhead по тактам; преимущественно vertical drag меняет горизонтальный zoom.
+- Направление одинаковое с Piano Roll: drag вниз = шире/zoom in, drag вверх = уже/zoom out. `Ctrl/Cmd + wheel` использует то же направление: wheel down = шире, wheel up = уже.
+- `Shift+drag` по-прежнему задаёт loop range, зелёные locator handles работают отдельно и не смешиваются с zoom gesture.
 ## Project Clip Piano Roll
 
 - Loop Browser остаётся только источником preview/drag-and-drop. После drop MIDI становится **Project Clip** на timeline; Piano Roll никогда не редактирует Library Loop напрямую.
