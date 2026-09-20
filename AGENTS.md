@@ -310,6 +310,10 @@ Playback в Style Library использует короткий lookahead schedu
 - Библиотека расширена до **278** формул: Core 20 + Guitar 144 + Bass 42 + Acid 36 + Keys 36.
 - В Rhythm Browser добавлен фильтр **Bank**. Режим `Auto for target` автоматически подбирает Guitar/Bass/Acid/Keys по выбранной дорожке (role / GM program / имени); `All banks` показывает всё.
 - Guitar events могут дополнительно хранить будущие articulation metadata `attack` (`CHORD/CHOKE/MUTE/SUSTAIN`) и `stroke` (`DOWN/UP`). Текущий playback пока использует только `pos/dur/vel`, но articulation metadata не теряется.
+- У каждой Rhythm Browser карточки есть **✎ editor**. Ручные правки не меняют built-in pattern: **Save as new revision** добавляет персональную редакцию.
+- После появления редакций карточка показывает **‹ / ›** и счётчик: `O · N` = оригинал + N редакций, `V3/10` = выбранная 3-я из 10. Стрелки сразу audition'ят выбранную версию.
+- В редакторе attack можно добавить/удалить кликом; существующий hit можно drag-and-drop передвинуть по сетке с сохранением `dur/vel` и guitar articulation metadata.
+- Кнопка **▣** на выбранной редакции сохраняет её как отдельный custom rhythm. Редакции и custom rhythms сейчас живут в browser localStorage (`midi_host_rhythm_revisions_v1`, `midi_host_custom_rhythms_v1`) и переживают обычный refresh / one-click Update; built-in `index.json` не переписывается.
 
 ## User Style Library (arranger-style drafts)
 
