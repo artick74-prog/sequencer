@@ -9421,6 +9421,22 @@ body.timeline-ruler-seeking {
     playhead.style.transform = "translate3d(" + x + "px,0,0)";
   }
 
+  const pianoRollParameterResizer = document.getElementById("pianoRollParameterResizer");
+  pianoRollParameterResizer?.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    const dock = document.getElementById("pianoRollDock");
+    const lane = document.getElementById("pianoRollParameterLane");
+    if (!dock?.classList.contains("open") || !lane) return;
+    event.preventDefault();
+    state.pianoRollParameterResizing = true;
+    state.pianoRollParameterResizeStartY = event.clientY;
+    state.pianoRollParameterResizeStartHeight =
+      lane.getBoundingClientRect().height || state.pianoRollParameterLaneHeight || 92;
+    dock.classList.add("parameter-resizing");
+    document.body.classList.add("piano-roll-parameter-resizing");
+    pianoRollParameterResizer.setPointerCapture?.(event.pointerId);
+  });
+
   const pianoRollResizer = document.getElementById("pianoRollResizer");
   pianoRollResizer?.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
@@ -9436,6 +9452,24 @@ body.timeline-ruler-seeking {
   });
 
   document.addEventListener("pointermove", (event) => {
+    if (state.pianoRollParameterResizing) {
+      const delta = state.pianoRollParameterResizeStartY - event.clientY;
+      state.pianoRollParameterLaneHeight = clampPianoRollParameterLaneHeight(
+        state.pianoRollParameterResizeStartHeight + delta
+      );
+      const lane = document.getElementById("pianoRollParameterLane");
+      if (lane) lane.style.height = state.pianoRollParameterLaneHeight + "px";
+
+      if (!state.pianoRollParameterResizeRenderFrame) {
+        state.pianoRollParameterResizeRenderFrame = requestAnimationFrame(() => {
+          state.pianoRollParameterResizeRenderFrame = 0;
+          applyPianoRollParameterLaneHeight();
+          updatePianoRollGeometry({ horizontal: false, vertical: true });
+        });
+      }
+      return;
+    }
+
     if (!state.pianoRollResizing) return;
     const dock = document.getElementById("pianoRollDock");
     const main = dock?.closest(".main");
@@ -9453,12 +9487,31 @@ body.timeline-ruler-seeking {
     if (!state.pianoRollResizeRenderFrame) {
       state.pianoRollResizeRenderFrame = requestAnimationFrame(() => {
         state.pianoRollResizeRenderFrame = 0;
+        applyPianoRollParameterLaneHeight();
         updatePianoRollGeometry({ horizontal: false, vertical: true });
       });
     }
   });
 
   document.addEventListener("pointerup", (event) => {
+    if (state.pianoRollParameterResizing) {
+      state.pianoRollParameterResizing = false;
+      document.getElementById("pianoRollDock")?.classList.remove("parameter-resizing");
+      document.body.classList.remove("piano-roll-parameter-resizing");
+      try { pianoRollParameterResizer?.releasePointerCapture?.(event.pointerId); } catch {}
+      if (state.pianoRollParameterResizeRenderFrame) {
+        cancelAnimationFrame(state.pianoRollParameterResizeRenderFrame);
+        state.pianoRollParameterResizeRenderFrame = 0;
+      }
+      applyPianoRollParameterLaneHeight();
+      updatePianoRollGeometry({ horizontal: false, vertical: true });
+      scheduleLocalStorageSet(
+        "midi_host_piano_roll_parameter_lane_height_v1",
+        state.pianoRollParameterLaneHeight
+      );
+      return;
+    }
+
     if (!state.pianoRollResizing) return;
     state.pianoRollResizing = false;
     document.getElementById("pianoRollDock")?.classList.remove("resizing");
@@ -9468,8 +9521,23 @@ body.timeline-ruler-seeking {
       cancelAnimationFrame(state.pianoRollResizeRenderFrame);
       state.pianoRollResizeRenderFrame = 0;
     }
+    applyPianoRollParameterLaneHeight();
     updatePianoRollGeometry({ horizontal: false, vertical: true });
     scheduleLocalStorageSet("midi_host_piano_roll_height_v1", state.pianoRollHeight);
+  });
+
+  document.addEventListener("pointercancel", (event) => {
+    if (!state.pianoRollParameterResizing) return;
+    state.pianoRollParameterResizing = false;
+    document.getElementById("pianoRollDock")?.classList.remove("parameter-resizing");
+    document.body.classList.remove("piano-roll-parameter-resizing");
+    try { pianoRollParameterResizer?.releasePointerCapture?.(event.pointerId); } catch {}
+    if (state.pianoRollParameterResizeRenderFrame) {
+      cancelAnimationFrame(state.pianoRollParameterResizeRenderFrame);
+      state.pianoRollParameterResizeRenderFrame = 0;
+    }
+    applyPianoRollParameterLaneHeight();
+    updatePianoRollGeometry({ horizontal: false, vertical: true });
   });
 
   document.getElementById("pianoRollSnap")?.addEventListener("change", (event) => {
@@ -9549,6 +9617,12 @@ body.timeline-ruler-seeking {
     const savedPianoRowH = Number(localStorage.getItem("midi_host_piano_roll_row_h_v1"));
     if (Number.isFinite(savedPianoRowH) && savedPianoRowH >= 10 && savedPianoRowH <= 48) {
       state.pianoRollRowH = savedPianoRowH;
+    }
+    const savedParameterLaneHeight = Number(
+      localStorage.getItem("midi_host_piano_roll_parameter_lane_height_v1")
+    );
+    if (Number.isFinite(savedParameterLaneHeight) && savedParameterLaneHeight >= 64) {
+      state.pianoRollParameterLaneHeight = Math.min(320, savedParameterLaneHeight);
     }
   } catch {}
 
