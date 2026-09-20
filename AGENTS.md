@@ -339,6 +339,16 @@ Playback в Style Library использует короткий lookahead schedu
   - **Acid Rock 2** — тот же drum family + Kick Lock Long bass.
 - Не путать cloud project и user style: project — конкретная аранжировка, style — переиспользуемый шаблон.
 
+## Project Clip Piano Roll
+
+- Loop Browser остаётся только источником preview/drag-and-drop. После drop MIDI становится **Project Clip** на timeline; Piano Roll никогда не редактирует Library Loop напрямую.
+- **Piano Roll v0.1** — read-only фундамент: двойной клик по Project Clip открывает нижний dock с нотами только этого clip instance.
+- Dock показывает track + имя clip, project bar range, note count, вертикальные MIDI note labels, bar/beat grid, реальную высоту/start/duration нот и playhead, синхронизированный с главным transport.
+- Нижний Piano Roll можно закрыть и менять по высоте drag'ом верхнего разделителя; высота сохраняется в localStorage `midi_host_piano_roll_height_v1`.
+- Редактирование нот пока намеренно отсутствует. Следующая итерация: select/create/move/resize/delete нот внутри конкретного Project Clip.
+- Source/provenance Library Loop сохраняется у Project Clip, но объектом будущего редактирования является конкретный instance на timeline, а не исходный MIDI в библиотеке.
+
+
 ## GM-оркестровка (скетч-дорожки)
 
 Для разнообразия длинных партий (например Acid → духовые / фортепиано) добавляй **отдельные дорожки** под General MIDI. **Program Change не используем** — один трек = один инструмент навсегда.
