@@ -9414,8 +9414,11 @@ body.timeline-ruler-seeking {
     event.preventDefault();
     state.pianoRollParameterResizing = true;
     state.pianoRollParameterResizeStartY = event.clientY;
+    const dockHeight = dock.getBoundingClientRect().height || state.pianoRollHeight || 290;
     state.pianoRollParameterResizeStartHeight =
       lane.getBoundingClientRect().height || state.pianoRollParameterLaneHeight || 92;
+    state.pianoRollParameterResizeMaxHeight =
+      Math.max(64, Math.min(320, dockHeight - 88));
     dock.classList.add("parameter-resizing");
     document.body.classList.add("piano-roll-parameter-resizing");
     pianoRollParameterResizer.setPointerCapture?.(event.pointerId);
@@ -9438,19 +9441,20 @@ body.timeline-ruler-seeking {
   document.addEventListener("pointermove", (event) => {
     if (state.pianoRollParameterResizing) {
       const delta = state.pianoRollParameterResizeStartY - event.clientY;
-      state.pianoRollParameterLaneHeight = clampPianoRollParameterLaneHeight(
-        state.pianoRollParameterResizeStartHeight + delta
+      const nextHeight = Math.max(
+        64,
+        Math.min(
+          state.pianoRollParameterResizeMaxHeight || 320,
+          state.pianoRollParameterResizeStartHeight + delta
+        )
       );
-      const lane = document.getElementById("pianoRollParameterLane");
-      if (lane) lane.style.height = state.pianoRollParameterLaneHeight + "px";
+      state.pianoRollParameterLaneHeight = nextHeight;
 
-      if (!state.pianoRollParameterResizeRenderFrame) {
-        state.pianoRollParameterResizeRenderFrame = requestAnimationFrame(() => {
-          state.pianoRollParameterResizeRenderFrame = 0;
-          applyPianoRollParameterLaneHeight();
-          updatePianoRollGeometry({ horizontal: false, vertical: true });
-        });
-      }
+      scheduleUiFrame("piano-parameter-lane-resize", () => {
+        if (!state.pianoRollParameterResizing) return;
+        const lane = document.getElementById("pianoRollParameterLane");
+        if (lane) lane.style.height = state.pianoRollParameterLaneHeight + "px";
+      });
       return;
     }
 
@@ -9483,10 +9487,6 @@ body.timeline-ruler-seeking {
       document.getElementById("pianoRollDock")?.classList.remove("parameter-resizing");
       document.body.classList.remove("piano-roll-parameter-resizing");
       try { pianoRollParameterResizer?.releasePointerCapture?.(event.pointerId); } catch {}
-      if (state.pianoRollParameterResizeRenderFrame) {
-        cancelAnimationFrame(state.pianoRollParameterResizeRenderFrame);
-        state.pianoRollParameterResizeRenderFrame = 0;
-      }
       applyPianoRollParameterLaneHeight();
       updatePianoRollGeometry({ horizontal: false, vertical: true });
       scheduleLocalStorageSet(
@@ -9516,10 +9516,6 @@ body.timeline-ruler-seeking {
     document.getElementById("pianoRollDock")?.classList.remove("parameter-resizing");
     document.body.classList.remove("piano-roll-parameter-resizing");
     try { pianoRollParameterResizer?.releasePointerCapture?.(event.pointerId); } catch {}
-    if (state.pianoRollParameterResizeRenderFrame) {
-      cancelAnimationFrame(state.pianoRollParameterResizeRenderFrame);
-      state.pianoRollParameterResizeRenderFrame = 0;
-    }
     applyPianoRollParameterLaneHeight();
     updatePianoRollGeometry({ horizontal: false, vertical: true });
   });
