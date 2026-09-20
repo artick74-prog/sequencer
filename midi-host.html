@@ -1166,6 +1166,9 @@ select, input[type="number"], input[type="text"] {
   line-height: 1.1;
 }
 .piano-roll-parameter-head span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
   color: #aab6c6;
   font-size: 14px;
   line-height: 1.15;
@@ -8048,8 +8051,7 @@ body.timeline-ruler-seeking {
         if (meta) {
           const current = Math.max(1, Math.min(127, Number(note.velocity) || 100));
           meta.textContent =
-            (origins.length > 1 ? origins.length + " notes · " : "vel ") +
-            current;
+            (origins.length > 1 ? origins.length + "× " : "") + current;
         }
       };
 
@@ -8075,7 +8077,7 @@ body.timeline-ruler-seeking {
           );
         } else {
           const meta = document.getElementById("pianoRollParameterMeta");
-          if (meta) meta.textContent = "range 1–127";
+          if (meta) meta.textContent = "1–127";
         }
       };
 
@@ -8092,7 +8094,7 @@ body.timeline-ruler-seeking {
           if (origin.bar) updatePianoRollVelocityBar(origin.bar, origin.note);
         }
         const meta = document.getElementById("pianoRollParameterMeta");
-        if (meta) meta.textContent = "range 1–127";
+        if (meta) meta.textContent = "1–127";
       };
 
       bar.addEventListener("pointermove", onMove);
@@ -8110,7 +8112,7 @@ body.timeline-ruler-seeking {
     if (!ctx) return;
 
     if (name) name.textContent = "Velocity";
-    if (meta) meta.textContent = "range 1–127";
+    if (meta) meta.textContent = "1–127";
     applyPianoRollParameterLaneHeight();
 
     const grid = document.getElementById("pianoRollGrid");
