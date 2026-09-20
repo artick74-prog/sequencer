@@ -7024,6 +7024,11 @@ body.timeline-ruler-seeking {
           note.clipId = clip.instanceId;
         }
       }
+      for (const event of track.midiControls || []) {
+        if (!event.clipId && event.tick >= start && event.tick < end) {
+          event.clipId = clip.instanceId;
+        }
+      }
     });
 
     return project;
@@ -7979,6 +7984,25 @@ body.timeline-ruler-seeking {
     return owned;
   }
 
+  function hostClipOwnedMidiControls(clip, track) {
+    const instanceId = hostClipInstanceId(
+      clip,
+      Math.max(0, (state.project?.clips || []).indexOf(clip))
+    );
+    clip.instanceId = instanceId;
+    track.midiControls = Array.isArray(track?.midiControls) ? track.midiControls : [];
+    let owned = track.midiControls.filter((event) => event.clipId === instanceId);
+    if (owned.length) return owned;
+
+    const start = Math.max(0, Number(clip.startTick) || 0);
+    const end = Math.max(start + 1, Number(clip.endTick) || (start + 1));
+    owned = track.midiControls.filter(
+      (event) => !event.clipId && event.tick >= start && event.tick < end
+    );
+    for (const event of owned) event.clipId = instanceId;
+    return owned;
+  }
+
   function selectedHostClipContext() {
     if (!state.project || !state.selectedClipId) return null;
     const clip = (state.project.clips || []).find(
@@ -8023,8 +8047,14 @@ body.timeline-ruler-seeking {
         return noteStart < endTick && noteEnd > startTick;
       })
       .sort((a,b) => Number(a.tick) - Number(b.tick) || Number(a.note) - Number(b.note));
+    const midiControls = hostClipOwnedMidiControls(clip, track)
+      .filter((event) => {
+        const tick = Number(event.tick) || 0;
+        return tick >= startTick && tick < endTick;
+      })
+      .sort((a,b) => Number(a.tick) - Number(b.tick));
 
-    return { clip, track, ppq, startTick, endTick, notes };
+    return { clip, track, ppq, startTick, endTick, notes, midiControls };
   }
 
   function closePianoRoll({ silent = false } = {}) {
