@@ -8181,7 +8181,6 @@ body.timeline-ruler-seeking {
 
   function attachPianoRollNoteEditor(block, resizeHandle, note, ctx, layout) {
     const noteId = pianoRollNoteId(note);
-    const { rollW, rowH, maxNote, spanTicks } = layout;
     const snap = pianoRollSnapTicks(ctx.ppq);
 
     block.addEventListener("click", (event) => {
@@ -8198,6 +8197,9 @@ body.timeline-ruler-seeking {
       else if (!pianoRollSelectedIdSet().has(noteId)) pianoRollSelectNote(noteId);
       if (!pianoRollSelectedIdSet().has(noteId)) return;
 
+      const liveLayout = pianoRollEditorLayout(ctx);
+      if (!liveLayout) return;
+      const { rollW, rowH, maxNote, spanTicks } = liveLayout;
       const selectedNotes = pianoRollSelectedNotes(ctx);
       const origins = selectedNotes.map((item) => ({
         note: item,
@@ -8205,6 +8207,9 @@ body.timeline-ruler-seeking {
         tick: Number(item.tick) || 0,
         pitch: Number(item.note) || 0,
         duration: Math.max(1, Number(item.duration) || 1),
+        el: document.querySelector(
+          '.piano-roll-note[data-piano-note-id="' + CSS.escape(pianoRollNoteId(item)) + '"]'
+        ),
       }));
       const minTick = Math.min(...origins.map((item) => item.tick));
       const maxEnd = Math.max(...origins.map((item) => item.tick + item.duration));
@@ -8221,10 +8226,11 @@ body.timeline-ruler-seeking {
       block.classList.add("dragging");
       block.setPointerCapture?.(event.pointerId);
 
-      const onMove = (moveEvent) => {
-        if (!(moveEvent.buttons & 1)) return;
-        const dx = moveEvent.clientX - originX;
-        const dy = moveEvent.clientY - originY;
+      let dragActive = true;
+      const applyMove = (clientX, clientY) => {
+        if (!dragActive) return;
+        const dx = clientX - originX;
+        const dy = clientY - originY;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
         let deltaTicks = Math.round(rawDeltaTicks / snap) * snap;
         deltaTicks = Math.max(ctx.startTick - minTick, Math.min(ctx.endTick - maxEnd, deltaTicks));
@@ -8236,9 +8242,7 @@ body.timeline-ruler-seeking {
         moved = moved || deltaTicks !== 0 || deltaPitch !== 0;
 
         for (const origin of origins) {
-          const el = document.querySelector(
-            '.piano-roll-note[data-piano-note-id="' + CSS.escape(origin.id) + '"]'
-          );
+          const el = origin.el;
           if (!el) continue;
           const tick = origin.tick + deltaTicks;
           const pitch = origin.pitch + deltaPitch;
@@ -8253,7 +8257,16 @@ body.timeline-ruler-seeking {
         }
       };
 
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const clientX = moveEvent.clientX;
+        const clientY = moveEvent.clientY;
+        scheduleUiFrame("piano-note-drag-" + noteId, () => applyMove(clientX, clientY));
+      };
+
       const finish = (upEvent) => {
+        applyMove(upEvent.clientX, upEvent.clientY);
+        dragActive = false;
         block.removeEventListener("pointermove", onMove);
         block.removeEventListener("pointerup", finish);
         block.removeEventListener("pointercancel", cancel);
@@ -8272,18 +8285,17 @@ body.timeline-ruler-seeking {
             (previewDeltaPitch ? " · transpose " + (previewDeltaPitch > 0 ? "+" : "") + previewDeltaPitch : ""),
             origins[origins.length - 1].note.note
           );
-        } else {
-          renderPianoRoll();
         }
       };
 
       const cancel = (cancelEvent) => {
+        dragActive = false;
         block.removeEventListener("pointermove", onMove);
         block.removeEventListener("pointerup", finish);
         block.removeEventListener("pointercancel", cancel);
         try { block.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
         block.classList.remove("dragging");
-        renderPianoRoll();
+        updatePianoRollGeometry();
       };
 
       block.addEventListener("pointermove", onMove);
@@ -8298,6 +8310,9 @@ body.timeline-ruler-seeking {
       event.stopPropagation();
       if (!pianoRollSelectedIdSet().has(noteId)) pianoRollSelectNote(noteId);
 
+      const liveLayout = pianoRollEditorLayout(ctx);
+      if (!liveLayout) return;
+      const { rollW, spanTicks } = liveLayout;
       const originX = event.clientX;
       const originDuration = Math.max(1, Number(note.duration) || 1);
       const maxDuration = Math.max(1, ctx.endTick - (Number(note.tick) || 0));
@@ -8307,17 +8322,25 @@ body.timeline-ruler-seeking {
       block.classList.add("resizing");
       resizeHandle.setPointerCapture?.(event.pointerId);
 
-      const onMove = (moveEvent) => {
-        if (!(moveEvent.buttons & 1)) return;
-        const dx = moveEvent.clientX - originX;
+      let resizeActive = true;
+      const applyResize = (clientX) => {
+        if (!resizeActive) return;
+        const dx = clientX - originX;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
         const deltaTicks = Math.round(rawDeltaTicks / snap) * snap;
         previewDuration = Math.max(1, Math.min(maxDuration, originDuration + deltaTicks));
         changed = changed || previewDuration !== originDuration;
         block.style.width = Math.max(3, (previewDuration / Math.max(1, spanTicks)) * rollW) + "px";
       };
+      const onMove = (moveEvent) => {
+        if (!(moveEvent.buttons & 1)) return;
+        const clientX = moveEvent.clientX;
+        scheduleUiFrame("piano-note-resize-" + noteId, () => applyResize(clientX));
+      };
 
       const finish = (upEvent) => {
+        applyResize(upEvent.clientX);
+        resizeActive = false;
         resizeHandle.removeEventListener("pointermove", onMove);
         resizeHandle.removeEventListener("pointerup", finish);
         resizeHandle.removeEventListener("pointercancel", cancel);
@@ -8332,18 +8355,17 @@ body.timeline-ruler-seeking {
             "Resized " + midiToName(note.note) +
             " → " + (note.duration / Math.max(1, ctx.ppq)).toFixed(2) + " beats"
           );
-        } else {
-          renderPianoRoll();
         }
       };
 
       const cancel = (cancelEvent) => {
+        resizeActive = false;
         resizeHandle.removeEventListener("pointermove", onMove);
         resizeHandle.removeEventListener("pointerup", finish);
         resizeHandle.removeEventListener("pointercancel", cancel);
         try { resizeHandle.releasePointerCapture?.(cancelEvent.pointerId); } catch {}
         block.classList.remove("resizing");
-        renderPianoRoll();
+        updatePianoRollGeometry();
       };
 
       resizeHandle.addEventListener("pointermove", onMove);
