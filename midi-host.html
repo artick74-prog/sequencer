@@ -2091,7 +2091,6 @@ body.timeline-ruler-seeking {
           <span class="piano-roll-tools" aria-label="Piano Roll edit tools">
             <button class="btn" id="pianoUndo" type="button" title="Undo · Ctrl+Z">↶</button>
             <button class="btn" id="pianoRedo" type="button" title="Redo · Ctrl+Y / Ctrl+Shift+Z">↷</button>
-            <button class="btn" id="pianoDup" type="button" title="Duplicate selected notes · Ctrl+D">Dup</button>
           </span>
           <button class="btn" id="btnClosePianoRoll" type="button" title="Close Piano Roll">Close</button>
         </div>
@@ -8606,7 +8605,7 @@ body.timeline-ruler-seeking {
 
     if (event.target.closest?.(".piano-roll-keys, .piano-roll-key")) {
       setPianoRollVerticalZoom(
-        event.deltaY > 0 ? 1.12 : 1 / 1.12,
+        event.deltaY < 0 ? 1.12 : 1 / 1.12,
         event.clientY
       );
       return;
@@ -8709,7 +8708,6 @@ body.timeline-ruler-seeking {
 
   document.getElementById("pianoUndo")?.addEventListener("click", pianoRollUndo);
   document.getElementById("pianoRedo")?.addEventListener("click", pianoRollRedo);
-  document.getElementById("pianoDup")?.addEventListener("click", duplicateSelectedPianoRollNotes);
 
   document.getElementById("btnClosePianoRoll")?.addEventListener("click", () => {
     closePianoRoll();
