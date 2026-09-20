@@ -7761,7 +7761,7 @@ body.timeline-ruler-seeking {
       const enabled = !!state.pianoRollSnapEnabled;
       button.classList.toggle("active", enabled);
       button.setAttribute("aria-pressed", enabled ? "true" : "false");
-      button.textContent = enabled ? "Snap to Grid" : "Snap Off";
+      button.textContent = "Snap to Grid";
       button.title = enabled
         ? "Snap ON · note movement and editing follow the selected grid"
         : "Snap OFF · notes can move freely between grid lines";
