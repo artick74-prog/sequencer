@@ -2882,10 +2882,20 @@ body.timeline-ruler-seeking {
   function drumAuditionPitchForView(track, displayPitch, viewMap = null) {
     if (!trackIsPercussion(track)) return Number(displayPitch) || 0;
     const map = viewMap || pianoRollDrumViewMap({ track });
-    if (map === "gm" && drumMapForTrack(track) === "xr20") {
-      return resolveGmDrumToXr20(track, displayPitch)?.midiNote ?? null;
+    const pitch = Number(displayPitch) || 0;
+
+    if (isXr20DrumTrack(track) && drumListenForTrack(track) === "gm") {
+      if (map === "gm") return pitch;
+      const hardware = xr20HardwarePadByMidi(pitch);
+      if (!hardware) return null;
+      const assignment = xr20KitAssignment(currentXr20KitProfile(track), hardware.pad);
+      return assignment.gmNote == null ? null : Number(assignment.gmNote);
     }
-    return Number(displayPitch) || 0;
+
+    if (map === "gm" && drumMapForTrack(track) === "xr20") {
+      return resolveGmDrumToXr20(track, pitch)?.midiNote ?? null;
+    }
+    return pitch;
   }
 
   function createDefaultXr20KitProfile() {
