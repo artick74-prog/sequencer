@@ -2846,6 +2846,100 @@ body.timeline-ruler-seeking {
     return null;
   }
 
+  function drumNoteMetaCopy(note) {
+    const out = {};
+    const source = Number(note?.drumSourceNote);
+    const pad = Number(note?.drumPad);
+    if (Number.isInteger(source) && source >= 0 && source <= 127) {
+      out.drumSourceNote = source;
+      out.drumSourceName = String(note?.drumSourceName || gmDrumName(source));
+    }
+    if (Number.isInteger(pad) && pad >= 1 && pad <= 12) out.drumPad = pad;
+    if (note?.drumUnresolved) out.drumUnresolved = true;
+    return out;
+  }
+
+  function syncDrumNoteTargetMetadata(track, note, { preserveSource = true } = {}) {
+    if (!trackIsPercussion(track) || !note) return note;
+    if (drumMapForTrack(track) === "gm") {
+      note.drumSourceNote = Number(note.note) | 0;
+      note.drumSourceName = gmDrumName(note.drumSourceNote);
+      delete note.drumPad;
+      note.drumUnresolved = false;
+      return note;
+    }
+
+    const hardware = xr20HardwarePadByMidi(note.note);
+    if (!hardware) {
+      note.drumUnresolved = true;
+      delete note.drumPad;
+      return note;
+    }
+    note.drumPad = hardware.pad;
+    note.drumUnresolved = false;
+
+    if (!preserveSource || note.drumSourceNote == null) {
+      const assignment = xr20KitAssignment(currentXr20KitProfile(track), hardware.pad);
+      if (assignment.gmNote != null) {
+        note.drumSourceNote = Number(assignment.gmNote);
+        note.drumSourceName = gmDrumName(assignment.gmNote);
+      } else if (!preserveSource) {
+        delete note.drumSourceNote;
+        delete note.drumSourceName;
+      }
+    }
+    return note;
+  }
+
+  function prepareImportedDrumNote(entry, targetTrack, rawNote) {
+    const sourceNote = hostLoopMapDrumNote(entry, rawNote);
+    if (drumMapForTrack(targetTrack) === "gm") {
+      return {
+        note: sourceNote,
+        drumSourceNote: sourceNote,
+        drumSourceName: gmDrumName(sourceNote),
+        drumUnresolved: false,
+      };
+    }
+
+    const resolved = resolveGmDrumToXr20(targetTrack, sourceNote);
+    if (resolved) {
+      return {
+        note: resolved.midiNote,
+        drumSourceNote: sourceNote,
+        drumSourceName: gmDrumName(sourceNote),
+        drumPad: resolved.pad,
+        drumUnresolved: false,
+      };
+    }
+    return {
+      note: sourceNote,
+      drumSourceNote: sourceNote,
+      drumSourceName: gmDrumName(sourceNote),
+      drumUnresolved: true,
+    };
+  }
+
+  function resolveUnmappedDrumNotesForProfile(profileId) {
+    if (!state.project) return 0;
+    let resolvedCount = 0;
+    for (const track of state.project.tracks || []) {
+      if (!isXr20DrumTrack(track) || String(track.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID) !== String(profileId)) {
+        continue;
+      }
+      for (const note of track.notes || []) {
+        if (!note.drumUnresolved || note.drumSourceNote == null) continue;
+        const target = resolveGmDrumToXr20(track, note.drumSourceNote);
+        if (!target) continue;
+        note.note = target.midiNote;
+        note.drumPad = target.pad;
+        note.drumUnresolved = false;
+        resolvedCount++;
+      }
+    }
+    return resolvedCount;
+  }
+
   function pianoRollDisplayRows(ctx = pianoRollContext()) {
     const track = ctx?.track;
     if (!trackIsPercussion(track)) {
@@ -5825,6 +5919,110 @@ body.timeline-ruler-seeking {
     stopRhythmAudition({ restartTarget:true });
   }
 
+  let drumKitEditingTrackId = "";
+
+  function closeDrumKitEditor() {
+    drumKitEditingTrackId = "";
+    const modal = document.getElementById("drumKitModal");
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden", "true");
+  }
+
+  function drumKitGmOptions(selected) {
+    const options = ['<option value="">— unassigned —</option>'];
+    for (const note of Object.keys(GM_DRUM_NOTE_NAMES).map(Number).sort((a,b)=>a-b)) {
+      options.push(
+        '<option value="' + note + '"' + (Number(selected) === note ? ' selected' : '') + '>' +
+        note + ' · ' + escapeHtml(gmDrumName(note)) + '</option>'
+      );
+    }
+    return options.join("");
+  }
+
+  function openDrumKitEditor(track) {
+    if (!state.project || !track || !isXr20DrumTrack(track)) return;
+    drumKitEditingTrackId = track.id;
+    const profile = currentXr20KitProfile(track);
+    const modal = document.getElementById("drumKitModal");
+    const grid = document.getElementById("drumKitGrid");
+    const name = document.getElementById("drumKitProfileName");
+    const trackName = document.getElementById("drumKitTrackName");
+    if (!modal || !grid || !name) return;
+
+    name.value = profile.name || "XR20 Kit 1";
+    if (trackName) trackName.textContent = track.name + " · first 12 DRUM pads";
+
+    grid.innerHTML =
+      '<div class="drum-kit-cell head">PAD</div>' +
+      '<div class="drum-kit-cell head">XR20 MIDI</div>' +
+      '<div class="drum-kit-cell head">GM source instrument</div>' +
+      '<div class="drum-kit-cell head">Custom label</div>';
+
+    for (const hardware of XR20_DRUM_HARDWARE_MAP) {
+      const assignment = xr20KitAssignment(profile, hardware.pad);
+      grid.insertAdjacentHTML("beforeend",
+        '<div class="drum-kit-cell"><strong>PAD ' + hardware.pad + '</strong></div>' +
+        '<div class="drum-kit-cell"><code>' + hardware.midiNote + ' · ' + NOTE_NAMES[hardware.midiNote % 12] + '</code></div>' +
+        '<div class="drum-kit-cell"><select data-kit-gm="' + hardware.pad + '">' +
+          drumKitGmOptions(assignment.gmNote) +
+        '</select></div>' +
+        '<div class="drum-kit-cell"><input data-kit-label="' + hardware.pad + '" type="text" value="' +
+          escapeHtml(assignment.label || "") + '" placeholder="optional"></div>'
+      );
+    }
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function saveDrumKitEditor() {
+    if (!state.project || !drumKitEditingTrackId) return false;
+    const track = state.project.tracks.find((item) => item.id === drumKitEditingTrackId);
+    if (!track) return false;
+    const profile = currentXr20KitProfile(track);
+    const profileIndex = state.project.drumKitProfiles.findIndex((item) => item.id === profile.id);
+    const assignments = {};
+
+    for (const hardware of XR20_DRUM_HARDWARE_MAP) {
+      const gmSelect = document.querySelector('[data-kit-gm="' + hardware.pad + '"]');
+      const labelInput = document.querySelector('[data-kit-label="' + hardware.pad + '"]');
+      const raw = gmSelect?.value || "";
+      assignments[String(hardware.pad)] = {
+        gmNote: raw === "" ? null : Number(raw),
+        label: String(labelInput?.value || "").trim(),
+      };
+    }
+
+    const updated = {
+      id: profile.id,
+      name: String(document.getElementById("drumKitProfileName")?.value || profile.name || "XR20 Kit 1").trim() || "XR20 Kit 1",
+      device: "xr20",
+      assignments,
+    };
+    if (profileIndex >= 0) state.project.drumKitProfiles[profileIndex] = updated;
+    else state.project.drumKitProfiles.push(updated);
+    track.drumKitProfileId = updated.id;
+
+    const resolved = resolveUnmappedDrumNotesForProfile(updated.id);
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    closeDrumKitEditor();
+    renderAll();
+    setStatus(
+      "XR20 Kit Profile saved · " +
+      resolved + " previously unresolved drum note" + (resolved === 1 ? "" : "s") + " resolved",
+      "ok"
+    );
+    return true;
+  }
+
+  document.getElementById("drumKitClose")?.addEventListener("click", closeDrumKitEditor);
+  document.getElementById("drumKitCancel")?.addEventListener("click", closeDrumKitEditor);
+  document.getElementById("drumKitSave")?.addEventListener("click", saveDrumKitEditor);
+  document.getElementById("drumKitModal")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeDrumKitEditor();
+  });
+
   function openHostLoopBrowser() {
     if (document.getElementById("rhythmBrowser")?.classList.contains("open")) closeRhythmBrowser();
     const drawer = document.getElementById("hostLoopBrowser");
@@ -5911,7 +6109,7 @@ body.timeline-ruler-seeking {
       (track.midiControls || []).map((event) => ({ ...event, channel: track.channel || 1 }))
     );
 
-    const targetIsDrums = targetTrack.channel === 10 || targetTrack.role === "xr20-drums";
+    const targetIsDrums = trackIsPercussion(targetTrack);
     let selected = targetIsDrums
       ? flattened.filter((note) => note.channel === 10)
       : flattened.filter((note) => note.channel !== 10);
@@ -5924,22 +6122,24 @@ body.timeline-ruler-seeking {
 
     const clipInstanceId = newHostClipInstanceId();
     let insertedEnd = startTick;
+    let unresolvedDrumNotes = 0;
     const newNotes = selected.map((note) => {
       const tick = startTick + Math.max(0, Math.round(note.tick * scale));
       const duration = Math.max(1, Math.round(note.duration * scale));
       insertedEnd = Math.max(insertedEnd, tick + duration);
+
+      const drum = targetIsDrums
+        ? prepareImportedDrumNote(entry, targetTrack, note.note)
+        : null;
+      if (drum?.drumUnresolved) unresolvedDrumNotes++;
+
       return {
         tick,
         duration,
-        note: Math.max(
-          0,
-          Math.min(
-            127,
-            targetIsDrums ? hostLoopMapDrumNote(entry, note.note) : (note.note | 0)
-          )
-        ),
+        note: Math.max(0, Math.min(127, drum ? drum.note : (note.note | 0))),
         velocity: Math.max(1, Math.min(127, note.velocity | 0)),
         clipId: clipInstanceId,
+        ...(drum || {}),
       };
     });
 
@@ -5977,6 +6177,11 @@ body.timeline-ruler-seeking {
       repeatCount: 1,
       sourcePpq,
       noteCount: newNotes.length,
+      ...(targetIsDrums ? {
+        drumSourceMap: "gm",
+        drumTargetMap: drumMapForTrack(targetTrack),
+        unresolvedDrumNotes,
+      } : {}),
       insertedAt: new Date().toISOString(),
     });
     state.selectedClipId = clipInstanceId;
@@ -5992,7 +6197,9 @@ body.timeline-ruler-seeking {
     setStatus(
       "Inserted loop “" + hostLoopDisplayName(entry) + "” → " + targetTrack.name +
       " @ bar " + tickToBar(startTick, targetPpq) +
-      " · " + newNotes.length + " notes · UNSAVED cloud changes",
+      " · " + newNotes.length + " notes" +
+      (unresolvedDrumNotes ? " · " + unresolvedDrumNotes + " unresolved GM drum hits (not sent to XR20)" : "") +
+      " · UNSAVED cloud changes",
       "ok"
     );
     hostLoopSetStatus(
@@ -6923,10 +7130,17 @@ body.timeline-ruler-seeking {
           ? Math.min(range.end, offTick + swingOffset)
           : offTick + swingOffset;
         const playbackNote = projectPlaybackNote(project, track, n.note);
+        const sourceDrumNote =
+          trackIsPercussion(track) && n.drumSourceNote != null
+            ? Math.max(0, Math.min(127, Number(n.drumSourceNote) || 0))
+            : playbackNote;
+        const skipHardware = isXr20DrumTrack(track) && !!n.drumUnresolved;
         queue.push({
           tick: playbackStart,
           type: "on",
           note: playbackNote,
+          sf2Note: sourceDrumNote,
+          skipHardware,
           velocity: n.velocity,
           ch,
           route,
@@ -6937,6 +7151,8 @@ body.timeline-ruler-seeking {
           tick: Math.max(playbackStart + 1, playbackEnd),
           type: "off",
           note: playbackNote,
+          sf2Note: sourceDrumNote,
+          skipHardware,
           velocity: 0,
           ch,
           route,
@@ -7021,7 +7237,7 @@ body.timeline-ruler-seeking {
       const targetTime = state.startPerf + ticksToMs(item.offsetTicks, tempo, ppq);
       if (targetTime > deadline) return true;
       advanceScheduleCursor(cursor);
-      if (!eventIsAudible(item.event)) continue;
+      if (!eventIsAudible(item.event) || item.event.skipHardware) continue;
       try {
         const message = midiMessageForEvent(item.event);
         if (!message.length) continue;
@@ -7042,10 +7258,11 @@ body.timeline-ruler-seeking {
     const send = () => {
       if (!state.playing || state.playbackToken !== token) return;
       if (!eventIsAudible(event)) return;
+      const sf2Note = event.sf2Note == null ? event.note : event.sf2Note;
       if (event.type === "on") {
-        sf2NoteOn(event.ch, event.note, event.velocity);
+        sf2NoteOn(event.ch, sf2Note, event.velocity);
       } else if (event.type === "off") {
-        sf2NoteOff(event.ch, event.note);
+        sf2NoteOff(event.ch, sf2Note);
       } else {
         const synth = sf2Synth();
         if (!synth) return;
@@ -7422,6 +7639,7 @@ body.timeline-ruler-seeking {
             velocity: n.velocity | 0,
             td3Slide: !!n.td3Slide,
             clipId: n.clipId ? String(n.clipId) : "",
+            ...drumNoteMetaCopy(n),
           })),
           midiControls: (t.midiControls || []).map((event) => ({
             tick: Math.max(0, Number(event.tick) || 0),
