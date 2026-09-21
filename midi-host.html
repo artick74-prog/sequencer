@@ -2652,6 +2652,7 @@ body.timeline-ruler-seeking {
   const MIDI_MONITOR_MAX = 10000;
   const MIDI_MONITOR_VISIBLE = 500;
   const midiMonitorEvents = [];
+  let midiMonitorWriteIndex = 0;
   let midiMonitorPaused = false;
   let midiMonitorRenderQueued = false;
 
@@ -6984,15 +6985,28 @@ body.timeline-ruler-seeking {
     };
   }
 
+  function midiMonitorIsOpen() {
+    return !!document.getElementById("midiMonitorModal")?.classList.contains("open");
+  }
+
+  function orderedMidiMonitorEvents() {
+    if (midiMonitorEvents.length < MIDI_MONITOR_MAX || midiMonitorWriteIndex === 0) {
+      return midiMonitorEvents;
+    }
+    return midiMonitorEvents
+      .slice(midiMonitorWriteIndex)
+      .concat(midiMonitorEvents.slice(0, midiMonitorWriteIndex));
+  }
+
   function renderMidiMonitor() {
     midiMonitorRenderQueued = false;
-    if (midiMonitorPaused) return;
+    if (midiMonitorPaused || !midiMonitorIsOpen()) return;
 
     const log = document.getElementById("midiMonitorLog");
     const count = document.getElementById("midiMonitorCount");
     if (!log || !count) return;
 
-    const visibleEvents = midiMonitorEvents.slice(-MIDI_MONITOR_VISIBLE);
+    const visibleEvents = orderedMidiMonitorEvents().slice(-MIDI_MONITOR_VISIBLE);
     count.textContent =
       midiMonitorEvents.length.toLocaleString("ru-RU") + " stored" +
       (midiMonitorEvents.length > visibleEvents.length
@@ -7037,12 +7051,20 @@ body.timeline-ruler-seeking {
   }
 
   function queueMidiMonitorRender() {
-    if (midiMonitorPaused || midiMonitorRenderQueued) return;
+    if (midiMonitorPaused || midiMonitorRenderQueued || !midiMonitorIsOpen()) return;
     midiMonitorRenderQueued = true;
-    requestAnimationFrame(renderMidiMonitor);
+    // The monitor is a diagnostic view, not part of the real-time scheduler.
+    // Updating it at ~10 fps is plenty and prevents hundreds of DOM nodes from
+    // being rebuilt every animation frame while MIDI is playing.
+    setTimeout(renderMidiMonitor, 100);
   }
 
   function logMidiOut(message, timestamp = null, source = "host") {
+    // Normal playback must not pay the cost of diagnostic string formatting,
+    // locale time conversion, ring-buffer maintenance or DOM redraws while the
+    // MIDI Monitor modal is closed.
+    if (!midiMonitorIsOpen()) return;
+
     const decoded = midiMonitorMessageText(message);
     const nowPerf = performance.now();
     const scheduledMs = Number.isFinite(Number(timestamp)) ? Number(timestamp) - nowPerf : 0;
@@ -7051,23 +7073,26 @@ body.timeline-ruler-seeking {
       now.toLocaleTimeString("en-GB", { hour12: false }) +
       "." + String(now.getMilliseconds()).padStart(3, "0");
 
-    midiMonitorEvents.push({
+    const event = {
       time,
       source: String(source || "host"),
       channel: decoded.channel,
       text: decoded.text,
       raw: decoded.raw,
       scheduleText: scheduledMs > 2 ? ("scheduled +" + Math.round(scheduledMs) + " ms") : "",
-    });
-    if (midiMonitorEvents.length > MIDI_MONITOR_MAX) {
-      midiMonitorEvents.splice(0, midiMonitorEvents.length - MIDI_MONITOR_MAX);
+    };
+    if (midiMonitorEvents.length < MIDI_MONITOR_MAX) {
+      midiMonitorEvents.push(event);
+    } else {
+      midiMonitorEvents[midiMonitorWriteIndex] = event;
+      midiMonitorWriteIndex = (midiMonitorWriteIndex + 1) % MIDI_MONITOR_MAX;
     }
     queueMidiMonitorRender();
   }
 
   function midiSend(output, message, timestamp = null, source = "host") {
     if (!output) return;
-    logMidiOut(message, timestamp, source);
+    if (midiMonitorIsOpen()) logMidiOut(message, timestamp, source);
     if (Number.isFinite(Number(timestamp))) output.send(message, Number(timestamp));
     else output.send(message);
   }
@@ -7311,6 +7336,7 @@ body.timeline-ruler-seeking {
 
   function clearMidiMonitor() {
     midiMonitorEvents.length = 0;
+    midiMonitorWriteIndex = 0;
     renderMidiMonitor();
   }
 
@@ -7325,7 +7351,7 @@ body.timeline-ruler-seeking {
       "",
       "time\tsource\tchannel\tmessage\traw",
     ];
-    const rows = midiMonitorEvents.map((event) => [
+    const rows = orderedMidiMonitorEvents().map((event) => [
       event.time,
       event.source,
       event.channel,
@@ -9138,38 +9164,39 @@ body.timeline-ruler-seeking {
       rulerEl.addEventListener("mousedown", onDown);
     }
 
-    // Marker row
-    if (markers.length) {
-      const mRow = document.createElement("div");
-      mRow.className = "ruler-row markers-row";
-      const mGutter = document.createElement("div");
-      mGutter.className = "ruler-gutter";
-      mGutter.textContent = "markers";
-      mRow.appendChild(mGutter);
+    // Marker row is the one and only timeline seek surface. Keep it visible
+    // even when a project has no markers so the playhead always has a dedicated
+    // navigation strip that cannot be confused with loop-locator editing.
+    const mRow = document.createElement("div");
+    mRow.className = "ruler-row markers-row";
+    const mGutter = document.createElement("div");
+    mGutter.className = "ruler-gutter";
+    mGutter.textContent = "markers";
+    mRow.appendChild(mGutter);
 
-      const mRuler = document.createElement("div");
-      mRuler.className = "ruler markers-ruler";
-      mRuler.style.width = `${totalW}px`;
-      for (const m of markers) {
-        const x = (m.tick / length) * totalW;
-        const tick = document.createElement("div");
-        tick.className = "marker-tick";
-        tick.dataset.tick = String(m.tick);
-        tick.style.left = `${x}px`;
-        mRuler.appendChild(tick);
+    const mRuler = document.createElement("div");
+    mRuler.className = "ruler markers-ruler";
+    mRuler.style.width = `${totalW}px`;
+    mRuler.title = "Click / drag here to move the red playhead";
+    for (const m of markers) {
+      const x = (m.tick / length) * totalW;
+      const tick = document.createElement("div");
+      tick.className = "marker-tick";
+      tick.dataset.tick = String(m.tick);
+      tick.style.left = `${x}px`;
+      mRuler.appendChild(tick);
 
-        const lab = document.createElement("span");
-        lab.className = "marker-label";
-        lab.dataset.tick = String(m.tick);
-        lab.textContent = `${m.bar} · ${m.text}`;
-        lab.title = `${m.text} · bar ${m.bar} — click to seek`;
-        lab.style.left = `${x + 4}px`;
-        mRuler.appendChild(lab);
-      }
-      attachSeek(mRuler);
-      mRow.appendChild(mRuler);
-      wrap.appendChild(mRow);
+      const lab = document.createElement("span");
+      lab.className = "marker-label";
+      lab.dataset.tick = String(m.tick);
+      lab.textContent = `${m.bar} · ${m.text}`;
+      lab.title = `${m.text} · bar ${m.bar} — click to seek`;
+      lab.style.left = `${x + 4}px`;
+      mRuler.appendChild(lab);
     }
+    attachSeek(mRuler);
+    mRow.appendChild(mRuler);
+    wrap.appendChild(mRow);
 
     // Bar numbers row
     const row = document.createElement("div");
@@ -9180,7 +9207,7 @@ body.timeline-ruler-seeking {
     row.appendChild(gutter);
 
     const ruler = document.createElement("div");
-    ruler.className = "ruler bars-ruler seekable";
+    ruler.className = "ruler bars-ruler";
     ruler.style.width = `${totalW}px`;
     ruler.style.setProperty("--bar-w", `${state.barW}px`);
     for (let b = 1; b <= bars; b++) {
@@ -9213,7 +9240,7 @@ body.timeline-ruler-seeking {
     ruler.appendChild(barPlayhead);
     state.rulerPlayheadEls.push(barPlayhead);
 
-    ruler.title = "Click/horizontal drag = seek · start vertical drag = zoom, then left/right pans · Shift+drag = loop range · drag green locators = loop";
+    ruler.title = "Loop locators / range · Shift+drag = loop range · vertical drag = zoom · horizontal drag = pan · move playhead on markers row above";
 
     function beginLocatorDrag(kind, e) {
       if (e.button !== 0 || !state.project) return;
@@ -9238,8 +9265,8 @@ body.timeline-ruler-seeking {
     ruler.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return;
 
-      // Shift+drag edits loop range. Plain click/drag always edits the red playhead,
-      // even when Loop is enabled, so transport and locators stay independent.
+      // Shift+drag edits loop range. The bar ruler never moves the red playhead;
+      // seeking belongs exclusively to the marker strip above.
       if (e.shiftKey) {
         e.preventDefault();
         e.stopPropagation();
@@ -9270,7 +9297,7 @@ body.timeline-ruler-seeking {
         mode: "pending",
       };
       setStatus(
-        "Timeline ruler · horizontal drag = seek · vertical drag = zoom",
+        "Bar ruler · horizontal drag = pan · vertical drag = zoom · seek on markers row",
         ""
       );
     });
@@ -13447,12 +13474,11 @@ body.timeline-ruler-seeking {
       const distance = Math.hypot(dx, dy);
 
       if (gesture.mode === "pending" && distance >= 5) {
-        gesture.mode = Math.abs(dy) > Math.abs(dx) ? "zoom" : "seek";
+        gesture.mode = Math.abs(dy) > Math.abs(dx) ? "zoom" : "pan";
         if (gesture.mode === "zoom") {
           document.body.classList.add("timeline-ruler-zooming");
         } else {
-          document.body.classList.add("timeline-ruler-seeking");
-          beginTimelineRulerSeek(e.clientX);
+          gesture.lastX = e.clientX;
         }
       }
 
@@ -13485,8 +13511,19 @@ body.timeline-ruler-seeking {
             "ok"
           );
         });
-      } else if (gesture.mode === "seek") {
-        moveTimelineRulerSeek(e.clientX);
+      } else if (gesture.mode === "pan") {
+        const scroll = document.getElementById("timelineScroll");
+        const panDx = e.clientX - gesture.lastX;
+        gesture.lastX = e.clientX;
+        if (scroll && Math.abs(panDx) > 0.01) {
+          scroll.scrollLeft = Math.max(
+            0,
+            Math.min(
+              Math.max(0, scroll.scrollWidth - scroll.clientWidth),
+              scroll.scrollLeft - panDx
+            )
+          );
+        }
       }
       return;
     }
@@ -13593,8 +13630,8 @@ body.timeline-ruler-seeking {
       document.body.classList.remove("timeline-ruler-zooming", "timeline-ruler-seeking");
 
       if (gesture.mode === "pending") {
-        // Plain click keeps the existing one-bar seek behavior.
-        beginTimelineRulerSeek(gesture.originX);
+        setStatus("Bar ruler · playhead unchanged · use markers row above to seek", "");
+        return;
       } else if (gesture.mode === "zoom") {
         setStatus(
           "Timeline zoom · " + (Math.round(state.barW * 10) / 10) +
@@ -13602,8 +13639,10 @@ body.timeline-ruler-seeking {
           "ok"
         );
         return;
+      } else if (gesture.mode === "pan") {
+        setStatus("Timeline pan · playhead unchanged", "");
+        return;
       }
-      // Seek mode continues into the existing rulerSeeking finalizer below.
     }
 
     if (state.rulerSeeking) {
