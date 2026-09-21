@@ -1126,6 +1126,29 @@ select, input[type="number"], input[type="text"] {
   color: var(--accent);
   letter-spacing: .04em;
 }
+.piano-roll-head-drum-map {
+  display: none;
+  min-width: 76px;
+  height: 24px;
+  padding: 2px 22px 2px 6px;
+  border: 1px solid var(--accent-dim);
+  border-radius: 4px;
+  background: #0b1016;
+  color: var(--accent);
+  font: 700 10px/1 ui-monospace, Consolas, monospace;
+  cursor: pointer;
+}
+.piano-roll-head-drum-map.visible {
+  display: inline-block;
+}
+.piano-roll-head-drum-map:disabled {
+  cursor: default;
+  opacity: .68;
+}
+.piano-roll-head-drum-map:focus {
+  outline: 1px solid var(--accent);
+  outline-offset: 0;
+}
 .piano-roll-badge {
   padding: 2px 5px;
   border: 1px solid #3b4b61;
@@ -2449,6 +2472,11 @@ body.timeline-ruler-seeking {
         <div class="piano-roll-resizer" id="pianoRollResizer" title="Drag to resize Piano Roll"></div>
         <div class="piano-roll-head">
           <strong id="pianoRollTitle">Track</strong>
+          <select class="piano-roll-head-drum-map" id="pianoRollDrumMap"
+            aria-label="Drum Map" title="Drum Map">
+            <option value="xr20">XR20</option>
+            <option value="gm">GM</option>
+          </select>
           <span class="piano-roll-badge" title="1 = Select · 5 = Draw · Ctrl temporarily selects while drawing">EDIT · v0.6 · DRAW</span>
           <span class="piano-roll-meta" id="pianoRollMeta">Double-click a Project Clip on the timeline.</span>
           <span class="piano-roll-snap">
@@ -10305,7 +10333,18 @@ body.timeline-ruler-seeking {
       ? notes.filter((note) => !!note.drumUnresolved).length
       : 0;
 
-    if (title) title.textContent = track.name + (drumMode ? " · Drum Roll" : "");
+    if (title) title.textContent = track.name;
+    const drumMapSelect = document.getElementById("pianoRollDrumMap");
+    if (drumMapSelect) {
+      drumMapSelect.classList.toggle("visible", drumMode);
+      drumMapSelect.disabled = !drumMode || (notes || []).length > 0;
+      if (drumMode) {
+        drumMapSelect.value = drumMap;
+        drumMapSelect.title = drumMapSelect.disabled
+          ? "Drum Map is locked after notes exist on this track"
+          : "Choose Drum Map";
+      }
+    }
     const badge = document.querySelector(".piano-roll-badge");
     if (badge) {
       badge.textContent =
@@ -11018,6 +11057,35 @@ body.timeline-ruler-seeking {
   document.getElementById("pianoRollUsedParameterSelect")?.addEventListener("change", (event) => {
     if (!event.target.value) return;
     selectPianoRollParameter(event.target.value);
+  });
+
+  document.getElementById("pianoRollDrumMap")?.addEventListener("change", (event) => {
+    const ctx = pianoRollContext();
+    if (!ctx || !trackIsPercussion(ctx.track)) return;
+    const track = ctx.track;
+
+    if ((track.notes || []).length) {
+      event.target.value = drumMapForTrack(track);
+      setStatus("Drum Map is locked after notes exist. Use an empty drum track for a different target map.", "err");
+      return;
+    }
+
+    track.drumMap = event.target.value === "gm" ? "gm" : "xr20";
+    if (track.drumMap === "xr20") {
+      track.role = "xr20-drums";
+      track.drumKitProfileId = track.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID;
+    } else if (track.role === "xr20-drums") {
+      track.role = "gm-drums";
+    }
+
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderTracks();
+    renderPianoRoll({ centerPitch: true });
+    setStatus(
+      "Drum Map → " + (track.drumMap === "xr20" ? "AKAI XR20" : "General MIDI"),
+      "ok"
+    );
   });
 
   document.getElementById("pianoRollSnap")?.addEventListener("change", (event) => {
@@ -12242,9 +12310,6 @@ body.timeline-ruler-seeking {
         : "";
       const percussion = trackIsPercussion(track);
       const drumMap = percussion ? drumMapForTrack(track) : "";
-      const drumMapTag = percussion
-        ? `<select class="drum-map-select" data-drum-map="${track.id}" ${(track.notes || []).length ? "disabled" : ""} title="${(track.notes || []).length ? "Drum Map is locked after notes exist on this track" : "Choose the target drum map before adding notes"}"><option value="xr20" ${drumMap === "xr20" ? "selected" : ""}>XR20</option><option value="gm" ${drumMap === "gm" ? "selected" : ""}>GM</option></select>`
-        : "";
       const drumKitTag = percussion && drumMap === "xr20"
         ? `<button class="btn drum-kit-btn" type="button" data-drum-kit="${track.id}" title="Map GM source instruments to XR20 physical pads">Kit</button>`
         : "";
@@ -12267,7 +12332,6 @@ body.timeline-ruler-seeking {
               <select data-ch="${track.id}">${chOptions}</select>
             </label>
             ${gmTag}
-            ${drumMapTag}
           </div>
           <div class="track-actions-row">
             <span class="track-mix" aria-label="Solo and mute">
@@ -12506,24 +12570,6 @@ body.timeline-ruler-seeking {
       });
       el.querySelector(`[data-gm-program="${track.id}"]`)?.addEventListener("change", (e) => {
         setGmTrackProgram(track, Number(e.target.value));
-      });
-      el.querySelector(`[data-drum-map="${track.id}"]`)?.addEventListener("change", (e) => {
-        if ((track.notes || []).length) {
-          e.target.value = drumMapForTrack(track);
-          setStatus("Drum Map is locked after notes exist. Use an empty drum track for a different target map.", "err");
-          return;
-        }
-        track.drumMap = e.target.value === "gm" ? "gm" : "xr20";
-        if (track.drumMap === "xr20") {
-          track.role = "xr20-drums";
-          track.drumKitProfileId = track.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID;
-        } else if (track.role === "xr20-drums") {
-          track.role = "gm-drums";
-        }
-        markHostProjectDirty();
-        scheduleHostAutosave();
-        renderTracks();
-        setStatus("Drum Map → " + (track.drumMap === "xr20" ? "AKAI XR20" : "General MIDI"), "ok");
       });
       el.querySelector(`[data-drum-kit="${track.id}"]`)?.addEventListener("click", () => {
         openDrumKitEditor(track);
