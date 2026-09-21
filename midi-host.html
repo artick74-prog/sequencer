@@ -7546,6 +7546,8 @@ body.timeline-ruler-seeking {
     output = state.playbackOutput || getOutput(),
     { stopLoopPreview = true } = {}
   ) {
+    state.pendingLoopState = null;
+    state.pendingLoopAtPerf = 0;
     state.playing = false;
     state.playbackToken++;
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
