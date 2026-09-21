@@ -9380,6 +9380,7 @@ body.timeline-ruler-seeking {
       velocity: Math.max(1, Math.min(127, Number(note.velocity) || 100)),
       td3Slide: !!note.td3Slide,
       clipId: String(note.clipId || ""),
+      ...drumNoteMetaCopy(note),
     }));
   }
 
@@ -9469,6 +9470,7 @@ body.timeline-ruler-seeking {
       note: Number(note.note) || 0,
       velocity: Number(note.velocity) || 100,
       td3Slide: !!note.td3Slide,
+      ...drumNoteMetaCopy(note),
     }));
     setStatus("Piano Roll · copied " + notes.length + " note(s)", "ok");
     return true;
@@ -9499,6 +9501,7 @@ body.timeline-ruler-seeking {
         velocity: Math.max(1, Math.min(127, Number(item.velocity) || 100)),
         td3Slide: !!item.td3Slide,
         clipId: instanceId,
+        ...drumNoteMetaCopy(item),
       };
       pianoRollNoteId(note);
       ctx.track.notes.push(note);
@@ -9535,6 +9538,7 @@ body.timeline-ruler-seeking {
         velocity: Number(source.velocity) || 100,
         td3Slide: !!source.td3Slide,
         clipId: instanceId,
+        ...drumNoteMetaCopy(source),
       };
       pianoRollNoteId(note);
       ctx.track.notes.push(note);
@@ -11180,6 +11184,7 @@ body.timeline-ruler-seeking {
       velocity: note.velocity | 0,
       td3Slide: !!note.td3Slide,
       clipId: nextId,
+      ...drumNoteMetaCopy(note),
     }));
     const newControls = ownedControls.map((event) =>
       cloneMidiControlEvent(event, nextStart + (event.tick - sourceStart), nextId)
@@ -11247,6 +11252,7 @@ body.timeline-ruler-seeking {
       note: note.note | 0,
       velocity: note.velocity | 0,
       td3Slide: !!note.td3Slide,
+      ...drumNoteMetaCopy(note),
     }));
     const controlTemplate = ownedControls
       .filter((event) => event.tick >= start && event.tick < start + baseLengthTicks)
@@ -11268,6 +11274,7 @@ body.timeline-ruler-seeking {
           velocity: note.velocity,
           td3Slide: !!note.td3Slide,
           clipId: instanceId,
+          ...drumNoteMetaCopy(note),
         });
       }
     }
@@ -11332,6 +11339,7 @@ body.timeline-ruler-seeking {
         note: note.note | 0,
         velocity: note.velocity | 0,
         td3Slide: !!note.td3Slide,
+        ...drumNoteMetaCopy(note),
       })),
       midiControls: ownedControls.map((event) => ({
         offset: event.tick - start,
@@ -11381,6 +11389,7 @@ body.timeline-ruler-seeking {
       velocity: note.velocity,
       td3Slide: !!note.td3Slide,
       clipId: nextId,
+      ...drumNoteMetaCopy(note),
     }));
     const midiControls = (data.midiControls || []).map((event) =>
       cloneMidiControlEvent(event, start + (Number(event.offset) || 0), nextId)
@@ -11443,6 +11452,7 @@ body.timeline-ruler-seeking {
         velocity: note.velocity | 0,
         td3Slide: !!note.td3Slide,
         clipId: instanceId,
+        ...drumNoteMetaCopy(note),
       });
     }
 
@@ -11562,6 +11572,7 @@ body.timeline-ruler-seeking {
             velocity: note.velocity | 0,
             td3Slide: !!note.td3Slide,
             clipId: leftId,
+            ...drumNoteMetaCopy(note),
           });
         }
       }
@@ -11577,6 +11588,7 @@ body.timeline-ruler-seeking {
             velocity: note.velocity | 0,
             td3Slide: !!note.td3Slide,
             clipId: rightId,
+            ...drumNoteMetaCopy(note),
           });
         }
       }
