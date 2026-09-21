@@ -1,7 +1,7 @@
 # Acid Rock 1
 
 - Tempo: **120** BPM · PPQ 480 · **104** bars
-- Performance: swing **24%** · master transpose **+7 st** (drums/percussion excluded)
+- Performance: swing **23%** · master transpose **+7 st** (drums/percussion excluded)
 - Hardware: TD-3 USB → DIN → XR20 (ch2 acid, ch1 bass, ch10 drums)
 - ASCII grid: **1/32** (32 slots/bar, snap ±30 ticks for humanization)
 - Legend: `.` empty · `x` hit · `X` accent · `o` soft · `*` stack · `#` heatmap peak
@@ -43,7 +43,7 @@
 ### Start (bars 1–32)
 Heatmap (all tracks, avg density):
 ```
-x.o.xoo.|xoo.xoo.|xoo.#oo.|xoo.xoxo
+x.o.xoo.|xoooxoo.|xoo.#oo.|xoo.xoxo
 ```
 **Bass A · Kick Lock Long** (ch 1, 95 notes)
 - bars 17–32:
@@ -98,8 +98,8 @@ X...X.X.|x.X.X.X.|x.X.X.X.|x...x.x.
 ```
   pitches: C3 C3 C3 C3 C3 C3 C3
 
-**Drums** (ch 10, 207 notes)
-- bars 17–32:
+**Drums** (ch 10, 211 notes)
+- bars 17, 19–32:
 ```
 ........|........|........|........
 ```
@@ -110,7 +110,7 @@ X...X.X.|x.X.X.X.|x.X.X.X.|x...x.x.
   pitches: C2 F#2 D2 F#2 F#2 C2 D2 F#2 C2
 - bars 1:
 ```
-*....x..|.*...x..|.X...*..|.*...x..
+*....x..|.*...x..|.x...*..|.*...x..
 ```
   pitches: C2 F#2 D2 F#2 F#2 C2 D2 F#2
 - bars 2:
@@ -861,12 +861,12 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 - **Acid** (id `acid`, ch 2, td3) — 1232 notes · C1–F4
 - **29 Overdriven Guitar** (id `guitar`, ch 3, gm · GM 29) — 751 notes · C3–A#3
 - **4 Electric Piano 1** (id `keys`, ch 4, gm · GM 4) — 0 notes
-- **Drums** (id `drums`, ch 10, xr20-drums) — 1071 notes · C2–F#2
+- **Drums** (id `drums`, ch 10, xr20-drums) — 1075 notes · C2–F3
 
 ## Activity (notes per 8 bars)
 - Bars 1-8: total 269 — Bass A · Kick Lock Long:47, Acid:112, 29 Overdriven Guitar:7, Drums:103
 - Bars 9-16: total 264 — Bass A · Kick Lock Long:48, Acid:112, Drums:104
-- Bars 17-24: total 0 — (empty)
+- Bars 17-24: total 4 — Drums:4
 - Bars 25-32: total 0 — (empty)
 - Bars 33-40: total 304 — Bass A · Kick Lock Long:40, Acid:112, 29 Overdriven Guitar:56, Drums:96
 - Bars 41-48: total 320 — Bass A · Kick Lock Long:40, Acid:112, 29 Overdriven Guitar:72, Drums:96

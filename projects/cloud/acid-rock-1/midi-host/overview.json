@@ -2,7 +2,7 @@
   "version": 2,
   "name": "Acid Rock 1",
   "tempo": 120,
-  "swing": 24,
+  "swing": 23,
   "masterTranspose": 7,
   "ppq": 480,
   "totalBars": 104,
@@ -639,11 +639,11 @@
       "gmProgram": null,
       "mute": false,
       "transposeOctaves": 0,
-      "noteCount": 1071,
+      "noteCount": 1075,
       "pitchMin": 36,
-      "pitchMax": 42,
+      "pitchMax": 53,
       "pitchMinName": "C2",
-      "pitchMaxName": "F#2",
+      "pitchMaxName": "F3",
       "densityPer8Bars": [
         {
           "bars": "1-8",
@@ -663,8 +663,8 @@
           "bars": "17-24",
           "startBar": 17,
           "endBar": 24,
-          "notes": 0,
-          "avgVel": 0
+          "notes": 4,
+          "avgVel": 100
         },
         {
           "bars": "25-32",
@@ -770,13 +770,13 @@
       "bars": "17-24",
       "startBar": 17,
       "endBar": 24,
-      "notes": 0,
+      "notes": 4,
       "byTrack": {
         "Bass A · Kick Lock Long": 0,
         "Acid": 0,
         "29 Overdriven Guitar": 0,
         "4 Electric Piano 1": 0,
-        "Drums": 0
+        "Drums": 4
       }
     },
     {
@@ -916,9 +916,9 @@
       "startBar": 1,
       "endBar": 32,
       "heatmap32": {
-        "ascii": "x.o.xoo.|xoo.xoo.|xoo.#oo.|xoo.xoxo",
-        "max": 3.9,
-        "barsSampled": 16
+        "ascii": "x.o.xoo.|xoooxoo.|xoo.#oo.|xoo.xoxo",
+        "max": 3.6,
+        "barsSampled": 17
       },
       "tracks": [
         {
@@ -1127,13 +1127,13 @@
           "trackId": "drums",
           "trackName": "Drums",
           "channel": 10,
-          "noteCount": 207,
+          "noteCount": 211,
           "hardOffNotes": 0,
           "patterns": [
             {
               "ascii": "........|........|........|........",
-              "bars": "17–32",
-              "barCount": 16,
+              "bars": "17, 19–32",
+              "barCount": 15,
               "hardOffNotes": 0,
               "pitches": []
             },
@@ -1155,7 +1155,7 @@
               ]
             },
             {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
+              "ascii": "*....x..|.*...x..|.x...*..|.*...x..",
               "bars": "1",
               "barCount": 1,
               "hardOffNotes": 0,

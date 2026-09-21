@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "savedAt": "2026-09-20T05:27:35.235Z",
-  "barWidthPx": 76.67711999999997,
-  "loop": false,
-  "loopStartTick": 61440,
-  "loopEndTick": 76800,
+  "savedAt": "2026-09-21T01:24:48.890Z",
+  "barWidthPx": 125.3440008534169,
+  "loop": true,
+  "loopStartTick": 0,
+  "loopEndTick": 30720,
   "browserAudioSf2": true,
   "hardwareMidiOut": true,
   "midiOutputName": "TD-3"
