@@ -308,7 +308,58 @@ a { color: var(--accent); }
   font-size: 11px;
   line-height: 1.45;
 }
+.timing-modal {
+  width: min(860px, 96vw);
+}
+.timing-body {
+  overflow: auto;
+  padding: 12px 14px 16px;
+}
+.timing-grid {
+  display: grid;
+  grid-template-columns: 180px minmax(0,1fr);
+  gap: 1px;
+  border: 1px solid var(--border);
+  background: var(--border);
+  font: 11px/1.45 ui-monospace, Consolas, monospace;
+}
+.timing-cell {
+  min-width: 0;
+  padding: 7px 9px;
+  background: #0d131a;
+  overflow-wrap: anywhere;
+}
+.timing-cell.key {
+  color: var(--dim);
+  background: #131b25;
+}
+.timing-section {
+  grid-column: 1 / -1;
+  padding: 7px 9px;
+  background: #18212d;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+.timing-note {
+  margin-top: 10px;
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.timing-test-result {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #090d12;
+  color: var(--text);
+  font: 11px/1.45 ui-monospace, Consolas, monospace;
+}
+
 .midi-monitor-modal {
+  width: min(980px, 96vw);
+}.midi-monitor-modal {
   width: min(980px, 96vw);
 }
 .midi-monitor-toolbar {
@@ -2237,6 +2288,7 @@ body.timeline-ruler-seeking {
     </label>
     <button class="btn" id="btnRefreshMidi" type="button">Refresh</button>
     <button class="btn" id="btnMidiMonitor" type="button" title="Show every MIDI message sent by MIDI Host to hardware">MIDI Monitor</button>
+    <button class="btn" id="btnTimingDiagnostics" type="button" title="Browser / audio / scheduler timing diagnostics">Timing</button>
     <span style="flex:1"></span>
     <div class="file-menu-wrap" id="fileMenuWrap">
       <button class="btn" id="btnFileMenu" type="button" aria-haspopup="true" aria-expanded="false">File ▾</button>
@@ -2423,6 +2475,27 @@ body.timeline-ruler-seeking {
       <div class="drum-kit-actions">
         <button class="btn" id="drumKitCancel" type="button">Cancel</button>
         <button class="btn primary" id="drumKitSave" type="button">Save profile</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cloud-modal-backdrop" id="timingDiagnosticsModal" aria-hidden="true">
+    <div class="cloud-modal timing-modal" role="dialog" aria-modal="true" aria-labelledby="timingDiagnosticsTitle">
+      <div class="cloud-modal-head">
+        <strong id="timingDiagnosticsTitle">Timing Diagnostics</strong>
+        <span class="spacer"></span>
+        <button class="btn" id="btnTimingRun" type="button">Run 2s Test</button>
+        <button class="btn" id="btnTimingCopy" type="button">Copy diagnostics</button>
+        <button class="btn" id="btnTimingClose" type="button">Close</button>
+      </div>
+      <div class="timing-body">
+        <div class="timing-grid" id="timingDiagnosticsGrid"></div>
+        <div class="timing-test-result" id="timingTestResult">Scheduler jitter test has not been run yet.</div>
+        <div class="timing-note">
+          External path reference only (not used for automatic compensation):
+          USB MIDI ≈ 1 ms, ordinary built-in audio path ≈ 10 ms. Real hardware can differ.
+          The automatic SF2 compensation uses browser-reported AudioContext latency plus the scheduler measurements above.
+        </div>
       </div>
     </div>
   </div>
@@ -3770,6 +3843,7 @@ body.timeline-ruler-seeking {
     playbackToken: 0,
     playbackOutput: null,
     sf2Timers: new Set(),
+    timingDiagnosticResult: null,
     playheadEls: [],
     rulerPlayheadEls: [],
     rulerSeeking: false,
@@ -6831,7 +6905,19 @@ body.timeline-ruler-seeking {
   function allNotesOffSf2() {
     const synth = sf2Synth();
     if (!synth) return;
-    for (let ch = 0; ch < 16; ch++) synth.allSoundOff(ch);
+
+    // Do not rely on one synth implementation's allSoundOff semantics.
+    // First release every possible held note explicitly, then send the usual
+    // channel panic controls and finally call allSoundOff if available.
+    for (let ch = 0; ch < 16; ch++) {
+      for (let note = 0; note < 128; note++) {
+        try { synth.noteOff(ch, note); } catch {}
+      }
+      try { synth.controlChange?.(ch, 64, 0); } catch {}   // sustain off
+      try { synth.controlChange?.(ch, 123, 0); } catch {}  // all notes off
+      try { synth.controlChange?.(ch, 120, 0); } catch {}  // all sound off
+      try { synth.allSoundOff?.(ch); } catch {}
+    }
   }
 
   function midiMonitorMessageText(message) {
@@ -6980,6 +7066,229 @@ body.timeline-ruler-seeking {
     logMidiOut(message, timestamp, source);
     if (Number.isFinite(Number(timestamp))) output.send(message, Number(timestamp));
     else output.send(message);
+  }
+
+  function timingBrowserName() {
+    const ua = navigator.userAgent || "";
+    const edge = ua.match(/Edg\/([\d.]+)/);
+    if (edge) return "Edge " + edge[1];
+    const chrome = ua.match(/Chrome\/([\d.]+)/);
+    if (chrome) return "Chrome " + chrome[1];
+    const firefox = ua.match(/Firefox\/([\d.]+)/);
+    if (firefox) return "Firefox " + firefox[1];
+    const safari = ua.match(/Version\/([\d.]+).*Safari/);
+    if (safari) return "Safari " + safari[1];
+    return ua || "Unknown";
+  }
+
+  function timingTrackRoutes() {
+    if (!state.project) return "No project";
+    return (state.project.tracks || [])
+      .filter((track) => trackIsAudible(track, state.project))
+      .map((track) =>
+        (track.name || track.id || "Track") +
+        " [CH " + (track.channel || 1) + "] → " +
+        trackRoute(track)
+      )
+      .join("\n");
+  }
+
+  function timingDiagnosticSnapshot() {
+    const ctx = sf2Synth()?.ctx || null;
+    const out = getOutput();
+    const test = state.timingDiagnosticResult;
+    const baseLatencyMs = ctx ? Math.max(0, Number(ctx.baseLatency) || 0) * 1000 : null;
+    const outputLatencyMs = ctx ? Math.max(0, Number(ctx.outputLatency) || 0) * 1000 : null;
+    return {
+      browser: timingBrowserName(),
+      platform: navigator.platform || "unknown",
+      sampleRate: ctx?.sampleRate || null,
+      audioState: ctx?.state || (state.sf2Prepared ? "prepared / context unavailable" : "not prepared"),
+      baseLatencyMs,
+      outputLatencyMs,
+      sf2CompensationMs: sf2OutputLatencyMs(),
+      sf2Prepared: !!state.sf2Prepared,
+      sf2Ready: !!state.sf2Ready,
+      schedulerIntervalMs: SCHEDULER_INTERVAL_MS,
+      hardwareLookaheadMs: HARDWARE_LOOKAHEAD_MS,
+      sf2LookaheadMs: SF2_LOOKAHEAD_MS,
+      playbackStartLeadMs: PLAYBACK_START_LEAD_MS,
+      midiOutput: out?.name || "none",
+      hardwareEnabled: useHwOutput(),
+      sf2Enabled: useSf2Output(),
+      routes: timingTrackRoutes(),
+      test,
+    };
+  }
+
+  function timingDiagnosticText() {
+    const d = timingDiagnosticSnapshot();
+    const fmt = (value) => value == null ? "n/a" : Number(value).toFixed(2) + " ms";
+    const test = d.test
+      ? [
+          "Timer test: " + d.test.durationMs + " ms @ " + d.test.intervalMs + " ms",
+          "Timer jitter avg(abs): " + d.test.avgAbsMs.toFixed(2) + " ms",
+          "Timer jitter p95(abs): " + d.test.p95AbsMs.toFixed(2) + " ms",
+          "Timer jitter max(abs): " + d.test.maxAbsMs.toFixed(2) + " ms",
+          "Callbacks >5 ms late: " + d.test.lateOver5 + " / " + d.test.samples,
+        ].join("\n")
+      : "Timer test: not run";
+
+    return [
+      "MIDI Host Timing Diagnostics",
+      "Timestamp: " + new Date().toISOString(),
+      "",
+      "Browser: " + d.browser,
+      "Platform: " + d.platform,
+      "Audio sample rate: " + (d.sampleRate || "n/a") + (d.sampleRate ? " Hz" : ""),
+      "AudioContext state: " + d.audioState,
+      "baseLatency: " + fmt(d.baseLatencyMs),
+      "outputLatency: " + fmt(d.outputLatencyMs),
+      "SF2 auto compensation: " + fmt(d.sf2CompensationMs),
+      "SF2 prepared/ready: " + d.sf2Prepared + " / " + d.sf2Ready,
+      "",
+      "Scheduler interval: " + d.schedulerIntervalMs + " ms",
+      "Hardware lookahead: " + d.hardwareLookaheadMs + " ms",
+      "SF2 lookahead: " + d.sf2LookaheadMs + " ms",
+      "Playback start lead: " + d.playbackStartLeadMs + " ms",
+      "",
+      "MIDI output: " + d.midiOutput,
+      "Hardware enabled: " + d.hardwareEnabled,
+      "SF2 enabled: " + d.sf2Enabled,
+      "Reference external overhead (informational only): USB MIDI ≈1 ms; built-in audio ≈10 ms",
+      "",
+      test,
+      "",
+      "Current audible routes:",
+      d.routes || "none",
+    ].join("\n");
+  }
+
+  function renderTimingDiagnostics() {
+    const grid = document.getElementById("timingDiagnosticsGrid");
+    const result = document.getElementById("timingTestResult");
+    if (!grid || !result) return;
+    const d = timingDiagnosticSnapshot();
+    const fmt = (value) => value == null ? "n/a" : Number(value).toFixed(2) + " ms";
+    const rows = [
+      ["section","Browser / Audio"],
+      ["Browser", d.browser],
+      ["Platform", d.platform],
+      ["Sample rate", d.sampleRate ? d.sampleRate + " Hz" : "n/a"],
+      ["AudioContext", d.audioState],
+      ["baseLatency", fmt(d.baseLatencyMs)],
+      ["outputLatency", fmt(d.outputLatencyMs)],
+      ["SF2 auto compensation", fmt(d.sf2CompensationMs)],
+      ["SF2 prepared / ready", d.sf2Prepared + " / " + d.sf2Ready],
+      ["section","Scheduler"],
+      ["Interval", d.schedulerIntervalMs + " ms"],
+      ["Hardware lookahead", d.hardwareLookaheadMs + " ms"],
+      ["SF2 lookahead", d.sf2LookaheadMs + " ms"],
+      ["Playback start lead", d.playbackStartLeadMs + " ms"],
+      ["section","MIDI / Routing"],
+      ["MIDI output", d.midiOutput],
+      ["Hardware enabled", String(d.hardwareEnabled)],
+      ["SF2 enabled", String(d.sf2Enabled)],
+      ["Audible routes", d.routes || "none"],
+    ];
+    grid.innerHTML = rows.map(([key,value]) =>
+      key === "section"
+        ? '<div class="timing-section">' + escapeHtml(value) + '</div>'
+        : '<div class="timing-cell key">' + escapeHtml(key) + '</div>' +
+          '<div class="timing-cell">' + escapeHtml(value).replace(/\n/g, "<br>") + '</div>'
+    ).join("");
+
+    if (d.test) {
+      result.textContent =
+        "2s timer test · avg |jitter| " + d.test.avgAbsMs.toFixed(2) + " ms" +
+        " · p95 " + d.test.p95AbsMs.toFixed(2) + " ms" +
+        " · max " + d.test.maxAbsMs.toFixed(2) + " ms" +
+        " · >5 ms late " + d.test.lateOver5 + "/" + d.test.samples;
+    } else {
+      result.textContent = "Scheduler jitter test has not been run yet.";
+    }
+  }
+
+  function showTimingDiagnostics() {
+    renderTimingDiagnostics();
+    document.getElementById("timingDiagnosticsModal")?.classList.add("open");
+    document.getElementById("timingDiagnosticsModal")?.setAttribute("aria-hidden", "false");
+  }
+
+  function closeTimingDiagnostics() {
+    document.getElementById("timingDiagnosticsModal")?.classList.remove("open");
+    document.getElementById("timingDiagnosticsModal")?.setAttribute("aria-hidden", "true");
+  }
+
+  async function runTimingDiagnosticsTest() {
+    if (state.playing) {
+      setStatus("Stop playback before running the timing jitter test.", "err");
+      return false;
+    }
+    const button = document.getElementById("btnTimingRun");
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Testing…";
+    }
+
+    const intervalMs = 10;
+    const durationMs = 2000;
+    const samples = [];
+    const start = performance.now();
+    let previous = start;
+
+    await new Promise((resolve) => {
+      const timer = setInterval(() => {
+        const now = performance.now();
+        samples.push((now - previous) - intervalMs);
+        previous = now;
+        if (now - start >= durationMs) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, intervalMs);
+    });
+
+    const abs = samples.map((value) => Math.abs(value)).sort((a,b) => a-b);
+    const percentile = (arr, p) => arr.length
+      ? arr[Math.min(arr.length - 1, Math.max(0, Math.ceil(arr.length * p) - 1))]
+      : 0;
+    state.timingDiagnosticResult = {
+      durationMs,
+      intervalMs,
+      samples: samples.length,
+      avgAbsMs: abs.length ? abs.reduce((sum,value) => sum + value, 0) / abs.length : 0,
+      p95AbsMs: percentile(abs, .95),
+      maxAbsMs: abs.length ? abs[abs.length - 1] : 0,
+      lateOver5: samples.filter((value) => value > 5).length,
+    };
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Run 2s Test";
+    }
+    renderTimingDiagnostics();
+    return true;
+  }
+
+  async function copyTimingDiagnostics() {
+    const text = timingDiagnosticText();
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus("Timing diagnostics copied.", "ok");
+      return true;
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand("copy");
+      area.remove();
+      setStatus(ok ? "Timing diagnostics copied." : "Could not copy timing diagnostics.", ok ? "ok" : "err");
+      return ok;
+    }
   }
 
   function showMidiMonitor() {
@@ -7176,7 +7485,9 @@ body.timeline-ruler-seeking {
     // Browser preview so hot-switching loops does not invalidate its token.
     if (stopLoopPreview) hostLoopStopPreview();
 
+    const currentOutput = getOutput();
     allNotesOff(output);
+    if (currentOutput && currentOutput !== output) allNotesOff(currentOutput);
     state.playbackOutput = null;
     const playButton = document.getElementById("btnPlay");
     if (playButton) {
@@ -13989,6 +14300,14 @@ body.timeline-ruler-seeking {
     });
   }, { passive: false });
 
+  document.getElementById("btnTimingDiagnostics")?.addEventListener("click", showTimingDiagnostics);
+  document.getElementById("btnTimingClose")?.addEventListener("click", closeTimingDiagnostics);
+  document.getElementById("btnTimingRun")?.addEventListener("click", runTimingDiagnosticsTest);
+  document.getElementById("btnTimingCopy")?.addEventListener("click", copyTimingDiagnostics);
+  document.getElementById("timingDiagnosticsModal")?.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeTimingDiagnostics();
+  });
+
   document.getElementById("btnMidiMonitor")?.addEventListener("click", showMidiMonitor);
   document.getElementById("btnMidiMonitorClose")?.addEventListener("click", closeMidiMonitor);
   document.getElementById("btnMidiMonitorCopy")?.addEventListener("click", copyMidiMonitorLog);
@@ -14254,6 +14573,7 @@ body.timeline-ruler-seeking {
       closeCloudProjects();
       closeHostLoopBrowser();
       closeMidiMonitor();
+      closeTimingDiagnostics();
       closeRhythmEditor();
       closeDrumKitEditor();
     }
