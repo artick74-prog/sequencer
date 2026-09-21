@@ -3844,6 +3844,7 @@ body.timeline-ruler-seeking {
     playbackOutput: null,
     sf2Timers: new Set(),
     hardwarePanicTimers: new Set(),
+    transportRestartTimer: null,
     timingDiagnosticResult: null,
     playheadEls: [],
     rulerPlayheadEls: [],
@@ -7412,6 +7413,34 @@ body.timeline-ruler-seeking {
     state.hardwarePanicTimers.clear();
   }
 
+  function clearTransportRestart() {
+    if (!state.transportRestartTimer) return;
+    clearTimeout(state.transportRestartTimer);
+    state.transportRestartTimer = null;
+  }
+
+  function scheduleTransportRestart(tick) {
+    clearTransportRestart();
+    const restart = () => {
+      state.transportRestartTimer = null;
+      if (!state.project) return;
+      state.startTick = tick;
+      runScheduler(tick);
+    };
+
+    // A transport seek is a stop + restart. Web MIDI clear() cannot always
+    // retract messages already handed to the Windows MIDI driver, so restarting
+    // immediately can let an old Note Off land after the new TD-3 Note On and
+    // close its mono gate. Let the first delayed panic catch those stale events,
+    // then restart. Repeated << / >> clicks debounce into one final restart.
+    if (useHwOutput() && getOutput()) {
+      const delay = HARDWARE_LOOKAHEAD_MS + 70;
+      state.transportRestartTimer = setTimeout(restart, delay);
+    } else {
+      restart();
+    }
+  }
+
   function scheduleDelayedHardwarePanic(output, stopToken) {
     if (!output) return;
     // Some Windows MIDI drivers can already have timestamped Note On messages
@@ -7465,15 +7494,29 @@ body.timeline-ruler-seeking {
   }
 
   function resetXr20BassGate(output, project, timestamp = null, source = "XR20 bass gate reset") {
-    if (!output) return 0;
+    if (!output || !project) return 0;
 
-    // XR20 CH1 can keep a mono bass voice alive after the browser clears its
-    // timestamped MIDI queue. A full Note Off sweep is cheap (128 messages),
-    // deterministic, and does not depend on which note the project believes is active.
-    for (let note = 0; note < 128; note++) {
+    const notes = new Set();
+    for (const track of project.tracks || []) {
+      if ((Number(track.channel) || 1) !== 1) continue;
+      const route = trackRoute(track);
+      if (route !== "hw" && route !== "both") continue;
+      // Do not filter muted tracks here: a note can still be physically open on
+      // the XR20 when the user mutes or seeks away from that track.
+      for (const note of track.notes || []) {
+        const pitch = projectPlaybackNote(project, track, note.note);
+        if (Number.isFinite(pitch)) notes.add(Math.max(0, Math.min(127, pitch | 0)));
+      }
+    }
+
+    // The old 128-note sweep took about 123 ms on a 31.25 kbit/s DIN link and
+    // could congest TD-3 THRU -> XR20 during rapid transport seeks. Every late
+    // project Note On must use one of the project's actual CH1 pitches, so a
+    // targeted sweep is equally effective for transport cleanup and far lighter.
+    for (const note of [...notes].sort((a, b) => a - b)) {
       midiSend(output, [0x80, note, 0], timestamp, source);
     }
-    return 128;
+    return notes.size;
   }
 
   function allNotesOff(output) {
@@ -7962,6 +8005,7 @@ body.timeline-ruler-seeking {
   }
 
   function runScheduler(fromTick) {
+    clearTransportRestart();
     clearDelayedHardwarePanics();
     const project = state.project;
     if (!project) return;
@@ -8065,6 +8109,7 @@ body.timeline-ruler-seeking {
   }
 
   async function togglePlay() {
+    clearTransportRestart();
     if (state.playing) {
       const project = state.project;
       const ppq = project.ppq || 480;
@@ -14257,26 +14302,37 @@ body.timeline-ruler-seeking {
       Math.min(maxBarStart, currentBarStart + deltaBars * tpb)
     );
 
-    const wasPlaying = state.playing;
-    if (wasPlaying) stopPlayback();
+    const shouldResume = state.playing || !!state.transportRestartTimer;
+    clearTransportRestart();
+    if (state.playing) stopPlayback();
     state.startTick = next;
     updatePlayheads(next, state.lengthTicks || 1);
-    if (wasPlaying) runScheduler(next);
-    else setStatus("Cue: bar " + tickToBar(next, ppq), "");
+    if (shouldResume) {
+      scheduleTransportRestart(next);
+      setStatus("Cue: bar " + tickToBar(next, ppq) + " · MIDI settling…", "ok");
+    } else {
+      setStatus("Cue: bar " + tickToBar(next, ppq), "");
+    }
   }
 
   document.getElementById("btnToStart")?.addEventListener("click", () => {
-    const wasPlaying = state.playing;
-    if (wasPlaying) stopPlayback();
+    const shouldResume = state.playing || !!state.transportRestartTimer;
+    clearTransportRestart();
+    if (state.playing) stopPlayback();
     state.startTick = 0;
     updatePlayheads(0, state.lengthTicks || 1);
-    if (wasPlaying) runScheduler(0);
-    else setStatus("Cue: bar 1", "");
+    if (shouldResume) {
+      scheduleTransportRestart(0);
+      setStatus("Cue: bar 1 · MIDI settling…", "ok");
+    } else {
+      setStatus("Cue: bar 1", "");
+    }
   });
   document.getElementById("btnRewind")?.addEventListener("click", () => transportSeekByBars(-1));
   document.getElementById("btnForward")?.addEventListener("click", () => transportSeekByBars(1));
   document.getElementById("btnPlay").addEventListener("click", () => { togglePlay(); });
   document.getElementById("btnStop").addEventListener("click", () => {
+    clearTransportRestart();
     if (state.playing) {
       const tick = snapToBar(currentTransportTick());
       stopPlayback();
