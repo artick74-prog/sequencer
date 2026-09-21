@@ -2790,9 +2790,10 @@ body.timeline-ruler-seeking {
   const PIANO_ROLL_BAR_W_MAX = 8192;
   const BAR_W_MAX = PIANO_ROLL_BAR_W_MAX;
   const HEAD_W = 280;
-  const SCHEDULER_INTERVAL_MS = 20;
-  const HARDWARE_LOOKAHEAD_MS = 120;
-  const SF2_LOOKAHEAD_MS = 80;
+  const SCHEDULER_INTERVAL_MS = 10;
+  const HARDWARE_LOOKAHEAD_MS = 140;
+  const SF2_LOOKAHEAD_MS = 260;
+  const PLAYBACK_START_LEAD_MS = 40;
 
   // UI work can receive pointer/wheel events far faster than a display can draw.
   // Coalesce "latest wins" visual work into one callback per animation frame.
@@ -7550,6 +7551,17 @@ body.timeline-ruler-seeking {
     }
   }
 
+  function sf2OutputLatencyMs() {
+    const ctx = sf2Synth()?.ctx;
+    if (!ctx) return 0;
+    const seconds =
+      Math.max(0, Number(ctx.baseLatency) || 0) +
+      Math.max(0, Number(ctx.outputLatency) || 0);
+    // Browser-reported values can be absent or occasionally unrealistic.
+    // Keep compensation conservative so a bad report cannot make notes race ahead.
+    return Math.max(0, Math.min(80, seconds * 1000));
+  }
+
   function scheduleSf2Event(event, targetTime, token) {
     const send = () => {
       if (!state.playing || state.playbackToken !== token) return;
@@ -7573,7 +7585,10 @@ body.timeline-ruler-seeking {
         }
       }
     };
-    const delay = Math.max(0, targetTime - performance.now());
+    const delay = Math.max(
+      0,
+      targetTime - sf2OutputLatencyMs() - performance.now()
+    );
     if (delay < 2) {
       send();
       return;
@@ -7636,8 +7651,8 @@ body.timeline-ruler-seeking {
     // few milliseconds later. This avoids the TD-3 occasionally choking when a
     // dense drum clip starts on the same transport boundary.
     const td3ResetCount = hw ? resetTd3Gate(output, project) : 0;
-    const td3ResetLeadMs = td3ResetCount ? 12 : 0;
-    state.startPerf = performance.now() + td3ResetLeadMs;
+    const resetLeadMs = td3ResetCount ? 12 : 0;
+    state.startPerf = performance.now() + Math.max(PLAYBACK_START_LEAD_MS, resetLeadMs);
     state.startTick = scheduleStart;
     state.playbackTempo = tempo;
     state.playbackPpq = ppq;
@@ -13879,11 +13894,18 @@ body.timeline-ruler-seeking {
   function transportSeekByBars(deltaBars) {
     if (!state.project) return;
     const ppq = state.project.ppq || 480;
+    const tpb = ticksPerBar(ppq);
     const current = state.playing ? currentTransportTick() : (state.startTick || 0);
+    const currentBarStart = Math.floor(Math.max(0, current) / tpb) * tpb;
+    const projectEnd = Math.max(0, state.lengthTicks || state.project.lengthTicks || 0);
+    const maxBarStart = projectEnd > 0
+      ? Math.max(0, Math.floor(Math.max(0, projectEnd - 1) / tpb) * tpb)
+      : 0;
     const next = Math.max(
       0,
-      Math.min(state.lengthTicks || state.project.lengthTicks || 0, current + deltaBars * ticksPerBar(ppq))
+      Math.min(maxBarStart, currentBarStart + deltaBars * tpb)
     );
+
     const wasPlaying = state.playing;
     if (wasPlaying) stopPlayback();
     state.startTick = next;
