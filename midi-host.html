@@ -3013,7 +3013,10 @@ body.timeline-ruler-seeking {
   }
 
   function isGmTrack(track) {
-    return track?.role === "gm" || !!parseGmTrackName(track?.name);
+    return track?.role === "gm" ||
+      track?.role === "gm-drums" ||
+      (trackIsPercussion(track) && track?.drumMap === "gm") ||
+      !!parseGmTrackName(track?.name);
   }
 
   function gmProgramFromTrack(track) {
@@ -3046,7 +3049,7 @@ body.timeline-ruler-seeking {
 
   function trackDisplayInfo(track) {
     const gm = parseGmTrackName(track.name);
-    if (gm || track.role === "gm") {
+    if (gm || track.role === "gm" || track.role === "gm-drums" || (trackIsPercussion(track) && drumMapForTrack(track) === "gm")) {
       const program = gm?.program ?? null;
       return {
         role: "gm",
@@ -9311,6 +9314,7 @@ body.timeline-ruler-seeking {
 
     if (spec.kind === "velocity") {
       for (const note of ctx.notes) {
+        if (isXr20DrumTrack(ctx.track) && note.drumUnresolved) continue;
         const tick = Number(note.tick) || 0;
         if (tick < ctx.startTick || tick >= ctx.endTick) continue;
         const id = pianoRollNoteId(note);
@@ -9801,7 +9805,13 @@ body.timeline-ruler-seeking {
     const next = tool === "select" ? "select" : "draw";
     state.pianoRollTool = next;
     const badge = document.querySelector(".piano-roll-badge");
-    if (badge) badge.textContent = "EDIT · v0.6 · " + (next === "select" ? "SELECT" : "DRAW");
+    const ctx = pianoRollContext();
+    if (badge) {
+      const prefix = trackIsPercussion(ctx?.track)
+        ? (drumMapForTrack(ctx.track) === "xr20" ? "DRUM MAP · XR20 · " : "DRUM MAP · GM · ")
+        : "EDIT · v0.6 · ";
+      badge.textContent = prefix + (next === "select" ? "SELECT" : "DRAW");
+    }
     const grid = document.getElementById("pianoRollGrid");
     if (grid) {
       grid.classList.toggle("tool-select", next === "select");
@@ -10241,7 +10251,10 @@ body.timeline-ruler-seeking {
     const displayRows = pianoRollDisplayRows(ctx);
     const rowIndexByNote = new Map(displayRows.map((row, index) => [row.note, index]));
     const hiddenNotes = drumMode
-      ? notes.filter((note) => !rowIndexByNote.has(Number(note.note))).length
+      ? notes.filter((note) =>
+          (isXr20DrumTrack(track) && !!note.drumUnresolved) ||
+          !rowIndexByNote.has(Number(note.note))
+        ).length
       : 0;
     const unresolvedNotes = drumMode
       ? notes.filter((note) => !!note.drumUnresolved).length
@@ -10366,6 +10379,7 @@ body.timeline-ruler-seeking {
 
     const info = trackDisplayInfo(track);
     for (const note of notes) {
+      if (isXr20DrumTrack(track) && note.drumUnresolved) continue;
       const noteRowIndex = rowIndexByNote.get(Number(note.note));
       if (noteRowIndex == null) continue;
       const clippedStart = Math.max(startTick, Number(note.tick) || 0);
@@ -10557,7 +10571,7 @@ body.timeline-ruler-seeking {
         const centerNote = notes.length
           ? notes.reduce((sum, note) => sum + Number(note.note || 0), 0) / notes.length
           : 60;
-        const centerY = rulerH + (maxNote - centerNote + 0.5) * rowH;
+        const centerY = rulerH + (127 - centerNote + 0.5) * rowH;
         scroll.scrollTop = Math.max(0, centerY - scroll.clientHeight / 2);
       }
       scroll.scrollLeft = 0;
@@ -13776,6 +13790,7 @@ body.timeline-ruler-seeking {
       closeHostLoopBrowser();
       closeMidiMonitor();
       closeRhythmEditor();
+      closeDrumKitEditor();
     }
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       const code = e.code;
