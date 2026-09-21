@@ -51,6 +51,18 @@ li{margin:3px 0}
 <main>
   <p class="note"><strong>Важно:</strong> General MIDI задаёт номера и общие назначения MIDI-контроллеров, но не гарантирует, что конкретный SoundFont, VST или железный синтезатор одинаково реагирует на каждый CC. Ниже — практические рекомендации: с чего обычно имеет смысл начинать для данного типа инструмента.</p>
 
+  <h2>Browser audio (SF2)</h2>
+  <div class="grid">
+    <section class="card">
+      <h3>Встроенный SoundFont</h3>
+      <p>MIDI Host по умолчанию подготавливает встроенный <strong>Yamaha XG</strong> SoundFont для браузерного прослушивания General MIDI дорожек. GM-программа берётся из выбранного инструмента дорожки, например <code>GM 56 · Trumpet</code>.</p>
+    </section>
+    <section class="card">
+      <h3>Свой SF2</h3>
+      <p>Кнопка <strong>Load SF2…</strong> позволяет загрузить собственный файл <code>.sf2</code>. Переключатель <strong>Project GM tracks (SF2)</strong> включает или отключает браузерный звуковой движок независимо от Hardware MIDI Out.</p>
+    </section>
+  </div>
+
   <h2>Горячие клавиши</h2>
   <table>
     <thead><tr><th>Где</th><th>Клавиша</th><th>Действие</th></tr></thead>
