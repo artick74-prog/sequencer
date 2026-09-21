@@ -2891,6 +2891,40 @@ body.timeline-ruler-seeking {
     };
   }
 
+  function inferGmDrumNoteFromKitLabel(label) {
+    const text = String(label || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[._-]+/g, " ")
+      .replace(/\s+/g, " ");
+
+    if (!text) return null;
+    const exact = new Map([
+      ["kick", 36],
+      ["bass drum", 36],
+      ["bass drum 1", 36],
+      ["snare", 38],
+      ["acoustic snare", 38],
+      ["side stick", 37],
+      ["sidestick", 37],
+      ["closed hh", 42],
+      ["closed hat", 42],
+      ["closed hi hat", 42],
+      ["closed hi-hat", 42],
+      ["open hh", 46],
+      ["opened hh", 46],
+      ["open hat", 46],
+      ["open hi hat", 46],
+      ["open hi-hat", 46],
+      ["tambourine", 54],
+      ["crash", 49],
+      ["crash 1", 49],
+      ["ride", 51],
+      ["ride 1", 51],
+    ]);
+    return exact.has(text) ? exact.get(text) : null;
+  }
+
   function normalizeDrumKitProfiles(rawProfiles) {
     const source = Array.isArray(rawProfiles) && rawProfiles.length
       ? rawProfiles
@@ -2898,12 +2932,19 @@ body.timeline-ruler-seeking {
     return source.map((profile, index) => {
       const fallback = createDefaultXr20KitProfile();
       const assignments = {};
+      const claimedInferred = new Set();
       for (const item of XR20_DRUM_HARDWARE_MAP) {
         const raw = profile?.assignments?.[String(item.pad)] || {};
+        const label = String(raw.label || "").trim();
         const gm = Number(raw.gmNote);
+        const explicitGm = Number.isInteger(gm) && GM_DRUM_NOTE_NAMES[gm] ? gm : null;
+        let inferredGm = explicitGm == null ? inferGmDrumNoteFromKitLabel(label) : null;
+        if (inferredGm != null && claimedInferred.has(inferredGm)) inferredGm = null;
+        const gmNote = explicitGm ?? inferredGm;
+        if (explicitGm == null && gmNote != null) claimedInferred.add(gmNote);
         assignments[String(item.pad)] = {
-          gmNote: Number.isInteger(gm) && GM_DRUM_NOTE_NAMES[gm] ? gm : null,
-          label: String(raw.label || "").trim(),
+          gmNote,
+          label,
         };
       }
       return {
@@ -6093,14 +6134,27 @@ body.timeline-ruler-seeking {
     const profile = currentXr20KitProfile(track);
     const profileIndex = state.project.drumKitProfiles.findIndex((item) => item.id === profile.id);
     const assignments = {};
+    const claimedInferred = new Set();
+    let autoLinked = 0;
 
     for (const hardware of XR20_DRUM_HARDWARE_MAP) {
       const gmSelect = document.querySelector('[data-kit-gm="' + hardware.pad + '"]');
       const labelInput = document.querySelector('[data-kit-label="' + hardware.pad + '"]');
       const raw = gmSelect?.value || "";
+      const label = String(labelInput?.value || "").trim();
+      const explicitGm = raw === "" ? null : Number(raw);
+      let gmNote = explicitGm;
+      if (gmNote == null) {
+        const inferred = inferGmDrumNoteFromKitLabel(label);
+        if (inferred != null && !claimedInferred.has(inferred)) {
+          gmNote = inferred;
+          claimedInferred.add(inferred);
+          autoLinked++;
+        }
+      }
       assignments[String(hardware.pad)] = {
-        gmNote: raw === "" ? null : Number(raw),
-        label: String(labelInput?.value || "").trim(),
+        gmNote,
+        label,
       };
     }
 
@@ -6121,6 +6175,7 @@ body.timeline-ruler-seeking {
     renderAll();
     setStatus(
       "XR20 Kit Profile saved · " +
+      (autoLinked ? autoLinked + " obvious label" + (autoLinked === 1 ? "" : "s") + " linked to GM · " : "") +
       resolved + " previously unresolved drum note" + (resolved === 1 ? "" : "s") + " resolved",
       "ok"
     );
