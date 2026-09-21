@@ -1386,6 +1386,7 @@ select, input[type="number"], input[type="text"] {
   height: 100%;
   transform: translate3d(0,0,0);
   will-change: transform;
+  contain: layout paint style;
 }
 .piano-roll-velocity-bar {
   position: absolute;
@@ -1605,6 +1606,7 @@ select, input[type="number"], input[type="text"] {
   background: #0c1219;
   cursor: crosshair;
   user-select: none;
+  contain: layout paint style;
 }
 .piano-roll-grid.tool-select { cursor: default; }
 .piano-roll-grid.tool-draw { cursor: crosshair; }
@@ -1659,6 +1661,44 @@ select, input[type="number"], input[type="text"] {
   width: 2px;
   background: rgba(135,157,188,.58);
 }
+.piano-roll-note-vector,
+.piano-roll-parameter-vector {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+.piano-roll-note-vector { z-index: 2; }
+.piano-roll-parameter-vector { z-index: 1; }
+
+body.piano-roll-fast-geometry .piano-roll-note,
+body.piano-roll-resizing .piano-roll-note {
+  display: none !important;
+}
+body.piano-roll-fast-geometry .piano-roll-note-vector,
+body.piano-roll-resizing .piano-roll-note-vector {
+  display: block;
+}
+body.piano-roll-fast-geometry .piano-roll-velocity-bar,
+body.piano-roll-fast-geometry .piano-roll-control-bar,
+body.piano-roll-fast-geometry .piano-roll-slide-step,
+body.piano-roll-resizing .piano-roll-velocity-bar,
+body.piano-roll-resizing .piano-roll-control-bar,
+body.piano-roll-resizing .piano-roll-slide-step,
+body.piano-roll-parameter-resizing .piano-roll-velocity-bar,
+body.piano-roll-parameter-resizing .piano-roll-control-bar,
+body.piano-roll-parameter-resizing .piano-roll-slide-step {
+  display: none !important;
+}
+body.piano-roll-fast-geometry .piano-roll-parameter-vector,
+body.piano-roll-resizing .piano-roll-parameter-vector,
+body.piano-roll-parameter-resizing .piano-roll-parameter-vector {
+  display: block;
+}
+
 .piano-roll-note {
   position: absolute;
   z-index: 2;
@@ -1728,6 +1768,9 @@ select, input[type="number"], input[type="text"] {
   background: var(--playhead);
   box-shadow: 0 0 5px var(--playhead);
   pointer-events: none;
+  will-change: transform;
+  transform: translate3d(0,0,0);
+  contain: layout paint;
 }
 .piano-roll-empty {
   padding: 24px;
@@ -3931,7 +3974,9 @@ body.timeline-ruler-zooming {
     pianoRollResizeStartY: 0,
     pianoRollResizeStartHeight: 290,
     pianoRollResizeStartParameterLaneHeight: 92,
+    pianoRollResizeMaxHeight: 290,
     pianoRollResizeRenderFrame: 0,
+    pianoRollLastPlaybackPaintPerf: 0,
     pianoRollParameterLaneHeight: 92,
     pianoRollParameterResizing: false,
     pianoRollParameterResizeStartY: 0,
@@ -8326,7 +8371,15 @@ body.timeline-ruler-zooming {
     document.getElementById("tracks")?.style.setProperty("--playhead-x", xPx);
     document.getElementById("rulerWrap")?.style.setProperty("--playhead-x", xPx);
     updateSectionPlaylistActive(tick);
-    updatePianoRollPlayhead(tick);
+    const now = performance.now();
+    if (
+      !state.playing ||
+      !state.pianoRollClipId ||
+      now - (state.pianoRollLastPlaybackPaintPerf || 0) >= 40
+    ) {
+      state.pianoRollLastPlaybackPaintPerf = now;
+      updatePianoRollPlayhead(tick);
+    }
   }
 
   function startPlaybackUiLoop(token, projectLength) {
@@ -10671,6 +10724,7 @@ body.timeline-ruler-zooming {
     const info = trackDisplayInfo(ctx.track);
     content.style.width = width + "px";
     const fragment = document.createDocumentFragment();
+    fragment.appendChild(createPianoRollParameterVector(ctx, spec, info.color));
 
     if (spec.kind === "velocity") {
       for (const note of ctx.notes) {
@@ -11050,6 +11104,112 @@ body.timeline-ruler-zooming {
       beatOffset + "px 0"
     ].join(",");
     ruler.style.backgroundRepeat = "repeat";
+  }
+
+  function createPianoRollNoteVector(ctx, displayRows, rowH, rollH, rollW, color) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add("piano-roll-note-vector");
+    svg.setAttribute("viewBox", "0 0 " + Math.max(1, ctx.endTick - ctx.startTick) + " " + Math.max(1, rollH));
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("aria-hidden", "true");
+
+    const rowIndexByNote = new Map(displayRows.map((row, index) => [row.note, index]));
+    const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
+    const minTickWidth = Math.max(1, spanTicks / Math.max(1, rollW) * 1.25);
+    const pathData = [];
+
+    for (const note of ctx.notes || []) {
+      const displayNote = pianoRollDisplayNote(ctx, note);
+      const rowIndex = rowIndexByNote.get(displayNote);
+      if (rowIndex == null) continue;
+
+      const start = Math.max(ctx.startTick, Number(note.tick) || 0);
+      const end = Math.min(
+        ctx.endTick,
+        (Number(note.tick) || 0) + Math.max(1, Number(note.duration) || 1)
+      );
+      if (end <= start) continue;
+
+      const x = start - ctx.startTick;
+      const w = Math.max(minTickWidth, end - start);
+      const y = rowIndex * rowH + 2;
+      const h = Math.max(3, rowH - 4);
+      pathData.push(
+        "M", x.toFixed(2), " ", y.toFixed(2),
+        "h", w.toFixed(2),
+        "v", h.toFixed(2),
+        "h-", w.toFixed(2),
+        "Z"
+      );
+    }
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", pathData.join(""));
+    path.setAttribute("fill", resolveCanvasColor(color));
+    path.setAttribute("fill-opacity", ".92");
+    path.setAttribute("shape-rendering", "crispEdges");
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function createPianoRollParameterVector(ctx, spec, color) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add("piano-roll-parameter-vector");
+    const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
+    svg.setAttribute("viewBox", "0 0 " + spanTicks + " 127");
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("aria-hidden", "true");
+
+    const pathData = [];
+    const pushLine = (tick, ratio) => {
+      if (tick < ctx.startTick || tick >= ctx.endTick) return;
+      const x = tick - ctx.startTick;
+      const y = 127 - Math.max(0, Math.min(1, ratio)) * 124;
+      pathData.push("M", x.toFixed(2), " 127V", y.toFixed(2));
+    };
+
+    if (spec.kind === "velocity") {
+      for (const note of ctx.notes || []) {
+        if (trackIsPercussion(ctx.track) && pianoRollDisplayNote(ctx, note) == null) continue;
+        pushLine(Number(note.tick) || 0, Math.max(1, Math.min(127, Number(note.velocity) || 100)) / 127);
+      }
+    } else if (spec.kind === "slide") {
+      for (const note of ctx.notes || []) {
+        if (!note.td3Slide) continue;
+        pushLine(Number(note.tick) || 0, 1);
+      }
+    } else {
+      const range = Math.max(1, spec.max - spec.min);
+      for (const control of ctx.midiControls || []) {
+        if (!pianoRollParameterMatches(control, spec)) continue;
+        pushLine(
+          Number(control.tick) || 0,
+          (Math.max(spec.min, Math.min(spec.max, Number(control.value) || 0)) - spec.min) / range
+        );
+      }
+    }
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", pathData.join(""));
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", resolveCanvasColor(color));
+    path.setAttribute("stroke-opacity", ".9");
+    path.setAttribute("stroke-width", "3");
+    path.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(path);
+    return svg;
+  }
+
+  let pianoRollFastGeometryTimer = null;
+  function pulsePianoRollFastGeometry(delay = 130) {
+    document.body.classList.add("piano-roll-fast-geometry");
+    if (pianoRollFastGeometryTimer) clearTimeout(pianoRollFastGeometryTimer);
+    pianoRollFastGeometryTimer = setTimeout(() => {
+      pianoRollFastGeometryTimer = null;
+      if (!state.pianoRollResizing && !state.pianoRollParameterResizing && !state.pianoRollRulerGesture) {
+        document.body.classList.remove("piano-roll-fast-geometry");
+      }
+    }, Math.max(60, Number(delay) || 130));
   }
 
   function updatePianoRollViewportExtent() {
@@ -11845,6 +12005,9 @@ body.timeline-ruler-zooming {
     grid.dataset.rowNotes = displayRows.map((row) => row.note).join(",");
 
     const info = trackDisplayInfo(track);
+    grid.appendChild(
+      createPianoRollNoteVector(ctx, displayRows, rowH, rollH, rollW, info.color)
+    );
     for (const note of notes) {
       const displayNote = pianoRollDisplayNote(ctx, note);
       if (displayNote == null) continue;
@@ -12090,6 +12253,7 @@ body.timeline-ruler-zooming {
     );
     const anchorRatio = Math.max(0, Math.min(1, anchorContentX / oldRollW));
 
+    pulsePianoRollFastGeometry();
     state.pianoRollBarW = nextBarW;
     scheduleLocalStorageSet("midi_host_piano_roll_bar_w_v1", state.pianoRollBarW);
     const geometry = updatePianoRollHorizontalGeometryFast(nextBarW);
@@ -12231,6 +12395,7 @@ body.timeline-ruler-zooming {
     state.pianoRollRulerSeeking = false;
     if (gesture.mode === "zoom") {
       state.pianoRollRulerResumeAfterSeek = false;
+      pulsePianoRollFastGeometry(70);
       setStatus(
         "Piano Roll zoom · " + Math.round(state.pianoRollBarW) +
         " px/bar" +
@@ -12333,6 +12498,7 @@ body.timeline-ruler-zooming {
     state.pianoRollResizing = true;
     state.pianoRollResizeStartY = event.clientY;
     state.pianoRollResizeStartHeight = dock.getBoundingClientRect().height;
+    state.pianoRollResizeMaxHeight = pianoRollMaxHeight();
     const lane = document.getElementById("pianoRollParameterLane");
     state.pianoRollResizeStartParameterLaneHeight =
       lane?.getBoundingClientRect().height || state.pianoRollParameterLaneHeight || 92;
@@ -12363,16 +12529,14 @@ body.timeline-ruler-zooming {
 
     if (!state.pianoRollResizing) return;
     const dock = document.getElementById("pianoRollDock");
-    const main = dock?.closest(".main");
-    if (!dock || !main) return;
+    if (!dock) return;
     const delta = state.pianoRollResizeStartY - event.clientY;
-    const maxHeight = pianoRollMaxHeight();
+    const maxHeight = Math.max(220, Number(state.pianoRollResizeMaxHeight) || state.pianoRollResizeStartHeight);
     const next = Math.max(
       220,
       Math.min(maxHeight, state.pianoRollResizeStartHeight + delta)
     );
     state.pianoRollHeight = Math.round(next);
-    dock.style.height = state.pianoRollHeight + "px";
 
     const actualDockDelta =
       state.pianoRollHeight - state.pianoRollResizeStartHeight;
@@ -12387,6 +12551,7 @@ body.timeline-ruler-zooming {
     if (!state.pianoRollResizeRenderFrame) {
       state.pianoRollResizeRenderFrame = requestAnimationFrame(() => {
         state.pianoRollResizeRenderFrame = 0;
+        dock.style.height = state.pianoRollHeight + "px";
         applyPianoRollParameterLaneHeight();
         updatePianoRollViewportExtent();
       });
@@ -12417,6 +12582,7 @@ body.timeline-ruler-zooming {
       cancelAnimationFrame(state.pianoRollResizeRenderFrame);
       state.pianoRollResizeRenderFrame = 0;
     }
+    document.getElementById("pianoRollDock").style.height = state.pianoRollHeight + "px";
     applyPianoRollParameterLaneHeight();
     updatePianoRollViewportExtent();
     scheduleLocalStorageSet("midi_host_piano_roll_height_v1", state.pianoRollHeight);
