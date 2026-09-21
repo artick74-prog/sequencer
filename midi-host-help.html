@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Справка — Hardware MIDI Host</title>
+<style>
+:root {
+  --bg:#0c0e12;
+  --panel:#141820;
+  --border:#2a3344;
+  --text:#d0d6e0;
+  --dim:#7a8494;
+  --accent:#3ddc97;
+  --accent-dim:#1a6b4a;
+  --gm:#e8c170;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 "Segoe UI",system-ui,sans-serif}
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:16px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--border)}
+header h1{margin:0;font-size:17px;color:var(--accent)}
+header a{margin-left:auto;color:var(--text);text-decoration:none;border:1px solid var(--border);border-radius:4px;padding:6px 11px;background:#1c2430}
+header a:hover{border-color:var(--accent);color:#fff}
+main{width:min(1100px,calc(100% - 28px));margin:20px auto 48px}
+h2{margin:28px 0 10px;color:#fff;font-size:20px}
+h3{margin:18px 0 8px;color:var(--gm);font-size:15px}
+p{margin:8px 0}
+.note{padding:10px 12px;border:1px solid #4d452d;border-radius:6px;background:#18160f;color:#d8cfaa}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.card{padding:12px;border:1px solid var(--border);border-radius:6px;background:#0f141b}
+.card h3{margin-top:0}
+table{width:100%;border-collapse:collapse;background:#0f141b}
+th,td{padding:8px 10px;border:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:#171e28;color:#fff}
+code,kbd{font-family:ui-monospace,Consolas,monospace}
+kbd{display:inline-block;padding:1px 5px;border:1px solid #556173;border-bottom-width:2px;border-radius:4px;background:#1b2330;color:#fff;white-space:nowrap}
+.cc{color:var(--accent)}
+.small{color:var(--dim);font-size:12px}
+ul{margin:7px 0 0;padding-left:19px}
+li{margin:3px 0}
+.quick{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.quick a{color:var(--gm);text-decoration:none;border:1px solid var(--border);border-radius:999px;padding:4px 9px;background:#111821}
+.quick a:hover{border-color:var(--gm)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Hardware MIDI Host — Справка</h1>
+  <a href="midi-host.html">← MIDI Host</a>
+</header>
+<main>
+  <p class="note"><strong>Важно:</strong> General MIDI задаёт номера и общие назначения MIDI-контроллеров, но не гарантирует, что конкретный SoundFont, VST или железный синтезатор одинаково реагирует на каждый CC. Ниже — практические рекомендации: с чего обычно имеет смысл начинать для данного типа инструмента.</p>
+
+  <h2>Горячие клавиши</h2>
+  <table>
+    <thead><tr><th>Где</th><th>Клавиша</th><th>Действие</th></tr></thead>
+    <tbody>
+      <tr><td>Проект</td><td><kbd>Ctrl+N</kbd></td><td>Новый проект</td></tr>
+      <tr><td>Проект</td><td><kbd>Ctrl+O</kbd></td><td>Открыть проект</td></tr>
+      <tr><td>Проект</td><td><kbd>Ctrl+S</kbd></td><td>Сохранить проект</td></tr>
+      <tr><td>Транспорт</td><td><kbd>Space</kbd></td><td>Play / Pause</td></tr>
+      <tr><td>Транспорт</td><td><kbd>Esc</kbd></td><td>Остановить; повторное использование при остановке возвращает cue к началу</td></tr>
+      <tr><td>Транспорт</td><td><kbd>Home</kbd></td><td>Перейти в начало</td></tr>
+      <tr><td>Arrangement</td><td><kbd>+</kbd> / <kbd>-</kbd></td><td>Горизонтальный zoom таймлайна</td></tr>
+      <tr><td>Arrangement</td><td><kbd>0</kbd></td><td>Fit — показать проект по ширине</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>1</kbd></td><td>Select tool</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>5</kbd></td><td>Draw tool</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Ctrl</kbd> при Draw</td><td>Временно перейти в Select</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Ctrl+A</kbd></td><td>Выделить все ноты клипа</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Копировать / вставить выделенные ноты</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Ctrl+D</kbd></td><td>Дублировать выделенные ноты</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Delete</kbd> / <kbd>Backspace</kbd></td><td>Удалить выделенные ноты</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>Транспонировать выделение на ±1 полутон</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd></td><td>Транспонировать на ±12 полутонов</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>←</kbd> / <kbd>→</kbd></td><td>Сдвинуть выделенные ноты на текущий шаг сетки</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Ctrl+Z</kbd></td><td>Undo</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Ctrl+Y</kbd> / <kbd>Ctrl+Shift+Z</kbd></td><td>Redo</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Esc</kbd></td><td>Снять выделение нот</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Ctrl+колесо</kbd> над клавишами</td><td>Вертикальный zoom нотного диапазона</td></tr>
+      <tr><td>Piano Roll</td><td><kbd>Ctrl+колесо</kbd> над сеткой</td><td>Горизонтальный zoom Piano Roll</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Быстрый словарь контроллеров</h2>
+  <div class="grid">
+    <section class="card"><h3>Исполнение</h3><ul>
+      <li><span class="cc">Velocity</span> — сила/характер атаки ноты.</li>
+      <li><span class="cc">Pitch Bend</span> — плавное изменение высоты.</li>
+      <li><span class="cc">Aftertouch</span> — давление после нажатия; назначение зависит от тембра.</li>
+      <li><span class="cc">CC1 Modulation</span> — часто vibrato/modulation.</li>
+      <li><span class="cc">CC2 Breath</span> — дыхание/интенсивность; особенно полезен на духовых и многих современных библиотеках.</li>
+      <li><span class="cc">CC11 Expression</span> — музыкальная динамика внутри уже звучащей партии.</li>
+    </ul></section>
+    <section class="card"><h3>Микс и педали</h3><ul>
+      <li><span class="cc">CC7 Volume</span> — общий уровень канала.</li>
+      <li><span class="cc">CC10 Pan</span> — панорама.</li>
+      <li><span class="cc">CC64 Sustain</span> — sustain/damper.</li>
+      <li><span class="cc">CC65 Portamento</span> — включение portamento, если инструмент его поддерживает.</li>
+      <li><span class="cc">CC66 Sostenuto</span> — sostenuto.</li>
+      <li><span class="cc">CC67 Soft Pedal</span> — soft pedal.</li>
+    </ul></section>
+    <section class="card"><h3>Тембр и эффекты</h3><ul>
+      <li><span class="cc">CC71 Resonance</span> — resonance.</li>
+      <li><span class="cc">CC72 Release</span> — release time.</li>
+      <li><span class="cc">CC73 Attack</span> — attack time.</li>
+      <li><span class="cc">CC74 Brightness / Cutoff</span> — яркость/часто filter cutoff.</li>
+      <li><span class="cc">CC75 Decay</span> — decay time.</li>
+      <li><span class="cc">CC76/77/78</span> — vibrato rate/depth/delay.</li>
+      <li><span class="cc">CC91/93/94/95</span> — reverb/chorus/detune/phaser send.</li>
+    </ul></section>
+  </div>
+
+  <h2>Рекомендованные контроллеры по инструментам</h2>
+  <div class="quick">
+    <a href="#guitar">Гитара</a><a href="#trumpet">Труба</a><a href="#violin">Скрипка</a><a href="#accordion">Аккордеон</a><a href="#synth">Синтезатор</a><a href="#hardware">TD-3 / XR20</a>
+  </div>
+
+  <table>
+    <thead><tr><th>GM-группа</th><th>С чего начинать</th><th>Комментарий</th></tr></thead>
+    <tbody>
+      <tr><td>Piano · Programs 0–7</td><td>Velocity, CC64, CC66, CC67, CC11, CC91, CC93, Pitch Bend</td><td>Для акустического фортепиано Pitch Bend обычно используется осторожно; для electric piano — свободнее.</td></tr>
+      <tr><td>Chromatic Percussion · 8–15</td><td>Velocity, CC11, CC10, CC91, CC93, Pitch Bend</td><td>Pitch Bend особенно полезен на колокольчиках и синтетических маллетах.</td></tr>
+      <tr><td>Organ · 16–23</td><td>CC1, CC7, CC11, CC64, CC91, CC93, Pitch Bend</td><td>CC1 нередко управляет vibrato/rotary, но конкретная реакция зависит от движка.</td></tr>
+      <tr id="guitar"><td>Guitar · 24–31</td><td>Velocity, Pitch Bend, CC1, CC11, CC7, CC10, CC64, CC91, CC93</td><td>Palm mute, harmonics, pick noise и настоящий guitar slide не стандартизованы GM-контроллерами и часто делаются keyswitch/спец-артикуляциями.</td></tr>
+      <tr><td>Bass · 32–39</td><td>Velocity, Pitch Bend, CC1, CC11, CC7, CC10, CC64, CC91</td><td>Pitch Bend удобен для slides; Velocity — для атаки/акцента.</td></tr>
+      <tr id="violin"><td>Strings · 40–47</td><td>Velocity, CC1, CC11, CC2, Aftertouch, Pitch Bend, CC91, CC93</td><td>CC1/CC11 — основные кандидаты для vibrato и динамики. CC2 часто используется библиотеками, но не гарантируется GM.</td></tr>
+      <tr><td>Ensemble · 48–55</td><td>CC1, CC11, CC2, Aftertouch, CC74, CC91, CC93</td><td>Для падоподобных ансамблей CC74 может быть полезен как brightness/cutoff.</td></tr>
+      <tr id="trumpet"><td>Brass · 56–63</td><td>Velocity, CC1, CC2, CC11, Aftertouch, Pitch Bend, CC91, CC93</td><td>Для трубы/тромбона особенно полезны Breath/Expression и умеренный Pitch Bend.</td></tr>
+      <tr><td>Reed · 64–71</td><td>Velocity, CC2, CC11, CC1, Aftertouch, Pitch Bend, CC91</td><td>Саксофон/гобой/кларнет хорошо выигрывают от непрерывной динамики.</td></tr>
+      <tr><td>Pipe · 72–79</td><td>Velocity, CC2, CC11, CC1, Aftertouch, Pitch Bend, CC91, CC93</td><td>Флейты и свистковые тембры: Breath/Expression + vibrato.</td></tr>
+      <tr id="synth"><td>Synth Lead · 80–87</td><td>Velocity, Pitch Bend, CC1, Aftertouch, CC11, CC71–78, CC91–95</td><td>Самая широкая зона для filter/envelope/vibrato/effects, если движок поддерживает Sound Controllers.</td></tr>
+      <tr><td>Synth Pad · 88–95</td><td>CC1, CC11, Aftertouch, Pitch Bend, CC71–78, CC91–95</td><td>Expression, filter и envelope-контроллеры особенно полезны для движения длинных нот.</td></tr>
+      <tr><td>Synth Effects · 96–103</td><td>Pitch Bend, CC1, CC11, Aftertouch, CC71–78, CC91–95</td><td>Экспериментальные тембры обычно лучше всего реагируют на широкий набор sound/effect controllers.</td></tr>
+      <tr><td>Ethnic · 104–111</td><td>Velocity, Pitch Bend, CC1, CC11, CC91, CC93</td><td>Набор сильно зависит от конкретного тембра.</td></tr>
+      <tr><td>Percussive · 112–119</td><td>Velocity, CC11, CC10, CC91, CC93, Pitch Bend</td><td>Для тональной перкуссии Pitch Bend может быть выразительным; для шумовой — обычно нет.</td></tr>
+      <tr><td>Sound Effects · 120–127</td><td>CC7, CC10, CC11, Pitch Bend, CC71–78, CC91–95</td><td>Здесь особенно полезен эксперимент: поведение очень зависит от патча.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="accordion">Аккордеон · GM 21</h3>
+  <p>Практический старт: <strong>Velocity, CC11 Expression, CC7 Volume, CC10 Pan, CC91 Reverb, CC93 Chorus</strong>; затем можно попробовать <strong>CC1</strong> и <strong>Pitch Bend</strong>, если конкретный SoundFont реагирует музыкально.</p>
+
+  <h3 id="hardware">TD-3 и XR20</h3>
+  <div class="grid">
+    <section class="card"><h3>TD-3</h3><p>Для нашей дорожки отдельно есть <strong>TD-3 Slide</strong>: MIDI Host эмулирует slide перекрытием соседних нот. Остальные параметры проверяем по реакции конкретного TD-3; стандартный список CC не следует считать картой всех ручек синтезатора.</p></section>
+    <section class="card"><h3>XR20</h3><p><strong>Velocity</strong> — главный выразительный параметр для ударов. Для остальных CC не предполагаем поддержку автоматически: ориентируемся на MIDI-реализацию XR20 и фактическое поведение железа.</p></section>
+  </div>
+
+  <p class="small">Эта страница — рабочая шпаргалка проекта. По мере появления собственных articulation mapping, presets и проверок на железе список можно уточнять без изменения самого Piano Roll.</p>
+</main>
+</body>
+</html>
