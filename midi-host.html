@@ -107,6 +107,43 @@ a { color: var(--accent); }
   text-align: center;
 }
 .performance-value.wide { min-width: 38px; }
+.transport-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #101720;
+}
+.transport-btn {
+  width: 34px;
+  min-width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #b8c2cf;
+  font: 700 16px/28px "Segoe UI Symbol","Segoe UI",sans-serif;
+  text-align: center;
+  cursor: pointer;
+}
+.transport-btn:hover {
+  border-color: var(--border);
+  background: #1a2430;
+  color: #fff;
+}
+.transport-btn.play {
+  color: var(--accent);
+}
+.transport-btn.stop {
+  color: #8ab9ff;
+}
+.transport-btn:focus {
+  outline: 1px solid var(--accent-dim);
+  outline-offset: 0;
+}
 .transport-transpose,
 .octave-control {
   display: inline-flex;
@@ -2174,8 +2211,13 @@ body.timeline-ruler-seeking {
   </header>
 
   <div class="toolbar">
-    <button class="btn primary" id="btnPlay" type="button">Play</button>
-    <button class="btn" id="btnStop" type="button">Stop</button>
+    <span class="transport-bar" aria-label="Transport">
+      <button class="transport-btn" id="btnToStart" type="button" title="To project start · Home">⏮</button>
+      <button class="transport-btn" id="btnRewind" type="button" title="Back one bar">◀◀</button>
+      <button class="transport-btn stop" id="btnStop" type="button" title="Stop">■</button>
+      <button class="transport-btn play" id="btnPlay" type="button" title="Play / Pause · Space">▶</button>
+      <button class="transport-btn" id="btnForward" type="button" title="Forward one bar">▶▶</button>
+    </span>
     <button class="btn" id="btnLoop" type="button">Loop</button>
     <label class="field">BPM
       <input type="number" id="tempo" min="40" max="240" value="120" step="1">
@@ -7082,24 +7124,15 @@ body.timeline-ruler-seeking {
   }
 
   function resetXr20BassGate(output, project, timestamp = null, source = "XR20 bass gate reset") {
-    if (!output || !project) return 0;
+    if (!output) return 0;
 
-    const notes = new Set();
-    for (const track of project.tracks || []) {
-      if ((Number(track.channel) || 1) !== 1) continue;
-      const route = trackRoute(track);
-      if (route !== "hw" && route !== "both") continue;
-      if (!trackIsAudible(track, project)) continue;
-      for (const note of track.notes || []) {
-        const pitch = projectPlaybackNote(project, track, note.note);
-        if (Number.isFinite(pitch)) notes.add(Math.max(0, Math.min(127, pitch | 0)));
-      }
-    }
-
-    for (const note of [...notes].sort((a, b) => a - b)) {
+    // XR20 CH1 can keep a mono bass voice alive after the browser clears its
+    // timestamped MIDI queue. A full Note Off sweep is cheap (128 messages),
+    // deterministic, and does not depend on which note the project believes is active.
+    for (let note = 0; note < 128; note++) {
       midiSend(output, [0x80, note, 0], timestamp, source);
     }
-    return notes.size;
+    return 128;
   }
 
   function allNotesOff(output) {
@@ -7144,7 +7177,12 @@ body.timeline-ruler-seeking {
 
     allNotesOff(output);
     state.playbackOutput = null;
-    document.getElementById("btnPlay").textContent = "Play";
+    const playButton = document.getElementById("btnPlay");
+    if (playButton) {
+      playButton.textContent = "▶";
+      playButton.title = "Play · Space";
+      playButton.setAttribute("aria-label", "Play");
+    }
   }
 
   function absoluteTransportTick(atPerf = performance.now()) {
@@ -7605,7 +7643,12 @@ body.timeline-ruler-seeking {
     state.playbackPpq = ppq;
     state.playbackOutput = hw ? output : null;
     const token = ++state.playbackToken;
-    document.getElementById("btnPlay").textContent = "Pause";
+    const playButton = document.getElementById("btnPlay");
+    if (playButton) {
+      playButton.textContent = "❚❚";
+      playButton.title = "Pause · Space";
+      playButton.setAttribute("aria-label", "Pause");
+    }
     updatePlayheads(scheduleStart, projectLength);
     const dest = [sf2 ? "SF2" : null, hw ? `${output.name} (HW timestamp)` : null]
       .filter(Boolean)
@@ -13833,6 +13876,32 @@ body.timeline-ruler-seeking {
     if (file) await loadSf2File(file);
   });
 
+  function transportSeekByBars(deltaBars) {
+    if (!state.project) return;
+    const ppq = state.project.ppq || 480;
+    const current = state.playing ? currentTransportTick() : (state.startTick || 0);
+    const next = Math.max(
+      0,
+      Math.min(state.lengthTicks || state.project.lengthTicks || 0, current + deltaBars * ticksPerBar(ppq))
+    );
+    const wasPlaying = state.playing;
+    if (wasPlaying) stopPlayback();
+    state.startTick = next;
+    updatePlayheads(next, state.lengthTicks || 1);
+    if (wasPlaying) runScheduler(next);
+    else setStatus("Cue: bar " + tickToBar(next, ppq), "");
+  }
+
+  document.getElementById("btnToStart")?.addEventListener("click", () => {
+    const wasPlaying = state.playing;
+    if (wasPlaying) stopPlayback();
+    state.startTick = 0;
+    updatePlayheads(0, state.lengthTicks || 1);
+    if (wasPlaying) runScheduler(0);
+    else setStatus("Cue: bar 1", "");
+  });
+  document.getElementById("btnRewind")?.addEventListener("click", () => transportSeekByBars(-1));
+  document.getElementById("btnForward")?.addEventListener("click", () => transportSeekByBars(1));
   document.getElementById("btnPlay").addEventListener("click", () => { togglePlay(); });
   document.getElementById("btnStop").addEventListener("click", () => {
     if (state.playing) {
@@ -14308,8 +14377,28 @@ body.timeline-ruler-seeking {
     setMasterTranspose((Number(state.project.masterTranspose) || 0) + 1);
   });
 
+  document.addEventListener("change", (e) => {
+    if (e.target instanceof HTMLSelectElement) {
+      requestAnimationFrame(() => e.target.blur());
+    }
+  });
+
   document.addEventListener("keydown", (e) => {
-    if (e.target.matches("input, select, textarea")) return;
+    const target = e.target;
+    const isTextEntry =
+      target instanceof HTMLTextAreaElement ||
+      (target instanceof HTMLInputElement &&
+        !["button","checkbox","radio","range","color"].includes(String(target.type || "").toLowerCase())) ||
+      target?.isContentEditable;
+
+    if (e.code === "Space" && !isTextEntry) {
+      e.preventDefault();
+      target?.blur?.();
+      togglePlay();
+      return;
+    }
+
+    if (target?.matches?.("input, select, textarea")) return;
 
     const clipContext = selectedHostClipContext();
 
@@ -14434,8 +14523,7 @@ body.timeline-ruler-seeking {
       return;
     }
 
-    if (e.code === "Space") { e.preventDefault(); togglePlay(); }
-    else if (e.code === "Escape") {
+    if (e.code === "Escape") {
       if (state.playing) {
         const tick = snapToBar(currentTransportTick());
         stopPlayback();
