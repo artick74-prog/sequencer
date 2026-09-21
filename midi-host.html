@@ -46,15 +46,39 @@ a { color: var(--accent); }
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.header-brand { min-width: 260px; }
-.header h1 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--accent);
+.header-brand {
+  min-width: 260px;
+  display: flex;
+  align-items: center;
 }
-.header .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+.header-project-row {
+  min-width: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.header-project-name {
+  width: min(430px, 42vw);
+  min-width: 150px;
+  padding: 2px 3px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  outline: none;
+  background: transparent;
+  color: var(--accent);
+  font: 600 16px/1.25 "Segoe UI", system-ui, sans-serif;
+  letter-spacing: .02em;
+}
+.header-project-name:hover { border-color: rgba(61,220,151,.22); }
+.header-project-name:focus {
+  border-color: var(--accent-dim);
+  background: #101720;
+}
+.header-dirty-mark {
+  color: var(--gm);
+  font: 700 18px/1 ui-monospace, Consolas, monospace;
+  user-select: none;
+}
 .app-nav {
   margin-left: auto;
   display: flex;
@@ -1678,6 +1702,22 @@ body.piano-roll-fast-geometry .piano-roll-note,
 body.piano-roll-resizing .piano-roll-note {
   display: none !important;
 }
+body.piano-roll-playback-lite .piano-roll-note {
+  opacity: 0 !important;
+  box-shadow: none !important;
+}
+body.piano-roll-playback-lite .piano-roll-note-vector {
+  display: block;
+}
+body.piano-roll-playback-lite .piano-roll-velocity-bar,
+body.piano-roll-playback-lite .piano-roll-control-bar,
+body.piano-roll-playback-lite .piano-roll-slide-step {
+  opacity: 0 !important;
+  box-shadow: none !important;
+}
+body.piano-roll-playback-lite .piano-roll-parameter-vector {
+  display: block;
+}
 body.piano-roll-fast-geometry .piano-roll-note-vector,
 body.piano-roll-resizing .piano-roll-note-vector {
   display: block;
@@ -2347,8 +2387,10 @@ body.timeline-ruler-zooming {
 <body>
   <header class="header">
     <div class="header-brand">
-      <h1>Hardware MIDI Host</h1>
-      <div class="sub">TD-3 / XR20 · Hardware playback · Arrangement / Git sync</div>
+      <div class="header-project-row">
+        <input class="header-project-name" id="projectName" type="text" value="untitled" aria-label="Project name" title="Project name">
+        <span class="header-dirty-mark" id="projectDirtyMark" hidden aria-label="Unsaved changes">*</span>
+      </div>
     </div>
     <nav class="app-nav" aria-label="Music workspace">
       <button class="btn nav-update" id="btnUpdateApp" type="button" title="Pull the newest main commit from GitHub and restart this local bridge automatically">↓ Update</button>
@@ -2638,22 +2680,11 @@ body.timeline-ruler-zooming {
   <div class="layout">
     <aside class="sidebar">
       <h2>Browser audio (SF2)</h2>
-      <div class="audio-box" id="audioBox">
-        SoundFont: <strong id="sf2Name">not loaded</strong><br>
-        GM tracks play here (program from track name, e.g. <code>56 Trumpet</code>).
-      </div>
       <div class="sel-actions" style="margin-top:0;margin-bottom:8px">
-        <button class="btn" id="btnLoadSf2" type="button">Load SF2…</button>
+        <button class="btn" id="btnLoadSf2" type="button" title="Load a custom .sf2 file. Built-in SoundFont details are in Справка.">Load SF2…</button>
       </div>
       <label class="field" style="margin-bottom:4px"><input type="checkbox" id="chkSf2" checked> Project GM tracks (SF2)</label>
       <label class="field" style="margin-bottom:8px"><input type="checkbox" id="chkHw" checked> Hardware MIDI Out</label>
-
-      <h2>Project</h2>
-      <label class="field" style="margin-bottom:8px;width:100%">Name
-        <input type="text" id="projectName" style="width:100%" value="untitled">
-      </label>
-      <div id="projectMeta" style="color:var(--dim);font-size:12px;line-height:1.5">No project loaded.</div>
-      <div id="cloudProjectMeta" style="color:var(--dim);font-size:11px;line-height:1.4;margin-top:5px">Cloud: not saved</div>
 
       <h2>Arrangement playlist</h2>
       <div class="overview-box section-playlist" id="overviewBox">
@@ -3926,6 +3957,7 @@ body.timeline-ruler-zooming {
 
   const state = {
     project: null,
+    projectDirty: false,
     midiAccess: null,
     outputId: "",
     playing: false,
@@ -6468,11 +6500,26 @@ body.timeline-ruler-zooming {
     return { tick, bar: tickToBar(tick, project.ppq), x };
   }
 
+  function updateProjectTitleUi() {
+    const input = document.getElementById("projectName");
+    const mark = document.getElementById("projectDirtyMark");
+    const name = state.project?.name || input?.value || "untitled";
+    const dirty = !!state.projectDirty || !!state.project?.cloudProject?.dirty;
+
+    if (input && document.activeElement !== input && input.value !== name) {
+      input.value = name;
+    }
+    if (mark) mark.hidden = !dirty;
+    document.title = name + (dirty ? " *" : "") + " — MIDI Host";
+  }
+
   function markHostProjectDirty() {
     if (!state.project) return;
+    state.projectDirty = true;
     if (state.project.cloudProject?.id) {
       state.project.cloudProject = { ...state.project.cloudProject, dirty: true };
     }
+    updateProjectTitleUi();
     renderCloudProjectMeta();
   }
 
@@ -6623,9 +6670,7 @@ body.timeline-ruler-zooming {
 
     recomputeLength(state.project);
     renderAll();
-    const bars = Math.max(1, Math.round(state.lengthTicks / ticksPerBar(targetPpq)));
-    document.getElementById("projectMeta").innerHTML =
-      (state.project.tempo || 120) + " BPM · PPQ " + targetPpq + " · " + bars + " bars";
+    updateHostProjectMeta();
     markHostProjectDirty();
     scheduleHostAutosave();
 
@@ -6842,21 +6887,16 @@ body.timeline-ruler-zooming {
   }
 
   function updateSf2UI() {
-    const box = document.getElementById("audioBox");
-    const nameEl = document.getElementById("sf2Name");
-    if (!box || !nameEl) return;
+    const button = document.getElementById("btnLoadSf2");
+    if (!button) return;
     if (state.sf2Loading) {
-      nameEl.textContent = "preloading…";
-      box.classList.remove("ready");
-    } else if (state.sf2Ready) {
-      nameEl.textContent = state.sf2Name || "ready";
-      box.classList.add("ready");
-    } else if (state.sf2Prepared) {
-      nameEl.textContent = (state.sf2Name || "SoundFont") + " · prepared";
-      box.classList.add("ready");
+      button.title = "SoundFont is loading…";
+    } else if (state.sf2Ready || state.sf2Prepared) {
+      button.title =
+        "Current SoundFont: " + (state.sf2Name || "ready") +
+        " · click to load a custom .sf2 file · details in Справка";
     } else {
-      nameEl.textContent = "not loaded (Play or Load SF2)";
-      box.classList.remove("ready");
+      button.title = "Load a custom .sf2 file · built-in SoundFont details are in Справка";
     }
   }
 
@@ -7698,6 +7738,7 @@ body.timeline-ruler-zooming {
     state.pendingLoopState = null;
     state.pendingLoopAtPerf = 0;
     state.playing = false;
+    syncPianoRollPlaybackLiteMode();
     state.playbackToken++;
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
     if (state.playbackUiFrame) {
@@ -8205,6 +8246,7 @@ body.timeline-ruler-zooming {
       scheduleStart
     );
     state.playing = true;
+    syncPianoRollPlaybackLiteMode();
 
     // TD-3 transport-start guard.
     // Before the first real CH2 note, clear the mono gate with ordinary Note Off
@@ -8375,7 +8417,7 @@ body.timeline-ruler-zooming {
     if (
       !state.playing ||
       !state.pianoRollClipId ||
-      now - (state.pianoRollLastPlaybackPaintPerf || 0) >= 40
+      now - (state.pianoRollLastPlaybackPaintPerf || 0) >= 80
     ) {
       state.pianoRollLastPlaybackPaintPerf = now;
       updatePianoRollPlayhead(tick);
@@ -8757,15 +8799,14 @@ body.timeline-ruler-zooming {
         resolveUnmappedDrumNotesForProfile(profile.id);
       }
     }
+    state.projectDirty = !!project.cloudProject?.dirty;
     document.getElementById("projectName").value = project.name || "untitled";
     document.getElementById("tempo").value = project.tempo || 120;
+    updateProjectTitleUi();
     updatePerformanceControlsUi();
     updateLoopButtonUi();
     renderAll();
     updatePlayheads(0, state.lengthTicks);
-    const bars = (project.lengthTicks / ticksPerBar(project.ppq)).toFixed(0);
-    document.getElementById("projectMeta").innerHTML =
-      `${project.tempo || 120} BPM · PPQ ${project.ppq} · ${bars} bars`;
     renderCloudProjectMeta();
     renderOverview();
     setStatus(
@@ -10149,6 +10190,13 @@ body.timeline-ruler-zooming {
     return { clip, track, ppq, startTick, endTick, notes, midiControls };
   }
 
+  function syncPianoRollPlaybackLiteMode() {
+    document.body.classList.toggle(
+      "piano-roll-playback-lite",
+      !!state.playing && !!state.pianoRollClipId
+    );
+  }
+
   function closePianoRoll({ silent = false } = {}) {
     state.pianoRollClipId = "";
     state.pianoRollSelectedNoteId = "";
@@ -10157,7 +10205,11 @@ body.timeline-ruler-zooming {
     state.pianoRollRedoStack = [];
     state.pianoRollResizing = false;
     state.pianoRollParameterResizing = false;
-    document.body.classList.remove("piano-roll-resizing", "piano-roll-parameter-resizing");
+    document.body.classList.remove(
+      "piano-roll-resizing",
+      "piano-roll-parameter-resizing",
+      "piano-roll-playback-lite"
+    );
     const dock = document.getElementById("pianoRollDock");
     if (dock) {
       dock.classList.remove("open", "resizing");
@@ -10214,6 +10266,7 @@ body.timeline-ruler-zooming {
       dock.style.height = state.pianoRollHeight + "px";
     }
     renderPianoRoll({ centerPitch: true });
+    syncPianoRollPlaybackLiteMode();
     setStatus(
       "Piano Roll VIEW · " + (track.name || "Track") +
       " · " + (clip.name || clip.originalName || "Project Clip") +
@@ -12761,12 +12814,7 @@ body.timeline-ruler-zooming {
 
   function updateHostProjectMeta() {
     if (!state.project) return;
-    const bars = Math.max(
-      1,
-      Math.round((state.lengthTicks || ticksPerBar(state.project.ppq)) / ticksPerBar(state.project.ppq))
-    );
-    document.getElementById("projectMeta").innerHTML =
-      (state.project.tempo || 120) + " BPM · PPQ " + (state.project.ppq || 480) + " · " + bars + " bars";
+    updateProjectTitleUi();
   }
 
   function newHostClipInstanceId() {
@@ -14826,6 +14874,7 @@ body.timeline-ruler-zooming {
   }
 
   function renderCloudProjectMeta() {
+    updateProjectTitleUi();
     const el = document.getElementById("cloudProjectMeta");
     if (!el) return;
     const cloud = state.project?.cloudProject;
@@ -14927,6 +14976,7 @@ body.timeline-ruler-zooming {
         savedAt: new Date().toISOString(),
         dirty: false,
       };
+      state.projectDirty = false;
       scheduleHostAutosave();
       renderCloudProjectMeta();
 
@@ -15772,6 +15822,7 @@ body.timeline-ruler-zooming {
   document.getElementById("projectName").addEventListener("input", () => {
     if (!state.project) return;
     state.project.name = document.getElementById("projectName").value || state.project.name;
+    markHostProjectDirty();
     scheduleHostAutosave();
   });
 
@@ -15781,6 +15832,7 @@ body.timeline-ruler-zooming {
     const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
     if (wasPlaying) stopPlayback();
     state.project.tempo = Number(document.getElementById("tempo").value) || 120;
+    markHostProjectDirty();
     scheduleHostAutosave();
     if (wasPlaying) {
       state.startTick = tick;
