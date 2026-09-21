@@ -710,6 +710,69 @@ a { color: var(--accent); }
 }
 .rhythm-editor-actions .danger { color: var(--danger); border-color: #633; }
 
+.drum-kit-modal { width: min(820px, 96vw); }
+.drum-kit-body {
+  overflow: auto;
+  padding: 12px 14px 14px;
+}
+.drum-kit-intro {
+  margin-bottom: 10px;
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.drum-kit-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.drum-kit-name-row input {
+  flex: 1;
+  min-width: 160px;
+}
+.drum-kit-grid {
+  display: grid;
+  grid-template-columns: 74px 90px minmax(190px, 1fr) minmax(120px, .8fr);
+  gap: 1px;
+  border: 1px solid var(--border);
+  background: var(--border);
+}
+.drum-kit-cell {
+  min-width: 0;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 5px 7px;
+  background: #0d131a;
+  font-size: 11px;
+}
+.drum-kit-cell.head {
+  background: #18212d;
+  color: #fff;
+  font-weight: 700;
+}
+.drum-kit-cell code { color: var(--accent); }
+.drum-kit-cell select,
+.drum-kit-cell input {
+  width: 100%;
+  min-width: 0;
+  height: 25px;
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #0b1016;
+  color: var(--text);
+  font-size: 10px;
+}
+.drum-kit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+}
+
 .rhythm-audition-slot {
   position: absolute;
   top: 3px;
@@ -1792,6 +1855,25 @@ body.timeline-ruler-seeking {
 }
 .gm-program-select:focus,
 .gm-program-select:hover { border-color: var(--accent-dim); outline: none; }
+.drum-map-select {
+  min-width: 70px;
+  max-width: 92px;
+  height: 27px;
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #0b1016;
+  color: var(--xr-drums);
+  font-size: 10px;
+}
+.drum-map-select:focus,
+.drum-map-select:hover { border-color: var(--accent-dim); outline: none; }
+.drum-kit-btn {
+  padding: 5px 6px !important;
+  color: var(--gm);
+  border-color: #5d5231;
+}
+
 .track-delete { color: var(--danger); }
 .track-delete:hover {
   border-color: var(--danger) !important;
@@ -2253,6 +2335,33 @@ body.timeline-ruler-seeking {
     </div>
   </div>
 
+  <div class="cloud-modal-backdrop" id="drumKitModal" aria-hidden="true">
+    <div class="cloud-modal drum-kit-modal" role="dialog" aria-modal="true" aria-labelledby="drumKitTitle">
+      <div class="cloud-modal-head">
+        <strong id="drumKitTitle">XR20 Kit Profile</strong>
+        <span id="drumKitTrackName" style="color:var(--dim);font-size:11px"></span>
+        <span class="spacer"></span>
+        <button class="btn" id="drumKitClose" type="button">Close</button>
+      </div>
+      <div class="drum-kit-body">
+        <div class="drum-kit-intro">
+          GM = what the source loop means. PAD = where that instrument lives in the current XR20 kit.
+          Unassigned GM instruments stay unresolved instead of being guessed and sent to the wrong pad.
+        </div>
+        <div class="drum-kit-name-row">
+          <label class="field" style="flex:1">Profile name
+            <input id="drumKitProfileName" type="text" value="XR20 Kit 1">
+          </label>
+        </div>
+        <div class="drum-kit-grid" id="drumKitGrid"></div>
+      </div>
+      <div class="drum-kit-actions">
+        <button class="btn" id="drumKitCancel" type="button">Cancel</button>
+        <button class="btn primary" id="drumKitSave" type="button">Save profile</button>
+      </div>
+    </div>
+  </div>
+
   <div class="cloud-modal-backdrop" id="midiMonitorModal" aria-hidden="true">
     <div class="cloud-modal midi-monitor-modal" role="dialog" aria-modal="true" aria-labelledby="midiMonitorTitle">
       <div class="cloud-modal-head">
@@ -2408,11 +2517,31 @@ body.timeline-ruler-seeking {
   let GM_PROGRAMS = null;
   const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
-  // Step 5 prototype: a deliberately simple 24-row XR20 Drum Roll.
-  // MIDI 36–59 is only a contiguous two-octave test map. We will replace it
-  // with project-specific Drum Maps after checking the user's actual XR20.
-  const XR20_DRUM_MAP_BASE_NOTE = 36;
-  const XR20_DRUM_MAP_ROWS = 24;
+  // Drum-map architecture:
+  // - GM notes describe the musical source (library / interchangeable MIDI).
+  // - XR20 hardware pads describe the physical destination.
+  // - A project Kit Profile connects a GM instrument to one of those pads.
+  const GM_DRUM_NOTE_NAMES = {
+    35:"Acoustic Bass Drum", 36:"Bass Drum 1", 37:"Side Stick", 38:"Acoustic Snare",
+    39:"Hand Clap", 40:"Electric Snare", 41:"Low Floor Tom", 42:"Closed Hi-Hat",
+    43:"High Floor Tom", 44:"Pedal Hi-Hat", 45:"Low Tom", 46:"Open Hi-Hat",
+    47:"Low-Mid Tom", 48:"Hi-Mid Tom", 49:"Crash Cymbal 1", 50:"High Tom",
+    51:"Ride Cymbal 1", 52:"Chinese Cymbal", 53:"Ride Bell", 54:"Tambourine",
+    55:"Splash Cymbal", 56:"Cowbell", 57:"Crash Cymbal 2", 58:"Vibraslap",
+    59:"Ride Cymbal 2", 60:"Hi Bongo", 61:"Low Bongo", 62:"Mute Hi Conga",
+    63:"Open Hi Conga", 64:"Low Conga", 65:"High Timbale", 66:"Low Timbale",
+    67:"High Agogo", 68:"Low Agogo", 69:"Cabasa", 70:"Maracas",
+    71:"Short Whistle", 72:"Long Whistle", 73:"Short Guiro", 74:"Long Guiro",
+    75:"Claves", 76:"Hi Wood Block", 77:"Low Wood Block", 78:"Mute Cuica",
+    79:"Open Cuica", 80:"Mute Triangle", 81:"Open Triangle",
+  };
+  const XR20_DRUM_HARDWARE_MAP = [
+    { pad:1, midiNote:36 }, { pad:2, midiNote:38 }, { pad:3, midiNote:37 },
+    { pad:4, midiNote:42 }, { pad:5, midiNote:44 }, { pad:6, midiNote:46 },
+    { pad:7, midiNote:48 }, { pad:8, midiNote:47 }, { pad:9, midiNote:41 },
+    { pad:10, midiNote:49 }, { pad:11, midiNote:51 }, { pad:12, midiNote:53 },
+  ];
+  const DEFAULT_XR20_KIT_PROFILE_ID = "xr20-kit-1";
   const MIDI_CC_NAMES = {
     0:"Bank Select MSB", 1:"Modulation Wheel", 2:"Breath Controller", 3:"Undefined",
     4:"Foot Controller", 5:"Portamento Time", 6:"Data Entry MSB", 7:"Channel Volume",
@@ -2627,43 +2756,157 @@ body.timeline-ruler-seeking {
     return ROLE_BY_CH[ch] || { role: "other", label: `Ch ${ch}`, color: "#8899aa" };
   }
 
+  function gmDrumName(note) {
+    const n = Math.max(0, Math.min(127, Number(note) || 0));
+    return GM_DRUM_NOTE_NAMES[n] || ("GM Drum " + n);
+  }
+
+  function drumMapForTrack(track) {
+    if (!trackIsPercussion(track)) return "";
+    if (track?.drumMap === "gm" || track?.drumMap === "xr20") return track.drumMap;
+    if (track?.role === "gm" || track?.role === "gm-drums") return "gm";
+    return "xr20";
+  }
+
   function isXr20DrumTrack(track) {
-    return !!track && (track.role === "xr20-drums" || Number(track.channel) === 10);
+    return trackIsPercussion(track) && drumMapForTrack(track) === "xr20";
   }
 
-  function pianoRollPitchBounds(ctx = pianoRollContext()) {
-    if (isXr20DrumTrack(ctx?.track)) {
-      return {
-        minNote: XR20_DRUM_MAP_BASE_NOTE,
-        maxNote: XR20_DRUM_MAP_BASE_NOTE + XR20_DRUM_MAP_ROWS - 1,
-      };
+  function createDefaultXr20KitProfile() {
+    const assignments = {};
+    for (const item of XR20_DRUM_HARDWARE_MAP) {
+      assignments[String(item.pad)] = { gmNote: null, label: "" };
     }
-    return { minNote: 0, maxNote: 127 };
-  }
-
-  function pianoRollKeyWidth(ctx = pianoRollContext()) {
-    return isXr20DrumTrack(ctx?.track) ? 132 : 78;
-  }
-
-  function xr20PrototypePadInfo(note) {
-    const midi = Math.max(0, Math.min(127, Number(note) || 0));
-    const index = midi - XR20_DRUM_MAP_BASE_NOTE;
-    if (index < 0 || index >= XR20_DRUM_MAP_ROWS) return null;
-    const bank = index < 12 ? "DRUM" : "1-SHOT";
-    const pad = (index % 12) + 1;
     return {
-      bank,
-      pad,
-      note: midi,
-      pitchClass: NOTE_NAMES[midi % 12],
-      label: bank + " " + String(pad).padStart(2, "0") +
-        " · " + NOTE_NAMES[midi % 12] + " · MIDI " + midi,
+      id: DEFAULT_XR20_KIT_PROFILE_ID,
+      name: "XR20 Kit 1",
+      device: "xr20",
+      assignments,
     };
   }
 
+  function normalizeDrumKitProfiles(rawProfiles) {
+    const source = Array.isArray(rawProfiles) && rawProfiles.length
+      ? rawProfiles
+      : [createDefaultXr20KitProfile()];
+    return source.map((profile, index) => {
+      const fallback = createDefaultXr20KitProfile();
+      const assignments = {};
+      for (const item of XR20_DRUM_HARDWARE_MAP) {
+        const raw = profile?.assignments?.[String(item.pad)] || {};
+        const gm = Number(raw.gmNote);
+        assignments[String(item.pad)] = {
+          gmNote: Number.isInteger(gm) && GM_DRUM_NOTE_NAMES[gm] ? gm : null,
+          label: String(raw.label || "").trim(),
+        };
+      }
+      return {
+        id: String(profile?.id || (index ? "xr20-kit-" + (index + 1) : DEFAULT_XR20_KIT_PROFILE_ID)),
+        name: String(profile?.name || fallback.name),
+        device: "xr20",
+        assignments,
+      };
+    });
+  }
+
+  function xr20HardwarePadByNumber(pad) {
+    return XR20_DRUM_HARDWARE_MAP.find((item) => item.pad === Number(pad)) || null;
+  }
+
+  function xr20HardwarePadByMidi(note) {
+    return XR20_DRUM_HARDWARE_MAP.find((item) => item.midiNote === Number(note)) || null;
+  }
+
+  function currentXr20KitProfile(track, project = state.project) {
+    const profiles = project?.drumKitProfiles || [];
+    const requested = String(track?.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID);
+    return profiles.find((profile) => profile.id === requested) ||
+      profiles[0] ||
+      createDefaultXr20KitProfile();
+  }
+
+  function xr20KitAssignment(profile, pad) {
+    return profile?.assignments?.[String(Number(pad))] || { gmNote:null, label:"" };
+  }
+
+  function resolveGmDrumToXr20(track, gmNote, project = state.project) {
+    const profile = currentXr20KitProfile(track, project);
+    const source = Number(gmNote);
+    for (const hardware of XR20_DRUM_HARDWARE_MAP) {
+      const assignment = xr20KitAssignment(profile, hardware.pad);
+      if (Number(assignment.gmNote) === source) {
+        return {
+          pad: hardware.pad,
+          midiNote: hardware.midiNote,
+          gmNote: source,
+          label: assignment.label || gmDrumName(source),
+        };
+      }
+    }
+    return null;
+  }
+
+  function pianoRollDisplayRows(ctx = pianoRollContext()) {
+    const track = ctx?.track;
+    if (!trackIsPercussion(track)) {
+      return Array.from({ length:128 }, (_, index) => {
+        const note = 127 - index;
+        const sharp = NOTE_NAMES[note % 12].includes("#");
+        return {
+          note,
+          label: sharp ? "" : midiToName(note),
+          sharp,
+          cNote: note % 12 === 0,
+          kind:"piano",
+        };
+      });
+    }
+
+    if (drumMapForTrack(track) === "gm") {
+      return Object.keys(GM_DRUM_NOTE_NAMES)
+        .map(Number)
+        .sort((a,b) => b-a)
+        .map((note) => ({
+          note,
+          label: gmDrumName(note) + " · " + note,
+          sharp:false,
+          cNote:false,
+          kind:"gm",
+        }));
+    }
+
+    const profile = currentXr20KitProfile(track);
+    return XR20_DRUM_HARDWARE_MAP.map((hardware) => {
+      const assignment = xr20KitAssignment(profile, hardware.pad);
+      const semantic = assignment.gmNote == null ? "" : gmDrumName(assignment.gmNote);
+      const custom = String(assignment.label || "").trim();
+      const soundLabel = custom || semantic;
+      return {
+        note: hardware.midiNote,
+        pad: hardware.pad,
+        label:
+          "PAD " + String(hardware.pad).padStart(2,"0") +
+          " · " + NOTE_NAMES[hardware.midiNote % 12] +
+          " · MIDI " + hardware.midiNote +
+          (soundLabel ? " · " + soundLabel : ""),
+        sharp:false,
+        cNote:false,
+        kind:"xr20",
+      };
+    });
+  }
+
+  function pianoRollRowIndex(ctx, note) {
+    return pianoRollDisplayRows(ctx).findIndex((row) => row.note === Number(note));
+  }
+
   function pianoRollPitchLabel(ctx, note) {
-    const pad = isXr20DrumTrack(ctx?.track) ? xr20PrototypePadInfo(note) : null;
-    return pad?.label || midiToName(note);
+    const row = pianoRollDisplayRows(ctx).find((item) => item.note === Number(note));
+    return row?.label || midiToName(note);
+  }
+
+  function pianoRollKeyWidth(ctx = pianoRollContext()) {
+    return trackIsPercussion(ctx?.track) ? 220 : 78;
   }
 
   function parseGmTrackName(name) {
@@ -7152,6 +7395,7 @@ body.timeline-ruler-seeking {
       cloudProject: data.cloudProject && typeof data.cloudProject === "object"
         ? {...data.cloudProject}
         : null,
+      drumKitProfiles: normalizeDrumKitProfiles(data.drumKitProfiles),
       clips: Array.isArray(data.clips) ? data.clips.map((clip) => ({...clip})) : [],
       tracks: (data.tracks || []).map((t, i) => {
         const channel = t.channel || 1;
@@ -7161,6 +7405,12 @@ body.timeline-ruler-seeking {
           name,
           channel,
           role: t.role || inferTrackRole({ name, role: t.role }, channel),
+          drumMap:
+            t.drumMap === "gm" || t.drumMap === "xr20"
+              ? t.drumMap
+              : ((t.role === "gm" || t.role === "gm-drums") && Number(channel) === 10 ? "gm" :
+                  (Number(channel) === 10 || t.role === "xr20-drums" ? "xr20" : "")),
+          drumKitProfileId: String(t.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID),
           mute: !!t.mute,
           solo: !!t.solo,
           transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(t.transposeOctaves) || 0))),
@@ -11636,8 +11886,16 @@ body.timeline-ruler-seeking {
             `<option value="${program}" ${gmProgram === program ? "selected" : ""}>GM ${program} · ${escapeHtml(gmProgramName(program))}</option>`
           ).join("")
         : "";
-      const gmTag = isGmTrack(track)
+      const gmTag = isGmTrack(track) && !trackIsPercussion(track)
         ? `<select class="gm-program-select" data-gm-program="${track.id}" title="SoundFont / General MIDI instrument">${gmProgramOptions}</select>`
+        : "";
+      const percussion = trackIsPercussion(track);
+      const drumMap = percussion ? drumMapForTrack(track) : "";
+      const drumMapTag = percussion
+        ? `<select class="drum-map-select" data-drum-map="${track.id}" ${(track.notes || []).length ? "disabled" : ""} title="${(track.notes || []).length ? "Drum Map is locked after notes exist on this track" : "Choose the target drum map before adding notes"}"><option value="xr20" ${drumMap === "xr20" ? "selected" : ""}>XR20</option><option value="gm" ${drumMap === "gm" ? "selected" : ""}>GM</option></select>`
+        : "";
+      const drumKitTag = percussion && drumMap === "xr20"
+        ? `<button class="btn drum-kit-btn" type="button" data-drum-kit="${track.id}" title="Map GM source instruments to XR20 physical pads">Kit</button>`
         : "";
       const el = document.createElement("div");
       el.className = "track";
@@ -11669,6 +11927,8 @@ body.timeline-ruler-seeking {
               <span class="performance-value">${trackIsPercussion(track) ? "dr" : ((track.transposeOctaves || 0) > 0 ? "+" : "") + (track.transposeOctaves || 0)}</span>
               <button class="pitch-step-btn" type="button" data-oct-up="${track.id}" ${trackIsPercussion(track) ? "disabled" : ""} title="Octave up">+</button>
             </span>
+            ${drumMapTag}
+            ${drumKitTag}
             <button class="btn" type="button" data-preview="${track.id}">Preview</button>
             <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
             <button class="btn track-delete" type="button" data-delete-track="${track.id}" title="Delete this MIDI track">×</button>
@@ -11882,12 +12142,39 @@ body.timeline-ruler-seeking {
       el.querySelector(`[data-ch="${track.id}"]`).addEventListener("change", (e) => {
         track.channel = Number(e.target.value);
         if (!isGmTrack(track)) track.role = roleForChannel(track.channel).role;
+        if (Number(track.channel) === 10 && !track.drumMap) {
+          track.drumMap = isGmTrack(track) ? "gm" : "xr20";
+        }
+        if (Number(track.channel) !== 10 && track.role !== "xr20-drums") {
+          track.drumMap = "";
+        }
         markHostProjectDirty();
         scheduleHostAutosave();
         renderTracks();
       });
       el.querySelector(`[data-gm-program="${track.id}"]`)?.addEventListener("change", (e) => {
         setGmTrackProgram(track, Number(e.target.value));
+      });
+      el.querySelector(`[data-drum-map="${track.id}"]`)?.addEventListener("change", (e) => {
+        if ((track.notes || []).length) {
+          e.target.value = drumMapForTrack(track);
+          setStatus("Drum Map is locked after notes exist. Use an empty drum track for a different target map.", "err");
+          return;
+        }
+        track.drumMap = e.target.value === "gm" ? "gm" : "xr20";
+        if (track.drumMap === "xr20") {
+          track.role = "xr20-drums";
+          track.drumKitProfileId = track.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID;
+        } else if (track.role === "xr20-drums") {
+          track.role = "gm-drums";
+        }
+        markHostProjectDirty();
+        scheduleHostAutosave();
+        renderTracks();
+        setStatus("Drum Map → " + (track.drumMap === "xr20" ? "AKAI XR20" : "General MIDI"), "ok");
+      });
+      el.querySelector(`[data-drum-kit="${track.id}"]`)?.addEventListener("click", () => {
+        openDrumKitEditor(track);
       });
       el.querySelector(`[data-delete-track="${track.id}"]`)?.addEventListener("click", () => {
         removeMidiTrack(track);
@@ -12256,7 +12543,7 @@ body.timeline-ruler-seeking {
         { id: "acid", name: "Acid", channel: 2, role: "td3", notes: [] },
         { id: "guitar", name: formatGmTrackName(29, gm29), channel: 3, role: "gm", notes: [] },
         { id: "keys", name: formatGmTrackName(4, gm4), channel: 4, role: "gm", notes: [] },
-        { id: "drums", name: "Drums", channel: 10, role: "xr20-drums", notes: [] },
+        { id: "drums", name: "Drums", channel: 10, role: "xr20-drums", drumMap: "xr20", drumKitProfileId: DEFAULT_XR20_KIT_PROFILE_ID, notes: [] },
       ],
     });
   }
