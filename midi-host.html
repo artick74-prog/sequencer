@@ -3845,6 +3845,8 @@ body.timeline-ruler-seeking {
     sf2Timers: new Set(),
     hardwarePanicTimers: new Set(),
     transportRestartTimer: null,
+    pendingLoopState: null,
+    pendingLoopAtPerf: 0,
     timingDiagnosticResult: null,
     playheadEls: [],
     rulerPlayheadEls: [],
@@ -7638,15 +7640,24 @@ body.timeline-ruler-seeking {
     return range;
   }
 
+  function loopUiState() {
+    return state.pendingLoopState == null ? !!state.loop : !!state.pendingLoopState;
+  }
+
   function updateLoopButtonUi() {
     const btn = document.getElementById("btnLoop");
     if (!btn) return;
     const range = loopRangeBounds();
-    btn.classList.toggle("active", !!state.loop);
-    btn.textContent = range ? ("Loop " + range.startBar + "–" + range.endBar) : "Loop";
+    const uiLoop = loopUiState();
+    const pending = state.pendingLoopState != null;
+    btn.classList.toggle("active", uiLoop);
+    btn.textContent = range
+      ? ("Loop " + range.startBar + "–" + range.endBar + (pending ? "…" : ""))
+      : ("Loop" + (pending ? "…" : ""));
     btn.title = range
-      ? ((state.loop ? "Loop ON · " : "Loop OFF · ") +
+      ? ((uiLoop ? "Loop ON · " : "Loop OFF · ") +
          "bars " + range.startBar + "–" + range.endBar +
+         (pending ? " · switching without interrupting playback" : "") +
          " · Shift+drag ruler or drag green locator handles to change the range")
       : "Enable Loop; without a range it will default to the current bar";
   }
@@ -7656,6 +7667,7 @@ body.timeline-ruler-seeking {
     const length = Math.max(1, state.lengthTicks || 1);
     const leftPct = range ? (range.start / length) * 100 : 0;
     const widthPct = range ? (range.span / length) * 100 : 0;
+    const uiLoop = loopUiState();
 
     document.querySelectorAll(".ruler-loop-range, .track-loop-region").forEach((el) => {
       if (!range) {
@@ -7665,7 +7677,7 @@ body.timeline-ruler-seeking {
       el.style.display = "block";
       el.style.left = leftPct + "%";
       el.style.width = widthPct + "%";
-      el.classList.toggle("active", !!state.loop);
+      el.classList.toggle("active", uiLoop);
     });
     document.querySelectorAll(".ruler-loop-label").forEach((el) => {
       el.textContent = range ? (range.startBar + "–" + range.endBar) : "";
@@ -8004,7 +8016,10 @@ body.timeline-ruler-seeking {
     }
   }
 
-  function runScheduler(fromTick) {
+  function runScheduler(
+    fromTick,
+    { startAtPerf = null, resetHardware = true, preserveToken = false } = {}
+  ) {
     clearTransportRestart();
     clearDelayedHardwarePanics();
     const project = state.project;
@@ -8045,14 +8060,16 @@ body.timeline-ruler-seeking {
     // messages for the pitches used by the active hardware track, then start a
     // few milliseconds later. This avoids the TD-3 occasionally choking when a
     // dense drum clip starts on the same transport boundary.
-    const td3ResetCount = hw ? resetTd3Gate(output, project) : 0;
+    const td3ResetCount = hw && resetHardware ? resetTd3Gate(output, project) : 0;
     const resetLeadMs = td3ResetCount ? 12 : 0;
-    state.startPerf = performance.now() + Math.max(PLAYBACK_START_LEAD_MS, resetLeadMs);
+    state.startPerf = Number.isFinite(startAtPerf)
+      ? startAtPerf
+      : performance.now() + Math.max(PLAYBACK_START_LEAD_MS, resetLeadMs);
     state.startTick = scheduleStart;
     state.playbackTempo = tempo;
     state.playbackPpq = ppq;
     state.playbackOutput = hw ? output : null;
-    const token = ++state.playbackToken;
+    const token = preserveToken ? state.playbackToken : ++state.playbackToken;
     const playButton = document.getElementById("btnPlay");
     if (playButton) {
       playButton.textContent = "❚❚";
@@ -8070,10 +8087,18 @@ body.timeline-ruler-seeking {
     const pump = () => {
       if (!state.playing || state.playbackToken !== token) return;
       const now = performance.now();
+      const pendingLoop = state.pendingLoopState;
+      const handoffPerf =
+        pendingLoop == null || !Number.isFinite(state.pendingLoopAtPerf)
+          ? null
+          : state.pendingLoopAtPerf;
+      const oldScheduleDeadline =
+        handoffPerf == null ? Infinity : Math.max(now, handoffPerf - 0.5);
+
       if (hw && !scheduleHardwareWindow(
         hardwareCursor,
         output,
-        now + HARDWARE_LOOKAHEAD_MS,
+        Math.min(now + HARDWARE_LOOKAHEAD_MS, oldScheduleDeadline),
         scheduleStart,
         scheduleLength,
         tempo,
@@ -8085,13 +8110,57 @@ body.timeline-ruler-seeking {
       if (sf2) {
         scheduleSf2Window(
           sf2Cursor,
-          now + SF2_LOOKAHEAD_MS,
+          Math.min(now + SF2_LOOKAHEAD_MS, oldScheduleDeadline),
           scheduleStart,
           scheduleLength,
           tempo,
           ppq,
           token
         );
+      }
+
+      if (pendingLoop != null && handoffPerf != null) {
+        const handoffLeadMs = Math.max(
+          PLAYBACK_START_LEAD_MS,
+          Math.min(90, sf2OutputLatencyMs() + 20)
+        );
+        if (now >= handoffPerf - handoffLeadMs) {
+          // Do not Stop/Panic here. The old scheduler has just filled both
+          // output queues up to (but not across) handoffPerf. Rebuild the queue
+          // for the new loop mode and timestamp its first events at the same
+          // handoff point, so the music continues through the switch.
+          let handoffTick = currentTransportTick(handoffPerf);
+
+          if (state.timer) {
+            clearInterval(state.timer);
+            state.timer = null;
+          }
+          if (state.playbackUiFrame) {
+            cancelAnimationFrame(state.playbackUiFrame);
+            state.playbackUiFrame = 0;
+          }
+
+          state.loop = !!pendingLoop;
+          state.pendingLoopState = null;
+          state.pendingLoopAtPerf = 0;
+
+          const nextRange = state.loop ? ensureLoopRangeAtTick(handoffTick) : null;
+          if (nextRange && (handoffTick < nextRange.start || handoffTick >= nextRange.end)) {
+            handoffTick = nextRange.start;
+          }
+
+          state.startTick = handoffTick;
+          updateLoopButtonUi();
+          updateLoopRangeVisuals();
+          scheduleHostAutosave();
+
+          runScheduler(handoffTick, {
+            startAtPerf: handoffPerf,
+            resetHardware: false,
+            preserveToken: true,
+          });
+          return;
+        }
       }
 
       if (!state.loop && absoluteTransportTick(now) >= projectLength) {
@@ -8110,6 +8179,10 @@ body.timeline-ruler-seeking {
 
   async function togglePlay() {
     clearTransportRestart();
+    state.pendingLoopState = null;
+    state.pendingLoopAtPerf = 0;
+    updateLoopButtonUi();
+    updateLoopRangeVisuals();
     if (state.playing) {
       const project = state.project;
       const ppq = project.ppq || 480;
@@ -14333,6 +14406,10 @@ body.timeline-ruler-seeking {
   document.getElementById("btnPlay").addEventListener("click", () => { togglePlay(); });
   document.getElementById("btnStop").addEventListener("click", () => {
     clearTransportRestart();
+    state.pendingLoopState = null;
+    state.pendingLoopAtPerf = 0;
+    updateLoopButtonUi();
+    updateLoopRangeVisuals();
     if (state.playing) {
       const tick = snapToBar(currentTransportTick());
       stopPlayback();
@@ -14346,21 +14423,35 @@ body.timeline-ruler-seeking {
     }
   });
   document.getElementById("btnLoop").addEventListener("click", () => {
-    const wasPlaying = state.playing;
-    const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
-    state.loop = !state.loop;
+    const tick = state.playing ? currentTransportTick() : state.startTick || 0;
+    const displayedLoop = loopUiState();
+    const nextLoop = !displayedLoop;
 
-    if (state.loop) ensureLoopRangeAtTick(tick);
+    if (nextLoop) ensureLoopRangeAtTick(tick);
+
+    if (state.playing) {
+      // Changing loop mode used to call stopPlayback() + runScheduler() here.
+      // That necessarily sent Panic/Note Off in the middle of the groove and
+      // caused the audible "stumble". Instead, keep the current scheduler alive
+      // long enough to fill its existing lookahead, then hand over to a freshly
+      // built queue at one shared timestamp without clearing gates.
+      state.pendingLoopState = nextLoop;
+      state.pendingLoopAtPerf =
+        performance.now() + Math.max(HARDWARE_LOOKAHEAD_MS, SF2_LOOKAHEAD_MS) + 30;
+      updateLoopButtonUi();
+      updateLoopRangeVisuals();
+      setStatus(nextLoop ? "Loop ON · seamless switch queued" : "Loop OFF · seamless switch queued", "ok");
+      return;
+    }
+
+    state.loop = nextLoop;
+    state.pendingLoopState = null;
+    state.pendingLoopAtPerf = 0;
     updateLoopButtonUi();
     updateLoopRangeVisuals();
     scheduleHostAutosave();
 
-    if (wasPlaying) {
-      stopPlayback();
-      const range = state.loop ? loopRangeBounds() : null;
-      state.startTick = range && (tick < range.start || tick >= range.end) ? range.start : tick;
-      runScheduler(state.startTick);
-    } else if (state.loop) {
+    if (state.loop) {
       const range = loopRangeBounds();
       if (range && (tick < range.start || tick >= range.end)) {
         state.startTick = range.start;
