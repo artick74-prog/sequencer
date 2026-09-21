@@ -7843,6 +7843,18 @@ body.timeline-ruler-seeking {
       clip.unresolvedDrumNotes = unresolved;
     }
 
+    for (const track of project.tracks || []) {
+      if (drumMapForTrack(track) !== "xr20") continue;
+      for (const note of track.notes || []) {
+        if (!note.drumUnresolved || note.drumSourceNote == null) continue;
+        const target = resolveGmDrumToXr20(track, note.drumSourceNote, project);
+        if (!target) continue;
+        note.note = target.midiNote;
+        note.drumPad = target.pad;
+        note.drumUnresolved = false;
+      }
+    }
+
     return project;
   }
 
@@ -9465,7 +9477,7 @@ body.timeline-ruler-seeking {
 
     if (spec.kind === "velocity") {
       for (const note of ctx.notes) {
-        if (isXr20DrumTrack(ctx.track) && note.drumUnresolved) continue;
+        if (trackIsPercussion(ctx.track) && pianoRollDisplayNote(ctx, note) == null) continue;
         const tick = Number(note.tick) || 0;
         if (tick < ctx.startTick || tick >= ctx.endTick) continue;
         const id = pianoRollNoteId(note);
@@ -9722,8 +9734,8 @@ body.timeline-ruler-seeking {
 
       pianoRollPushUndo(ctx);
       notes.forEach((note, index) => {
-        note.note = rowNotes[indexes[index] + safeRows];
-        syncDrumNoteTargetMetadata(ctx.track, note, { preserveSource:true });
+        const displayPitch = rowNotes[indexes[index] + safeRows];
+        setDrumNoteFromViewPitch(ctx.track, note, displayPitch, pianoRollDrumViewMap(ctx));
       });
       commitPianoRollEdit(
         ctx,
@@ -9960,10 +9972,11 @@ body.timeline-ruler-seeking {
     const badge = document.querySelector(".piano-roll-badge");
     const ctx = pianoRollContext();
     if (badge) {
-      const prefix = trackIsPercussion(ctx?.track)
-        ? (drumMapForTrack(ctx.track) === "xr20" ? "DRUM MAP · XR20 · " : "DRUM MAP · GM · ")
-        : "EDIT · v0.6 · ";
-      badge.textContent = prefix + (next === "select" ? "SELECT" : "DRAW");
+      const drumMode = trackIsPercussion(ctx?.track);
+      badge.hidden = drumMode;
+      if (!drumMode) {
+        badge.textContent = "EDIT · v0.6 · " + (next === "select" ? "SELECT" : "DRAW");
+      }
     }
     const grid = document.getElementById("pianoRollGrid");
     if (grid) {
@@ -10077,7 +10090,11 @@ body.timeline-ruler-seeking {
       velocity: 100,
       clipId: instanceId,
     };
-    syncDrumNoteTargetMetadata(ctx.track, note, { preserveSource:false });
+    if (trackIsPercussion(ctx.track)) {
+      setDrumNoteFromViewPitch(ctx.track, note, point.pitch, pianoRollDrumViewMap(ctx));
+    } else {
+      syncDrumNoteTargetMetadata(ctx.track, note, { preserveSource:false });
+    }
     pianoRollNoteId(note);
     pianoRollPushUndo(ctx);
     ctx.track.notes.push(note);
@@ -10123,11 +10140,13 @@ body.timeline-ruler-seeking {
       const { rollW, rowH, rowNotes, spanTicks } = liveLayout;
       const drumRows = trackIsPercussion(ctx.track);
       const selectedNotes = pianoRollSelectedNotes(ctx);
-      const origins = selectedNotes.map((item) => ({
+      const origins = selectedNotes.map((item) => {
+        const displayPitch = pianoRollDisplayNote(ctx, item);
+        return {
         note: item,
         id: pianoRollNoteId(item),
         tick: Number(item.tick) || 0,
-        pitch: Number(item.note) || 0,
+        pitch: displayPitch == null ? (Number(item.note) || 0) : displayPitch,
         duration: Math.max(1, Number(item.duration) || 1),
         el: document.querySelector(
           '.piano-roll-note[data-piano-note-id="' + CSS.escape(pianoRollNoteId(item)) + '"]'
@@ -10135,8 +10154,9 @@ body.timeline-ruler-seeking {
         velocityBar: document.querySelector(
           '.piano-roll-velocity-bar[data-piano-note-id="' + CSS.escape(pianoRollNoteId(item)) + '"]'
         ),
-        rowIndex: rowNotes.indexOf(Number(item.note) || 0),
-      }));
+        rowIndex: rowNotes.indexOf(displayPitch == null ? (Number(item.note) || 0) : displayPitch),
+      };
+      });
       const minTick = Math.min(...origins.map((item) => item.tick));
       const maxEnd = Math.max(...origins.map((item) => item.tick + item.duration));
       const minPitch = Math.min(...origins.map((item) => item.pitch));
@@ -10193,10 +10213,13 @@ body.timeline-ruler-seeking {
         }
 
         const lastOrigin = origins[origins.length - 1];
-        const auditionPitch = drumRows
+        const displayAuditionPitch = drumRows
           ? (rowNotes[lastOrigin.rowIndex + deltaRows] ?? lastOrigin.pitch)
           : lastOrigin.pitch + deltaPitch;
-        if (!state.playing && auditionPitch !== lastAuditionPitch) {
+        const auditionPitch = drumRows
+          ? drumAuditionPitchForView(ctx.track, displayAuditionPitch, pianoRollDrumViewMap(ctx))
+          : displayAuditionPitch;
+        if (!state.playing && auditionPitch != null && auditionPitch !== lastAuditionPitch) {
           lastAuditionPitch = auditionPitch;
           auditionPianoRollNote(ctx.track, auditionPitch, origins[origins.length - 1].note.velocity || 100);
         }
@@ -10222,10 +10245,12 @@ body.timeline-ruler-seeking {
           pianoRollPushUndo(ctx);
           for (const origin of origins) {
             origin.note.tick = origin.tick + previewDeltaTicks;
-            origin.note.note = drumRows
-              ? (rowNotes[origin.rowIndex + previewDeltaRows] ?? origin.pitch)
-              : origin.pitch + previewDeltaPitch;
-            if (drumRows) syncDrumNoteTargetMetadata(ctx.track, origin.note, { preserveSource:true });
+            if (drumRows) {
+              const displayPitch = rowNotes[origin.rowIndex + previewDeltaRows] ?? origin.pitch;
+              setDrumNoteFromViewPitch(ctx.track, origin.note, displayPitch, pianoRollDrumViewMap(ctx));
+            } else {
+              origin.note.note = origin.pitch + previewDeltaPitch;
+            }
           }
           commitPianoRollEdit(
             ctx,
@@ -10400,14 +10425,15 @@ body.timeline-ruler-seeking {
     const clipName = clip.name || clip.originalName || "Project Clip";
 
     const drumMode = trackIsPercussion(track);
-    const drumMap = drumMode ? drumMapForTrack(track) : "";
+    const drumTargetMap = drumMode ? drumMapForTrack(track) : "";
+    const drumViewMap = drumMode ? pianoRollDrumViewMap(ctx) : "";
     const displayRows = pianoRollDisplayRows(ctx);
     const rowIndexByNote = new Map(displayRows.map((row, index) => [row.note, index]));
     const hiddenNotes = drumMode
-      ? notes.filter((note) =>
-          (isXr20DrumTrack(track) && !!note.drumUnresolved) ||
-          !rowIndexByNote.has(Number(note.note))
-        ).length
+      ? notes.filter((note) => {
+          const displayNote = pianoRollDisplayNote(ctx, note);
+          return displayNote == null || !rowIndexByNote.has(displayNote);
+        }).length
       : 0;
     const unresolvedNotes = drumMode
       ? notes.filter((note) => !!note.drumUnresolved).length
@@ -10417,35 +10443,36 @@ body.timeline-ruler-seeking {
     const drumMapSelect = document.getElementById("pianoRollDrumMap");
     if (drumMapSelect) {
       drumMapSelect.classList.toggle("visible", drumMode);
-      drumMapSelect.disabled = !drumMode || (notes || []).length > 0;
+      drumMapSelect.disabled = !drumMode;
       if (drumMode) {
-        drumMapSelect.value = drumMap;
-        drumMapSelect.title = drumMapSelect.disabled
-          ? "Drum Map is locked after notes exist on this track"
-          : "Choose Drum Map";
+        drumMapSelect.value = drumViewMap;
+        drumMapSelect.title =
+          "View Drum Map · target " + (drumTargetMap === "xr20" ? "AKAI XR20" : "General MIDI");
       }
     }
+    const kitButton = document.getElementById("pianoRollKit");
+    if (kitButton) kitButton.hidden = !drumMode || drumTargetMap !== "xr20";
+
     const badge = document.querySelector(".piano-roll-badge");
     if (badge) {
-      badge.textContent =
-        (drumMode
-          ? (drumMap === "xr20" ? "DRUM MAP · XR20 · " : "DRUM MAP · GM · ")
-          : "EDIT · v0.6 · ") +
-        (state.pianoRollTool === "select" ? "SELECT" : "DRAW");
+      badge.hidden = drumMode;
+      if (!drumMode) {
+        badge.textContent =
+          "EDIT · v0.6 · " +
+          (state.pianoRollTool === "select" ? "SELECT" : "DRAW");
+      }
     }
     updatePianoRollSnapUi();
     if (meta) {
-      meta.textContent =
-        clipName + " · project bars " + startBar +
-        (endBar !== startBar ? "–" + endBar : "") +
-        " · " + notes.length + " notes · " +
-        (drumMode
-          ? (drumMap === "xr20" ? "XR20 first 12 DRUM pads" : "General MIDI percussion") +
-            (unresolvedNotes ? " · " + unresolvedNotes + " unresolved" : "") +
-            (hiddenNotes ? " · " + hiddenNotes + " outside current map hidden" : "") + " · "
-          : "") +
-        Math.round(Number(state.pianoRollBarW) || 96) + " px/bar · snap " +
-        pianoRollSnapStatusLabel() + " · EDIT";
+      meta.hidden = drumMode;
+      if (!drumMode) {
+        meta.textContent =
+          clipName + " · project bars " + startBar +
+          (endBar !== startBar ? "–" + endBar : "") +
+          " · " + notes.length + " notes · " +
+          Math.round(Number(state.pianoRollBarW) || 96) + " px/bar · snap " +
+          pianoRollSnapStatusLabel() + " · EDIT";
+      }
     }
 
     const rowH = Math.max(10, Math.min(48, Number(state.pianoRollRowH) || 18));
@@ -10468,7 +10495,7 @@ body.timeline-ruler-seeking {
 
     const corner = document.createElement("div");
     corner.className = "piano-roll-corner";
-    corner.textContent = drumMode ? (drumMap === "xr20" ? "XR20 pads" : "GM drums") : "pitch";
+    corner.textContent = drumMode ? (drumViewMap === "xr20" ? "XR20 pads" : "GM drums") : "pitch";
 
     const ruler = document.createElement("div");
     ruler.className = "piano-roll-ruler";
@@ -10545,8 +10572,9 @@ body.timeline-ruler-seeking {
 
     const info = trackDisplayInfo(track);
     for (const note of notes) {
-      if (isXr20DrumTrack(track) && note.drumUnresolved) continue;
-      const noteRowIndex = rowIndexByNote.get(Number(note.note));
+      const displayNote = pianoRollDisplayNote(ctx, note);
+      if (displayNote == null) continue;
+      const noteRowIndex = rowIndexByNote.get(displayNote);
       if (noteRowIndex == null) continue;
       const clippedStart = Math.max(startTick, Number(note.tick) || 0);
       const clippedEnd = Math.min(
@@ -10566,7 +10594,7 @@ body.timeline-ruler-seeking {
       block.dataset.pianoNoteId = noteId;
       block.dataset.noteTick = String(Number(note.tick) || 0);
       block.dataset.noteDuration = String(Math.max(1, Number(note.duration) || 1));
-      block.dataset.notePitch = String(Number(note.note) || 0);
+      block.dataset.notePitch = String(displayNote);
       block.style.left = x + "px";
       block.style.width = w + "px";
       block.style.top = y + "px";
@@ -10574,14 +10602,14 @@ body.timeline-ruler-seeking {
       block.style.background = info.color;
       const blockRow = displayRows[noteRowIndex];
       block.textContent = drumMode
-        ? (blockRow?.kind === "xr20" ? "P" + (blockRow.pad || "") : String(Number(note.note) || 0))
+        ? (blockRow?.kind === "xr20" ? "P" + (blockRow.pad || "") : String(displayNote))
         : midiToName(Number(note.note) || 0);
       const sourceInfo =
         drumMode && note.drumSourceNote != null
           ? " · Source GM " + note.drumSourceNote + " " + gmDrumName(note.drumSourceNote)
           : "";
       block.title =
-        pianoRollPitchLabel(ctx, Number(note.note) || 0) +
+        pianoRollPitchLabel(ctx, displayNote) +
         sourceInfo +
         (note.drumUnresolved ? " · UNRESOLVED: not sent to XR20" : "") +
         " · vel " + (Number(note.velocity) || 0) +
