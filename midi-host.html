@@ -3728,6 +3728,8 @@ body.timeline-ruler-seeking {
     lastOverview: null,
     sf2Engine: null,
     sf2Ready: false,
+    sf2Prepared: false,
+    sf2LoadPromise: null,
     sf2Name: "",
     sf2Loading: false,
     bridgeReady: false,
@@ -6587,10 +6589,13 @@ body.timeline-ruler-seeking {
     const nameEl = document.getElementById("sf2Name");
     if (!box || !nameEl) return;
     if (state.sf2Loading) {
-      nameEl.textContent = "loading…";
+      nameEl.textContent = "preloading…";
       box.classList.remove("ready");
     } else if (state.sf2Ready) {
       nameEl.textContent = state.sf2Name || "ready";
+      box.classList.add("ready");
+    } else if (state.sf2Prepared) {
+      nameEl.textContent = (state.sf2Name || "SoundFont") + " · prepared";
       box.classList.add("ready");
     } else {
       nameEl.textContent = "not loaded (Play or Load SF2)";
@@ -6633,41 +6638,62 @@ body.timeline-ruler-seeking {
     return state.sf2Engine?.synth || null;
   }
 
-  async function ensureSf2Loaded() {
-    if (state.sf2Ready && sf2Synth()) return true;
+  async function prepareDefaultSf2({ quiet = true } = {}) {
+    if (state.sf2Prepared && sf2Synth()) return true;
+    if (state.sf2LoadPromise) return state.sf2LoadPromise;
     if (typeof SoundFont === "undefined") {
-      setStatus("SF2 library not loaded (CDN). Check internet or Load SF2 after refresh.", "err");
+      if (!quiet) setStatus("SF2 library not loaded (CDN). Check internet or Load SF2 after refresh.", "err");
       return false;
     }
-    if (state.sf2Loading) return false;
+
     state.sf2Loading = true;
     updateSf2UI();
-    try {
-      if (!state.sf2Engine) {
-        state.sf2Engine = new SoundFont.WebMidiLink({
-          drawSynth: false,
-          placeholder: "sf2Placeholder",
-          url: DEFAULT_SF2_URL,
-          cache: true,
-        });
-        await new Promise((resolve, reject) => {
-          state.sf2Engine.setLoadCallback(() => resolve());
-          state.sf2Engine.setup().catch(reject);
-        });
+    state.sf2LoadPromise = (async () => {
+      try {
+        if (!state.sf2Engine) {
+          state.sf2Engine = new SoundFont.WebMidiLink({
+            drawSynth: false,
+            placeholder: "sf2Placeholder",
+            url: DEFAULT_SF2_URL,
+            cache: true,
+          });
+          await new Promise((resolve, reject) => {
+            state.sf2Engine.setLoadCallback(() => resolve());
+            state.sf2Engine.setup().catch(reject);
+          });
+        }
         state.sf2Name = "Yamaha XG (built-in)";
+        state.sf2Prepared = true;
+        return true;
+      } catch (err) {
+        state.sf2Prepared = false;
+        state.sf2Engine = null;
+        if (!quiet) setStatus(`SF2 load failed: ${err.message}`, "err");
+        return false;
+      } finally {
+        state.sf2Loading = false;
+        state.sf2LoadPromise = null;
+        updateSf2UI();
       }
+    })();
+
+    return state.sf2LoadPromise;
+  }
+
+  async function ensureSf2Loaded() {
+    if (state.sf2Ready && sf2Synth()) return true;
+    const prepared = await prepareDefaultSf2({ quiet: false });
+    if (!prepared || !sf2Synth()) return false;
+    try {
       await sf2Synth().ctx.resume();
       state.sf2Ready = true;
       updateSf2UI();
       return true;
     } catch (err) {
-      setStatus(`SF2 load failed: ${err.message}`, "err");
+      setStatus(`SF2 audio start failed: ${err.message}`, "err");
       state.sf2Ready = false;
       updateSf2UI();
       return false;
-    } finally {
-      state.sf2Loading = false;
-      updateSf2UI();
     }
   }
 
@@ -6692,6 +6718,7 @@ body.timeline-ruler-seeking {
         state.sf2Engine.setupByBuffer(buf);
       });
       await sf2Synth().ctx.resume();
+      state.sf2Prepared = true;
       state.sf2Ready = true;
       state.sf2Name = file.name;
       setStatus(`SF2 loaded: ${file.name}`, "ok");
@@ -14541,6 +14568,11 @@ body.timeline-ruler-seeking {
   restoreHostAutosaveUi();
   updateSyncUI();
   updateSf2UI();
+  setTimeout(() => {
+    if (document.getElementById("chkSf2")?.checked !== false) {
+      prepareDefaultSf2({ quiet: true });
+    }
+  }, 120);
   detectLocalBridge();
   restoreProjectsFolder();
   initMidi();
