@@ -1206,7 +1206,7 @@ select, input[type="number"], input[type="text"] {
   flex: 0 0 auto;
   height: 92px;
   display: grid;
-  grid-template-columns: 78px minmax(0, 1fr);
+  grid-template-columns: var(--pr-key-w, 78px) minmax(0, 1fr);
   background: #0b1016;
   overflow: hidden;
 }
@@ -9705,6 +9705,8 @@ body.timeline-ruler-seeking {
     const rowIndexByNote = new Map(displayRows.map((row, index) => [row.note, index]));
     const rowH = Math.max(10, Math.min(48, Number(state.pianoRollRowH) || 18));
     const keyW = pianoRollKeyWidth(ctx);
+    const parameterLane = document.getElementById("pianoRollParameterLane");
+    if (parameterLane) parameterLane.style.setProperty("--pr-key-w", keyW + "px");
     const rulerH = 24;
     const visiblePitchHeight = Math.max(rowH * 13, (scroll.clientHeight || 0) - rulerH);
     const rollH = Math.max(displayRows.length * rowH, visiblePitchHeight);
@@ -10286,6 +10288,8 @@ body.timeline-ruler-seeking {
 
     const rowH = Math.max(10, Math.min(48, Number(state.pianoRollRowH) || 18));
     const keyW = pianoRollKeyWidth(ctx);
+    const parameterLane = document.getElementById("pianoRollParameterLane");
+    if (parameterLane) parameterLane.style.setProperty("--pr-key-w", keyW + "px");
     const rulerH = 24;
     const visiblePitchHeight = Math.max(rowH * 13, (scroll.clientHeight || 0) - rulerH);
     const rollH = Math.max(displayRows.length * rowH, visiblePitchHeight);
@@ -12220,6 +12224,7 @@ body.timeline-ruler-seeking {
               <select data-ch="${track.id}">${chOptions}</select>
             </label>
             ${gmTag}
+            ${drumMapTag}
           </div>
           <div class="track-actions-row">
             <span class="track-mix" aria-label="Solo and mute">
@@ -12231,7 +12236,6 @@ body.timeline-ruler-seeking {
               <span class="performance-value">${trackIsPercussion(track) ? "dr" : ((track.transposeOctaves || 0) > 0 ? "+" : "") + (track.transposeOctaves || 0)}</span>
               <button class="pitch-step-btn" type="button" data-oct-up="${track.id}" ${trackIsPercussion(track) ? "disabled" : ""} title="Octave up">+</button>
             </span>
-            ${drumMapTag}
             ${drumKitTag}
             <button class="btn" type="button" data-preview="${track.id}">Preview</button>
             <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
@@ -12451,6 +12455,7 @@ body.timeline-ruler-seeking {
         }
         if (Number(track.channel) !== 10 && track.role !== "xr20-drums") {
           track.drumMap = "";
+          if (track.role === "gm-drums") track.role = "gm";
         }
         markHostProjectDirty();
         scheduleHostAutosave();
