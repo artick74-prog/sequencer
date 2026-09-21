@@ -9931,7 +9931,10 @@ body.timeline-ruler-zooming {
     const clip = (state.project.clips || []).find(
       (item, index) => hostClipInstanceId(item, index) === state.selectedClipId
     );
-    if (!clip) return null;
+    // Hidden Track Parts are editor backing stores, not arrangement clips.
+    // Never let arrangement shortcuts (Delete, Ctrl+D, arrows, etc.) move or
+    // destroy a whole authored track after its Piano/Drum Roll has been closed.
+    if (!clip || clip.nativeTrackPart || clip.hiddenOnTimeline) return null;
     const track = state.project.tracks.find((item) => item.id === clip.targetTrackId);
     if (!track) return null;
     return { clip, track };
