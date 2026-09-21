@@ -3843,6 +3843,7 @@ body.timeline-ruler-seeking {
     playbackToken: 0,
     playbackOutput: null,
     sf2Timers: new Set(),
+    hardwarePanicTimers: new Set(),
     timingDiagnosticResult: null,
     playheadEls: [],
     rulerPlayheadEls: [],
@@ -7113,6 +7114,7 @@ body.timeline-ruler-seeking {
       hardwareLookaheadMs: HARDWARE_LOOKAHEAD_MS,
       sf2LookaheadMs: SF2_LOOKAHEAD_MS,
       playbackStartLeadMs: PLAYBACK_START_LEAD_MS,
+      delayedPanicMs: [HARDWARE_LOOKAHEAD_MS + 35, HARDWARE_LOOKAHEAD_MS * 2 + 60],
       midiOutput: out?.name || "none",
       hardwareEnabled: useHwOutput(),
       sf2Enabled: useSf2Output(),
@@ -7151,6 +7153,7 @@ body.timeline-ruler-seeking {
       "Hardware lookahead: " + d.hardwareLookaheadMs + " ms",
       "SF2 lookahead: " + d.sf2LookaheadMs + " ms",
       "Playback start lead: " + d.playbackStartLeadMs + " ms",
+      "Post-stop hardware panic repeats: " + d.delayedPanicMs.join(" / ") + " ms",
       "",
       "MIDI output: " + d.midiOutput,
       "Hardware enabled: " + d.hardwareEnabled,
@@ -7185,6 +7188,7 @@ body.timeline-ruler-seeking {
       ["Hardware lookahead", d.hardwareLookaheadMs + " ms"],
       ["SF2 lookahead", d.sf2LookaheadMs + " ms"],
       ["Playback start lead", d.playbackStartLeadMs + " ms"],
+      ["Post-stop panic repeats", d.delayedPanicMs.join(" / ") + " ms"],
       ["section","MIDI / Routing"],
       ["MIDI output", d.midiOutput],
       ["Hardware enabled", String(d.hardwareEnabled)],
@@ -7402,6 +7406,33 @@ body.timeline-ruler-seeking {
       /* disconnected output or browser without a usable clear() */
     }
   }
+
+  function clearDelayedHardwarePanics() {
+    for (const timer of state.hardwarePanicTimers) clearTimeout(timer);
+    state.hardwarePanicTimers.clear();
+  }
+
+  function scheduleDelayedHardwarePanic(output, stopToken) {
+    if (!output) return;
+    // Some Windows MIDI drivers can already have timestamped Note On messages
+    // beyond Web MIDI's clear() boundary. Repeat the panic after the complete
+    // hardware lookahead window so a "last note" arriving during Stop cannot
+    // reopen a mono XR20 bass gate after the immediate panic.
+    const delays = [
+      HARDWARE_LOOKAHEAD_MS + 35,
+      HARDWARE_LOOKAHEAD_MS * 2 + 60,
+    ];
+    for (const delay of delays) {
+      const timer = setTimeout(() => {
+        state.hardwarePanicTimers.delete(timer);
+        if (state.playing || state.playbackToken !== stopToken) return;
+        clearHardwareQueue(output);
+        allNotesOff(output);
+      }, delay);
+      state.hardwarePanicTimers.add(timer);
+    }
+  }
+
   function clearSf2Timers() {
     for (const timer of state.sf2Timers) clearTimeout(timer);
     state.sf2Timers.clear();
@@ -7478,6 +7509,7 @@ body.timeline-ruler-seeking {
       state.playbackUiFrame = 0;
     }
     clearSf2Timers();
+    clearDelayedHardwarePanics();
     clearHardwareQueue(output);
 
     // User/master Stop or Pause stops Loop Browser too. Internal transport
@@ -7488,6 +7520,13 @@ body.timeline-ruler-seeking {
     const currentOutput = getOutput();
     allNotesOff(output);
     if (currentOutput && currentOutput !== output) allNotesOff(currentOutput);
+
+    const stopToken = state.playbackToken;
+    scheduleDelayedHardwarePanic(output, stopToken);
+    if (currentOutput && currentOutput !== output) {
+      scheduleDelayedHardwarePanic(currentOutput, stopToken);
+    }
+
     state.playbackOutput = null;
     const playButton = document.getElementById("btnPlay");
     if (playButton) {
@@ -7923,6 +7962,7 @@ body.timeline-ruler-seeking {
   }
 
   function runScheduler(fromTick) {
+    clearDelayedHardwarePanics();
     const project = state.project;
     if (!project) return;
     const output = getOutput();
