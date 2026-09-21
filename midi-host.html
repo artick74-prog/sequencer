@@ -1403,6 +1403,26 @@ select, input[type="number"], input[type="text"] {
   font-weight: 700;
   color: #111820;
 }
+.piano-roll-key.drum-map-key,
+.piano-roll-key.drum-map-key.black,
+.piano-roll-key.drum-map-key.c-note {
+  z-index: 2;
+  justify-content: flex-start;
+  padding: 0 6px;
+  border-bottom: 1px solid #56616d;
+  background: linear-gradient(to bottom, #202a35 0%, #18212b 100%);
+  color: #d5dde6;
+  text-shadow: none;
+  box-shadow: inset 0 1px rgba(255,255,255,.045);
+  font: 600 10px/1 ui-monospace, Consolas, monospace;
+}
+.piano-roll-key.drum-map-key.black::before {
+  display: none;
+}
+.piano-roll-key.drum-map-key.bank-one-shot {
+  background: linear-gradient(to bottom, #25231b 0%, #1d1b15 100%);
+  color: #e8c170;
+}
 .piano-roll-grid {
   grid-column: 2;
   grid-row: 2;
@@ -2387,6 +2407,12 @@ body.timeline-ruler-seeking {
     "https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/Yamaha%20XG%20Sound%20Set.sf2";
   let GM_PROGRAMS = null;
   const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+  // Step 5 prototype: a deliberately simple 24-row XR20 Drum Roll.
+  // MIDI 36–59 is only a contiguous two-octave test map. We will replace it
+  // with project-specific Drum Maps after checking the user's actual XR20.
+  const XR20_DRUM_MAP_BASE_NOTE = 36;
+  const XR20_DRUM_MAP_ROWS = 24;
   const MIDI_CC_NAMES = {
     0:"Bank Select MSB", 1:"Modulation Wheel", 2:"Breath Controller", 3:"Undefined",
     4:"Foot Controller", 5:"Portamento Time", 6:"Data Entry MSB", 7:"Channel Volume",
@@ -2599,6 +2625,45 @@ body.timeline-ruler-seeking {
   }
   function roleForChannel(ch) {
     return ROLE_BY_CH[ch] || { role: "other", label: `Ch ${ch}`, color: "#8899aa" };
+  }
+
+  function isXr20DrumTrack(track) {
+    return !!track && (track.role === "xr20-drums" || Number(track.channel) === 10);
+  }
+
+  function pianoRollPitchBounds(ctx = pianoRollContext()) {
+    if (isXr20DrumTrack(ctx?.track)) {
+      return {
+        minNote: XR20_DRUM_MAP_BASE_NOTE,
+        maxNote: XR20_DRUM_MAP_BASE_NOTE + XR20_DRUM_MAP_ROWS - 1,
+      };
+    }
+    return { minNote: 0, maxNote: 127 };
+  }
+
+  function pianoRollKeyWidth(ctx = pianoRollContext()) {
+    return isXr20DrumTrack(ctx?.track) ? 132 : 78;
+  }
+
+  function xr20PrototypePadInfo(note) {
+    const midi = Math.max(0, Math.min(127, Number(note) || 0));
+    const index = midi - XR20_DRUM_MAP_BASE_NOTE;
+    if (index < 0 || index >= XR20_DRUM_MAP_ROWS) return null;
+    const bank = index < 12 ? "DRUM" : "1-SHOT";
+    const pad = (index % 12) + 1;
+    return {
+      bank,
+      pad,
+      note: midi,
+      pitchClass: NOTE_NAMES[midi % 12],
+      label: bank + " " + String(pad).padStart(2, "0") +
+        " · " + NOTE_NAMES[midi % 12] + " · MIDI " + midi,
+    };
+  }
+
+  function pianoRollPitchLabel(ctx, note) {
+    const pad = isXr20DrumTrack(ctx?.track) ? xr20PrototypePadInfo(note) : null;
+    return pad?.label || midiToName(note);
   }
 
   function parseGmTrackName(name) {
@@ -9019,11 +9084,20 @@ body.timeline-ruler-seeking {
     const delta = Number(semitones) || 0;
     const minPitch = Math.min(...notes.map((note) => Number(note.note) || 0));
     const maxPitch = Math.max(...notes.map((note) => Number(note.note) || 0));
-    const safeDelta = Math.max(-minPitch, Math.min(127 - maxPitch, delta));
+    const bounds = pianoRollPitchBounds(ctx);
+    const safeDelta = Math.max(
+      bounds.minNote - minPitch,
+      Math.min(bounds.maxNote - maxPitch, delta)
+    );
     if (!safeDelta) return false;
 
     pianoRollPushUndo(ctx);
-    notes.forEach((note) => { note.note = Math.max(0, Math.min(127, (Number(note.note) || 0) + safeDelta)); });
+    notes.forEach((note) => {
+      note.note = Math.max(
+        bounds.minNote,
+        Math.min(bounds.maxNote, (Number(note.note) || 0) + safeDelta)
+      );
+    });
     commitPianoRollEdit(
       ctx,
       "Transpose " + (safeDelta > 0 ? "+" : "") + safeDelta + " · " + notes.length + " note(s)",
@@ -9052,6 +9126,7 @@ body.timeline-ruler-seeking {
     return {
       rollW: Math.max(1, Number(grid.dataset.rollWidth) || grid.offsetWidth || 1),
       rowH: Math.max(1, Number(grid.dataset.rowHeight) || 18),
+      minNote: Math.max(0, Math.min(127, Number(grid.dataset.minNote) || 0)),
       maxNote: Math.max(0, Math.min(127, Number(grid.dataset.maxNote) || 127)),
       spanTicks: Math.max(1, ctx.endTick - ctx.startTick),
     };
@@ -9131,7 +9206,7 @@ body.timeline-ruler-seeking {
     if (!scroll || !stage || !grid || !ruler || !keys || !ctx) return null;
 
     const rowH = Math.max(10, Math.min(48, Number(state.pianoRollRowH) || 18));
-    const keyW = 78;
+    const keyW = pianoRollKeyWidth(ctx);
     const rulerH = 24;
     const minNote = Math.max(0, Math.min(127, Number(grid.dataset.minNote) || 0));
     const maxNote = Math.max(minNote, Math.min(127, Number(grid.dataset.maxNote) || 127));
@@ -9341,7 +9416,7 @@ body.timeline-ruler-seeking {
     pianoRollSetSelection([note._pianoRollId]);
     commitPianoRollEdit(
       ctx,
-      "Added " + midiToName(note.note) + " @ " + tickToBarBeat(note.tick, ctx.ppq),
+      "Added " + pianoRollPitchLabel(ctx, note.note) + " @ " + tickToBarBeat(note.tick, ctx.ppq),
       note.note
     );
   }
@@ -9377,7 +9452,7 @@ body.timeline-ruler-seeking {
 
       const liveLayout = pianoRollEditorLayout(ctx);
       if (!liveLayout) return;
-      const { rollW, rowH, maxNote, spanTicks } = liveLayout;
+      const { rollW, rowH, minNote: editorMinNote, maxNote, spanTicks } = liveLayout;
       const selectedNotes = pianoRollSelectedNotes(ctx);
       const origins = selectedNotes.map((item) => ({
         note: item,
@@ -9417,7 +9492,10 @@ body.timeline-ruler-seeking {
         let deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
         deltaTicks = Math.max(ctx.startTick - minTick, Math.min(ctx.endTick - maxEnd, deltaTicks));
         let deltaPitch = -Math.round(dy / rowH);
-        deltaPitch = Math.max(-minPitch, Math.min(127 - maxPitch, deltaPitch));
+        deltaPitch = Math.max(
+          editorMinNote - minPitch,
+          Math.min(maxNote - maxPitch, deltaPitch)
+        );
 
         previewDeltaTicks = deltaTicks;
         previewDeltaPitch = deltaPitch;
@@ -9633,29 +9711,41 @@ body.timeline-ruler-seeking {
     const endBar = tickToBar(Math.max(startTick, endTick - 1), ppq);
     const clipName = clip.name || clip.originalName || "Project Clip";
 
-    if (title) title.textContent = track.name;
+    const drumMode = isXr20DrumTrack(track);
+    const bounds = pianoRollPitchBounds(ctx);
+    const outsideDrumMap = drumMode
+      ? notes.filter((note) => Number(note.note) < bounds.minNote || Number(note.note) > bounds.maxNote).length
+      : 0;
+
+    if (title) title.textContent = track.name + (drumMode ? " · Drum Roll" : "");
     const badge = document.querySelector(".piano-roll-badge");
-    if (badge) badge.textContent = "EDIT · v0.6 · " + (state.pianoRollTool === "select" ? "SELECT" : "DRAW");
+    if (badge) {
+      badge.textContent =
+        (drumMode ? "DRUM MAP · TEST 24 · " : "EDIT · v0.6 · ") +
+        (state.pianoRollTool === "select" ? "SELECT" : "DRAW");
+    }
     updatePianoRollSnapUi();
     if (meta) {
       meta.textContent =
         clipName + " · project bars " + startBar +
         (endBar !== startBar ? "–" + endBar : "") +
         " · " + notes.length + " notes · " +
+        (drumMode
+          ? "XR20 test map MIDI " + bounds.minNote + "–" + bounds.maxNote +
+            (outsideDrumMap ? " · " + outsideDrumMap + " outside map hidden" : "") + " · "
+          : "") +
         Math.round(Number(state.pianoRollBarW) || 96) + " px/bar · snap " +
         pianoRollSnapStatusLabel() + " · EDIT";
     }
 
     const rowH = Math.max(10, Math.min(48, Number(state.pianoRollRowH) || 18));
-    const keyW = 78;
+    const keyW = pianoRollKeyWidth(ctx);
     const rulerH = 24;
 
-    // DAW-style pitch canvas: keep the full MIDI 0–127 range available.
-    // The viewport opens centered on the clip's actual notes, while the mouse
-    // wheel can move freely through the whole register. Resizing the dock only
-    // changes how many pitch rows are visible at once; it never creates blank space.
-    const minNote = 0;
-    const maxNote = 127;
+    // Piano tracks keep the full MIDI register. XR20 drums use a provisional
+    // 24-row two-octave test map until the real hardware mapping is measured.
+    const minNote = bounds.minNote;
+    const maxNote = bounds.maxNote;
     const visiblePitchHeight = Math.max(rowH * 13, (scroll.clientHeight || 0) - rulerH);
     const rows = maxNote - minNote + 1;
     const rollH = Math.max(rows * rowH, visiblePitchHeight);
@@ -9672,7 +9762,7 @@ body.timeline-ruler-seeking {
 
     const corner = document.createElement("div");
     corner.className = "piano-roll-corner";
-    corner.textContent = "pitch";
+    corner.textContent = drumMode ? "XR20 pads" : "pitch";
 
     const ruler = document.createElement("div");
     ruler.className = "piano-roll-ruler";
@@ -9683,7 +9773,10 @@ body.timeline-ruler-seeking {
     keys.className = "piano-roll-keys";
 
     const grid = document.createElement("div");
-    grid.className = "piano-roll-grid " + (state.pianoRollTool === "select" ? "tool-select" : "tool-draw");
+    grid.className =
+      "piano-roll-grid " +
+      (drumMode ? "drum-roll " : "") +
+      (state.pianoRollTool === "select" ? "tool-select" : "tool-draw");
     grid.id = "pianoRollGrid";
     grid.dataset.startTick = String(startTick);
     grid.dataset.endTick = String(endTick);
@@ -9699,17 +9792,19 @@ body.timeline-ruler-seeking {
     for (let note = maxNote; note >= minNote; note--) {
       const y = (maxNote - note) * rowH;
       const sharp = NOTE_NAMES[note % 12].includes("#");
+      const padInfo = drumMode ? xr20PrototypePadInfo(note) : null;
       const key = document.createElement("div");
-      key.className =
-        "piano-roll-key" + (sharp ? " black" : "") + (note % 12 === 0 ? " c-note" : "");
+      key.className = drumMode
+        ? "piano-roll-key drum-map-key" + (padInfo?.bank === "1-SHOT" ? " bank-one-shot" : "")
+        : "piano-roll-key" + (sharp ? " black" : "") + (note % 12 === 0 ? " c-note" : "");
       key.dataset.note = String(note);
       key.style.top = y + "px";
       key.style.height = rowH + "px";
-      key.textContent = sharp ? "" : midiToName(note);
+      key.textContent = drumMode ? (padInfo?.label || ("MIDI " + note)) : (sharp ? "" : midiToName(note));
       keys.appendChild(key);
 
       const row = document.createElement("div");
-      row.className = "piano-roll-row" + (sharp ? " black" : "");
+      row.className = "piano-roll-row" + (!drumMode && sharp ? " black" : "");
       row.dataset.note = String(note);
       row.style.top = y + "px";
       row.style.height = rowH + "px";
@@ -9746,6 +9841,7 @@ body.timeline-ruler-seeking {
 
     const info = trackDisplayInfo(track);
     for (const note of notes) {
+      if (Number(note.note) < minNote || Number(note.note) > maxNote) continue;
       const clippedStart = Math.max(startTick, Number(note.tick) || 0);
       const clippedEnd = Math.min(
         endTick,
@@ -9770,9 +9866,12 @@ body.timeline-ruler-seeking {
       block.style.top = y + "px";
       block.style.height = Math.max(10, rowH - 4) + "px";
       block.style.background = info.color;
-      block.textContent = midiToName(Number(note.note) || 0);
+      const blockPadInfo = drumMode ? xr20PrototypePadInfo(Number(note.note) || 0) : null;
+      block.textContent = drumMode
+        ? (blockPadInfo?.bank === "1-SHOT" ? "S" : "D") + (blockPadInfo?.pad || "")
+        : midiToName(Number(note.note) || 0);
       block.title =
-        midiToName(Number(note.note) || 0) +
+        pianoRollPitchLabel(ctx, Number(note.note) || 0) +
         " · vel " + (Number(note.velocity) || 0) +
         " · " + tickToBarBeat(Number(note.tick) || 0, ppq) +
         " · drag = move · right edge = length";
@@ -9920,11 +10019,15 @@ body.timeline-ruler-seeking {
     scroll.appendChild(stage);
 
     if (centerPitch) {
-      const centerNote = notes.length
-        ? notes.reduce((sum, note) => sum + Number(note.note || 0), 0) / notes.length
-        : 60;
-      const centerY = rulerH + (maxNote - centerNote + 0.5) * rowH;
-      scroll.scrollTop = Math.max(0, centerY - scroll.clientHeight / 2);
+      if (drumMode) {
+        scroll.scrollTop = 0;
+      } else {
+        const centerNote = notes.length
+          ? notes.reduce((sum, note) => sum + Number(note.note || 0), 0) / notes.length
+          : 60;
+        const centerY = rulerH + (maxNote - centerNote + 0.5) * rowH;
+        scroll.scrollTop = Math.max(0, centerY - scroll.clientHeight / 2);
+      }
       scroll.scrollLeft = 0;
     } else {
       scroll.scrollLeft = previousLeft;
@@ -9965,7 +10068,7 @@ body.timeline-ruler-seeking {
     scheduleLocalStorageSet("midi_host_piano_roll_bar_w_v1", state.pianoRollBarW);
     const geometry = updatePianoRollGeometry({ horizontal: true, vertical: false });
     const newRollW = Math.max(1, Number(geometry?.rollW) || Number(grid.dataset.rollWidth) || 1);
-    const keyW = 78;
+    const keyW = pianoRollKeyWidth(pianoRollContext());
     scroll.scrollLeft = Math.max(
       0,
       keyW + anchorRatio * newRollW - anchorViewportX
