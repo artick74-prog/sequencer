@@ -1751,11 +1751,6 @@ body.timeline-ruler-zooming {
   cursor: ns-resize !important;
   user-select: none !important;
 }
-body.timeline-ruler-seeking {
-  cursor: ew-resize !important;
-  user-select: none !important;
-}
-
 .ruler-wrap {
   margin: 0;
   overflow: visible;
@@ -2575,7 +2570,7 @@ body.timeline-ruler-seeking {
         <button class="btn" id="btnZoomIn" type="button" title="Zoom in">+</button>
         <button class="btn" id="btnZoomFit" type="button" title="Fit arrangement in view">Fit</button>
         <span class="zoom-label" id="zoomLabel">40 px/bar</span>
-        <span style="color:var(--dim);font-size:12px">Ruler: horizontal drag seek · vertical drag zoom + left/right pan · Shift+drag loop · green edges locators · Ctrl+wheel zoom</span>
+        <span style="color:var(--dim);font-size:12px">Markers row: click/drag seek · Bars row: horizontal pan · vertical zoom · Shift+drag loop · green edges locators · Ctrl+wheel zoom</span>
       </div>
       <div class="timeline-scroll" id="timelineScroll">
         <div class="timeline-inner" id="timelineInner">
@@ -2659,6 +2654,7 @@ body.timeline-ruler-seeking {
   const MIDI_MONITOR_VISIBLE = 500;
   const midiMonitorEvents = [];
   let midiMonitorWriteIndex = 0;
+  let midiMonitorOpen = false;
   let midiMonitorPaused = false;
   let midiMonitorRenderQueued = false;
 
@@ -3099,10 +3095,6 @@ body.timeline-ruler-seeking {
     });
   }
 
-  function xr20HardwarePadByNumber(pad) {
-    return XR20_DRUM_HARDWARE_MAP.find((item) => item.pad === Number(pad)) || null;
-  }
-
   function xr20HardwarePadByMidi(note) {
     return XR20_DRUM_HARDWARE_MAP.find((item) => item.midiNote === Number(note)) || null;
   }
@@ -3278,10 +3270,6 @@ body.timeline-ruler-seeking {
         kind:"xr20",
       };
     });
-  }
-
-  function pianoRollRowIndex(ctx, note) {
-    return pianoRollDisplayRows(ctx).findIndex((row) => row.note === Number(note));
   }
 
   function pianoRollPitchLabel(ctx, note) {
@@ -7017,10 +7005,6 @@ body.timeline-ruler-seeking {
     };
   }
 
-  function midiMonitorIsOpen() {
-    return !!document.getElementById("midiMonitorModal")?.classList.contains("open");
-  }
-
   function orderedMidiMonitorEvents() {
     if (midiMonitorEvents.length < MIDI_MONITOR_MAX || midiMonitorWriteIndex === 0) {
       return midiMonitorEvents;
@@ -7032,7 +7016,7 @@ body.timeline-ruler-seeking {
 
   function renderMidiMonitor() {
     midiMonitorRenderQueued = false;
-    if (midiMonitorPaused || !midiMonitorIsOpen()) return;
+    if (midiMonitorPaused || !midiMonitorOpen) return;
 
     const log = document.getElementById("midiMonitorLog");
     const count = document.getElementById("midiMonitorCount");
@@ -7083,7 +7067,7 @@ body.timeline-ruler-seeking {
   }
 
   function queueMidiMonitorRender() {
-    if (midiMonitorPaused || midiMonitorRenderQueued || !midiMonitorIsOpen()) return;
+    if (midiMonitorPaused || midiMonitorRenderQueued || !midiMonitorOpen) return;
     midiMonitorRenderQueued = true;
     // The monitor is a diagnostic view, not part of the real-time scheduler.
     // Updating it at ~10 fps is plenty and prevents hundreds of DOM nodes from
@@ -7095,7 +7079,7 @@ body.timeline-ruler-seeking {
     // Normal playback must not pay the cost of diagnostic string formatting,
     // locale time conversion, ring-buffer maintenance or DOM redraws while the
     // MIDI Monitor modal is closed.
-    if (!midiMonitorIsOpen()) return;
+    if (!midiMonitorOpen) return;
 
     const decoded = midiMonitorMessageText(message);
     const nowPerf = performance.now();
@@ -7124,7 +7108,7 @@ body.timeline-ruler-seeking {
 
   function midiSend(output, message, timestamp = null, source = "host") {
     if (!output) return;
-    if (midiMonitorIsOpen()) logMidiOut(message, timestamp, source);
+    if (midiMonitorOpen) logMidiOut(message, timestamp, source);
     if (Number.isFinite(Number(timestamp))) output.send(message, Number(timestamp));
     else output.send(message);
   }
@@ -7356,12 +7340,14 @@ body.timeline-ruler-seeking {
   }
 
   function showMidiMonitor() {
+    midiMonitorOpen = true;
     document.getElementById("midiMonitorModal")?.classList.add("open");
     document.getElementById("midiMonitorModal")?.setAttribute("aria-hidden", "false");
     renderMidiMonitor();
   }
 
   function closeMidiMonitor() {
+    midiMonitorOpen = false;
     document.getElementById("midiMonitorModal")?.classList.remove("open");
     document.getElementById("midiMonitorModal")?.setAttribute("aria-hidden", "true");
   }
@@ -8376,31 +8362,6 @@ body.timeline-ruler-seeking {
     );
   }
 
-  function timelineRulerTickAtClientX(clientX) {
-    const ruler = document.querySelector(".ruler.bars-ruler");
-    if (!ruler || !state.project) return 0;
-    const rect = ruler.getBoundingClientRect();
-    const x = Math.min(Math.max(0, clientX - rect.left), rect.width || 1);
-    return (x / Math.max(1, rect.width)) * (state.lengthTicks || 1);
-  }
-
-  function beginTimelineRulerSeek(clientX) {
-    const tick = timelineRulerTickAtClientX(clientX);
-    state.rulerSeeking = true;
-    state.resumeAfterSeek = !!seekToTick(tick, { restart: false });
-  }
-
-  function moveTimelineRulerSeek(clientX) {
-    if (!state.project) return;
-    const tick = timelineRulerTickAtClientX(clientX);
-    const snapped = snapToBar(tick);
-    state.startTick = snapped;
-    updatePlayheads(snapped, state.lengthTicks || 1);
-    if (!state.playing) {
-      setStatus("Cue: bar " + tickToBar(snapped, state.project.ppq), "");
-    }
-  }
-
   function zoomFit() {
     const scroll = document.getElementById("timelineScroll");
     if (!scroll || !state.project) return;
@@ -8643,7 +8604,7 @@ body.timeline-ruler-seeking {
       statusText ||
       (restored
         ? `Loaded “${project.name}” · local routing/settings restored automatically.`
-        : `Loaded “${project.name}” · click ruler to set cue, then Play.`),
+        : `Loaded “${project.name}” · click the markers row to set cue, then Play.`),
       "ok"
     );
     scheduleHostAutosave();
@@ -10051,15 +10012,6 @@ body.timeline-ruler-seeking {
     return ctx.notes.filter((note) => selected.has(pianoRollNoteId(note)));
   }
 
-  function pianoRollSelectedNoteContext() {
-    const ctx = pianoRollContext();
-    if (!ctx || !state.pianoRollSelectedNoteId) return null;
-    const note = ctx.notes.find((item) =>
-      pianoRollNoteId(item) === state.pianoRollSelectedNoteId
-    );
-    return note ? { ...ctx, note } : null;
-  }
-
   function clampPianoRollParameterLaneHeight(value, dockHeightOverride = null) {
     const dock = document.getElementById("pianoRollDock");
     const override = Number(dockHeightOverride);
@@ -11392,16 +11344,6 @@ body.timeline-ruler-seeking {
     const drumTargetMap = drumMode ? drumMapForTrack(track) : "";
     const drumViewMap = drumMode ? pianoRollDrumViewMap(ctx) : "";
     const displayRows = pianoRollDisplayRows(ctx);
-    const rowIndexByNote = new Map(displayRows.map((row, index) => [row.note, index]));
-    const hiddenNotes = drumMode
-      ? notes.filter((note) => {
-          const displayNote = pianoRollDisplayNote(ctx, note);
-          return displayNote == null || !rowIndexByNote.has(displayNote);
-        }).length
-      : 0;
-    const unresolvedNotes = drumMode
-      ? notes.filter((note) => !!note.drumUnresolved).length
-      : 0;
 
     if (title) title.textContent = track.name;
     const drumMapSelect = document.getElementById("pianoRollDrumMap");
@@ -13907,7 +13849,7 @@ body.timeline-ruler-seeking {
     if (state.timelineRulerGesture) {
       const gesture = state.timelineRulerGesture;
       state.timelineRulerGesture = null;
-      document.body.classList.remove("timeline-ruler-zooming", "timeline-ruler-seeking");
+      document.body.classList.remove("timeline-ruler-zooming");
 
       if (gesture.mode === "pending") {
         setStatus("Bar ruler · playhead unchanged · use markers row above to seek", "");
