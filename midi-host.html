@@ -2479,6 +2479,11 @@ body.timeline-ruler-seeking {
           </select>
           <button class="btn drum-kit-btn" id="pianoRollKit" type="button" hidden
             title="Map GM source instruments to XR20 physical pads">Kit</button>
+          <select class="piano-roll-head-drum-map" id="pianoRollDrumListen"
+            aria-label="Drum playback destination" title="Listen through">
+            <option value="xr20">Listen · XR20</option>
+            <option value="gm">Listen · GM SF2</option>
+          </select>
           <span class="piano-roll-badge" title="1 = Select · 5 = Draw · Ctrl temporarily selects while drawing">EDIT · v0.6 · DRAW</span>
           <span class="piano-roll-meta" id="pianoRollMeta">Double-click a Project Clip on the timeline.</span>
           <span class="piano-roll-snap">
@@ -2800,6 +2805,11 @@ body.timeline-ruler-seeking {
 
   function isXr20DrumTrack(track) {
     return trackIsPercussion(track) && drumMapForTrack(track) === "xr20";
+  }
+
+  function drumListenForTrack(track) {
+    if (!isXr20DrumTrack(track)) return "gm";
+    return track?.drumListen === "gm" ? "gm" : "xr20";
   }
 
   function pianoRollDrumViewMap(ctx = pianoRollContext()) {
@@ -6396,6 +6406,7 @@ body.timeline-ruler-seeking {
       midiControls: track.midiControls?.length || 0,
       drumMap: track.drumMap || "",
       drumKitProfileId: track.drumKitProfileId || "",
+      drumListen: track.drumListen || "",
     }));
     const markers = (project.markers || []).map((m) => [m.tick | 0, String(m.text || "")]);
     return JSON.stringify({
@@ -6438,6 +6449,7 @@ body.timeline-ruler-seeking {
           role: track.role || inferTrackRole(track, track.channel || 1),
           drumMap: track.drumMap || "",
           drumKitProfileId: track.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID,
+          drumListen: track.drumListen === "gm" ? "gm" : "xr20",
           mute: !!track.mute,
           solo: !!track.solo,
           transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(track.transposeOctaves) || 0))),
@@ -6550,6 +6562,7 @@ body.timeline-ruler-seeking {
       track.role = match.role || inferTrackRole(track, track.channel || 1);
       if (match.drumMap === "gm" || match.drumMap === "xr20") track.drumMap = match.drumMap;
       if (match.drumKitProfileId) track.drumKitProfileId = String(match.drumKitProfileId);
+      if (match.drumListen === "gm" || match.drumListen === "xr20") track.drumListen = match.drumListen;
       track.mute = !!match.mute;
       track.solo = !!match.solo;
       if (Number.isFinite(Number(match.transposeOctaves))) {
@@ -6589,13 +6602,22 @@ body.timeline-ruler-seeking {
     const sf2 = useSf2Output();
     const hw = useHwOutput();
 
+    // XR20 drums have an explicit audition destination. This lets the same
+    // library clip be compared as original GM percussion or through the
+    // current XR20 Kit Profile without changing its MIDI source semantics.
+    if (isXr20DrumTrack(track)) {
+      return drumListenForTrack(track) === "gm"
+        ? (sf2 ? "sf2" : "none")
+        : (hw ? "hw" : "none");
+    }
+
     // GM tracks belong to the SoundFont engine.
     if (isGmTrack(track)) return sf2 ? "sf2" : "none";
 
     // Dedicated hardware tracks must not be doubled by SoundFont while the
     // hardware output is available. SF2 is only a fallback for hardware tracks
     // when no hardware output is active.
-    if (track.role === "td3" || track.role === "xr20-bass" || track.role === "xr20-drums") {
+    if (track.role === "td3" || track.role === "xr20-bass") {
       if (hw) return "hw";
       if (sf2) return "sf2";
       return "none";
@@ -7804,6 +7826,7 @@ body.timeline-ruler-seeking {
               : ((t.role === "gm" || t.role === "gm-drums") && Number(channel) === 10 ? "gm" :
                   (Number(channel) === 10 || t.role === "xr20-drums" ? "xr20" : "")),
           drumKitProfileId: String(t.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID),
+          drumListen: t.drumListen === "gm" ? "gm" : "xr20",
           mute: !!t.mute,
           solo: !!t.solo,
           transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(t.transposeOctaves) || 0))),
@@ -10521,6 +10544,14 @@ body.timeline-ruler-seeking {
     const kitButton = document.getElementById("pianoRollKit");
     if (kitButton) kitButton.hidden = !drumMode || drumTargetMap !== "xr20";
 
+    const listenSelect = document.getElementById("pianoRollDrumListen");
+    if (listenSelect) {
+      const showListen = drumMode && drumTargetMap === "xr20";
+      listenSelect.classList.toggle("visible", showListen);
+      listenSelect.disabled = !showListen;
+      if (showListen) listenSelect.value = drumListenForTrack(track);
+    }
+
     const badge = document.querySelector(".piano-roll-badge");
     if (badge) {
       badge.hidden = drumMode;
@@ -11246,6 +11277,32 @@ body.timeline-ruler-seeking {
     const ctx = pianoRollContext();
     if (!ctx || !isXr20DrumTrack(ctx.track)) return;
     openDrumKitEditor(ctx.track);
+  });
+
+  document.getElementById("pianoRollDrumListen")?.addEventListener("change", async (event) => {
+    const ctx = pianoRollContext();
+    if (!ctx || !isXr20DrumTrack(ctx.track)) return;
+
+    const track = ctx.track;
+    track.drumListen = event.target.value === "gm" ? "gm" : "xr20";
+
+    if (track.drumListen === "gm") {
+      const sf2Toggle = document.getElementById("chkSf2");
+      if (sf2Toggle) sf2Toggle.checked = true;
+      await ensureSf2Loaded();
+    } else {
+      const hwToggle = document.getElementById("chkHw");
+      if (hwToggle) hwToggle.checked = true;
+    }
+
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    if (state.playing) await restartPlaybackForRoutingChange();
+    renderPianoRoll();
+    setStatus(
+      "Drums listen → " + (track.drumListen === "gm" ? "GM SoundFont" : "AKAI XR20"),
+      "ok"
+    );
   });
 
   document.getElementById("pianoRollSnap")?.addEventListener("change", (event) => {
@@ -12978,18 +13035,23 @@ body.timeline-ruler-seeking {
 
   async function previewTrack(track) {
     const ch = ((track.channel || 1) - 1) & 0x0f;
-    const baseNote = track.channel === 10 ? 36 : 67;
-    const note = projectPlaybackNote(state.project, track, baseNote);
-    if (isGmTrack(track) || (useSf2Output() && !useHwOutput())) {
+    const route = trackRoute(track);
+
+    if (route === "sf2") {
       if (!(await ensureSf2Loaded())) return;
       applySf2Programs({ tracks: [track] });
-      sf2NoteOn(ch, note, 100);
-      setTimeout(() => sf2NoteOff(ch, note), 400);
+      const sf2Note = trackIsPercussion(track) ? 36 : projectPlaybackNote(state.project, track, 67);
+      sf2NoteOn(ch, sf2Note, 100);
+      setTimeout(() => sf2NoteOff(ch, sf2Note), 400);
       setStatus(`Preview SF2 · ${track.name}`, "ok");
       return;
     }
+
     const out = getOutput();
-    if (!out) { setStatus("Select MIDI Out or enable Browser audio (SF2).", "err"); return; }
+    if (!out || route === "none") {
+      setStatus("Select MIDI Out or enable the selected playback destination.", "err");
+      return;
+    }
     const hwBaseNote = track.channel === 10 ? 36 : 40;
     const hwNote = projectPlaybackNote(state.project, track, hwBaseNote);
     const now = performance.now();
@@ -13450,6 +13512,7 @@ body.timeline-ruler-seeking {
         role: t.role,
         drumMap: t.drumMap || "",
         drumKitProfileId: t.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID,
+        drumListen: t.drumListen === "gm" ? "gm" : "xr20",
         mute: !!t.mute,
         solo: !!t.solo,
         transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(t.transposeOctaves) || 0))),
