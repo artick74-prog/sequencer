@@ -13242,12 +13242,15 @@ body.timeline-ruler-seeking {
           }
         : null,
       cloudProject: p.cloudProject ? {...p.cloudProject} : null,
+      drumKitProfiles: JSON.parse(JSON.stringify(p.drumKitProfiles || [])),
       clips: Array.isArray(p.clips) ? p.clips.map((clip) => ({...clip})) : [],
       tracks: p.tracks.map((t) => ({
         id: t.id,
         name: t.name,
         channel: t.channel,
         role: t.role,
+        drumMap: t.drumMap || "",
+        drumKitProfileId: t.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID,
         mute: !!t.mute,
         solo: !!t.solo,
         transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(t.transposeOctaves) || 0))),
@@ -13259,6 +13262,7 @@ body.timeline-ruler-seeking {
           velocity: n.velocity,
           ...(n.td3Slide ? { td3Slide: true } : {}),
           ...(n.clipId ? { clipId: n.clipId } : {}),
+          ...drumNoteMetaCopy(n),
         })),
         midiControls: (t.midiControls || []).map((event) => ({
           tick: Math.max(0, Number(event.tick) || 0),
