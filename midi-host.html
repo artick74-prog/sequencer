@@ -7871,6 +7871,11 @@ body.timeline-ruler-seeking {
       setLoopRangeBars(project.loopRange.startBar, project.loopRange.endBar);
     }
     const restored = restoreLocal ? applyHostAutosaveToProject(project) : false;
+    if (restored) {
+      for (const profile of project.drumKitProfiles || []) {
+        resolveUnmappedDrumNotesForProfile(profile.id);
+      }
+    }
     document.getElementById("projectName").value = project.name || "untitled";
     document.getElementById("tempo").value = project.tempo || 120;
     updatePerformanceControlsUi();
@@ -8941,7 +8946,15 @@ body.timeline-ruler-seeking {
     state.pianoRollSelectedNoteIds = [];
     state.pianoRollUndoStack = [];
     state.pianoRollRedoStack = [];
-    state.pianoRollDrumViewMap = trackIsPercussion(track) ? drumMapForTrack(track) : "";
+    if (trackIsPercussion(track)) {
+      const owned = hostClipOwnedNotes(clip, track);
+      state.pianoRollDrumViewMap =
+        isXr20DrumTrack(track) && owned.some((note) => !!note.drumUnresolved)
+          ? "gm"
+          : drumMapForTrack(track);
+    } else {
+      state.pianoRollDrumViewMap = "";
+    }
     selectHostLoopClip(instanceId);
 
     const dock = document.getElementById("pianoRollDock");
