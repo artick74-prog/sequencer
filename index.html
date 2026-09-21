@@ -2025,10 +2025,6 @@ function cloneMelodicCell(cell) {
   return normalizeMelodicCell(cell).map(e => ({...e}));
 }
 
-function primaryMelodicNote(cell) {
-  return normalizeMelodicCell(cell)[0]?.note ?? null;
-}
-
 /* Генератор белого шума (используется для синтезатора барабанов) */
 function createNoiseBuffer(ctx, duration) {
   const len = Math.ceil(ctx.sampleRate * duration);
@@ -5824,7 +5820,6 @@ const loopRatingEl = document.getElementById('loopRating');
 const loopListEl = document.getElementById('loopList');
 const loopStatusEl = document.getElementById('loopStatus');
 const loopCountEl = document.getElementById('loopCount');
-const loopTargetEl = document.getElementById('loopTarget');
 const LOOP_RENDER_LIMIT = 100;
 
 let loopCatalog = [];
