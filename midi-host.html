@@ -1153,36 +1153,43 @@ select, input[type="number"], input[type="text"] {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 5px;
-  padding: 7px 8px;
+  gap: 3px;
+  padding: 4px 5px;
   border-right: 1px solid #6f7780;
   background: #151b22;
   color: var(--text);
-  font: 12px/1.25 ui-monospace, Consolas, monospace;
+  font: 11px/1.2 ui-monospace, Consolas, monospace;
 }
 .piano-roll-parameter-select {
   width: 100%;
   min-width: 0;
-  height: 25px;
-  padding: 2px 3px;
+  height: 22px;
+  padding: 1px 3px;
   border: 1px solid #596474;
   border-radius: 3px;
   background: #0f151c;
   color: var(--accent);
-  font: 12px/1.1 ui-monospace, Consolas, monospace;
+  font: 10px/1.1 ui-monospace, Consolas, monospace;
   cursor: pointer;
+}
+.piano-roll-used-parameter-select {
+  color: var(--gm);
+  border-color: #6b5d32;
 }
 .piano-roll-parameter-select:focus {
   outline: 1px solid var(--accent);
   outline-offset: 0;
+}
+.piano-roll-used-parameter-select:focus {
+  outline-color: var(--gm);
 }
 .piano-roll-parameter-head span {
   display: block;
   max-width: 100%;
   overflow: hidden;
   color: #aab6c6;
-  font-size: 14px;
-  line-height: 1.15;
+  font-size: 11px;
+  line-height: 1.1;
   white-space: nowrap;
 }
 .piano-roll-parameter-viewport {
@@ -2037,6 +2044,7 @@ body.timeline-ruler-seeking {
       <a href="index.html">Chiptune Sequencer</a>
       <a href="style-library.html">Style Library</a>
       <a class="active" href="midi-host.html">MIDI Host</a>
+      <a href="midi-host-help.html">Справка</a>
     </nav>
   </header>
 
@@ -2340,8 +2348,14 @@ body.timeline-ruler-seeking {
           title="Drag to resize parameter lane"></div>
         <div class="piano-roll-parameter-lane" id="pianoRollParameterLane" aria-label="Piano Roll parameter lane">
           <div class="piano-roll-parameter-head">
+            <select class="piano-roll-parameter-select piano-roll-used-parameter-select"
+              id="pianoRollUsedParameterSelect"
+              aria-label="Used Piano Roll MIDI parameters"
+              title="Parameters that already contain data in this Project Clip">
+              <option value="">Used · none</option>
+            </select>
             <select class="piano-roll-parameter-select" id="pianoRollParameterSelect"
-              aria-label="Piano Roll MIDI parameter"></select>
+              aria-label="All Piano Roll MIDI parameters"></select>
             <span id="pianoRollParameterMeta">1–127</span>
           </div>
           <div class="piano-roll-parameter-viewport" id="pianoRollParameterViewport">
@@ -2444,10 +2458,7 @@ body.timeline-ruler-seeking {
     return { key:"velocity", kind:"velocity", label:"Velocity", min:1, max:127, defaultValue:100, meta:"1–127" };
   }
 
-  function populatePianoRollParameterSelect(track = pianoRollContext()?.track) {
-    const select = document.getElementById("pianoRollParameterSelect");
-    if (!select) return;
-    const requested = String(state.pianoRollParameterMode || "velocity");
+  function pianoRollParameterOptions(track = pianoRollContext()?.track) {
     const options = [
       { value:"velocity", text:"Velocity" },
       ...(track && (track.role === "td3" || Number(track.channel) === 2)
@@ -2459,19 +2470,86 @@ body.timeline-ruler-seeking {
     for (let cc = 0; cc <= 127; cc++) {
       options.push({ value:"cc:" + cc, text:midiCcLabel(cc) });
     }
+    return options;
+  }
+
+  function pianoRollUsedParameterKeys(ctx = pianoRollContext()) {
+    const used = new Set();
+    if (!ctx) return used;
+
+    // Velocity becomes "used" when at least one note differs from the editor's
+    // neutral/default value. This makes the marker mean "actually shaped",
+    // rather than merely "every MIDI note technically owns a velocity byte".
+    if ((ctx.notes || []).some((note) =>
+      Math.max(1, Math.min(127, Number(note.velocity) || 100)) !== 100
+    )) {
+      used.add("velocity");
+    }
+
+    if ((ctx.notes || []).some((note) => !!note.td3Slide)) {
+      used.add("td3Slide");
+    }
+
+    for (const event of ctx.midiControls || []) {
+      if (event?.type === "cc" && Number.isFinite(Number(event.controller))) {
+        used.add("cc:" + Math.max(0, Math.min(127, Number(event.controller))));
+      } else if (event?.type === "pitchBend") {
+        used.add("pitchBend");
+      } else if (event?.type === "channelPressure") {
+        used.add("channelPressure");
+      }
+    }
+    return used;
+  }
+
+  function populatePianoRollParameterSelect(track = pianoRollContext()?.track, ctx = pianoRollContext()) {
+    const select = document.getElementById("pianoRollParameterSelect");
+    const usedSelect = document.getElementById("pianoRollUsedParameterSelect");
+    if (!select) return;
+
+    const requested = String(state.pianoRollParameterMode || "velocity");
+    const options = pianoRollParameterOptions(track);
+    const usedKeys = pianoRollUsedParameterKeys(ctx);
+
     select.innerHTML = "";
     const fragment = document.createDocumentFragment();
     for (const optionInfo of options) {
       const option = document.createElement("option");
       option.value = optionInfo.value;
-      option.textContent = optionInfo.text;
+      option.textContent =
+        optionInfo.text + (usedKeys.has(optionInfo.value) ? "  🟡" : "");
       fragment.appendChild(option);
     }
     select.appendChild(fragment);
+
     const allowed = options.some((option) => option.value === requested);
     state.pianoRollParameterMode = allowed ? requested : "velocity";
     select.value = state.pianoRollParameterMode;
-    select.title = select.selectedOptions[0]?.textContent || "MIDI parameter";
+    select.title = pianoRollParameterSpec(state.pianoRollParameterMode).label;
+
+    if (usedSelect) {
+      usedSelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = usedKeys.size ? "Used…" : "Used · none";
+      usedSelect.appendChild(placeholder);
+
+      for (const optionInfo of options) {
+        if (!usedKeys.has(optionInfo.value)) continue;
+        const option = document.createElement("option");
+        option.value = optionInfo.value;
+        option.textContent = optionInfo.text;
+        usedSelect.appendChild(option);
+      }
+
+      usedSelect.disabled = usedKeys.size === 0;
+      usedSelect.value = usedKeys.has(state.pianoRollParameterMode)
+        ? state.pianoRollParameterMode
+        : "";
+      usedSelect.title = usedKeys.size
+        ? "Used parameters in this Project Clip"
+        : "No edited MIDI parameters in this Project Clip yet";
+    }
   }
 
   const BAR_W_DEFAULT = 40;
@@ -8675,7 +8753,7 @@ body.timeline-ruler-seeking {
     content.innerHTML = "";
     if (!ctx) return;
 
-    populatePianoRollParameterSelect(ctx.track);
+    populatePianoRollParameterSelect(ctx.track, ctx);
     const spec = pianoRollParameterSpec(state.pianoRollParameterMode);
     if (meta) meta.textContent = spec.meta;
     if (select) {
@@ -10226,14 +10304,24 @@ body.timeline-ruler-seeking {
     updatePianoRollGeometry({ horizontal: false, vertical: true });
   });
 
-  document.getElementById("pianoRollParameterSelect")?.addEventListener("change", (event) => {
-    state.pianoRollParameterMode = String(event.target.value || "velocity");
-    event.target.title = event.target.selectedOptions[0]?.textContent || "MIDI parameter";
+  function selectPianoRollParameter(value) {
+    const next = String(value || "");
+    if (!next) return;
+    state.pianoRollParameterMode = next;
     scheduleLocalStorageSet(
       "midi_host_piano_roll_parameter_mode_v1",
       state.pianoRollParameterMode
     );
     renderPianoRollParameterLane();
+  }
+
+  document.getElementById("pianoRollParameterSelect")?.addEventListener("change", (event) => {
+    selectPianoRollParameter(event.target.value || "velocity");
+  });
+
+  document.getElementById("pianoRollUsedParameterSelect")?.addEventListener("change", (event) => {
+    if (!event.target.value) return;
+    selectPianoRollParameter(event.target.value);
   });
 
   document.getElementById("pianoRollSnap")?.addEventListener("change", (event) => {
