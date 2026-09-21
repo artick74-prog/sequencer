@@ -1989,16 +1989,42 @@ body.timeline-ruler-zooming {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  min-width: 0;
+  white-space: nowrap;
 }
 .track-actions-row > .btn {
-  padding: 5px 7px;
-  font-size: 11px;
+  padding: 4px 5px;
+  font-size: 10px;
 }
 .track-mix {
   display: inline-flex;
-  gap: 3px;
+  gap: 2px;
   align-items: center;
+}
+.track-actions-row .mix-btn {
+  width: 24px;
+  min-width: 24px;
+  height: 25px;
+  line-height: 23px;
+}
+.track-actions-row .octave-control {
+  margin-left: 0;
+  gap: 2px;
+}
+.track-actions-row .octave-control .pitch-step-btn {
+  width: 18px;
+  min-width: 18px;
+  height: 23px;
+}
+.track-actions-row .octave-control .performance-value {
+  min-width: 16px;
+}
+.track-actions-row .track-delete {
+  width: 22px;
+  min-width: 22px;
+  padding-left: 0;
+  padding-right: 0;
 }
 .mix-btn {
   width: 27px;
@@ -8295,6 +8321,28 @@ body.timeline-ruler-zooming {
     return Math.max(1, Math.round(state.lengthTicks / ticksPerBar(state.project.ppq)));
   }
 
+  function timelineViewportBarWidth() {
+    const scroll = document.getElementById("timelineScroll");
+    if (!scroll || !state.project) return BAR_W_MIN;
+    const bars = Math.max(1, totalBars());
+    const available = Math.max(120, scroll.clientWidth - HEAD_W - 8);
+    return Math.max(BAR_W_MIN, available / bars);
+  }
+
+  function clampTimelineBarWidth(value) {
+    return Math.min(
+      BAR_W_MAX,
+      Math.max(BAR_W_MIN, timelineViewportBarWidth(), Number(value) || BAR_W_DEFAULT)
+    );
+  }
+
+  function ensureTimelineFillsViewport() {
+    const next = clampTimelineBarWidth(state.barW);
+    if (Math.abs(next - state.barW) < 0.01) return false;
+    state.barW = next;
+    return true;
+  }
+
   function timelineWidth() {
     return totalBars() * state.barW;
   }
@@ -8319,7 +8367,7 @@ body.timeline-ruler-zooming {
       ? anchorRatio
       : (scroll && oldW > 0 ? (scroll.scrollLeft + scroll.clientWidth / 2) / Math.max(oldW, 1) : 0);
 
-    state.barW = Math.min(BAR_W_MAX, Math.max(BAR_W_MIN, nextBarW));
+    state.barW = clampTimelineBarWidth(nextBarW);
     scheduleHostAutosave();
     updateRulerZoomGeometry();
     updateTrackZoomGeometry();
@@ -8371,9 +8419,7 @@ body.timeline-ruler-zooming {
   function zoomFit() {
     const scroll = document.getElementById("timelineScroll");
     if (!scroll || !state.project) return;
-    const bars = totalBars();
-    const avail = Math.max(120, scroll.clientWidth - HEAD_W - 8);
-    setZoom(avail / bars, { anchorRatio: 0 });
+    setZoom(timelineViewportBarWidth(), { anchorRatio: 0 });
     scroll.scrollLeft = 0;
   }
 
@@ -9195,6 +9241,7 @@ body.timeline-ruler-zooming {
     const project = state.project;
     state.rulerPlayheadEls = [];
     if (!project) { wrap.innerHTML = ""; return; }
+    ensureTimelineFillsViewport();
     const bars = totalBars();
     const totalW = timelineWidth();
     const length = state.lengthTicks || 1;
@@ -14969,6 +15016,21 @@ body.timeline-ruler-zooming {
   document.getElementById("btnZoomOut").addEventListener("click", () => zoomBy(1 / 1.35));
   document.getElementById("btnZoomIn").addEventListener("click", () => zoomBy(1.35));
   document.getElementById("btnZoomFit").addEventListener("click", () => zoomFit());
+  window.addEventListener("resize", () => {
+    scheduleUiFrame("timeline-resize-fill", () => {
+      if (!state.project) return;
+      const changed = ensureTimelineFillsViewport();
+      if (!changed) return;
+      updateRulerZoomGeometry();
+      updateTrackZoomGeometry();
+      updateMarkerGuideGeometry();
+      updatePlayheads(
+        state.playing ? currentTransportTick() : (state.startTick || 0),
+        state.lengthTicks || 1
+      );
+    });
+  });
+
   document.getElementById("timelineScroll").addEventListener("wheel", (e) => {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
