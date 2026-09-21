@@ -11052,6 +11052,84 @@ body.timeline-ruler-zooming {
     ruler.style.backgroundRepeat = "repeat";
   }
 
+  function updatePianoRollViewportExtent() {
+    const scroll = document.getElementById("pianoRollScroll");
+    const stage = scroll?.querySelector(".piano-roll-stage");
+    const grid = document.getElementById("pianoRollGrid");
+    if (!scroll || !stage || !grid) return false;
+
+    const rowH = Math.max(10, Math.min(48, Number(grid.dataset.rowHeight) || Number(state.pianoRollRowH) || 18));
+    const rowCount = Math.max(
+      1,
+      String(grid.dataset.rowNotes || "").split(",").filter(Boolean).length
+    );
+    const rulerH = 24;
+    const visiblePitchHeight = Math.max(rowH * 13, (scroll.clientHeight || 0) - rulerH);
+    const rollH = Math.max(rowCount * rowH, visiblePitchHeight);
+    stage.style.setProperty("--pr-roll-h", rollH + "px");
+    return true;
+  }
+
+  function updatePianoRollHorizontalGeometryFast(nextBarW) {
+    const scroll = document.getElementById("pianoRollScroll");
+    const stage = scroll?.querySelector(".piano-roll-stage");
+    const grid = document.getElementById("pianoRollGrid");
+    const ruler = document.getElementById("pianoRollRuler");
+    const content = document.getElementById("pianoRollParameterContent");
+    if (!scroll || !stage || !grid || !ruler) return null;
+
+    const startTick = Number(grid.dataset.startTick) || 0;
+    const endTick = Math.max(startTick + 1, Number(grid.dataset.endTick) || (startTick + 1));
+    const spanTicks = Math.max(1, endTick - startTick);
+    const ppq = Math.max(1, Number(grid.dataset.ppq) || 480);
+    const keyW = Math.max(0, Number(grid.dataset.keyWidth) || 78);
+    const tpb = ticksPerBar(ppq);
+    const barSpan = spanTicks / Math.max(1, tpb);
+    const availableW = Math.max(480, (scroll.clientWidth || 760) - keyW - 2);
+    const pxPerBar = Math.max(
+      PIANO_ROLL_BAR_W_MIN,
+      Math.min(PIANO_ROLL_BAR_W_MAX, Number(nextBarW) || Number(state.pianoRollBarW) || 96)
+    );
+    const rollW = Math.max(availableW, Math.max(1, barSpan) * pxPerBar);
+
+    stage.style.setProperty("--pr-roll-w", rollW + "px");
+    grid.dataset.rollWidth = String(rollW);
+    if (content) content.style.width = rollW + "px";
+
+    // Update only the tiled grid backgrounds. Notes, labels and parameter bars
+    // are percentage-positioned and follow the parent width automatically.
+    const snapTicks = Math.max(1, pianoRollSnapTicks(ppq));
+    const pxPerTick = rollW / spanTicks;
+    const snapPx = Math.max(2, snapTicks * pxPerTick);
+    const beatPx = Math.max(2, ppq * pxPerTick);
+    const barPx = Math.max(2, tpb * pxPerTick);
+    const firstSnapTick = Math.ceil(startTick / snapTicks) * snapTicks;
+    const firstBeatTick = Math.ceil(startTick / ppq) * ppq;
+    const firstBarTick = Math.ceil(startTick / tpb) * tpb;
+    const snapOffset = (firstSnapTick - startTick) * pxPerTick;
+    const beatOffset = (firstBeatTick - startTick) * pxPerTick;
+    const barOffset = (firstBarTick - startTick) * pxPerTick;
+
+    grid.style.backgroundSize =
+      barPx + "px 100%," + beatPx + "px 100%," + snapPx + "px 100%";
+    grid.style.backgroundPosition =
+      barOffset + "px 0," + beatOffset + "px 0," + snapOffset + "px 0";
+    ruler.style.backgroundSize =
+      barPx + "px 100%," + beatPx + "px 100%";
+    ruler.style.backgroundPosition =
+      barOffset + "px 0," + beatOffset + "px 0";
+
+    const meta = document.getElementById("pianoRollMeta");
+    if (meta) {
+      meta.textContent = meta.textContent.replace(
+        /\d+\s+px\/bar/,
+        Math.round(pxPerBar) + " px/bar"
+      );
+    }
+    updatePianoRollPlayhead(state.playing ? currentTransportTick() : (state.startTick || 0));
+    return { rollW, spanTicks, keyW };
+  }
+
   function updatePianoRollGeometry({ horizontal = true, vertical = true } = {}) {
     const scroll = document.getElementById("pianoRollScroll");
     const stage = scroll?.querySelector(".piano-roll-stage");
@@ -11708,6 +11786,8 @@ body.timeline-ruler-zooming {
     grid.dataset.startTick = String(startTick);
     grid.dataset.endTick = String(endTick);
     grid.dataset.rollWidth = String(rollW);
+    grid.dataset.ppq = String(ppq);
+    grid.dataset.keyWidth = String(keyW);
 
     const gridCanvas = document.createElement("canvas");
     gridCanvas.className = "piano-roll-grid-canvas";
@@ -11987,28 +12067,36 @@ body.timeline-ruler-zooming {
     const grid = document.getElementById("pianoRollGrid");
     if (!scroll || !grid || !state.pianoRollClipId) return;
 
-    const oldBarW = Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(state.pianoRollBarW) || 96));
-    const nextBarW = Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(nextValue) || oldBarW));
+    const oldBarW = Math.max(
+      PIANO_ROLL_BAR_W_MIN,
+      Math.min(PIANO_ROLL_BAR_W_MAX, Number(state.pianoRollBarW) || 96)
+    );
+    const nextBarW = Math.max(
+      PIANO_ROLL_BAR_W_MIN,
+      Math.min(PIANO_ROLL_BAR_W_MAX, Number(nextValue) || oldBarW)
+    );
     if (Math.abs(nextBarW - oldBarW) < 0.01) return;
 
-    const scrollRect = scroll.getBoundingClientRect();
-    const gridRect = grid.getBoundingClientRect();
     const oldRollW = Math.max(1, Number(grid.dataset.rollWidth) || grid.offsetWidth || 1);
-
+    const keyW = Math.max(0, Number(grid.dataset.keyWidth) || 78);
+    const scrollRect = scroll.getBoundingClientRect();
     const anchorClientX = clientX == null
       ? scrollRect.left + scroll.clientWidth / 2
       : clientX;
-    const anchorRatio = Math.max(
-      0,
-      Math.min(1, (anchorClientX - gridRect.left) / oldRollW)
-    );
     const anchorViewportX = anchorClientX - scrollRect.left;
+    const anchorContentX = Math.max(
+      0,
+      scroll.scrollLeft + anchorViewportX - keyW
+    );
+    const anchorRatio = Math.max(0, Math.min(1, anchorContentX / oldRollW));
 
     state.pianoRollBarW = nextBarW;
     scheduleLocalStorageSet("midi_host_piano_roll_bar_w_v1", state.pianoRollBarW);
-    const geometry = updatePianoRollGeometry({ horizontal: true, vertical: false });
-    const newRollW = Math.max(1, Number(geometry?.rollW) || Number(grid.dataset.rollWidth) || 1);
-    const keyW = pianoRollKeyWidth(pianoRollContext());
+    const geometry = updatePianoRollHorizontalGeometryFast(nextBarW);
+    const newRollW = Math.max(
+      1,
+      Number(geometry?.rollW) || Number(grid.dataset.rollWidth) || 1
+    );
     scroll.scrollLeft = Math.max(
       0,
       keyW + anchorRatio * newRollW - anchorViewportX
@@ -12294,12 +12382,13 @@ body.timeline-ruler-zooming {
     state.pianoRollParameterLaneHeight =
       clampPianoRollParameterLaneHeight(coupledLaneHeight, state.pianoRollHeight);
 
-    // Keep the existing Piano Roll DOM alive while resizing; only geometry changes.
+    // Dock-height drag must stay out of the note DOM. The row height does not
+    // change here, so only the scroll viewport/stage extent needs updating.
     if (!state.pianoRollResizeRenderFrame) {
       state.pianoRollResizeRenderFrame = requestAnimationFrame(() => {
         state.pianoRollResizeRenderFrame = 0;
         applyPianoRollParameterLaneHeight();
-        updatePianoRollGeometry({ horizontal: false, vertical: true });
+        updatePianoRollViewportExtent();
       });
     }
   });
@@ -12311,7 +12400,7 @@ body.timeline-ruler-zooming {
       document.body.classList.remove("piano-roll-parameter-resizing");
       try { pianoRollParameterResizer?.releasePointerCapture?.(event.pointerId); } catch {}
       applyPianoRollParameterLaneHeight();
-      updatePianoRollGeometry({ horizontal: false, vertical: true });
+      updatePianoRollViewportExtent();
       scheduleLocalStorageSet(
         "midi_host_piano_roll_parameter_lane_height_v1",
         state.pianoRollParameterLaneHeight
@@ -12329,7 +12418,7 @@ body.timeline-ruler-zooming {
       state.pianoRollResizeRenderFrame = 0;
     }
     applyPianoRollParameterLaneHeight();
-    updatePianoRollGeometry({ horizontal: false, vertical: true });
+    updatePianoRollViewportExtent();
     scheduleLocalStorageSet("midi_host_piano_roll_height_v1", state.pianoRollHeight);
     scheduleLocalStorageSet(
       "midi_host_piano_roll_parameter_lane_height_v1",
@@ -12344,7 +12433,7 @@ body.timeline-ruler-zooming {
     document.body.classList.remove("piano-roll-parameter-resizing");
     try { pianoRollParameterResizer?.releasePointerCapture?.(event.pointerId); } catch {}
     applyPianoRollParameterLaneHeight();
-    updatePianoRollGeometry({ horizontal: false, vertical: true });
+    updatePianoRollViewportExtent();
   });
 
   function selectPianoRollParameter(value) {
