@@ -3250,7 +3250,7 @@ body.timeline-ruler-seeking {
       .filter((tr) => tr.notes.length > 0 || tr.midiControls.length > 0)
       .map((tr) => {
         const channel = tr.notes.length ? majorityChannel(tr.notes) : majorityChannel(tr.midiControls);
-        const role = inferTrackRole({ name: tr.name }, channel);
+        const role = Number(channel) === 10 ? "gm-drums" : inferTrackRole({ name: tr.name }, channel);
         const notes = tr.notes
           .map((n) => ({
             tick: n.tick,
@@ -3274,6 +3274,7 @@ body.timeline-ruler-seeking {
           name: tr.name,
           channel,
           role,
+          drumMap: Number(channel) === 10 ? "gm" : "",
           mute: false,
           cubaseIndex: tr.index,
           notes,
@@ -7692,6 +7693,38 @@ body.timeline-ruler-seeking {
         }
       }
     });
+
+    // Migration for projects created before GM-source / XR20-target drum provenance.
+    // Library clips on an XR20 track used to store only bare MIDI numbers. Treat
+    // those numbers as source GM semantics and do not guess a hardware pad.
+    for (const clip of project.clips) {
+      const track = project.tracks.find((item) => item.id === clip.targetTrackId);
+      if (!track || drumMapForTrack(track) !== "xr20") continue;
+      const isLibraryClip = !!clip.source && clip.source !== "manual";
+      if (!isLibraryClip) continue;
+      const instanceId = String(clip.instanceId || "");
+      let unresolved = 0;
+
+      for (const note of track.notes || []) {
+        if (note.clipId !== instanceId || note.drumSourceNote != null) continue;
+        const sourceNote = Math.max(0, Math.min(127, Number(note.note) || 0));
+        note.drumSourceNote = sourceNote;
+        note.drumSourceName = gmDrumName(sourceNote);
+        const target = resolveGmDrumToXr20(track, sourceNote, project);
+        if (target) {
+          note.note = target.midiNote;
+          note.drumPad = target.pad;
+          note.drumUnresolved = false;
+        } else {
+          note.drumUnresolved = true;
+          unresolved++;
+        }
+      }
+
+      clip.drumSourceMap = clip.drumSourceMap || "gm";
+      clip.drumTargetMap = "xr20";
+      clip.unresolvedDrumNotes = unresolved;
+    }
 
     return project;
   }
