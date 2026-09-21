@@ -8491,7 +8491,6 @@ body.timeline-ruler-zooming {
 
     const tpb = ticksPerBar(project.ppq);
     const minimum = Math.max(tpb, Number(project.minimumLengthTicks) || 0);
-    const previous = Math.max(0, Number(project.lengthTicks) || 0);
     const contentBoundary =
       contentEndTick > 0 ? Math.ceil(contentEndTick / tpb) * tpb : 0;
     const elasticTarget =
@@ -8499,9 +8498,10 @@ body.timeline-ruler-zooming {
         ? contentBoundary + TIMELINE_RUNWAY_BARS * tpb
         : minimum;
 
-    // Never shrink the workspace automatically. Once bars have appeared they
-    // remain available, and writing farther right simply pushes the horizon on.
-    project.lengthTicks = Math.max(minimum, previous, elasticTarget);
+    // The runway follows authored material. Empty tail bars may contract when
+    // reopening/recomputing, but any bar containing notes, controls, clips or
+    // markers remains part of the project and pushes the horizon forward.
+    project.lengthTicks = Math.max(minimum, elasticTarget);
     state.lengthTicks = project.lengthTicks;
     return project.lengthTicks;
   }
@@ -10018,7 +10018,7 @@ body.timeline-ruler-zooming {
       Number(state.project.minimumLengthTicks) || 0
     );
     clip.startTick = 0;
-    clip.endTick = Math.max(endTick, Number(clip.endTick) || 0);
+    clip.endTick = endTick;
     clip.baseLengthTicks = clip.endTick;
     clip.repeatCount = 1;
     clip.noteCount = hostClipOwnedNotes(clip, track).length;
@@ -10077,7 +10077,7 @@ body.timeline-ruler-zooming {
       Number(clip.endTick) || (startTick + ticksPerBar(ppq))
     );
     const endTick = clip.nativeTrackPart
-      ? Math.max(storedEndTick, Number(state.project.lengthTicks) || 0, startTick + ticksPerBar(ppq))
+      ? Math.max(Number(state.project.lengthTicks) || 0, startTick + ticksPerBar(ppq))
       : storedEndTick;
     const notes = hostClipOwnedNotes(clip, track)
       .filter((note) => {
@@ -10572,7 +10572,7 @@ body.timeline-ruler-zooming {
     });
   }
 
-  function pianoRollAddControlAtPointer(event, ctx, spec, width) {
+  function pianoRollAddControlAtPointer(event, ctx, spec, width = null) {
     if (!ctx || !spec || spec.kind !== "control") return;
     const content = document.getElementById("pianoRollParameterContent");
     const viewport = document.getElementById("pianoRollParameterViewport");
@@ -10581,10 +10581,11 @@ body.timeline-ruler-zooming {
 
     const contentRect = content.getBoundingClientRect();
     const viewportRect = viewport.getBoundingClientRect();
-    const localX = Math.max(0, Math.min(width, event.clientX - contentRect.left));
+    const liveWidth = Math.max(1, contentRect.width || Number(width) || 1);
+    const localX = Math.max(0, Math.min(liveWidth, event.clientX - contentRect.left));
     const localY = Math.max(0, Math.min(viewportRect.height, event.clientY - viewportRect.top));
     const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
-    const rawTick = ctx.startTick + (localX / Math.max(1, width)) * spanTicks;
+    const rawTick = ctx.startTick + (localX / liveWidth) * spanTicks;
     let tick = pianoRollSnapTick(rawTick, ctx);
     tick = Math.max(ctx.startTick, Math.min(ctx.endTick - 1, tick));
     const ratio = 1 - (localY / Math.max(1, viewportRect.height));
@@ -10726,7 +10727,7 @@ body.timeline-ruler-zooming {
 
     content.appendChild(fragment);
     if (spec.kind === "control") {
-      content.ondblclick = (event) => pianoRollAddControlAtPointer(event, ctx, spec, width);
+      content.ondblclick = (event) => pianoRollAddControlAtPointer(event, ctx, spec);
       content.title = spec.label + " · double-click empty lane to add point";
     } else {
       content.ondblclick = null;
