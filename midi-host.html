@@ -6232,6 +6232,8 @@ body.timeline-ruler-seeking {
       name: track.name || "",
       notes: track.notes?.length || 0,
       midiControls: track.midiControls?.length || 0,
+      drumMap: track.drumMap || "",
+      drumKitProfileId: track.drumKitProfileId || "",
     }));
     const markers = (project.markers || []).map((m) => [m.tick | 0, String(m.text || "")]);
     return JSON.stringify({
@@ -6265,12 +6267,15 @@ body.timeline-ruler-seeking {
         swing: Math.max(0, Math.min(50, Number(state.project.swing) || 0)),
         masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(state.project.masterTranspose) || 0))),
         cloudProject: state.project.cloudProject ? {...state.project.cloudProject} : null,
+        drumKitProfiles: JSON.parse(JSON.stringify(state.project.drumKitProfiles || [])),
         tracks: state.project.tracks.map((track, index) => ({
           id: track.id || "",
           cubaseIndex: track.cubaseIndex ?? index,
           name: track.name || "",
           channel: track.channel || 1,
           role: track.role || inferTrackRole(track, track.channel || 1),
+          drumMap: track.drumMap || "",
+          drumKitProfileId: track.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID,
           mute: !!track.mute,
           solo: !!track.solo,
           transposeOctaves: Math.max(-3, Math.min(3, Math.round(Number(track.transposeOctaves) || 0))),
@@ -6363,6 +6368,9 @@ body.timeline-ruler-seeking {
     if (saved.project.cloudProject && typeof saved.project.cloudProject === "object") {
       project.cloudProject = {...saved.project.cloudProject};
     }
+    if (Array.isArray(saved.project.drumKitProfiles) && saved.project.drumKitProfiles.length) {
+      project.drumKitProfiles = normalizeDrumKitProfiles(saved.project.drumKitProfiles);
+    }
 
     const savedTracks = saved.project.tracks || [];
     for (let i = 0; i < project.tracks.length; i++) {
@@ -6378,6 +6386,8 @@ body.timeline-ruler-seeking {
         track.channel = channel;
       }
       track.role = match.role || inferTrackRole(track, track.channel || 1);
+      if (match.drumMap === "gm" || match.drumMap === "xr20") track.drumMap = match.drumMap;
+      if (match.drumKitProfileId) track.drumKitProfileId = String(match.drumKitProfileId);
       track.mute = !!match.mute;
       track.solo = !!match.solo;
       if (Number.isFinite(Number(match.transposeOctaves))) {
