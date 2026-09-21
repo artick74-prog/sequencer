@@ -2473,10 +2473,12 @@ body.timeline-ruler-seeking {
         <div class="piano-roll-head">
           <strong id="pianoRollTitle">Track</strong>
           <select class="piano-roll-head-drum-map" id="pianoRollDrumMap"
-            aria-label="Drum Map" title="Drum Map">
+            aria-label="Drum Map view" title="Drum Map view">
             <option value="xr20">XR20</option>
             <option value="gm">GM</option>
           </select>
+          <button class="btn drum-kit-btn" id="pianoRollKit" type="button" hidden
+            title="Map GM source instruments to XR20 physical pads">Kit</button>
           <span class="piano-roll-badge" title="1 = Select · 5 = Draw · Ctrl temporarily selects while drawing">EDIT · v0.6 · DRAW</span>
           <span class="piano-roll-meta" id="pianoRollMeta">Double-click a Project Clip on the timeline.</span>
           <span class="piano-roll-snap">
@@ -2800,6 +2802,82 @@ body.timeline-ruler-seeking {
     return trackIsPercussion(track) && drumMapForTrack(track) === "xr20";
   }
 
+  function pianoRollDrumViewMap(ctx = pianoRollContext()) {
+    if (!trackIsPercussion(ctx?.track)) return "";
+    const requested = String(state.pianoRollDrumViewMap || "");
+    return requested === "gm" || requested === "xr20"
+      ? requested
+      : drumMapForTrack(ctx.track);
+  }
+
+  function pianoRollDisplayNote(ctx, note) {
+    if (!ctx || !note) return null;
+    if (!trackIsPercussion(ctx.track)) return Number(note.note) || 0;
+
+    const viewMap = pianoRollDrumViewMap(ctx);
+    if (viewMap === "gm") {
+      if (note.drumSourceNote != null) return Number(note.drumSourceNote);
+      return drumMapForTrack(ctx.track) === "gm" ? Number(note.note) : null;
+    }
+
+    if (note.drumUnresolved) return null;
+    return Number(note.note);
+  }
+
+  function setDrumNoteFromViewPitch(track, note, displayPitch, viewMap = null) {
+    if (!trackIsPercussion(track) || !note) {
+      if (note) note.note = Math.max(0, Math.min(127, Number(displayPitch) || 0));
+      return note;
+    }
+
+    const map = viewMap || pianoRollDrumViewMap({ track });
+    const pitch = Math.max(0, Math.min(127, Number(displayPitch) || 0));
+
+    if (map === "gm") {
+      note.drumSourceNote = pitch;
+      note.drumSourceName = gmDrumName(pitch);
+
+      if (drumMapForTrack(track) === "gm") {
+        note.note = pitch;
+        delete note.drumPad;
+        note.drumUnresolved = false;
+        return note;
+      }
+
+      const resolved = resolveGmDrumToXr20(track, pitch);
+      if (resolved) {
+        note.note = resolved.midiNote;
+        note.drumPad = resolved.pad;
+        note.drumUnresolved = false;
+      } else {
+        note.note = pitch;
+        delete note.drumPad;
+        note.drumUnresolved = true;
+      }
+      return note;
+    }
+
+    note.note = pitch;
+    const hardware = xr20HardwarePadByMidi(pitch);
+    if (hardware) {
+      note.drumPad = hardware.pad;
+      note.drumUnresolved = false;
+    } else {
+      delete note.drumPad;
+      note.drumUnresolved = true;
+    }
+    return note;
+  }
+
+  function drumAuditionPitchForView(track, displayPitch, viewMap = null) {
+    if (!trackIsPercussion(track)) return Number(displayPitch) || 0;
+    const map = viewMap || pianoRollDrumViewMap({ track });
+    if (map === "gm" && drumMapForTrack(track) === "xr20") {
+      return resolveGmDrumToXr20(track, displayPitch)?.midiNote ?? null;
+    }
+    return Number(displayPitch) || 0;
+  }
+
   function createDefaultXr20KitProfile() {
     const assignments = {};
     for (const item of XR20_DRUM_HARDWARE_MAP) {
@@ -2984,7 +3062,7 @@ body.timeline-ruler-seeking {
       });
     }
 
-    if (drumMapForTrack(track) === "gm") {
+    if (pianoRollDrumViewMap(ctx) === "gm") {
       return Object.keys(GM_DRUM_NOTE_NAMES)
         .map(Number)
         .sort((a,b) => b-a)
@@ -3623,6 +3701,7 @@ body.timeline-ruler-seeking {
     pianoRollParameterResizeStartHeight: 92,
     pianoRollParameterResizeMaxHeight: 320,
     pianoRollParameterMode: "velocity",
+    pianoRollDrumViewMap: "",
     pianoRollSelectedNoteId: "",
     pianoRollSelectedNoteIds: [],
     pianoRollNoteClipboard: null,
@@ -8850,6 +8929,7 @@ body.timeline-ruler-seeking {
     state.pianoRollSelectedNoteIds = [];
     state.pianoRollUndoStack = [];
     state.pianoRollRedoStack = [];
+    state.pianoRollDrumViewMap = trackIsPercussion(track) ? drumMapForTrack(track) : "";
     selectHostLoopClip(instanceId);
 
     const dock = document.getElementById("pianoRollDock");
@@ -11062,30 +11142,14 @@ body.timeline-ruler-seeking {
   document.getElementById("pianoRollDrumMap")?.addEventListener("change", (event) => {
     const ctx = pianoRollContext();
     if (!ctx || !trackIsPercussion(ctx.track)) return;
-    const track = ctx.track;
-
-    if ((track.notes || []).length) {
-      event.target.value = drumMapForTrack(track);
-      setStatus("Drum Map is locked after notes exist. Use an empty drum track for a different target map.", "err");
-      return;
-    }
-
-    track.drumMap = event.target.value === "gm" ? "gm" : "xr20";
-    if (track.drumMap === "xr20") {
-      track.role = "xr20-drums";
-      track.drumKitProfileId = track.drumKitProfileId || DEFAULT_XR20_KIT_PROFILE_ID;
-    } else if (track.role === "xr20-drums") {
-      track.role = "gm-drums";
-    }
-
-    markHostProjectDirty();
-    scheduleHostAutosave();
-    renderTracks();
+    state.pianoRollDrumViewMap = event.target.value === "gm" ? "gm" : "xr20";
     renderPianoRoll({ centerPitch: true });
-    setStatus(
-      "Drum Map → " + (track.drumMap === "xr20" ? "AKAI XR20" : "General MIDI"),
-      "ok"
-    );
+  });
+
+  document.getElementById("pianoRollKit")?.addEventListener("click", () => {
+    const ctx = pianoRollContext();
+    if (!ctx || !isXr20DrumTrack(ctx.track)) return;
+    openDrumKitEditor(ctx.track);
   });
 
   document.getElementById("pianoRollSnap")?.addEventListener("change", (event) => {
@@ -12310,9 +12374,6 @@ body.timeline-ruler-seeking {
         : "";
       const percussion = trackIsPercussion(track);
       const drumMap = percussion ? drumMapForTrack(track) : "";
-      const drumKitTag = percussion && drumMap === "xr20"
-        ? `<button class="btn drum-kit-btn" type="button" data-drum-kit="${track.id}" title="Map GM source instruments to XR20 physical pads">Kit</button>`
-        : "";
       const el = document.createElement("div");
       el.className = "track";
       el.dataset.trackId = track.id;
@@ -12343,7 +12404,6 @@ body.timeline-ruler-seeking {
               <span class="performance-value">${trackIsPercussion(track) ? "dr" : ((track.transposeOctaves || 0) > 0 ? "+" : "") + (track.transposeOctaves || 0)}</span>
               <button class="pitch-step-btn" type="button" data-oct-up="${track.id}" ${trackIsPercussion(track) ? "disabled" : ""} title="Octave up">+</button>
             </span>
-            ${drumKitTag}
             <button class="btn" type="button" data-preview="${track.id}">Preview</button>
             <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
             <button class="btn track-delete" type="button" data-delete-track="${track.id}" title="Delete this MIDI track">×</button>
@@ -12570,9 +12630,6 @@ body.timeline-ruler-seeking {
       });
       el.querySelector(`[data-gm-program="${track.id}"]`)?.addEventListener("change", (e) => {
         setGmTrackProgram(track, Number(e.target.value));
-      });
-      el.querySelector(`[data-drum-kit="${track.id}"]`)?.addEventListener("click", () => {
-        openDrumKitEditor(track);
       });
       el.querySelector(`[data-delete-track="${track.id}"]`)?.addEventListener("click", () => {
         removeMidiTrack(track);
