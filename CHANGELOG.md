@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-23 — Uniform track lane height
+
+### Fixed
+- Все hardware и GM дорожки MIDI Host снова имеют одинаковую высоту.
+- Пустой GM-program slot аппаратных дорожек больше не наследует глобальные стили `.empty`, которые раздували высоту lane.
+- Timeline body и note vector теперь растягиваются на ту же стандартную высоту, что и track header.
+
+
+
 ## 2026-09-23 — Track GM selector layout
 
 ### Changed
