@@ -2117,8 +2117,10 @@ body.timeline-ruler-zooming {
 }
 .tracks { display: flex; flex-direction: column; gap: 0; }
 .track {
+  --track-lane-h: 110px;
   display: flex;
   align-items: stretch;
+  min-height: var(--track-lane-h);
   border-bottom: 1px solid var(--border);
   background: var(--panel);
   overflow: visible;
@@ -2126,11 +2128,12 @@ body.timeline-ruler-zooming {
 .track-head {
   flex: 0 0 var(--head-w, 280px);
   width: var(--head-w, 280px);
+  height: var(--track-lane-h);
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
-  align-items: center;
-  align-content: center;
+  align-items: stretch;
+  justify-content: center;
   padding: 8px 10px;
   background: #121820;
   border-right: 1px solid var(--border);
@@ -2169,7 +2172,7 @@ body.timeline-ruler-zooming {
   display: flex;
   align-items: center;
 }
-.track-program-row.empty {
+.track-program-row.placeholder {
   visibility: hidden;
 }
 .gm-program-select {
@@ -2309,7 +2312,7 @@ body.timeline-ruler-zooming {
 }
 .track-body {
   position: relative;
-  height: 72px;
+  height: var(--track-lane-h);
   flex: 0 0 auto;
   cursor: default;
   background:
@@ -2327,7 +2330,7 @@ body.timeline-ruler-zooming {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 72px;
+  height: 100%;
   z-index: 2;
   pointer-events: none;
   user-select: none;
@@ -14246,7 +14249,7 @@ body.timeline-ruler-zooming {
               <select data-ch="${track.id}">${chOptions}</select>
             </label>
           </div>
-          <div class="track-program-row ${gmTag ? "" : "empty"}">
+          <div class="track-program-row ${gmTag ? "" : "placeholder"}">
             ${gmTag || `<select class="gm-program-select" aria-hidden="true" tabindex="-1"><option>GM</option></select>`}
           </div>
           <div class="track-actions-row">
