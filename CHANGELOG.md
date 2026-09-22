@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-23 — Header menu layout
+
+### Changed
+- **File ▾** перенесён в левый верхний угол перед названием проекта.
+- **⚙ Settings** перенесён в крайний правый угол верхней навигации, после **Справка**.
+- Transport toolbar очищен от меню File/Settings; MIDI route summary остаётся на месте.
+
+
+
 ## 2026-09-23 — Settings menu cleanup
 
 ### Changed
