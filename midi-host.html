@@ -226,6 +226,14 @@ a { color: var(--accent); }
   position: relative;
   z-index: 80;
 }
+.settings-menu-button {
+  width: 32px;
+  min-width: 32px;
+  padding-left: 0;
+  padding-right: 0;
+  font-size: 16px;
+  line-height: 1;
+}
 .file-menu {
   position: absolute;
   top: calc(100% + 5px);
@@ -2538,10 +2546,19 @@ body.timeline-ruler-zooming {
       <span class="performance-value wide" id="masterTransposeValue">0 st</span>
       <button class="pitch-step-btn" id="masterTransposeUp" type="button" title="Master transpose +1 semitone">+</button>
     </span>
-    <button class="btn" id="btnMidiDevices" type="button" title="Choose Web MIDI input and output devices">MIDI Devices…</button>
     <span class="midi-route-summary" id="midiRouteSummary">MIDI: not connected</span>
-    <button class="btn" id="btnMidiMonitor" type="button" title="Show every MIDI message sent by MIDI Host to hardware">MIDI Monitor</button>
-    <button class="btn" id="btnTimingDiagnostics" type="button" title="Browser / audio / scheduler timing diagnostics">Timing</button>
+    <div class="file-menu-wrap" id="settingsMenuWrap">
+      <button class="btn settings-menu-button" id="btnSettingsMenu" type="button"
+        aria-haspopup="true" aria-expanded="false" aria-label="Settings" title="Settings">⚙</button>
+      <div class="file-menu" id="settingsMenu" role="menu" aria-hidden="true">
+        <button class="file-menu-item" id="btnMidiDevices" type="button"
+          title="Choose Web MIDI input and output devices">MIDI Devices…</button>
+        <button class="file-menu-item" id="btnMidiMonitor" type="button"
+          title="Show every MIDI message sent by MIDI Host to hardware">MIDI Monitor</button>
+        <button class="file-menu-item" id="btnTimingDiagnostics" type="button"
+          title="Browser / audio / scheduler timing diagnostics">Timing</button>
+      </div>
+    </div>
     <span style="flex:1"></span>
     <div class="file-menu-wrap" id="fileMenuWrap">
       <button class="btn" id="btnFileMenu" type="button" aria-haspopup="true" aria-expanded="false">File ▾</button>
@@ -14968,6 +14985,19 @@ body.timeline-ruler-zooming {
     setFileMenuOpen(false);
   }
 
+  function setSettingsMenuOpen(open) {
+    const menu = document.getElementById("settingsMenu");
+    const button = document.getElementById("btnSettingsMenu");
+    if (!menu || !button) return;
+    menu.classList.toggle("open", !!open);
+    menu.setAttribute("aria-hidden", open ? "false" : "true");
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function closeSettingsMenu() {
+    setSettingsMenuOpen(false);
+  }
+
   function currentProjectHasUnsavedWork() {
     const project = state.project;
     if (!project) return false;
@@ -15834,15 +15864,27 @@ body.timeline-ruler-zooming {
     });
   }
 
+  document.getElementById("btnSettingsMenu").addEventListener("click", (event) => {
+    event.stopPropagation();
+    const open = !document.getElementById("settingsMenu")?.classList.contains("open");
+    closeFileMenu();
+    setSettingsMenuOpen(open);
+  });
+  document.getElementById("settingsMenu").addEventListener("click", (event) => {
+    if (event.target.closest(".file-menu-item")) closeSettingsMenu();
+  });
+
   document.getElementById("btnFileMenu").addEventListener("click", (event) => {
     event.stopPropagation();
     const open = !document.getElementById("fileMenu")?.classList.contains("open");
+    closeSettingsMenu();
     setFileMenuOpen(open);
   });
   document.getElementById("fileMenu").addEventListener("click", (event) => {
     if (event.target.closest(".file-menu-item")) closeFileMenu();
   });
   document.addEventListener("click", (event) => {
+    if (!document.getElementById("settingsMenuWrap")?.contains(event.target)) closeSettingsMenu();
     if (!document.getElementById("fileMenuWrap")?.contains(event.target)) closeFileMenu();
     if (!document.getElementById("trackContextMenu")?.contains(event.target)) closeTrackContextMenu();
   });

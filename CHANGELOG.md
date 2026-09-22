@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-23 — Settings menu cleanup
+
+### Changed
+- MIDI Devices, MIDI Monitor и Timing спрятаны из transport toolbar в компактное меню **⚙ Settings**.
+- MIDI route summary остаётся видимым рядом с transport, чтобы текущие IN/OUT были заметны без открытия настроек.
+
+
 ## 2026-09-23 — MIDI Devices routing dialog
 
 ### Added
