@@ -2,7 +2,7 @@
 
 Базовый профиль для текущего сетапа: Bitstream 3X работает как MIDI-контроллер для компьютера и как MIDI→USB интерфейс для Akai XR20.
 
-> Важно: на конкретном Bitstream 3X пользователя (firmware 1.8 / hardware 2.0) опытным путём подтверждено, что для передачи входящего DIN MIDI в компьютер через MIDI Merger должны быть одновременно включены **MIDI Out 1** и **USB Out 1**. При USB Out 1 = ON и MIDI Out 1 = OFF входящий MIDI в USB не проходил.
+> **Ключевое открытие 22.09.2026:** на конкретном Bitstream 3X пользователя (firmware 1.8 / hardware 2.0) входящий DIN MIDI проходит в компьютер через USB только при одновременном включении двух выходов блока MIDI Merger: **MIDI Out 1 = ON** и **USB Out 1 = ON**. Вариант **USB Out 1 = ON / MIDI Out 1 = OFF** не работал, хотя по логике маршрутизации казался достаточным. Это подтверждено в MIDI-OX на сигналах и от Akai XR20, и от TD-3.
 
 ## MIDI CONFIG
 
@@ -59,9 +59,28 @@ MIDI Merger
 |---|---:|
 | XR20 SYNTH / Bass | 1 |
 | TD-3 | 2 |
-| XR20 1-SHOT | 3 |
+| XR20 1-SHOT / percussion | 3 |
 | XR20 DRUM | 10 |
 | Bitstream controls | 16 |
+
+## Практический нюанс MIDI Merger — обязательно помнить
+
+Для сценария **внешнее железо → Bitstream MIDI IN → USB → компьютер** рабочая комбинация на этом экземпляре такая:
+
+- **Merger Source → MIDI In = ON**
+- **Merger Source → USB In = OFF**
+- **Merger Output → MIDI Out 1 = ON**
+- **Merger Output → USB Out 1 = ON**
+
+То есть в секции **Outputs** нужно открыть **оба выхода одновременно — MIDI и USB**. Если оставить только USB Out 1, Bitstream показывает входящую активность светодиодом **MIDI IN**, но merged MIDI в компьютере не появляется.
+
+Дополнительные признаки правильной работы:
+- при ударе по пэдам XR20 или при проигрывании TD-3 светодиод **MIDI IN** на Bitstream мигает;
+- после включения обоих merger-выходов события появляются в MIDI-OX;
+- для этого merged-потока на компьютере используется **первый USB MIDI-порт `Bitstream 3X`**;
+- второй виртуальный порт **`MIDIIN2 (Bitstream 3X)` / `Bitstream 3X (Port 2)`** в этом тесте сигнал не принимал.
+
+Если снова возникнет ситуация «MIDI IN на Bitstream мигает, а DAW ничего не видит», первым делом проверять именно **MIDI Out 1 = ON + USB Out 1 = ON** в MIDI Merger.
 
 ## Диагностика MIDI-OX — подтверждено
 
