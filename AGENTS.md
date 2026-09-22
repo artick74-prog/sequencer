@@ -102,7 +102,7 @@ python scripts/local_server.py --open
 - Каждый drop записывается в `project.clips[]` с source library id, target track/startTick и provenance. **☁ Save Project** передаёт уникальные использованные library ids серверу; сервер копирует точные исходные MIDI в `midi-host/clips/` внутри cloud project и перечисляет их в `manifest.json`. Таким образом cloud project хранит не только итоговый arrangement/track MIDI, но и оригинальные library clips, реально использованные в проекте.
 - Local autosave MIDI Host теперь также содержит `workingProject` — полный текущий editable project snapshot. После refresh / one-click Update он восстанавливается раньше `projects/current.json`, поэтому ещё не отправленные в GitHub drag/drop правки не теряются. Cloud meta показывает `UNSAVED` после вставки и очищается после **☁ Save Project**.
 - Основные project/file actions MIDI Host сгруппированы в верхнее меню **File**: **New Project**, **Open Project…**, **Save Project**, Import MIDI/JSON, Export MIDI, а также служебные Reload/Sync/Bind. Горячие клавиши: Ctrl/Cmd+N, Ctrl/Cmd+O, Ctrl/Cmd+S.
-- **New Project** отвязывается от предыдущей cloud-папки и создаёт 32-тактовый starter project с пустыми дорожками Bass (CH1 XR20), Acid (CH2 TD-3), Overdriven Guitar (GM29/CH3), Electric Piano 1 (GM4/CH4), Drums (CH10 XR20). Пустой starter timeline держится через `minimumLengthTicks`, пока новые MIDI clips не удлинят аранжировку.
+- **New Project** отвязывается от предыдущей cloud-папки и создаёт 32-тактовый starter project с пустыми дорожками Bass (CH1 XR20), Acid (CH2 TD-3), Percussion (CH3 XR20 1-Shot), Overdriven Guitar (GM29/CH4), Electric Piano 1 (GM4/CH5), Drums (CH10 XR20). Пустой starter timeline держится через `minimumLengthTicks`, пока новые MIDI clips не удлинят аранжировку.
 - После refresh / one-click Update / обычного перезапуска браузера `projects/current.json` загружается как источник нот/маркеров, а локальные routing/settings автоматически накладываются обратно, если signature проекта совпадает (PPQ, length, track ids/names/note counts, markers). Это предотвращает сброс всех дорожек обратно на channel 1 при обновлении интерфейса.
 
 
@@ -404,9 +404,10 @@ Playback в Style Library использует короткий lookahead schedu
 | **1** | XR20 bass (железо) |
 | **2** | TD-3 acid (железо) |
 | **10** | XR20 drums (железо) |
-| **3–9, 11–16** | GM-скетч (по одному инструменту на канал) |
+| **3** | XR20 percussion / 1-Shot (железо) |
+| **4–9, 11–16** | GM-скетч (по одному инструменту на канал) |
 
-Новый GM-трек: возьми **первый свободный** канал из `3–9, 11–16` (см. `nextFreeGmChannel` в `midi-host.html`).
+Новый GM-трек: возьми **первый свободный** канал из `4–9, 11–16` (см. `nextFreeGmChannel` в `midi-host.html`).
 
 ### Как работать с Acid
 
