@@ -72,7 +72,7 @@ MIDI Merger
 - DATA1 34h = MIDI note 52 (E3)
 - B0 7B 00 — CC 123, All Notes Off
 
-В наблюдаемом логе входящий merged MIDI появлялся на MIDI-OX input **IN 2**. Для DAW следует проверить второй виртуальный Bitstream USB input (`Bitstream 3X (Port 2)` / `MIDIIN2 (Bitstream 3X)`) как основной вход для внешнего MIDI, пришедшего через DIN MIDI IN.
+Проверено отдельно: merged MIDI приходит через **первый виртуальный USB-порт `Bitstream 3X`**, а не через `MIDIIN2 (Bitstream 3X)` / `Bitstream 3X (Port 2)`. В колонке `PORT` MIDI-OX значение **2** в данном случае соответствует выбранному устройству `Bitstream 3X`, а не «второму виртуальному порту». Для DAW использовать вход **Bitstream 3X**.
 
 ## Базовые глобальные настройки вне MIDI CONFIG
 
