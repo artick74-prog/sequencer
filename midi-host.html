@@ -2944,10 +2944,11 @@ body.timeline-ruler-zooming {
   const ROLE_BY_CH = {
     1: { role: "xr20-bass", label: "XR20 Bass", color: "var(--xr-bass)" },
     2: { role: "td3", label: "TD-3 Acid", color: "var(--td3)" },
+    3: { role: "xr20-percussion", label: "XR20 Percussion", color: "var(--xr-drums)" },
     10: { role: "xr20-drums", label: "XR20 Drums", color: "var(--xr-drums)" },
   };
   const GM_TRACK_RE = /^(\d{1,3})\s+(.+)$/;
-  const GM_CHANNELS = [3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16];
+  const GM_CHANNELS = [4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16];
   const DEFAULT_SF2_URL =
     "https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/Yamaha%20XG%20Sound%20Set.sf2";
   let GM_PROGRAMS = null;
@@ -14996,8 +14997,9 @@ body.timeline-ruler-zooming {
       tracks: [
         { id: "bass", name: "Bass", channel: 1, role: "xr20-bass", notes: [] },
         { id: "acid", name: "Acid", channel: 2, role: "td3", notes: [] },
-        { id: "guitar", name: formatGmTrackName(29, gm29), channel: 3, role: "gm", notes: [] },
-        { id: "keys", name: formatGmTrackName(4, gm4), channel: 4, role: "gm", notes: [] },
+        { id: "percussion", name: "Percussion", channel: 3, role: "xr20-percussion", drumMap: "xr20", drumKitProfileId: DEFAULT_XR20_KIT_PROFILE_ID, notes: [] },
+        { id: "guitar", name: formatGmTrackName(29, gm29), channel: 4, role: "gm", notes: [] },
+        { id: "keys", name: formatGmTrackName(4, gm4), channel: 5, role: "gm", notes: [] },
         { id: "drums", name: "Drums", channel: 10, role: "xr20-drums", drumMap: "xr20", drumKitProfileId: DEFAULT_XR20_KIT_PROFILE_ID, notes: [] },
       ],
     });
