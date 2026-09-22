@@ -10,7 +10,7 @@
 ### Changed
 - При наличии loopMIDI браузер предпочитает виртуальные studio-порты вместо прямого захвата физического TD-3.
 - Выбор MIDI In/Out сохраняется в локальном autosave; имена портов также сохраняются в cloud session.
-- Текущая студийная раскладка каналов документирована как CH1 XR20 bass, CH2 TD-3, CH3 XR20 percussion, CH10 XR20 drums.
+- Текущая студийная раскладка закреплена в MIDI Host: CH1 XR20 bass, CH2 TD-3, CH3 XR20 percussion, CH10 XR20 drums; GM-скетч-каналы теперь начинаются с CH4.
 
 
 ## 2026-05-13 — Arrange View: Ruler, Drag-and-Drop, Context Menu
