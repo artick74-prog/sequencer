@@ -92,7 +92,8 @@ python scripts/local_server.py --open
 - У каждого MIDI Host track вместо checkbox Mute используются DAW-style кнопки **S / M**. **S** поддерживает multi-solo: если хотя бы один track solo, звучат только solo tracks, кроме отдельно muted; **M** всегда глушит конкретную дорожку.
 - S/M теперь работают без stop/restart transport: scheduler хранит общую очередь и проверяет актуальное solo/mute состояние прямо перед NOTE ON. SF2 timers тоже проверяют состояние в момент фактической отправки; Hardware MIDI использует короткий 120 ms lookahead. При переходе дорожки в silent уже звучащие её ноты получают NOTE OFF без глобального All Notes Off, поэтому остальные дорожки не должны спотыкаться.
 - Muted/non-solo tracks больше не становятся полупрозрачными: состояние видно только по цвету кнопок S/M. Счётчики вида `264n` / `968n` из track header удалены.
-- MIDI Host имеет локальный **autosave** в browser localStorage (`midi-host-autosave-v1`). Для текущего проекта автоматически сохраняются routing каждой track (channel/role), Solo/Mute, per-track octave, project name, tempo, Swing и Master Transpose; из UI — zoom, Loop, выбранный MIDI Out и Browser Audio / Hardware MIDI toggles. Сохранение вызывается при каждом изменении и ещё раз на `beforeunload`.
+- MIDI Host имеет локальный **autosave** в browser localStorage (`midi-host-autosave-v1`). Для текущего проекта автоматически сохраняются routing каждой track (channel/role), Solo/Mute, per-track octave, project name, tempo, Swing и Master Transpose; из UI — zoom, Loop, выбранные MIDI In / MIDI Out и Browser Audio / Hardware MIDI toggles. Сохранение вызывается при каждом изменении и ещё раз на `beforeunload`.
+- Кнопка **MIDI Devices…** открывает встроенное окно Web MIDI routing. В нём вручную выбираются **Receive From** и **Send To**, показываются все доступные inputs/outputs и последняя активность входа. Кнопка **Use Studio Ports** выбирает текущий виртуальный studio-route: `Bitstream In` → browser и browser → `Studio Out`. При первом запуске эти имена также являются preferred defaults, поэтому старый прямой TD-3 route не должен перехватываться, если loopMIDI уже запущен.
 - Кнопка **☁ Save Project** создаёт при первом сохранении самостоятельную GitHub-папку `projects/cloud/<project-id>/`, а последующие сохранения обновляют ту же папку. Внутри: `manifest.json`, `README.md`, `midi-host/project.json`, `session.json`, `overview.json/.md`, полный `arrangement.mid` и отдельный Standard MIDI для каждой дорожки в `midi-host/tracks/`. Поэтому облачный проект не зависит от скачанного локального JSON для восстановления музыкального материала.
 - Cloud folder намеренно рассчитан на два редактора: сейчас `manifest.editors.midiHost=true`, а позже Chiptune Sequencer сможет сохранять свою часть в той же папке под `chiptune/`.
 - Кнопка **☁ Projects** открывает встроенный список `projects/cloud/*`. Серверные GET endpoint'ы `/api/projects` и `/api/project/load?id=<project-id>` отдают список проектов и полный MIDI Host snapshot. При Open cloud snapshot считается авторитетным: его routing/Solo/Mute не перекрываются глобальным local autosave; затем открытый snapshot сам становится новым локальным autosave. Также восстанавливаются session-настройки (zoom, loop, Browser Audio / Hardware MIDI Out и MIDI Out по имени, если устройство уже доступно).
@@ -101,7 +102,7 @@ python scripts/local_server.py --open
 - Каждый drop записывается в `project.clips[]` с source library id, target track/startTick и provenance. **☁ Save Project** передаёт уникальные использованные library ids серверу; сервер копирует точные исходные MIDI в `midi-host/clips/` внутри cloud project и перечисляет их в `manifest.json`. Таким образом cloud project хранит не только итоговый arrangement/track MIDI, но и оригинальные library clips, реально использованные в проекте.
 - Local autosave MIDI Host теперь также содержит `workingProject` — полный текущий editable project snapshot. После refresh / one-click Update он восстанавливается раньше `projects/current.json`, поэтому ещё не отправленные в GitHub drag/drop правки не теряются. Cloud meta показывает `UNSAVED` после вставки и очищается после **☁ Save Project**.
 - Основные project/file actions MIDI Host сгруппированы в верхнее меню **File**: **New Project**, **Open Project…**, **Save Project**, Import MIDI/JSON, Export MIDI, а также служебные Reload/Sync/Bind. Горячие клавиши: Ctrl/Cmd+N, Ctrl/Cmd+O, Ctrl/Cmd+S.
-- **New Project** отвязывается от предыдущей cloud-папки и создаёт 32-тактовый starter project с пустыми дорожками Bass (CH1 XR20), Acid (CH2 TD-3), Overdriven Guitar (GM29/CH3), Electric Piano 1 (GM4/CH4), Drums (CH10 XR20). Пустой starter timeline держится через `minimumLengthTicks`, пока новые MIDI clips не удлинят аранжировку.
+- **New Project** отвязывается от предыдущей cloud-папки и создаёт 32-тактовый starter project с пустыми дорожками Bass (CH1 XR20), Acid (CH2 TD-3), Percussion (CH3 XR20 1-Shot), Overdriven Guitar (GM29/CH4), Electric Piano 1 (GM4/CH5), Drums (CH10 XR20). Пустой starter timeline держится через `minimumLengthTicks`, пока новые MIDI clips не удлинят аранжировку.
 - После refresh / one-click Update / обычного перезапуска браузера `projects/current.json` загружается как источник нот/маркеров, а локальные routing/settings автоматически накладываются обратно, если signature проекта совпадает (PPQ, length, track ids/names/note counts, markers). Это предотвращает сброс всех дорожек обратно на channel 1 при обновлении интерфейса.
 
 
@@ -109,17 +110,28 @@ python scripts/local_server.py --open
 
 ### Цепочка
 
-```
-PC USB → TD-3 → MIDI Out (5-pin DIN) → XR20 In
+Текущий Windows studio-route строится через loopMIDI + MIDI-OX, чтобы Fender Studio и браузерный MIDI Host могли оставаться открытыми одновременно и не захватывали физические MIDI-порты напрямую:
+
+```text
+Bitstream 3X → MIDI-OX → Bitstream In (loopMIDI) → Fender / browser
+
+Fender / browser → Studio Out (loopMIDI) → MIDI-OX → TD-3 USB
+                                                     ↓
+                                              MIDI OUT (DIN)
+                                                     ↓
+                                                   XR20
 ```
 
-| Канал (1–16, как в Cubase) | Инструмент |
+В приложениях выбираются виртуальные порты **Bitstream In** и **Studio Out**. Физические `Bitstream 3X` / `TD-3` держит MIDI-OX.
+
+| Канал (1–16, как в Fender/Studio One) | Инструмент |
 |----------------------------|------------|
-| **2** | TD-3 acid (Behringer слушает ch2) |
-| **1** | XR20 bass (сквозь TD-3 на DIN) |
-| **10** | XR20 drums (сквозь TD-3 на DIN) |
+| **1** | XR20 bass / Synth |
+| **2** | TD-3 acid |
+| **3** | XR20 percussion / 1-Shot |
+| **10** | XR20 drums |
 
-Один MIDI Out = TD-3. У каждой Cubase-дорожки в UI свой `channel` (можно сменить).
+Один виртуальный MIDI Out = `Studio Out`; дальше MIDI-OX отдаёт поток в TD-3, а TD-3 пропускает нужные каналы на XR20 по DIN. У каждой дорожки в UI свой `channel` (можно сменить).
 
 ### Импорт
 
@@ -392,9 +404,10 @@ Playback в Style Library использует короткий lookahead schedu
 | **1** | XR20 bass (железо) |
 | **2** | TD-3 acid (железо) |
 | **10** | XR20 drums (железо) |
-| **3–9, 11–16** | GM-скетч (по одному инструменту на канал) |
+| **3** | XR20 percussion / 1-Shot (железо) |
+| **4–9, 11–16** | GM-скетч (по одному инструменту на канал) |
 
-Новый GM-трек: возьми **первый свободный** канал из `3–9, 11–16` (см. `nextFreeGmChannel` в `midi-host.html`).
+Новый GM-трек: возьми **первый свободный** канал из `4–9, 11–16` (см. `nextFreeGmChannel` в `midi-host.html`).
 
 ### Как работать с Acid
 

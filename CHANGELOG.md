@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-23 — MIDI Devices routing dialog
+
+### Added
+- В Hardware MIDI Host добавлено окно **MIDI Devices…** с отдельным выбором Web MIDI input/output.
+- В окне видны все доступные MIDI inputs/outputs, выбранные порты и последняя входящая MIDI-активность.
+- Кнопка **Use Studio Ports** быстро выбирает `Bitstream In` как вход и `Studio Out` как выход.
+
+### Changed
+- При наличии loopMIDI браузер предпочитает виртуальные studio-порты вместо прямого захвата физического TD-3.
+- Выбор MIDI In/Out сохраняется в локальном autosave; имена портов также сохраняются в cloud session.
+- Текущая студийная раскладка закреплена в MIDI Host: CH1 XR20 bass, CH2 TD-3, CH3 XR20 percussion, CH10 XR20 drums; GM-скетч-каналы теперь начинаются с CH4.
+
+
 ## 2026-05-13 — Arrange View: Ruler, Drag-and-Drop, Context Menu
 
 ### Added

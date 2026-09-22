@@ -423,6 +423,121 @@ a { color: var(--accent); }
   color: var(--dim);
   text-align: center;
 }
+.midi-route-summary {
+  max-width: 290px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font: 10px/1.2 ui-monospace, Consolas, monospace;
+}
+.midi-devices-modal {
+  width: min(820px, 96vw);
+}
+.midi-devices-body {
+  overflow: auto;
+  padding: 12px 14px 16px;
+}
+.midi-devices-status {
+  margin-bottom: 10px;
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.midi-routing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.midi-routing-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0d1218;
+}
+.midi-routing-card .field {
+  width: 100%;
+}
+.midi-routing-card select {
+  width: 100%;
+  min-width: 0;
+}
+.midi-routing-label {
+  margin-bottom: 7px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.midi-routing-help {
+  margin-top: 7px;
+  color: var(--dim);
+  font-size: 10px;
+  line-height: 1.4;
+}
+.midi-device-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.midi-device-list {
+  min-height: 72px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #090d12;
+  font: 10px/1.5 ui-monospace, Consolas, monospace;
+}
+.midi-device-list-title {
+  margin-bottom: 5px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.midi-device-row {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  padding: 2px 0;
+  color: var(--dim);
+}
+.midi-device-row.selected {
+  color: var(--text);
+}
+.midi-device-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #556170;
+}
+.midi-device-row.selected .midi-device-dot {
+  background: var(--accent);
+}
+.midi-device-row span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.midi-input-activity {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #090d12;
+  color: var(--dim);
+  font: 10px/1.45 ui-monospace, Consolas, monospace;
+}
+@media (max-width: 720px) {
+  .midi-routing-grid,
+  .midi-device-lists {
+    grid-template-columns: 1fr;
+  }
+  .midi-route-summary {
+    display: none;
+  }
+}
 .cloud-project-empty {
   padding: 22px;
   color: var(--dim);
@@ -2423,10 +2538,8 @@ body.timeline-ruler-zooming {
       <span class="performance-value wide" id="masterTransposeValue">0 st</span>
       <button class="pitch-step-btn" id="masterTransposeUp" type="button" title="Master transpose +1 semitone">+</button>
     </span>
-    <label class="field">MIDI Out
-      <select id="midiOut"><option value="">— request access —</option></select>
-    </label>
-    <button class="btn" id="btnRefreshMidi" type="button">Refresh</button>
+    <button class="btn" id="btnMidiDevices" type="button" title="Choose Web MIDI input and output devices">MIDI Devices…</button>
+    <span class="midi-route-summary" id="midiRouteSummary">MIDI: not connected</span>
     <button class="btn" id="btnMidiMonitor" type="button" title="Show every MIDI message sent by MIDI Host to hardware">MIDI Monitor</button>
     <button class="btn" id="btnTimingDiagnostics" type="button" title="Browser / audio / scheduler timing diagnostics">Timing</button>
     <span style="flex:1"></span>
@@ -2619,6 +2732,48 @@ body.timeline-ruler-zooming {
     </div>
   </div>
 
+  <div class="cloud-modal-backdrop" id="midiDevicesModal" aria-hidden="true">
+    <div class="cloud-modal midi-devices-modal" role="dialog" aria-modal="true" aria-labelledby="midiDevicesTitle">
+      <div class="cloud-modal-head">
+        <strong id="midiDevicesTitle">MIDI Devices</strong>
+        <span class="spacer"></span>
+        <button class="btn" id="btnMidiUseStudioPorts" type="button" title="Select Bitstream In for input and Studio Out for output when available">Use Studio Ports</button>
+        <button class="btn" id="btnRefreshMidi" type="button">Refresh</button>
+        <button class="btn" id="btnMidiDevicesClose" type="button">Close</button>
+      </div>
+      <div class="midi-devices-body">
+        <div class="midi-devices-status" id="midiDevicesStatus">
+          Web MIDI has not been initialized yet.
+        </div>
+        <div class="midi-routing-grid">
+          <div class="midi-routing-card">
+            <div class="midi-routing-label">MIDI Input / controller</div>
+            <label class="field">Receive From
+              <select id="midiIn"><option value="">— none —</option></select>
+            </label>
+            <div class="midi-routing-help">
+              Studio default: <strong>Bitstream In</strong> from loopMIDI. The browser never needs to grab the physical Bitstream 3X port directly.
+            </div>
+          </div>
+          <div class="midi-routing-card">
+            <div class="midi-routing-label">MIDI Output / hardware</div>
+            <label class="field">Send To
+              <select id="midiOut"><option value="">— request access —</option></select>
+            </label>
+            <div class="midi-routing-help">
+              Studio default: <strong>Studio Out</strong> to loopMIDI, then MIDI-OX routes it to TD-3 → XR20.
+            </div>
+          </div>
+        </div>
+        <div class="midi-device-lists">
+          <div class="midi-device-list" id="midiInputsList"></div>
+          <div class="midi-device-list" id="midiOutputsList"></div>
+        </div>
+        <div class="midi-input-activity" id="midiInputActivity">Input activity: none yet.</div>
+      </div>
+    </div>
+  </div>
+
   <div class="cloud-modal-backdrop" id="timingDiagnosticsModal" aria-hidden="true">
     <div class="cloud-modal timing-modal" role="dialog" aria-modal="true" aria-labelledby="timingDiagnosticsTitle">
       <div class="cloud-modal-head">
@@ -2789,10 +2944,11 @@ body.timeline-ruler-zooming {
   const ROLE_BY_CH = {
     1: { role: "xr20-bass", label: "XR20 Bass", color: "var(--xr-bass)" },
     2: { role: "td3", label: "TD-3 Acid", color: "var(--td3)" },
+    3: { role: "xr20-percussion", label: "XR20 Percussion", color: "var(--xr-drums)" },
     10: { role: "xr20-drums", label: "XR20 Drums", color: "var(--xr-drums)" },
   };
   const GM_TRACK_RE = /^(\d{1,3})\s+(.+)$/;
-  const GM_CHANNELS = [3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16];
+  const GM_CHANNELS = [4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16];
   const DEFAULT_SF2_URL =
     "https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/Yamaha%20XG%20Sound%20Set.sf2";
   let GM_PROGRAMS = null;
@@ -3959,7 +4115,11 @@ body.timeline-ruler-zooming {
     project: null,
     projectDirty: false,
     midiAccess: null,
+    inputId: "",
+    inputName: "",
     outputId: "",
+    outputName: "",
+    lastMidiInputMessage: null,
     playing: false,
     loop: false,
     startPerf: 0,
@@ -6764,7 +6924,10 @@ body.timeline-ruler-zooming {
         loop: !!state.loop,
         loopStartTick: Math.max(0, Number(state.loopStartTick) || 0),
         loopEndTick: Math.max(0, Number(state.loopEndTick) || 0),
+        inputId: state.inputId || "",
+        inputName: getInput()?.name || state.inputName || "",
         outputId: state.outputId || "",
+        outputName: getOutput()?.name || state.outputName || "",
         sf2Enabled: sf2El?.checked !== false,
         hwEnabled: hwEl?.checked !== false,
       },
@@ -6818,7 +6981,10 @@ body.timeline-ruler-zooming {
     state.loop = !!saved.ui.loop;
     state.loopStartTick = Math.max(0, Number(saved.ui.loopStartTick) || 0);
     state.loopEndTick = Math.max(0, Number(saved.ui.loopEndTick) || 0);
+    state.inputId = String(saved.ui.inputId || "");
+    state.inputName = String(saved.ui.inputName || "");
     state.outputId = String(saved.ui.outputId || "");
+    state.outputName = String(saved.ui.outputName || "");
 
     const sf2El = document.getElementById("chkSf2");
     const hwEl = document.getElementById("chkHw");
@@ -7583,6 +7749,10 @@ body.timeline-ruler-zooming {
   function getOutput() {
     if (!state.midiAccess || !state.outputId) return null;
     return state.midiAccess.outputs.get(state.outputId) || null;
+  }
+  function getInput() {
+    if (!state.midiAccess || !state.inputId) return null;
+    return state.midiAccess.inputs.get(state.inputId) || null;
   }
   function ticksToMs(ticks, tempo, ppq) {
     return (ticks / ppq) * (60000 / tempo);
@@ -14583,44 +14753,196 @@ body.timeline-ruler-zooming {
 
   // ─── MIDI / files ────────────────────────────────────────────────
 
+  const PREFERRED_MIDI_INPUT_NAME = "Bitstream In";
+  const PREFERRED_MIDI_OUTPUT_NAME = "Studio Out";
+
+  function midiPortByName(ports, wantedName) {
+    const wanted = String(wantedName || "").trim().toLowerCase();
+    if (!wanted) return null;
+    return ports.find((port) => String(port?.name || "").trim().toLowerCase() === wanted) || null;
+  }
+
+  function midiSelectFill(select, ports, selectedId, emptyLabel) {
+    if (!select) return;
+    select.innerHTML = "";
+    const none = document.createElement("option");
+    none.value = "";
+    none.textContent = emptyLabel;
+    select.appendChild(none);
+    for (const port of ports) {
+      const option = document.createElement("option");
+      option.value = port.id;
+      option.textContent = port.name || "(unnamed MIDI port)";
+      select.appendChild(option);
+    }
+    select.value = ports.some((port) => port.id === selectedId) ? selectedId : "";
+  }
+
+  function renderMidiPortList(elementId, title, ports, selectedId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.innerHTML = "";
+    const heading = document.createElement("div");
+    heading.className = "midi-device-list-title";
+    heading.textContent = title + " · " + ports.length;
+    el.appendChild(heading);
+    if (!ports.length) {
+      const empty = document.createElement("div");
+      empty.className = "midi-device-row";
+      empty.textContent = "No devices";
+      el.appendChild(empty);
+      return;
+    }
+    for (const port of ports) {
+      const row = document.createElement("div");
+      row.className = "midi-device-row" + (port.id === selectedId ? " selected" : "");
+      const dot = document.createElement("span");
+      dot.className = "midi-device-dot";
+      const name = document.createElement("span");
+      name.textContent = port.name || "(unnamed MIDI port)";
+      row.append(dot, name);
+      el.appendChild(row);
+    }
+  }
+
+  function renderMidiRouteSummary() {
+    const summary = document.getElementById("midiRouteSummary");
+    if (!summary) return;
+    const input = getInput();
+    const output = getOutput();
+    summary.textContent = "IN " + (input?.name || "—") + " · OUT " + (output?.name || "—");
+    summary.title =
+      "MIDI Input: " + (input?.name || "none") + "\n" +
+      "MIDI Output: " + (output?.name || "none");
+  }
+
+  function renderMidiDevicesDialog() {
+    const inputs = state.midiAccess ? [...state.midiAccess.inputs.values()] : [];
+    const outputs = state.midiAccess ? [...state.midiAccess.outputs.values()] : [];
+    midiSelectFill(document.getElementById("midiIn"), inputs, state.inputId, "— none —");
+    midiSelectFill(document.getElementById("midiOut"), outputs, state.outputId, "— none —");
+    renderMidiPortList("midiInputsList", "Inputs", inputs, state.inputId);
+    renderMidiPortList("midiOutputsList", "Outputs", outputs, state.outputId);
+    const status = document.getElementById("midiDevicesStatus");
+    if (status) {
+      status.textContent = state.midiAccess
+        ? "Web MIDI ready · " + inputs.length + " input(s) · " + outputs.length +
+          " output(s). Preferred studio route: Bitstream In → browser, browser → Studio Out."
+        : "Web MIDI has not been initialized yet.";
+    }
+    const activity = document.getElementById("midiInputActivity");
+    if (activity) {
+      activity.textContent = state.lastMidiInputMessage
+        ? "Input activity · " + state.lastMidiInputMessage
+        : "Input activity: none yet.";
+    }
+    renderMidiRouteSummary();
+  }
+
+  function handleMidiInputMessage(event) {
+    const bytes = Array.from(event.data || []);
+    const decoded = midiMonitorMessageText(bytes);
+    state.lastMidiInputMessage =
+      (getInput()?.name || "MIDI In") + " · " + decoded.channel + " · " + decoded.text +
+      (decoded.raw ? " · " + decoded.raw : "");
+    const activity = document.getElementById("midiInputActivity");
+    if (activity) activity.textContent = "Input activity · " + state.lastMidiInputMessage;
+    window.dispatchEvent(new CustomEvent("midi-host-input", {
+      detail: { inputId: state.inputId, inputName: getInput()?.name || "", data: bytes }
+    }));
+  }
+
+  function bindSelectedMidiInput() {
+    if (!state.midiAccess) return;
+    for (const input of state.midiAccess.inputs.values()) {
+      if (input.onmidimessage === handleMidiInputMessage) input.onmidimessage = null;
+    }
+    const input = getInput();
+    if (input) input.onmidimessage = handleMidiInputMessage;
+  }
+
+  function usePreferredStudioMidiPorts() {
+    if (!state.midiAccess) return false;
+    const inputs = [...state.midiAccess.inputs.values()];
+    const outputs = [...state.midiAccess.outputs.values()];
+    const input = midiPortByName(inputs, PREFERRED_MIDI_INPUT_NAME);
+    const output = midiPortByName(outputs, PREFERRED_MIDI_OUTPUT_NAME);
+    if (input) {
+      state.inputId = input.id;
+      state.inputName = input.name || PREFERRED_MIDI_INPUT_NAME;
+    }
+    if (output) {
+      state.outputId = output.id;
+      state.outputName = output.name || PREFERRED_MIDI_OUTPUT_NAME;
+    }
+    bindSelectedMidiInput();
+    renderMidiDevicesDialog();
+    scheduleHostAutosave();
+    setStatus(
+      "Studio MIDI route · IN " + (input?.name || "not found") +
+      " · OUT " + (output?.name || "not found"),
+      input && output ? "ok" : "err"
+    );
+    return !!(input && output);
+  }
+
+  function showMidiDevices() {
+    renderMidiDevicesDialog();
+    document.getElementById("midiDevicesModal")?.classList.add("open");
+    document.getElementById("midiDevicesModal")?.setAttribute("aria-hidden", "false");
+  }
+
+  function closeMidiDevices() {
+    document.getElementById("midiDevicesModal")?.classList.remove("open");
+    document.getElementById("midiDevicesModal")?.setAttribute("aria-hidden", "true");
+  }
+
   async function initMidi() {
     loadGmPrograms();
     if (!navigator.requestMIDIAccess) {
       setStatus("Web MIDI not supported. Use Chrome/Edge on localhost.", "err");
+      renderMidiDevicesDialog();
       return;
     }
     try {
       state.midiAccess = await navigator.requestMIDIAccess({ sysex: false });
-      state.midiAccess.onstatechange = refreshMidiOutputs;
-      refreshMidiOutputs();
-      setStatus(`MIDI ready · ${state.midiAccess.outputs.size} output(s). Pick TD-3.`, "ok");
+      state.midiAccess.onstatechange = refreshMidiDevices;
+      refreshMidiDevices();
+      setStatus(
+        `MIDI ready · ${state.midiAccess.inputs.size} input(s) · ${state.midiAccess.outputs.size} output(s).`,
+        "ok"
+      );
     } catch (err) {
       setStatus(`MIDI access denied: ${err.message}`, "err");
+      renderMidiDevicesDialog();
     }
   }
-  function refreshMidiOutputs() {
-    const sel = document.getElementById("midiOut");
-    const prev = state.outputId;
-    sel.innerHTML = "";
+
+  function refreshMidiDevices() {
     if (!state.midiAccess) {
-      sel.innerHTML = '<option value="">— no access —</option>';
+      renderMidiDevicesDialog();
       return;
     }
+    const inputs = [...state.midiAccess.inputs.values()];
     const outputs = [...state.midiAccess.outputs.values()];
-    if (!outputs.length) {
-      sel.innerHTML = '<option value="">— no devices —</option>';
-      return;
-    }
-    for (const out of outputs) {
-      const opt = document.createElement("option");
-      opt.value = out.id;
-      opt.textContent = out.name;
-      sel.appendChild(opt);
-    }
-    const prefer = outputs.find((o) => /td-?3|behringer|303/i.test(o.name)) || outputs[0];
-    const pick = outputs.find((o) => o.id === prev) || prefer;
-    state.outputId = pick.id;
-    sel.value = pick.id;
+
+    const savedInputByName = midiPortByName(inputs, state.inputName);
+    const preferredInput = midiPortByName(inputs, PREFERRED_MIDI_INPUT_NAME);
+    const savedInputById = inputs.find((input) => input.id === state.inputId) || null;
+    const inputPick = savedInputByName || preferredInput || savedInputById || null;
+
+    const savedOutputByName = midiPortByName(outputs, state.outputName);
+    const preferredOutput = midiPortByName(outputs, PREFERRED_MIDI_OUTPUT_NAME);
+    const savedOutputById = outputs.find((output) => output.id === state.outputId) || null;
+    const outputPick = savedOutputByName || preferredOutput || savedOutputById || null;
+
+    state.inputId = inputPick?.id || "";
+    state.inputName = inputPick?.name || "";
+    state.outputId = outputPick?.id || "";
+    state.outputName = outputPick?.name || "";
+
+    bindSelectedMidiInput();
+    renderMidiDevicesDialog();
   }
 
   function download(filename, data, mime) {
@@ -14675,8 +14997,9 @@ body.timeline-ruler-zooming {
       tracks: [
         { id: "bass", name: "Bass", channel: 1, role: "xr20-bass", notes: [] },
         { id: "acid", name: "Acid", channel: 2, role: "td3", notes: [] },
-        { id: "guitar", name: formatGmTrackName(29, gm29), channel: 3, role: "gm", notes: [] },
-        { id: "keys", name: formatGmTrackName(4, gm4), channel: 4, role: "gm", notes: [] },
+        { id: "percussion", name: "Percussion", channel: 3, role: "xr20-percussion", drumMap: "xr20", drumKitProfileId: DEFAULT_XR20_KIT_PROFILE_ID, notes: [] },
+        { id: "guitar", name: formatGmTrackName(29, gm29), channel: 4, role: "gm", notes: [] },
+        { id: "keys", name: formatGmTrackName(4, gm4), channel: 5, role: "gm", notes: [] },
         { id: "drums", name: "Drums", channel: 10, role: "xr20-drums", drumMap: "xr20", drumKitProfileId: DEFAULT_XR20_KIT_PROFILE_ID, notes: [] },
       ],
     });
@@ -14810,18 +15133,28 @@ body.timeline-ruler-zooming {
     if (sf2 && typeof session.browserAudioSf2 === "boolean") sf2.checked = session.browserAudioSf2;
     if (hw && typeof session.hardwareMidiOut === "boolean") hw.checked = session.hardwareMidiOut;
 
-    const wantedOutput = String(session.midiOutputName || "").trim();
-    if (wantedOutput && state.midiAccess) {
-      const outputs = [...state.midiAccess.outputs.values()];
-      const match = outputs.find((out) => out.name === wantedOutput) ||
-        outputs.find((out) => String(out.name || "").toLowerCase() === wantedOutput.toLowerCase());
+    const wantedInput = String(session.midiInputName || "").trim();
+    if (wantedInput && state.midiAccess) {
+      const inputs = [...state.midiAccess.inputs.values()];
+      const match = midiPortByName(inputs, wantedInput);
       if (match) {
-        state.outputId = match.id;
-        const select = document.getElementById("midiOut");
-        if (select) select.value = match.id;
+        state.inputId = match.id;
+        state.inputName = match.name || wantedInput;
       }
     }
 
+    const wantedOutput = String(session.midiOutputName || "").trim();
+    if (wantedOutput && state.midiAccess) {
+      const outputs = [...state.midiAccess.outputs.values()];
+      const studioOut = midiPortByName(outputs, PREFERRED_MIDI_OUTPUT_NAME);
+      const match = studioOut || midiPortByName(outputs, wantedOutput);
+      if (match) {
+        state.outputId = match.id;
+        state.outputName = match.name || wantedOutput;
+      }
+    }
+
+    refreshMidiDevices();
     updateLoopButtonUi();
     updateZoomLabel();
   }
@@ -14909,6 +15242,7 @@ body.timeline-ruler-zooming {
       loopEndTick: Math.max(0, Number(state.loopEndTick) || 0),
       browserAudioSf2: document.getElementById("chkSf2")?.checked !== false,
       hardwareMidiOut: document.getElementById("chkHw")?.checked !== false,
+      midiInputName: getInput()?.name || null,
       midiOutputName: getOutput()?.name || null,
     };
   }
@@ -15446,6 +15780,13 @@ body.timeline-ruler-zooming {
     if (e.target === e.currentTarget) closeTimingDiagnostics();
   });
 
+  document.getElementById("btnMidiDevices")?.addEventListener("click", showMidiDevices);
+  document.getElementById("btnMidiDevicesClose")?.addEventListener("click", closeMidiDevices);
+  document.getElementById("btnMidiUseStudioPorts")?.addEventListener("click", usePreferredStudioMidiPorts);
+  document.getElementById("midiDevicesModal")?.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeMidiDevices();
+  });
+
   document.getElementById("btnMidiMonitor")?.addEventListener("click", showMidiMonitor);
   document.getElementById("btnMidiMonitorClose")?.addEventListener("click", closeMidiMonitor);
   document.getElementById("btnMidiMonitorCopy")?.addEventListener("click", copyMidiMonitorLog);
@@ -15459,19 +15800,31 @@ body.timeline-ruler-zooming {
     if (e.target === e.currentTarget) closeMidiMonitor();
   });
   document.getElementById("btnRefreshMidi").addEventListener("click", () => initMidi());
+  document.getElementById("midiIn").addEventListener("change", (e) => {
+    state.inputId = e.target.value;
+    state.inputName = getInput()?.name || "";
+    state.lastMidiInputMessage = null;
+    bindSelectedMidiInput();
+    renderMidiDevicesDialog();
+    scheduleHostAutosave();
+    const input = getInput();
+    setStatus(input ? `MIDI Input: ${input.name}` : "MIDI Input disabled", input ? "ok" : "");
+  });
   document.getElementById("midiOut").addEventListener("change", (e) => {
     const wasPlaying = state.playing;
     const tick = wasPlaying ? currentTransportTick() : state.startTick || 0;
     const previousOutput = state.playbackOutput || getOutput();
     if (wasPlaying) stopPlayback(previousOutput);
     state.outputId = e.target.value;
+    state.outputName = getOutput()?.name || "";
+    renderMidiDevicesDialog();
     scheduleHostAutosave();
     const out = getOutput();
     if (wasPlaying) {
       state.startTick = tick;
       runScheduler(tick);
     } else {
-      setStatus(out ? `Output: ${out.name}` : "No output", out ? "ok" : "err");
+      setStatus(out ? `MIDI Output: ${out.name}` : "MIDI Output disabled", out ? "ok" : "");
     }
   });
   for (const id of ["chkSf2", "chkHw"]) {
