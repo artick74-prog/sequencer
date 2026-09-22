@@ -52,7 +52,8 @@ a { color: var(--accent); }
   align-items: center;
   gap: 8px;
 }
-.header-file-menu .file-menu {
+.header-file-menu .file-menu,
+.header-settings-menu .file-menu {
   left: 0;
   right: auto;
 }
@@ -63,8 +64,9 @@ a { color: var(--accent); }
   gap: 5px;
 }
 .header-project-name {
-  width: min(430px, 42vw);
-  min-width: 150px;
+  width: 8ch;
+  min-width: 0;
+  max-width: min(430px, 42vw);
   padding: 2px 3px;
   border: 1px solid transparent;
   border-radius: 3px;
@@ -2531,18 +2533,7 @@ body.timeline-ruler-zooming {
           <button class="file-menu-item" id="btnBindProjects" type="button" title="Grant fallback write access to projects/ folder">Bind projects/</button>
         </div>
       </div>
-      <div class="header-project-row">
-        <input class="header-project-name" id="projectName" type="text" value="untitled" aria-label="Project name" title="Project name">
-        <span class="header-dirty-mark" id="projectDirtyMark" hidden aria-label="Unsaved changes">*</span>
-      </div>
-    </div>
-    <nav class="app-nav" aria-label="Music workspace">
-      <button class="btn nav-update" id="btnUpdateApp" type="button" title="Pull the newest main commit from GitHub and restart this local bridge automatically">↓ Update</button>
-      <a href="index.html">Chiptune Sequencer</a>
-      <a href="style-library.html">Style Library</a>
-      <a class="active" href="midi-host.html">MIDI Host</a>
-      <a href="midi-host-help.html">Справка</a>
-      <div class="file-menu-wrap" id="settingsMenuWrap">
+      <div class="file-menu-wrap header-settings-menu" id="settingsMenuWrap">
         <button class="btn settings-menu-button" id="btnSettingsMenu" type="button"
           aria-haspopup="true" aria-expanded="false" aria-label="Settings" title="Settings">⚙</button>
         <div class="file-menu" id="settingsMenu" role="menu" aria-hidden="true">
@@ -2554,6 +2545,17 @@ body.timeline-ruler-zooming {
             title="Browser / audio / scheduler timing diagnostics">Timing</button>
         </div>
       </div>
+      <div class="header-project-row">
+        <input class="header-project-name" id="projectName" type="text" value="untitled" aria-label="Project name" title="Project name">
+        <span class="header-dirty-mark" id="projectDirtyMark" hidden aria-label="Unsaved changes">*</span>
+      </div>
+    </div>
+    <nav class="app-nav" aria-label="Music workspace">
+      <button class="btn nav-update" id="btnUpdateApp" type="button" title="Pull the newest main commit from GitHub and restart this local bridge automatically">↓ Update</button>
+      <a href="index.html">Chiptune Sequencer</a>
+      <a href="style-library.html">Style Library</a>
+      <a class="active" href="midi-host.html">MIDI Host</a>
+      <a href="midi-host-help.html">Справка</a>
     </nav>
   </header>
 
@@ -6682,6 +6684,27 @@ body.timeline-ruler-zooming {
     return { tick, bar: tickToBar(tick, project.ppq), x };
   }
 
+  function updateProjectNameWidth(input = document.getElementById("projectName")) {
+    if (!input) return;
+    const value = input.value || input.placeholder || "untitled";
+    const style = getComputedStyle(input);
+    const canvas = updateProjectNameWidth.canvas || (updateProjectNameWidth.canvas = document.createElement("canvas"));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.font = style.font;
+    let textWidth = ctx.measureText(value).width;
+    const letterSpacing = Number.parseFloat(style.letterSpacing);
+    if (Number.isFinite(letterSpacing) && value.length > 1) {
+      textWidth += letterSpacing * (value.length - 1);
+    }
+    const horizontalChrome =
+      (Number.parseFloat(style.paddingLeft) || 0) +
+      (Number.parseFloat(style.paddingRight) || 0) +
+      (Number.parseFloat(style.borderLeftWidth) || 0) +
+      (Number.parseFloat(style.borderRightWidth) || 0);
+    input.style.width = Math.max(24, Math.ceil(textWidth + horizontalChrome + 4)) + "px";
+  }
+
   function updateProjectTitleUi() {
     const input = document.getElementById("projectName");
     const mark = document.getElementById("projectDirtyMark");
@@ -6691,6 +6714,7 @@ body.timeline-ruler-zooming {
     if (input && document.activeElement !== input && input.value !== name) {
       input.value = name;
     }
+    updateProjectNameWidth(input);
     if (mark) mark.hidden = !dirty;
     document.title = name + (dirty ? " *" : "") + " — MIDI Host";
   }
@@ -15300,6 +15324,7 @@ body.timeline-ruler-zooming {
       if (chosen === null) return false;
       projectName = chosen.trim() || projectName || "Project";
       document.getElementById("projectName").value = projectName;
+      updateProjectNameWidth(document.getElementById("projectName"));
       state.project.name = projectName;
       data.name = projectName;
     }
@@ -16220,8 +16245,10 @@ body.timeline-ruler-zooming {
   });
 
   document.getElementById("projectName").addEventListener("input", () => {
+    const input = document.getElementById("projectName");
+    updateProjectNameWidth(input);
     if (!state.project) return;
-    state.project.name = document.getElementById("projectName").value || state.project.name;
+    state.project.name = input.value || state.project.name;
     markHostProjectDirty();
     scheduleHostAutosave();
   });
