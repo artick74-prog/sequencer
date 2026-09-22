@@ -2162,9 +2162,21 @@ body.timeline-ruler-zooming {
 .track-main-row .field {
   flex: 0 1 auto;
 }
+.track-program-row {
+  width: 100%;
+  min-width: 0;
+  min-height: 27px;
+  display: flex;
+  align-items: center;
+}
+.track-program-row.empty {
+  visibility: hidden;
+}
 .gm-program-select {
-  min-width: 112px;
-  max-width: 150px;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 27px;
   background: #0b1016;
   color: var(--text);
   border: 1px solid var(--border);
@@ -14233,7 +14245,9 @@ body.timeline-ruler-zooming {
             <label class="field">ch
               <select data-ch="${track.id}">${chOptions}</select>
             </label>
-            ${gmTag}
+          </div>
+          <div class="track-program-row ${gmTag ? "" : "empty"}">
+            ${gmTag || `<select class="gm-program-select" aria-hidden="true" tabindex="-1"><option>GM</option></select>`}
           </div>
           <div class="track-actions-row">
             <span class="track-mix" aria-label="Solo and mute">

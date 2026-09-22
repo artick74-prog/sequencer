@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-23 — Track GM selector layout
+
+### Changed
+- GM Program selector перенесён из строки имени/канала на отдельную строку между routing и кнопками track actions.
+- Аппаратные дорожки сохраняют пустой slot той же высоты, поэтому все дорожки остаются выровненными.
+- GM selector теперь использует доступную ширину track header и больше не вылезает на timeline.
+
+
+
 ## 2026-09-23 — Compact project header
 
 ### Changed
