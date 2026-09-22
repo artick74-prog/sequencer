@@ -50,6 +50,11 @@ a { color: var(--accent); }
   min-width: 260px;
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+.header-file-menu .file-menu {
+  left: 0;
+  right: auto;
 }
 .header-project-row {
   min-width: 0;
@@ -2510,6 +2515,22 @@ body.timeline-ruler-zooming {
 <body>
   <header class="header">
     <div class="header-brand">
+      <div class="file-menu-wrap header-file-menu" id="fileMenuWrap">
+        <button class="btn" id="btnFileMenu" type="button" aria-haspopup="true" aria-expanded="false">File ▾</button>
+        <div class="file-menu" id="fileMenu" role="menu" aria-hidden="true">
+          <button class="file-menu-item" id="btnNewProject" type="button" data-shortcut="Ctrl+N">New Project</button>
+          <button class="file-menu-item" id="btnCloudProjects" type="button" data-shortcut="Ctrl+O">Open Project…</button>
+          <button class="file-menu-item" id="btnCloudSave" type="button" data-shortcut="Ctrl+S">Save Project</button>
+          <div class="file-menu-separator"></div>
+          <button class="file-menu-item" id="btnLoadMid" type="button">Import MIDI…</button>
+          <button class="file-menu-item" id="btnLoadJson" type="button">Import JSON…</button>
+          <button class="file-menu-item" id="btnExportMid" type="button">Export MIDI…</button>
+          <div class="file-menu-separator"></div>
+          <button class="file-menu-item" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
+          <button class="file-menu-item" id="btnSync" type="button" title="Save current.json / overview and push for AI review">Sync to AI</button>
+          <button class="file-menu-item" id="btnBindProjects" type="button" title="Grant fallback write access to projects/ folder">Bind projects/</button>
+        </div>
+      </div>
       <div class="header-project-row">
         <input class="header-project-name" id="projectName" type="text" value="untitled" aria-label="Project name" title="Project name">
         <span class="header-dirty-mark" id="projectDirtyMark" hidden aria-label="Unsaved changes">*</span>
@@ -2521,6 +2542,18 @@ body.timeline-ruler-zooming {
       <a href="style-library.html">Style Library</a>
       <a class="active" href="midi-host.html">MIDI Host</a>
       <a href="midi-host-help.html">Справка</a>
+      <div class="file-menu-wrap" id="settingsMenuWrap">
+        <button class="btn settings-menu-button" id="btnSettingsMenu" type="button"
+          aria-haspopup="true" aria-expanded="false" aria-label="Settings" title="Settings">⚙</button>
+        <div class="file-menu" id="settingsMenu" role="menu" aria-hidden="true">
+          <button class="file-menu-item" id="btnMidiDevices" type="button"
+            title="Choose Web MIDI input and output devices">MIDI Devices…</button>
+          <button class="file-menu-item" id="btnMidiMonitor" type="button"
+            title="Show every MIDI message sent by MIDI Host to hardware">MIDI Monitor</button>
+          <button class="file-menu-item" id="btnTimingDiagnostics" type="button"
+            title="Browser / audio / scheduler timing diagnostics">Timing</button>
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -2547,35 +2580,7 @@ body.timeline-ruler-zooming {
       <button class="pitch-step-btn" id="masterTransposeUp" type="button" title="Master transpose +1 semitone">+</button>
     </span>
     <span class="midi-route-summary" id="midiRouteSummary">MIDI: not connected</span>
-    <div class="file-menu-wrap" id="settingsMenuWrap">
-      <button class="btn settings-menu-button" id="btnSettingsMenu" type="button"
-        aria-haspopup="true" aria-expanded="false" aria-label="Settings" title="Settings">⚙</button>
-      <div class="file-menu" id="settingsMenu" role="menu" aria-hidden="true">
-        <button class="file-menu-item" id="btnMidiDevices" type="button"
-          title="Choose Web MIDI input and output devices">MIDI Devices…</button>
-        <button class="file-menu-item" id="btnMidiMonitor" type="button"
-          title="Show every MIDI message sent by MIDI Host to hardware">MIDI Monitor</button>
-        <button class="file-menu-item" id="btnTimingDiagnostics" type="button"
-          title="Browser / audio / scheduler timing diagnostics">Timing</button>
-      </div>
-    </div>
     <span style="flex:1"></span>
-    <div class="file-menu-wrap" id="fileMenuWrap">
-      <button class="btn" id="btnFileMenu" type="button" aria-haspopup="true" aria-expanded="false">File ▾</button>
-      <div class="file-menu" id="fileMenu" role="menu" aria-hidden="true">
-        <button class="file-menu-item" id="btnNewProject" type="button" data-shortcut="Ctrl+N">New Project</button>
-        <button class="file-menu-item" id="btnCloudProjects" type="button" data-shortcut="Ctrl+O">Open Project…</button>
-        <button class="file-menu-item" id="btnCloudSave" type="button" data-shortcut="Ctrl+S">Save Project</button>
-        <div class="file-menu-separator"></div>
-        <button class="file-menu-item" id="btnLoadMid" type="button">Import MIDI…</button>
-        <button class="file-menu-item" id="btnLoadJson" type="button">Import JSON…</button>
-        <button class="file-menu-item" id="btnExportMid" type="button">Export MIDI…</button>
-        <div class="file-menu-separator"></div>
-        <button class="file-menu-item" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
-        <button class="file-menu-item" id="btnSync" type="button" title="Save current.json / overview and push for AI review">Sync to AI</button>
-        <button class="file-menu-item" id="btnBindProjects" type="button" title="Grant fallback write access to projects/ folder">Bind projects/</button>
-      </div>
-    </div>
     <button class="btn" id="btnLoops" type="button" title="Browse, preview and drag MIDI loops into the arrangement">♫ Loops</button>
     <button class="btn" id="btnRhythms" type="button" title="Audition pitch-free rhythm patterns on any track without editing the project">♬ Rhythms</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
