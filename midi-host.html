@@ -2791,10 +2791,11 @@ body.timeline-ruler-zooming {
     <label class="field">BPM
       <input type="number" id="tempo" min="40" max="240" value="120" step="1">
     </label>
-    <label class="field performance-field" title="16th-note swing, same 0–50% range as Chiptune Sequencer">Swing
-      <input type="range" id="swing" min="0" max="50" value="0" step="1">
+    <label class="field performance-field" title="Swing quantize grid · 0% = straight, 100% = 2:1 triplet feel. Moving Swing changes the visible Piano Roll grid; Apply Swing writes that timing into note ticks.">Swing Grid
+      <input type="range" id="swing" min="0" max="100" value="0" step="1">
       <span class="performance-value" id="swingValue">0%</span>
     </label>
+    <button class="btn" id="btnApplySwing" type="button" title="Quantize selected Piano Roll notes to the current grid + Swing. If nothing is selected, applies to all project notes. Safe to press again: notes already on the swung grid do not move further.">Apply Swing</button>
     <span class="transport-transpose" title="Master semitone transpose. Drums / percussion are never transposed.">
       <span class="transport-transpose-label">Transpose</span>
       <button class="pitch-step-btn" id="masterTransposeDown" type="button" title="Master transpose −1 semitone">−</button>
@@ -4310,11 +4311,10 @@ body.timeline-ruler-zooming {
       });
       const ch = ((track.channel || 1) - 1) & 0x0f;
       for (const n of track.notes || []) {
-        const swingOffset = projectSwingOffsetTicks(project, n.tick, ppq);
-        const startTick = Math.max(0, Math.round(n.tick + swingOffset));
+        const startTick = Math.max(0, Math.round(n.tick));
         const endTick = Math.max(
           startTick + 1,
-          Math.round(td3SlideEndTick(track, n, ppq) + swingOffset)
+          Math.round(td3SlideEndTick(track, n, ppq))
         );
         const pitch = projectPlaybackNote(project, track, n.note);
         events.push({
@@ -4373,11 +4373,10 @@ body.timeline-ruler-zooming {
 
     const ch = ((track.channel || 1) - 1) & 0x0f;
     for (const note of track.notes || []) {
-      const swingOffset = projectSwingOffsetTicks(project, note.tick, ppq);
-      const startTick = Math.max(0, Math.round(note.tick + swingOffset));
+      const startTick = Math.max(0, Math.round(note.tick));
       const endTick = Math.max(
         startTick + 1,
-        Math.round(td3SlideEndTick(track, note, ppq) + swingOffset)
+        Math.round(td3SlideEndTick(track, note, ppq))
       );
       const pitch = projectPlaybackNote(project, track, note.note);
       events.push({
@@ -6782,9 +6781,8 @@ body.timeline-ruler-zooming {
     const ppq = state.project.ppq || 480;
     return rawNotes.map((note) => {
       const local = note.tick - startTick;
-      const swing = projectSwingOffsetTicks(state.project, local, ppq);
       return {
-        tick: Math.max(0, Math.round(local + swing)),
+        tick: Math.max(0, Math.round(local)),
         duration: Math.max(1, note.duration),
         note: projectPlaybackNote(state.project, targetTrack, note.note),
         velocity: note.velocity,
@@ -7439,7 +7437,7 @@ body.timeline-ruler-zooming {
       project: {
         name: projectName,
         tempo,
-        swing: Math.max(0, Math.min(50, Number(state.project.swing) || 0)),
+        swing: Math.max(0, Math.min(100, Number(state.project.swing) || 0)),
         masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(state.project.masterTranspose) || 0))),
         cloudProject: state.project.cloudProject ? {...state.project.cloudProject} : null,
         drumKitProfiles: JSON.parse(JSON.stringify(state.project.drumKitProfiles || [])),
@@ -7542,7 +7540,7 @@ body.timeline-ruler-zooming {
     if (saved.project.name) project.name = saved.project.name;
     if (Number.isFinite(Number(saved.project.tempo))) project.tempo = Number(saved.project.tempo);
     if (Number.isFinite(Number(saved.project.swing))) {
-      project.swing = Math.max(0, Math.min(50, Number(saved.project.swing)));
+      project.swing = Math.max(0, Math.min(100, Number(saved.project.swing)));
     }
     if (Number.isFinite(Number(saved.project.masterTranspose))) {
       project.masterTranspose = Math.max(-36, Math.min(36, Math.round(Number(saved.project.masterTranspose))));
@@ -8660,33 +8658,47 @@ body.timeline-ruler-zooming {
     return Math.max(0, Math.min(127, Math.round(raw + master + octaves * 12)));
   }
 
-  function projectSwingOffsetTicks(project, noteStartTick, ppq = project?.ppq || 480) {
-    const swing = Math.max(0, Math.min(50, Number(project?.swing) || 0));
-    if (!swing) return 0;
-    const stepTicks = Math.max(1, ppq / 4); // 1/16 note, matching Chiptune Sequencer
-    const nearestStep = Math.round(Number(noteStartTick || 0) / stepTicks);
-    if ((nearestStep & 1) === 0) return 0;
-    return (swing / 100) * stepTicks * 0.5;
+  function projectSwingPercent(project = state.project) {
+    return Math.max(0, Math.min(100, Number(project?.swing) || 0));
+  }
+
+  // DAW-style swing belongs to the quantize grid, not to playback.
+  // For a straight grid step S, 100% moves every second line by S/3:
+  // pair spacing becomes 4S/3 then 2S/3, i.e. the familiar 2:1 triplet feel.
+  // Note ticks themselves are the source of truth for playback and MIDI export.
+  function swingGridTickForIndex(index, stepTicks, swingPercent = 0, triplet = false) {
+    const i = Math.round(Number(index) || 0);
+    const step = Math.max(1, Number(stepTicks) || 1);
+    if (triplet || (i & 1) === 0) return Math.round(i * step);
+    const swing = Math.max(0, Math.min(100, Number(swingPercent) || 0));
+    return Math.round(i * step + (swing / 100) * step / 3);
   }
 
   function updatePerformanceControlsUi() {
     const project = state.project;
-    const swing = Math.max(0, Math.min(50, Number(project?.swing) || 0));
+    const swing = Math.max(0, Math.min(100, Number(project?.swing) || 0));
     const transpose = Math.max(-36, Math.min(36, Math.round(Number(project?.masterTranspose) || 0)));
     const swingEl = document.getElementById("swing");
     const swingValue = document.getElementById("swingValue");
     const transposeValue = document.getElementById("masterTransposeValue");
-    if (swingEl) swingEl.value = String(swing);
+    if (swingEl) {
+      swingEl.value = String(swing);
+      swingEl.title =
+        "Swing Grid " + Math.round(swing) + "% · changes Piano Roll grid/snap only";
+    }
     if (swingValue) swingValue.textContent = Math.round(swing) + "%";
+    const applySwing = document.getElementById("btnApplySwing");
+    if (applySwing) {
+      const tripletSwingIgnored = swing > 0 && pianoRollSnapIsTriplet();
+      applySwing.title = tripletSwingIgnored
+        ? "Current " + pianoRollSnapLabel() +
+          " grid is triplet-based, so Swing is ignored. Choose a straight grid before Apply Swing."
+        : "Apply current " + pianoRollSnapLabel() +
+          " grid" + (swing ? " with Swing " + Math.round(swing) + "%" : " straight") +
+          " to selected notes, or to the whole project when nothing is selected. " +
+          "Playback/export never add another swing layer.";
+    }
     if (transposeValue) transposeValue.textContent = (transpose > 0 ? "+" : "") + transpose + " st";
-  }
-
-  function restartPlaybackForPerformanceChange() {
-    if (!state.playing) return;
-    const tick = currentTransportTick();
-    stopPlayback();
-    state.startTick = tick;
-    runScheduler(tick);
   }
 
   function setMasterTranspose(value) {
@@ -8744,13 +8756,12 @@ body.timeline-ruler-zooming {
         const noteEnd = td3SlideEndTick(track, n, project.ppq || 480);
         if (range && (noteStart < range.start || noteStart >= range.end)) continue;
         const offTick = range ? Math.min(noteEnd, range.end) : noteEnd;
-        const swingOffset = projectSwingOffsetTicks(project, noteStart, project.ppq || 480);
         const playbackStart = range
-          ? Math.min(range.end - 1, noteStart + swingOffset)
-          : noteStart + swingOffset;
+          ? Math.min(range.end - 1, noteStart)
+          : noteStart;
         const playbackEnd = range
-          ? Math.min(range.end, offTick + swingOffset)
-          : offTick + swingOffset;
+          ? Math.min(range.end, offTick)
+          : offTick;
         const playbackNote = projectPlaybackNote(project, track, n.note);
         const sourceDrumNote =
           trackIsPercussion(track) && n.drumSourceNote != null
@@ -9335,7 +9346,7 @@ body.timeline-ruler-zooming {
       name: data.name || fallbackName || "untitled",
       ppq: data.ppq || 480,
       tempo: data.tempo || 120,
-      swing: Math.max(0, Math.min(50, Number(data.swing) || 0)),
+      swing: Math.max(0, Math.min(100, Number(data.swing) || 0)),
       masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(data.masterTranspose) || 0))),
       lengthTicks: data.lengthTicks || 0,
       minimumLengthTicks: Math.max(0, Number(data.minimumLengthTicks) || 0),
@@ -9846,7 +9857,7 @@ body.timeline-ruler-zooming {
       version: 2,
       name: project.name,
       tempo: project.tempo,
-      swing: Math.max(0, Math.min(50, Number(project.swing) || 0)),
+      swing: Math.max(0, Math.min(100, Number(project.swing) || 0)),
       masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(project.masterTranspose) || 0))),
       ppq,
       totalBars,
@@ -9890,7 +9901,7 @@ body.timeline-ruler-zooming {
     lines.push("");
     lines.push(`- Tempo: **${ov.tempo}** BPM · PPQ ${ov.ppq} · **${ov.totalBars}** bars`);
     lines.push(
-      `- Performance: swing **${ov.swing || 0}%** · master transpose **${(ov.masterTranspose || 0) > 0 ? "+" : ""}${ov.masterTranspose || 0} st** (drums/percussion excluded)`
+      `- Quantize grid: swing **${ov.swing || 0}%** (stored note ticks are played/exported literally) · master transpose **${(ov.masterTranspose || 0) > 0 ? "+" : ""}${ov.masterTranspose || 0} st** (drums/percussion excluded)`
     );
     lines.push(`- Hardware: TD-3 USB → DIN → XR20 (ch2 acid, ch1 bass, ch10 drums)`);
     if (ov.grid) {
@@ -11224,14 +11235,26 @@ body.timeline-ruler-zooming {
     return ["4","8","8T","16","16T","32","64"].includes(raw) ? raw : "16";
   }
 
+  function pianoRollSnapIsTriplet() {
+    return pianoRollSnapValue().endsWith("T");
+  }
+
+  function pianoRollSwingPercent() {
+    return projectSwingPercent(state.project);
+  }
+
   function pianoRollSnapLabel() {
     return "1/" + pianoRollSnapValue();
   }
 
   function pianoRollSnapStatusLabel() {
-    return state.pianoRollSnapEnabled
+    const base = state.pianoRollSnapEnabled
       ? pianoRollSnapLabel()
       : "OFF · grid " + pianoRollSnapLabel();
+    const swing = pianoRollSwingPercent();
+    if (!swing) return base + " · straight";
+    if (pianoRollSnapIsTriplet()) return base + " · swing ignored on triplets";
+    return base + " · swing " + Math.round(swing) + "%";
   }
 
   function pianoRollSnapTicks(ppq = state.project?.ppq || 480) {
@@ -11247,12 +11270,48 @@ body.timeline-ruler-zooming {
     return state.pianoRollSnapEnabled ? pianoRollSnapTicks(ppq) : 1;
   }
 
-  function pianoRollSnapTick(rawTick, ctx = pianoRollContext()) {
-    if (!ctx) return Math.max(0, Number(rawTick) || 0);
+  function pianoRollGridTickAtIndex(index, ppq = state.project?.ppq || 480) {
+    return swingGridTickForIndex(
+      index,
+      pianoRollSnapTicks(ppq),
+      pianoRollSwingPercent(),
+      pianoRollSnapIsTriplet()
+    );
+  }
+
+  function pianoRollNearestGridIndex(rawTick, ppq = state.project?.ppq || 480) {
     const raw = Number(rawTick) || 0;
-    const step = pianoRollEditStepTicks(ctx.ppq);
-    const snapped = Math.round(raw / step) * step;
+    const step = Math.max(1, pianoRollSnapTicks(ppq));
+    const approx = Math.round(raw / step);
+    let bestIndex = approx;
+    let bestDistance = Infinity;
+    for (let index = approx - 3; index <= approx + 3; index++) {
+      const tick = pianoRollGridTickAtIndex(index, ppq);
+      const distance = Math.abs(raw - tick);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    }
+    return bestIndex;
+  }
+
+  function pianoRollSnapTick(rawTick, ctx = pianoRollContext()) {
+    if (!ctx) return Math.max(0, Math.round(Number(rawTick) || 0));
+    const raw = Number(rawTick) || 0;
+    const snapped = state.pianoRollSnapEnabled
+      ? pianoRollGridTickAtIndex(pianoRollNearestGridIndex(raw, ctx.ppq), ctx.ppq)
+      : Math.round(raw);
     return Math.max(ctx.startTick, Math.min(ctx.endTick, snapped));
+  }
+
+  function pianoRollAdjacentGridDelta(anchorTick, direction, ppq = state.project?.ppq || 480) {
+    const anchor = Number(anchorTick) || 0;
+    const dir = direction < 0 ? -1 : 1;
+    if (!state.pianoRollSnapEnabled) return dir;
+    const currentIndex = pianoRollNearestGridIndex(anchor, ppq);
+    const targetTick = pianoRollGridTickAtIndex(currentIndex + dir, ppq);
+    return Math.round(targetTick - anchor);
   }
 
   function updatePianoRollSnapUi() {
@@ -11264,10 +11323,121 @@ body.timeline-ruler-zooming {
       button.setAttribute("aria-pressed", enabled ? "true" : "false");
       button.textContent = "Snap to Grid";
       button.title = enabled
-        ? "Snap ON · note movement and editing follow the selected grid"
+        ? "Snap ON · editing follows the visible quantize grid, including Swing"
         : "Snap OFF · notes can move freely between grid lines";
     }
-    if (select) select.value = pianoRollSnapValue();
+    if (select) {
+      select.value = pianoRollSnapValue();
+      select.title =
+        pianoRollSnapLabel() +
+        (pianoRollSwingPercent() && !pianoRollSnapIsTriplet()
+          ? " · Swing " + Math.round(pianoRollSwingPercent()) + "%"
+          : "");
+    }
+  }
+
+  function refreshPianoRollSwingGrid() {
+    const ctx = pianoRollContext();
+    const grid = document.getElementById("pianoRollGrid");
+    const ruler = document.getElementById("pianoRollRuler");
+    if (ctx && grid && ruler) {
+      const rollW = Math.max(1, Number(grid.dataset.rollWidth) || grid.offsetWidth || 1);
+      applyPianoRollGridBackground(grid, ruler, ctx, rollW);
+    }
+    updatePianoRollSnapUi();
+    const meta = document.getElementById("pianoRollMeta");
+    if (meta && !meta.hidden) {
+      meta.textContent = meta.textContent.replace(
+        / · snap .* · EDIT$/,
+        " · snap " + pianoRollSnapStatusLabel() + " · EDIT"
+      );
+    }
+  }
+
+  function applySwingGridToNotes() {
+    const project = state.project;
+    if (!project) return false;
+
+    const swing = pianoRollSwingPercent();
+    if (swing > 0 && pianoRollSnapIsTriplet()) {
+      setStatus(
+        "Swing Grid is not applied to triplet grids. Choose a straight grid such as 1/8, 1/16, 1/32 or 1/64.",
+        "err"
+      );
+      return false;
+    }
+
+    const ctx = pianoRollContext();
+    const selected = ctx ? pianoRollSelectedNotes(ctx) : [];
+    const selectedOnly = !!(ctx && selected.length);
+    const targets = selectedOnly
+      ? [{ track: ctx.track, notes: selected }]
+      : (project.tracks || []).map((track) => ({ track, notes: track.notes || [] }));
+    const targetCount = targets.reduce((sum, item) => sum + item.notes.length, 0);
+    if (!targetCount) {
+      setStatus("Swing Grid · no notes to quantize.", "");
+      return false;
+    }
+
+    const ppq = Math.max(1, Number(project.ppq) || 480);
+    const wasPlaying = !!state.playing;
+    const resumeTick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
+    if (wasPlaying) stopPlayback();
+
+    if (selectedOnly) pianoRollPushUndo(ctx);
+
+    let changed = 0;
+    const changedTrackIds = new Set();
+    for (const item of targets) {
+      for (const note of item.notes) {
+        const oldTick = Math.max(0, Math.round(Number(note.tick) || 0));
+        const index = pianoRollNearestGridIndex(oldTick, ppq);
+        const newTick = Math.max(0, pianoRollGridTickAtIndex(index, ppq));
+        if (newTick === oldTick) continue;
+        note.tick = newTick;
+        changed++;
+        if (item.track?.id) changedTrackIds.add(item.track.id);
+      }
+      item.track?.notes?.sort(
+        (a, b) => (Number(a.tick) || 0) - (Number(b.tick) || 0) ||
+          (Number(a.note) || 0) - (Number(b.note) || 0)
+      );
+    }
+
+    if (!changed) {
+      if (selectedOnly) state.pianoRollUndoStack.pop();
+      state.startTick = Math.max(0, resumeTick);
+      if (wasPlaying) runScheduler(state.startTick);
+      setStatus(
+        "Swing Grid · notes are already on " + pianoRollSnapLabel() +
+        (swing ? " · swing " + Math.round(swing) + "%" : " · straight"),
+        "ok"
+      );
+      return true;
+    }
+
+    for (const clip of project.clips || []) {
+      if (changedTrackIds.has(clip.targetTrackId)) {
+        markClipContentEdited(clip, "swing-grid");
+      }
+    }
+
+    recomputeLength(project);
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    state.startTick = Math.max(0, resumeTick);
+    renderAll();
+    if (wasPlaying) runScheduler(state.startTick);
+
+    setStatus(
+      "Applied " + pianoRollSnapLabel() +
+      (swing ? " Swing " + Math.round(swing) + "%" : " straight grid") +
+      " · " + changed + " / " + targetCount + " note start(s)" +
+      (selectedOnly ? " · selection only" : " · whole project") +
+      " · MIDI export uses these stored ticks exactly",
+      "ok"
+    );
+    return true;
   }
 
   function pianoRollSelectedIdSet() {
@@ -11919,7 +12089,18 @@ body.timeline-ruler-zooming {
     const snap = pianoRollEditStepTicks(ctx.ppq);
     const minTick = Math.min(...notes.map((note) => Number(note.tick) || 0));
     const maxEnd = Math.max(...notes.map((note) => (Number(note.tick) || 0) + Math.max(1, Number(note.duration) || 1)));
-    const span = Math.max(snap, Math.ceil((maxEnd - minTick) / snap) * snap);
+    let span;
+    if (state.pianoRollSnapEnabled) {
+      const cells = Math.max(1, Math.ceil((maxEnd - minTick) / Math.max(1, snap)));
+      const startIndex = pianoRollNearestGridIndex(minTick, ctx.ppq);
+      span = Math.max(
+        1,
+        pianoRollGridTickAtIndex(startIndex + cells, ctx.ppq) -
+        pianoRollGridTickAtIndex(startIndex, ctx.ppq)
+      );
+    } else {
+      span = Math.max(1, Math.ceil(maxEnd - minTick));
+    }
     const instanceId = hostClipInstanceId(
       ctx.clip,
       Math.max(0, (state.project.clips || []).indexOf(ctx.clip))
@@ -12022,68 +12203,140 @@ body.timeline-ruler-zooming {
     };
   }
 
+  function pianoRollGridBackgroundGeometry(ctx, rollW) {
+    const cssW = Math.max(1, Number(rollW) || 1);
+    const startTick = Number(ctx?.startTick) || 0;
+    const endTick = Math.max(startTick + 1, Number(ctx?.endTick) || (startTick + 1));
+    const spanTicks = Math.max(1, endTick - startTick);
+    const ppq = Math.max(1, Number(ctx?.ppq) || 480);
+    const tpb = ticksPerBar(ppq);
+    const snapTicks = Math.max(1, pianoRollSnapTicks(ppq));
+    const pxPerTick = cssW / spanTicks;
+    const beatPx = Math.max(2, ppq * pxPerTick);
+    const barPx = Math.max(2, tpb * pxPerTick);
+    const firstBeatTick = Math.ceil(startTick / ppq) * ppq;
+    const firstBarTick = Math.ceil(startTick / tpb) * tpb;
+    const beatOffset = (firstBeatTick - startTick) * pxPerTick;
+    const barOffset = (firstBarTick - startTick) * pxPerTick;
+
+    const swing = pianoRollSwingPercent();
+    const swung = swing > 0 && !pianoRollSnapIsTriplet();
+
+    if (!swung) {
+      const snapPx = Math.max(2, snapTicks * pxPerTick);
+      const firstSnapTick = Math.ceil(startTick / snapTicks) * snapTicks;
+      const snapOffset = (firstSnapTick - startTick) * pxPerTick;
+      return {
+        swung: false,
+        barPx,
+        beatPx,
+        barOffset,
+        beatOffset,
+        snapPx,
+        snapOffset,
+      };
+    }
+
+    const pairTicks = snapTicks * 2;
+    const pairPx = Math.max(2, pairTicks * pxPerTick);
+    const oddOriginTick = pianoRollGridTickAtIndex(1, ppq);
+    const phasePx = (originTick) => {
+      const delta = ((originTick - startTick) % pairTicks + pairTicks) % pairTicks;
+      return delta * pxPerTick;
+    };
+
+    return {
+      swung: true,
+      barPx,
+      beatPx,
+      barOffset,
+      beatOffset,
+      pairPx,
+      evenOffset: phasePx(0),
+      oddOffset: phasePx(oddOriginTick),
+    };
+  }
+
+  function applyPianoRollGridBackground(grid, ruler, ctx, rollW) {
+    if (!grid || !ruler || !ctx) return;
+    const geometry = pianoRollGridBackgroundGeometry(ctx, rollW);
+    const barGrid = "linear-gradient(90deg, rgba(135,157,188,.62) 0 2px, transparent 2px)";
+    const beatGrid = "linear-gradient(90deg, rgba(111,130,155,.44) 0 1px, transparent 1px)";
+    const snapGrid = "linear-gradient(90deg, rgba(90,104,123,.24) 0 1px, transparent 1px)";
+    const barRuler = "linear-gradient(90deg, rgba(180,202,232,.52) 0 2px, transparent 2px)";
+    const beatRuler = "linear-gradient(90deg, rgba(153,171,196,.38) 0 1px, transparent 1px)";
+    const snapRuler = "linear-gradient(90deg, rgba(120,140,168,.22) 0 1px, transparent 1px)";
+
+    if (geometry.swung) {
+      // A swung binary grid has two alternating spacings. Two background tiles,
+      // both repeating every pair of grid steps, draw the even and delayed odd lines.
+      grid.style.backgroundImage = [barGrid, beatGrid, snapGrid, snapGrid].join(",");
+      grid.style.backgroundSize = [
+        geometry.barPx + "px 100%",
+        geometry.beatPx + "px 100%",
+        geometry.pairPx + "px 100%",
+        geometry.pairPx + "px 100%"
+      ].join(",");
+      grid.style.backgroundPosition = [
+        geometry.barOffset + "px 0",
+        geometry.beatOffset + "px 0",
+        geometry.evenOffset + "px 0",
+        geometry.oddOffset + "px 0"
+      ].join(",");
+
+      ruler.style.backgroundImage = [barRuler, beatRuler, snapRuler, snapRuler].join(",");
+      ruler.style.backgroundSize = [
+        geometry.barPx + "px 100%",
+        geometry.beatPx + "px 100%",
+        geometry.pairPx + "px 100%",
+        geometry.pairPx + "px 100%"
+      ].join(",");
+      ruler.style.backgroundPosition = [
+        geometry.barOffset + "px 0",
+        geometry.beatOffset + "px 0",
+        geometry.evenOffset + "px 0",
+        geometry.oddOffset + "px 0"
+      ].join(",");
+    } else {
+      grid.style.backgroundImage = [barGrid, beatGrid, snapGrid].join(",");
+      grid.style.backgroundSize = [
+        geometry.barPx + "px 100%",
+        geometry.beatPx + "px 100%",
+        geometry.snapPx + "px 100%"
+      ].join(",");
+      grid.style.backgroundPosition = [
+        geometry.barOffset + "px 0",
+        geometry.beatOffset + "px 0",
+        geometry.snapOffset + "px 0"
+      ].join(",");
+
+      ruler.style.backgroundImage = [barRuler, beatRuler, snapRuler].join(",");
+      ruler.style.backgroundSize = [
+        geometry.barPx + "px 100%",
+        geometry.beatPx + "px 100%",
+        geometry.snapPx + "px 100%"
+      ].join(",");
+      ruler.style.backgroundPosition = [
+        geometry.barOffset + "px 0",
+        geometry.beatOffset + "px 0",
+        geometry.snapOffset + "px 0"
+      ].join(",");
+    }
+
+    grid.style.backgroundRepeat = "repeat";
+    ruler.style.backgroundRepeat = "repeat";
+  }
+
   function drawPianoRollGridCanvases(grid, ruler, ctx, rollW) {
     if (!grid || !ruler || !ctx) return;
 
-    // The Piano Roll can be hundreds of thousands of CSS pixels wide at deep zoom.
-    // Stretching an 8K canvas across that distance turns 1px grid lines into soft,
-    // wide bands. Use native CSS background tiles instead: the browser keeps the
-    // separators pixel-sharp at any zoom level without creating thousands of DOM nodes.
+    // Keep the grid in CSS rather than a stretched canvas so lines remain sharp
+    // at extreme zoom. Swing is represented by the real shifted quantize lines.
     const gridCanvas = grid.querySelector(".piano-roll-grid-canvas");
     const rulerCanvas = ruler.querySelector(".piano-roll-ruler-canvas");
     if (gridCanvas) gridCanvas.style.display = "none";
     if (rulerCanvas) rulerCanvas.style.display = "none";
-
-    const cssW = Math.max(1, Number(rollW) || 1);
-    const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
-    const ppq = Math.max(1, ctx.ppq || 480);
-    const tpb = ticksPerBar(ppq);
-    const snapTicks = Math.max(1, pianoRollSnapTicks(ppq));
-
-    const pxPerTick = cssW / spanTicks;
-    const snapPx = Math.max(2, snapTicks * pxPerTick);
-    const beatPx = Math.max(2, ppq * pxPerTick);
-    const barPx = Math.max(2, tpb * pxPerTick);
-
-    const firstSnapTick = Math.ceil(ctx.startTick / snapTicks) * snapTicks;
-    const firstBeatTick = Math.ceil(ctx.startTick / ppq) * ppq;
-    const firstBarTick = Math.ceil(ctx.startTick / tpb) * tpb;
-
-    const snapOffset = ((firstSnapTick - ctx.startTick) * pxPerTick);
-    const beatOffset = ((firstBeatTick - ctx.startTick) * pxPerTick);
-    const barOffset = ((firstBarTick - ctx.startTick) * pxPerTick);
-
-    grid.style.backgroundImage = [
-      "linear-gradient(90deg, rgba(135,157,188,.62) 0 2px, transparent 2px)",
-      "linear-gradient(90deg, rgba(111,130,155,.44) 0 1px, transparent 1px)",
-      "linear-gradient(90deg, rgba(90,104,123,.24) 0 1px, transparent 1px)"
-    ].join(",");
-    grid.style.backgroundSize = [
-      barPx + "px 100%",
-      beatPx + "px 100%",
-      snapPx + "px 100%"
-    ].join(",");
-    grid.style.backgroundPosition = [
-      barOffset + "px 0",
-      beatOffset + "px 0",
-      snapOffset + "px 0"
-    ].join(",");
-    grid.style.backgroundRepeat = "repeat";
-
-    // The ruler gets crisp full-height divisions as well. Bar labels remain DOM text.
-    ruler.style.backgroundImage = [
-      "linear-gradient(90deg, rgba(180,202,232,.52) 0 2px, transparent 2px)",
-      "linear-gradient(90deg, rgba(153,171,196,.38) 0 1px, transparent 1px)"
-    ].join(",");
-    ruler.style.backgroundSize = [
-      barPx + "px 100%",
-      beatPx + "px 100%"
-    ].join(",");
-    ruler.style.backgroundPosition = [
-      barOffset + "px 0",
-      beatOffset + "px 0"
-    ].join(",");
-    ruler.style.backgroundRepeat = "repeat";
+    applyPianoRollGridBackground(grid, ruler, ctx, rollW);
   }
 
   function createPianoRollNoteVector(ctx, displayRows, rowH, rollH, rollW, color) {
@@ -12236,28 +12489,14 @@ body.timeline-ruler-zooming {
     grid.dataset.rollWidth = String(rollW);
     if (content) content.style.width = rollW + "px";
 
-    // Update only the tiled grid backgrounds. Notes, labels and parameter bars
-    // are percentage-positioned and follow the parent width automatically.
-    const snapTicks = Math.max(1, pianoRollSnapTicks(ppq));
-    const pxPerTick = rollW / spanTicks;
-    const snapPx = Math.max(2, snapTicks * pxPerTick);
-    const beatPx = Math.max(2, ppq * pxPerTick);
-    const barPx = Math.max(2, tpb * pxPerTick);
-    const firstSnapTick = Math.ceil(startTick / snapTicks) * snapTicks;
-    const firstBeatTick = Math.ceil(startTick / ppq) * ppq;
-    const firstBarTick = Math.ceil(startTick / tpb) * tpb;
-    const snapOffset = (firstSnapTick - startTick) * pxPerTick;
-    const beatOffset = (firstBeatTick - startTick) * pxPerTick;
-    const barOffset = (firstBarTick - startTick) * pxPerTick;
-
-    grid.style.backgroundSize =
-      barPx + "px 100%," + beatPx + "px 100%," + snapPx + "px 100%";
-    grid.style.backgroundPosition =
-      barOffset + "px 0," + beatOffset + "px 0," + snapOffset + "px 0";
-    ruler.style.backgroundSize =
-      barPx + "px 100%," + beatPx + "px 100%";
-    ruler.style.backgroundPosition =
-      barOffset + "px 0," + beatOffset + "px 0";
+    // Update the very same grid geometry used by the full render. This keeps
+    // swing lines, notes and snap positions locked together while zooming.
+    applyPianoRollGridBackground(
+      grid,
+      ruler,
+      { startTick, endTick, ppq },
+      rollW
+    );
 
     const meta = document.getElementById("pianoRollMeta");
     if (meta) {
@@ -12493,10 +12732,9 @@ body.timeline-ruler-zooming {
     if (!ctx || !grid) return;
     const point = pianoRollGridPoint(event, grid, ctx);
     const gridStep = pianoRollSnapTicks(ctx.ppq);
-    const editStep = pianoRollEditStepTicks(ctx.ppq);
     const defaultDuration = Math.max(1, Math.min(gridStep, ctx.endTick - ctx.startTick));
     const latestStart = Math.max(ctx.startTick, ctx.endTick - defaultDuration);
-    let tick = Math.round(point.rawTick / editStep) * editStep;
+    let tick = pianoRollSnapTick(point.rawTick, ctx);
     tick = Math.max(ctx.startTick, Math.min(latestStart, tick));
     const duration = Math.max(1, Math.min(defaultDuration, ctx.endTick - tick));
     const instanceId = hostClipInstanceId(
@@ -12603,9 +12841,18 @@ body.timeline-ruler-zooming {
         const dx = clientX - originX;
         const dy = clientY - originY;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
-        const editStep = pianoRollEditStepTicks(ctx.ppq);
-        let deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
-        deltaTicks = Math.max(ctx.startTick - minTick, Math.min(ctx.endTick - maxEnd, deltaTicks));
+        let deltaTicks = 0;
+        if (Math.abs(dx) >= 2) {
+          const rawAnchorTick = minTick + rawDeltaTicks;
+          const snappedAnchorTick = state.pianoRollSnapEnabled
+            ? pianoRollSnapTick(rawAnchorTick, ctx)
+            : Math.round(rawAnchorTick);
+          deltaTicks = snappedAnchorTick - minTick;
+          deltaTicks = Math.max(
+            ctx.startTick - minTick,
+            Math.min(ctx.endTick - maxEnd, deltaTicks)
+          );
+        }
         let deltaPitch = 0;
         let deltaRows = 0;
         if (drumRows) {
@@ -12733,6 +12980,8 @@ body.timeline-ruler-zooming {
       const maxDelta = Math.min(...origins.map(
         (item) => item.maxDuration - item.duration
       ));
+      const resizeAnchor = origins.find((item) => item.id === noteId) || origins[0];
+      const resizeAnchorEnd = resizeAnchor.tick + resizeAnchor.duration;
       const originX = event.clientX;
       let previewDeltaTicks = 0;
       let changed = false;
@@ -12745,9 +12994,16 @@ body.timeline-ruler-zooming {
         if (!resizeActive) return;
         const dx = clientX - originX;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
-        const editStep = pianoRollEditStepTicks(ctx.ppq);
-        let deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
-        deltaTicks = Math.max(minDelta, Math.min(maxDelta, deltaTicks));
+        let deltaTicks = 0;
+        if (Math.abs(dx) >= 2) {
+          if (state.pianoRollSnapEnabled) {
+            const snappedEnd = pianoRollSnapTick(resizeAnchorEnd + rawDeltaTicks, ctx);
+            deltaTicks = snappedEnd - resizeAnchorEnd;
+          } else {
+            deltaTicks = Math.round(rawDeltaTicks);
+          }
+          deltaTicks = Math.max(minDelta, Math.min(maxDelta, deltaTicks));
+        }
         previewDeltaTicks = deltaTicks;
         changed = deltaTicks !== 0;
 
@@ -13685,9 +13941,9 @@ body.timeline-ruler-zooming {
     state.pianoRollSnapDenominator = value;
     scheduleLocalStorageSet("midi_host_piano_roll_snap_v1", value);
     renderPianoRoll();
+    updatePerformanceControlsUi();
     setStatus(
-      "Piano Roll · grid " + pianoRollSnapLabel() +
-      (state.pianoRollSnapEnabled ? " · Snap ON" : " · Snap OFF"),
+      "Piano Roll · grid " + pianoRollSnapStatusLabel(),
       "ok"
     );
   });
@@ -13698,29 +13954,12 @@ body.timeline-ruler-zooming {
       "midi_host_piano_roll_snap_enabled_v1",
       state.pianoRollSnapEnabled ? "1" : "0"
     );
-    updatePianoRollSnapUi();
-    const ctx = pianoRollContext();
-    const grid = document.getElementById("pianoRollGrid");
-    const ruler = document.getElementById("pianoRollRuler");
-    if (ctx && grid && ruler) {
-      drawPianoRollGridCanvases(
-        grid,
-        ruler,
-        ctx,
-        Math.max(1, Number(grid.dataset.rollWidth) || grid.offsetWidth || 1)
-      );
-    }
-    const meta = document.getElementById("pianoRollMeta");
-    if (meta) {
-      meta.textContent = meta.textContent.replace(
-        /snap (?:OFF · grid )?1\/(?:4|8T?|16T?|32|64)/,
-        "snap " + pianoRollSnapStatusLabel()
-      );
-    }
+    renderPianoRoll();
+    updatePerformanceControlsUi();
     setStatus(
       state.pianoRollSnapEnabled
-        ? "Piano Roll · Snap to Grid ON · " + pianoRollSnapLabel()
-        : "Piano Roll · Snap to Grid OFF · free timing for humanization",
+        ? "Piano Roll · Snap to Grid ON · " + pianoRollSnapStatusLabel()
+        : "Piano Roll · Snap to Grid OFF · visible grid stays " + pianoRollSnapStatusLabel(),
       "ok"
     );
   });
@@ -16340,7 +16579,7 @@ body.timeline-ruler-zooming {
       name: p.name,
       ppq: p.ppq,
       tempo: p.tempo,
-      swing: Math.max(0, Math.min(50, Number(p.swing) || 0)),
+      swing: Math.max(0, Math.min(100, Number(p.swing) || 0)),
       masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(p.masterTranspose) || 0))),
       lengthTicks: p.lengthTicks,
       minimumLengthTicks: Math.max(0, Number(p.minimumLengthTicks) || 0),
@@ -17266,15 +17505,22 @@ body.timeline-ruler-zooming {
 
   document.getElementById("swing")?.addEventListener("input", (e) => {
     if (!state.project) return;
-    state.project.swing = Math.max(0, Math.min(50, Number(e.target.value) || 0));
+    state.project.swing = Math.max(0, Math.min(100, Number(e.target.value) || 0));
     updatePerformanceControlsUi();
+    refreshPianoRollSwingGrid();
     markHostProjectDirty();
     scheduleHostAutosave();
   });
   document.getElementById("swing")?.addEventListener("change", () => {
     if (!state.project) return;
-    restartPlaybackForPerformanceChange();
-    setStatus("Swing: " + Math.round(Number(state.project.swing) || 0) + "%", "ok");
+    const swing = Math.round(projectSwingPercent(state.project));
+    setStatus(
+      "Swing Grid: " + swing + "% · grid/snap only · existing notes and playback stay unchanged until Apply Swing or manual editing",
+      "ok"
+    );
+  });
+  document.getElementById("btnApplySwing")?.addEventListener("click", () => {
+    applySwingGridToNotes();
   });
   document.getElementById("masterTransposeDown")?.addEventListener("click", () => {
     if (!state.project) return;
@@ -17378,8 +17624,14 @@ body.timeline-ruler-zooming {
       if (code === "ArrowLeft" || code === "ArrowRight") {
         e.preventDefault();
         if (selectedNotes.length) {
-          const step = pianoRollEditStepTicks(state.project?.ppq || 480);
-          moveSelectedPianoRollNotes(code === "ArrowLeft" ? -step : step);
+          const anchorTick = Math.min(...selectedNotes.map((note) => Number(note.tick) || 0));
+          const direction = code === "ArrowLeft" ? -1 : 1;
+          const delta = pianoRollAdjacentGridDelta(
+            anchorTick,
+            direction,
+            state.project?.ppq || 480
+          );
+          moveSelectedPianoRollNotes(delta);
         }
         return;
       }
