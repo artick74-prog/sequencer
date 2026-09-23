@@ -8681,8 +8681,20 @@ body.timeline-ruler-zooming {
     const swingEl = document.getElementById("swing");
     const swingValue = document.getElementById("swingValue");
     const transposeValue = document.getElementById("masterTransposeValue");
-    if (swingEl) swingEl.value = String(swing);
+    if (swingEl) {
+      swingEl.value = String(swing);
+      swingEl.title =
+        "Swing Grid " + Math.round(swing) + "% · changes Piano Roll grid/snap only";
+    }
     if (swingValue) swingValue.textContent = Math.round(swing) + "%";
+    const applySwing = document.getElementById("btnApplySwing");
+    if (applySwing) {
+      applySwing.title =
+        "Apply current " + pianoRollSnapLabel() +
+        " grid" + (swing ? " with Swing " + Math.round(swing) + "%" : " straight") +
+        " to selected notes, or to the whole project when nothing is selected. " +
+        "Playback/export never add another swing layer.";
+    }
     if (transposeValue) transposeValue.textContent = (transpose > 0 ? "+" : "") + transpose + " st";
   }
 
@@ -11327,6 +11339,103 @@ body.timeline-ruler-zooming {
           ? " · Swing " + Math.round(pianoRollSwingPercent()) + "%"
           : "");
     }
+  }
+
+  function refreshPianoRollSwingGrid() {
+    const ctx = pianoRollContext();
+    const grid = document.getElementById("pianoRollGrid");
+    const ruler = document.getElementById("pianoRollRuler");
+    if (ctx && grid && ruler) {
+      const rollW = Math.max(1, Number(grid.dataset.rollWidth) || grid.offsetWidth || 1);
+      applyPianoRollGridBackground(grid, ruler, ctx, rollW);
+    }
+    updatePianoRollSnapUi();
+  }
+
+  function applySwingGridToNotes() {
+    const project = state.project;
+    if (!project) return false;
+
+    const swing = pianoRollSwingPercent();
+    if (swing > 0 && pianoRollSnapIsTriplet()) {
+      setStatus(
+        "Swing Grid is not applied to triplet grids. Choose a straight grid such as 1/8, 1/16, 1/32 or 1/64.",
+        "err"
+      );
+      return false;
+    }
+
+    const ctx = pianoRollContext();
+    const selected = ctx ? pianoRollSelectedNotes(ctx) : [];
+    const selectedOnly = !!(ctx && selected.length);
+    const targets = selectedOnly
+      ? [{ track: ctx.track, notes: selected }]
+      : (project.tracks || []).map((track) => ({ track, notes: track.notes || [] }));
+    const targetCount = targets.reduce((sum, item) => sum + item.notes.length, 0);
+    if (!targetCount) {
+      setStatus("Swing Grid · no notes to quantize.", "");
+      return false;
+    }
+
+    const ppq = Math.max(1, Number(project.ppq) || 480);
+    const wasPlaying = !!state.playing;
+    const resumeTick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
+    if (wasPlaying) stopPlayback();
+
+    if (selectedOnly) pianoRollPushUndo(ctx);
+
+    let changed = 0;
+    const changedTrackIds = new Set();
+    for (const item of targets) {
+      for (const note of item.notes) {
+        const oldTick = Math.max(0, Math.round(Number(note.tick) || 0));
+        const index = pianoRollNearestGridIndex(oldTick, ppq);
+        const newTick = Math.max(0, pianoRollGridTickAtIndex(index, ppq));
+        if (newTick === oldTick) continue;
+        note.tick = newTick;
+        changed++;
+        if (item.track?.id) changedTrackIds.add(item.track.id);
+      }
+      item.track?.notes?.sort(
+        (a, b) => (Number(a.tick) || 0) - (Number(b.tick) || 0) ||
+          (Number(a.note) || 0) - (Number(b.note) || 0)
+      );
+    }
+
+    if (!changed) {
+      if (selectedOnly) state.pianoRollUndoStack.pop();
+      state.startTick = Math.max(0, resumeTick);
+      if (wasPlaying) runScheduler(state.startTick);
+      setStatus(
+        "Swing Grid · notes are already on " + pianoRollSnapLabel() +
+        (swing ? " · swing " + Math.round(swing) + "%" : " · straight"),
+        "ok"
+      );
+      return true;
+    }
+
+    for (const clip of project.clips || []) {
+      if (changedTrackIds.has(clip.targetTrackId)) {
+        markClipContentEdited(clip, "swing-grid");
+      }
+    }
+
+    recomputeLength(project);
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    state.startTick = Math.max(0, resumeTick);
+    renderAll();
+    if (wasPlaying) runScheduler(state.startTick);
+
+    setStatus(
+      "Applied " + pianoRollSnapLabel() +
+      (swing ? " Swing " + Math.round(swing) + "%" : " straight grid") +
+      " · " + changed + " / " + targetCount + " note start(s)" +
+      (selectedOnly ? " · selection only" : " · whole project") +
+      " · MIDI export uses these stored ticks exactly",
+      "ok"
+    );
+    return true;
   }
 
   function pianoRollSelectedIdSet() {
@@ -17405,13 +17514,20 @@ body.timeline-ruler-zooming {
     if (!state.project) return;
     state.project.swing = Math.max(0, Math.min(100, Number(e.target.value) || 0));
     updatePerformanceControlsUi();
+    refreshPianoRollSwingGrid();
     markHostProjectDirty();
     scheduleHostAutosave();
   });
   document.getElementById("swing")?.addEventListener("change", () => {
     if (!state.project) return;
-    restartPlaybackForPerformanceChange();
-    setStatus("Swing: " + Math.round(Number(state.project.swing) || 0) + "%", "ok");
+    const swing = Math.round(projectSwingPercent(state.project));
+    setStatus(
+      "Swing Grid: " + swing + "% · grid/snap only · existing notes and playback stay unchanged until Apply Swing or manual editing",
+      "ok"
+    );
+  });
+  document.getElementById("btnApplySwing")?.addEventListener("click", () => {
+    applySwingGridToNotes();
   });
   document.getElementById("masterTransposeDown")?.addEventListener("click", () => {
     if (!state.project) return;
