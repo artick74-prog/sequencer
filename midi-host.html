@@ -3663,6 +3663,27 @@ body.timeline-ruler-zooming {
       !!parseGmTrackName(track?.name);
   }
 
+  // A track may keep a GM name/program as its source identity while being
+  // temporarily auditioned through one of the studio hardware channels.
+  // Channel 1/2/3/10 therefore wins for playback/routing, except for an
+  // explicitly GM-mapped percussion track.
+  function hardwareChannelInfo(track) {
+    if (!track) return null;
+    const channel = Number(track.channel) || 1;
+    const info = ROLE_BY_CH[channel] || null;
+    if (!info) return null;
+    if (trackIsPercussion(track) && drumMapForTrack(track) === "gm") return null;
+    return info;
+  }
+
+  function trackUsesHardwareChannel(track) {
+    return !!hardwareChannelInfo(track);
+  }
+
+  function trackUsesGmPlayback(track) {
+    return isGmTrack(track) && !trackUsesHardwareChannel(track);
+  }
+
   function gmProgramFromTrack(track) {
     return parseGmTrackName(track?.name)?.program ?? null;
   }
@@ -3687,11 +3708,16 @@ body.timeline-ruler-zooming {
   }
 
   function inferTrackRole(track, channel) {
+    const hardware = ROLE_BY_CH[Number(channel) || 1];
+    if (hardware) return hardware.role;
     if (track?.role === "gm" || parseGmTrackName(track?.name)) return "gm";
     return roleForChannel(channel).role;
   }
 
   function trackDisplayInfo(track) {
+    const hardware = hardwareChannelInfo(track);
+    if (hardware) return hardware;
+
     const gm = parseGmTrackName(track.name);
     if (gm || track.role === "gm" || track.role === "gm-drums" || (trackIsPercussion(track) && drumMapForTrack(track) === "gm")) {
       const program = gm?.program ?? null;
@@ -7179,17 +7205,17 @@ body.timeline-ruler-zooming {
         : (hw ? "hw" : "none");
     }
 
-    // GM tracks belong to the SoundFont engine.
-    if (isGmTrack(track)) return sf2 ? "sf2" : "none";
-
-    // Dedicated hardware tracks must not be doubled by SoundFont while the
-    // hardware output is available. SF2 is only a fallback for hardware tracks
-    // when no hardware output is active.
-    if (track.role === "td3" || track.role === "xr20-bass") {
+    // Studio hardware channels are the playback destination. This intentionally
+    // overrides a GM source name/program, so a GM-authored part can be auditioned
+    // on XR20/TD-3 simply by changing its channel.
+    if (trackUsesHardwareChannel(track)) {
       if (hw) return "hw";
       if (sf2) return "sf2";
       return "none";
     }
+
+    // GM tracks on the GM channel pool belong to the SoundFont engine.
+    if (isGmTrack(track)) return sf2 ? "sf2" : "none";
 
     if (sf2 && hw) return "both";
     if (sf2) return "sf2";
@@ -7310,6 +7336,26 @@ body.timeline-ruler-zooming {
     if (!synth || !project) return;
     for (const track of project.tracks || []) {
       const ch = ((track.channel || 1) - 1) & 0x0f;
+      const hardware = hardwareChannelInfo(track);
+
+      // If a GM-authored part is temporarily routed onto a studio hardware
+      // channel, its SF2 fallback should mimic that hardware role rather than
+      // keep playing the original GM program.
+      if (hardware?.role === "td3") {
+        synth.setPercussionPart(ch, false);
+        synth.programChange(ch, 81);
+        continue;
+      }
+      if (hardware?.role === "xr20-bass") {
+        synth.setPercussionPart(ch, false);
+        synth.programChange(ch, 33);
+        continue;
+      }
+      if (hardware?.role === "xr20-percussion" || hardware?.role === "xr20-drums") {
+        synth.setPercussionPart(ch, true);
+        continue;
+      }
+
       const gm = gmProgramFromTrack(track);
       if (gm != null) {
         synth.setPercussionPart(ch, false);
@@ -14322,12 +14368,13 @@ body.timeline-ruler-zooming {
     for (const track of project.tracks) {
       const info = trackDisplayInfo(track);
       const gmProgram = gmProgramFromTrack(track);
-      const gmProgramOptions = isGmTrack(track)
+      const gmPlayback = trackUsesGmPlayback(track);
+      const gmProgramOptions = gmPlayback
         ? Array.from({ length: 128 }, (_, program) =>
             `<option value="${program}" ${gmProgram === program ? "selected" : ""}>GM ${program} · ${escapeHtml(gmProgramName(program))}</option>`
           ).join("")
         : "";
-      const gmTag = isGmTrack(track) && !trackIsPercussion(track)
+      const gmTag = gmPlayback && !trackIsPercussion(track)
         ? `<select class="gm-program-select" data-gm-program="${track.id}" title="SoundFont / General MIDI instrument">${gmProgramOptions}</select>`
         : "";
       const percussion = trackIsPercussion(track);
@@ -14612,18 +14659,41 @@ body.timeline-ruler-zooming {
         setTrackOctave(track, (track.transposeOctaves || 0) + 1);
       });
       el.querySelector(`[data-ch="${track.id}"]`).addEventListener("change", (e) => {
+        const previousGmIdentity =
+          gmProgramFromTrack(track) != null ||
+          track.role === "gm" ||
+          track.role === "gm-drums";
+
         track.channel = Number(e.target.value);
-        if (!isGmTrack(track)) track.role = roleForChannel(track.channel).role;
-        if (Number(track.channel) === 10 && !track.drumMap) {
-          track.drumMap = isGmTrack(track) ? "gm" : "xr20";
-        }
-        if (Number(track.channel) !== 10 && track.role !== "xr20-drums") {
+        const hardware = ROLE_BY_CH[track.channel] || null;
+
+        if (hardware) {
+          track.role = hardware.role;
+          track.drumMap =
+            hardware.role === "xr20-drums" || hardware.role === "xr20-percussion"
+              ? "xr20"
+              : "";
+        } else if (previousGmIdentity || gmProgramFromTrack(track) != null) {
+          // Keep the GM program/name as the source identity so switching back
+          // from hardware immediately restores the original SoundFont sound.
+          track.role = "gm";
           track.drumMap = "";
-          if (track.role === "gm-drums") track.role = "gm";
+        } else {
+          track.role = roleForChannel(track.channel).role;
+          track.drumMap = "";
         }
+
+        if (state.sf2Ready && sf2Synth()) applySf2Programs({ tracks: [track] });
         markHostProjectDirty();
         scheduleHostAutosave();
         renderTracks();
+        void restartPlaybackForRoutingChange();
+
+        const destination = trackDisplayInfo(track);
+        setStatus(
+          track.name + " → CH " + track.channel + " · " + destination.label,
+          "ok"
+        );
       });
       el.querySelector(`[data-gm-program="${track.id}"]`)?.addEventListener("change", (e) => {
         setGmTrackProgram(track, Number(e.target.value));
