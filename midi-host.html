@@ -2068,8 +2068,8 @@ body.timeline-ruler-zooming {
   border-radius: 2px;
   box-shadow: 0 0 5px rgba(61, 220, 151, .45);
 }
-.loop-locator-handle.start { left: -5px; }
-.loop-locator-handle.end { right: -5px; }
+.loop-locator-handle.start { left: 0; }
+.loop-locator-handle.end { right: 0; }
 .ruler-loop-range.active {
   background: rgba(61, 220, 151, .20);
   border-color: var(--accent);
@@ -10329,12 +10329,14 @@ body.timeline-ruler-zooming {
     return created;
   }
 
-  function openNativeTrackPart(track) {
+  function openNativeTrackPart(track, { focusClip = null } = {}) {
     if (!state.project || !track) return false;
     const clip = ensureNativeTrackPart(state.project, track, { createEmpty: true });
     if (!clip) return false;
 
-    // Keep a full-track editing range, including an empty starter project.
+    // The hidden Track Part is the editor backing store. In full-track mode the
+    // Piano/Drum Roll reads every note on the track, including notes that still
+    // belong to visible loop clips.
     recomputeLength(state.project);
     const tpb = ticksPerBar(state.project.ppq || 480);
     const endTick = Math.max(
@@ -10346,13 +10348,17 @@ body.timeline-ruler-zooming {
     clip.endTick = endTick;
     clip.baseLengthTicks = clip.endTick;
     clip.repeatCount = 1;
-    clip.noteCount = hostClipOwnedNotes(clip, track).length;
+    clip.noteCount = (track.notes || []).length;
 
     openPianoRollForClip(clip, track);
+    if (focusClip) {
+      const focusIndex = Math.max(0, (state.project.clips || []).indexOf(focusClip));
+      selectHostLoopClip(hostClipInstanceId(focusClip, focusIndex));
+    }
     setStatus(
       (trackIsPercussion(track) ? "Drum Roll" : "Piano Roll") +
-      " · editing project track “" + (track.name || "Track") +
-      "” · " + clip.noteCount + " note(s)",
+      " · full track “" + (track.name || "Track") +
+      "” · " + (track.notes || []).length + " note(s)",
       "ok"
     );
     return true;
@@ -10401,24 +10407,33 @@ body.timeline-ruler-zooming {
       startTick + 1,
       Number(clip.endTick) || (startTick + ticksPerBar(ppq))
     );
-    const endTick = clip.nativeTrackPart
-      ? Math.max(Number(state.project.lengthTicks) || 0, startTick + ticksPerBar(ppq))
+    const fullTrack = !!clip.nativeTrackPart;
+    const endTick = fullTrack
+      ? Math.max(
+          Number(state.project.lengthTicks) || 0,
+          Number(state.project.minimumLengthTicks) || 0,
+          startTick + ticksPerBar(ppq)
+        )
       : storedEndTick;
-    const notes = hostClipOwnedNotes(clip, track)
+    const sourceNotes = fullTrack ? (track.notes || []) : hostClipOwnedNotes(clip, track);
+    const sourceControls = fullTrack
+      ? (track.midiControls || [])
+      : hostClipOwnedMidiControls(clip, track);
+    const notes = sourceNotes
       .filter((note) => {
         const noteStart = Number(note.tick) || 0;
         const noteEnd = noteStart + Math.max(1, Number(note.duration) || 1);
         return noteStart < endTick && noteEnd > startTick;
       })
       .sort((a,b) => Number(a.tick) - Number(b.tick) || Number(a.note) - Number(b.note));
-    const midiControls = hostClipOwnedMidiControls(clip, track)
+    const midiControls = sourceControls
       .filter((event) => {
         const tick = Number(event.tick) || 0;
         return tick >= startTick && tick < endTick;
       })
       .sort((a,b) => Number(a.tick) - Number(b.tick));
 
-    return { clip, track, ppq, startTick, endTick, notes, midiControls };
+    return { clip, track, ppq, startTick, endTick, notes, midiControls, fullTrack };
   }
 
   function syncPianoRollPlaybackLiteMode() {
@@ -10447,7 +10462,7 @@ body.timeline-ruler-zooming {
       dock.setAttribute("aria-hidden", "true");
     }
     const scroll = document.getElementById("pianoRollScroll");
-    if (scroll) scroll.innerHTML = '<div class="piano-roll-empty">Double-click a Project Clip to inspect its notes.</div>';
+    if (scroll) scroll.innerHTML = '<div class="piano-roll-empty">Double-click a clip or use Edit to open the full track.</div>';
     if (!silent) setStatus("Piano Roll closed.", "");
   }
 
@@ -10479,7 +10494,7 @@ body.timeline-ruler-zooming {
     state.pianoRollUndoStack = [];
     state.pianoRollRedoStack = [];
     if (trackIsPercussion(track)) {
-      const owned = hostClipOwnedNotes(clip, track);
+      const owned = clip.nativeTrackPart ? (track.notes || []) : hostClipOwnedNotes(clip, track);
       state.pianoRollDrumViewMap =
         isXr20DrumTrack(track) && owned.some((note) => !!note.drumUnresolved)
           ? "gm"
@@ -10515,7 +10530,7 @@ body.timeline-ruler-zooming {
     if (doubled) {
       state.lastClipClickId = "";
       state.lastClipClickAt = 0;
-      openPianoRollForClip(clip, track);
+      openNativeTrackPart(track, { focusClip: clip });
       return true;
     }
 
@@ -11103,8 +11118,12 @@ body.timeline-ruler-zooming {
   function pianoRollSnapshot(ctx = pianoRollContext()) {
     if (!ctx) return null;
     return {
-      notes: pianoRollCloneNotes(hostClipOwnedNotes(ctx.clip, ctx.track)),
-      midiControls: pianoRollCloneMidiControls(hostClipOwnedMidiControls(ctx.clip, ctx.track)),
+      notes: pianoRollCloneNotes(
+        ctx.fullTrack ? (ctx.track.notes || []) : hostClipOwnedNotes(ctx.clip, ctx.track)
+      ),
+      midiControls: pianoRollCloneMidiControls(
+        ctx.fullTrack ? (ctx.track.midiControls || []) : hostClipOwnedMidiControls(ctx.clip, ctx.track)
+      ),
     };
   }
 
@@ -11124,21 +11143,27 @@ body.timeline-ruler-zooming {
     const snapshotNotes = Array.isArray(snapshot) ? snapshot : (snapshot.notes || []);
     const snapshotControls = Array.isArray(snapshot) ? [] : (snapshot.midiControls || []);
 
-    const ownedNotes = new Set(hostClipOwnedNotes(ctx.clip, ctx.track));
-    ctx.track.notes = ctx.track.notes.filter((note) => !ownedNotes.has(note));
     const restoredNotes = pianoRollCloneNotes(snapshotNotes).map((note) => ({
       ...note,
       clipId: note.clipId || instanceId,
     }));
-    ctx.track.notes.push(...restoredNotes);
-
-    const ownedControls = new Set(hostClipOwnedMidiControls(ctx.clip, ctx.track));
-    ctx.track.midiControls = (ctx.track.midiControls || []).filter((event) => !ownedControls.has(event));
     const restoredControls = pianoRollCloneMidiControls(snapshotControls).map((event) => ({
       ...event,
       clipId: event.clipId || instanceId,
     }));
-    ctx.track.midiControls.push(...restoredControls);
+
+    if (ctx.fullTrack) {
+      ctx.track.notes = restoredNotes;
+      ctx.track.midiControls = restoredControls;
+    } else {
+      const ownedNotes = new Set(hostClipOwnedNotes(ctx.clip, ctx.track));
+      ctx.track.notes = ctx.track.notes.filter((note) => !ownedNotes.has(note));
+      ctx.track.notes.push(...restoredNotes);
+
+      const ownedControls = new Set(hostClipOwnedMidiControls(ctx.clip, ctx.track));
+      ctx.track.midiControls = (ctx.track.midiControls || []).filter((event) => !ownedControls.has(event));
+      ctx.track.midiControls.push(...restoredControls);
+    }
 
     pianoRollSetSelection([]);
     commitPianoRollEdit(ctx, message);
@@ -11735,8 +11760,16 @@ body.timeline-ruler-zooming {
     ctx.track.notes.sort((a,b) => Number(a.tick) - Number(b.tick) || Number(a.note) - Number(b.note));
     ctx.track.midiControls = Array.isArray(ctx.track.midiControls) ? ctx.track.midiControls : [];
     ctx.track.midiControls.sort((a,b) => Number(a.tick) - Number(b.tick));
-    ctx.clip.noteCount = hostClipOwnedNotes(ctx.clip, ctx.track).length;
+    ctx.clip.noteCount = ctx.fullTrack
+      ? (ctx.track.notes || []).length
+      : hostClipOwnedNotes(ctx.clip, ctx.track).length;
     markClipContentEdited(ctx.clip, "piano-roll");
+    if (ctx.fullTrack) {
+      const focused = selectedHostClipContext();
+      if (focused?.track?.id === ctx.track.id) {
+        markClipContentEdited(focused.clip, "piano-roll");
+      }
+    }
 
     // Writing toward the right edge must reveal more bars instead of hitting a
     // fixed project boundary. Native Track Parts then expand to the new horizon.
@@ -11761,8 +11794,8 @@ body.timeline-ruler-zooming {
 
     setStatus(
       "Piano Roll · " + message + " · snap " + pianoRollSnapStatusLabel() +
-      (ctx.clip.nativeTrackPart
-        ? " · project track edited · timeline keeps " + TIMELINE_RUNWAY_BARS + " empty bars ahead"
+      (ctx.fullTrack
+        ? " · full project track edited · timeline keeps " + TIMELINE_RUNWAY_BARS + " empty bars ahead"
         : " · Project Clip is now an edited instance"),
       "ok"
     );
@@ -12139,7 +12172,9 @@ body.timeline-ruler-zooming {
     const barSpan = spanTicks / tpb;
     const startBar = tickToBar(startTick, ppq);
     const endBar = tickToBar(Math.max(startTick, endTick - 1), ppq);
-    const clipName = clip.name || clip.originalName || "Project Clip";
+    const clipName = ctx.fullTrack
+      ? "Full track"
+      : (clip.name || clip.originalName || "Project Clip");
 
     const drumMode = trackIsPercussion(track);
     const drumTargetMap = drumMode ? drumMapForTrack(track) : "";

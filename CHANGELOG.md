@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-23 — Full-track Piano Roll and Acid Rock drum cleanup
+
+### Changed
+- Double-click по loop/Project Clip теперь открывает в Piano/Drum Roll всю дорожку целиком, а не только границы выбранного clip.
+- Full-track Undo/Redo сохраняет всю дорожку вместе с clip ownership; loop containers остаются на timeline и по-прежнему поддерживают repeat/trim.
+- В Acid Rock 1 первые 16 тактов Drums преобразованы из library-loop container в обычные ноты барабанной дорожки; квантизация 1/16 сохранена и в `projects/current.json`, и в cloud snapshot.
+
+### Fixed
+- Левый loop locator на bar 1 больше не попадает под sticky ruler gutter и теперь перетаскивается так же, как правый.
+
+
+
 ## 2026-09-23 — Uniform track lane height
 
 ### Fixed
