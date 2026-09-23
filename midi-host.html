@@ -11764,6 +11764,12 @@ body.timeline-ruler-zooming {
       ? (ctx.track.notes || []).length
       : hostClipOwnedNotes(ctx.clip, ctx.track).length;
     markClipContentEdited(ctx.clip, "piano-roll");
+    if (ctx.fullTrack) {
+      const focused = selectedHostClipContext();
+      if (focused?.track?.id === ctx.track.id) {
+        markClipContentEdited(focused.clip, "piano-roll");
+      }
+    }
 
     // Writing toward the right edge must reveal more bars instead of hitting a
     // fixed project boundary. Native Track Parts then expand to the new horizon.
