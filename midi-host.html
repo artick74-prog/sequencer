@@ -2073,12 +2073,15 @@ body.timeline-ruler-zooming {
 .ruler .marker-flag {
   position: absolute;
   top: 1px;
+  width: var(--marker-slot-width, 150px);
+  max-width: var(--marker-slot-width, 150px);
   height: 25px;
   display: inline-flex;
   align-items: flex-start;
   gap: 3px;
   padding: 0;
   border: 0;
+  overflow: hidden;
   background: transparent;
   color: var(--accent);
   font: inherit;
@@ -2117,8 +2120,10 @@ body.timeline-ruler-zooming {
 .ruler .marker-flag-label {
   position: relative;
   top: 0;
-  display: inline-block;
-  max-width: var(--marker-label-max, 150px);
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
   padding: 1px 4px 2px;
   overflow: hidden;
   white-space: nowrap;
@@ -2138,8 +2143,6 @@ body.timeline-ruler-zooming {
 }
 .ruler .marker-flag:hover .marker-flag-label,
 .ruler .marker-flag:focus-visible .marker-flag-label {
-  max-width: none;
-  width: max-content;
   background: #10171f;
   box-shadow: 0 3px 12px rgba(0,0,0,.45);
 }
@@ -10271,13 +10274,13 @@ body.timeline-ruler-zooming {
       const x = (m.tick / length) * totalW;
       const nextMarker = markers[markerIndex + 1] || null;
       const nextX = nextMarker ? (nextMarker.tick / length) * totalW : totalW;
-      const availableLabelWidth = Math.max(56, nextX - x - 18);
+      const availableSlotWidth = Math.max(42, nextX - x - 4);
       const flag = document.createElement("button");
       flag.type = "button";
       flag.className = "marker-flag";
       flag.dataset.tick = String(m.tick);
       flag.style.left = `${x}px`;
-      flag.style.setProperty("--marker-label-max", `${availableLabelWidth}px`);
+      flag.style.setProperty("--marker-slot-width", `${availableSlotWidth}px`);
       flag.title =
         `${m.text} · bar ${m.bar} — click = seek · double-click/right-click = edit/copy`;
       flag.innerHTML =
