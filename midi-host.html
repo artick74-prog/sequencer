@@ -8684,7 +8684,8 @@ body.timeline-ruler-zooming {
     if (swingEl) {
       swingEl.value = String(swing);
       swingEl.title =
-        "Swing Grid " + Math.round(swing) + "% · changes Piano Roll grid/snap only";
+        "Swing Grid " + Math.round(swing) +
+        "% · grid-attached notes follow the shifted lines live; free-timing notes stay where they are";
     }
     if (swingValue) swingValue.textContent = Math.round(swing) + "%";
     const applySwing = document.getElementById("btnApplySwing");
@@ -11279,14 +11280,14 @@ body.timeline-ruler-zooming {
     );
   }
 
-  function pianoRollNearestGridIndex(rawTick, ppq = state.project?.ppq || 480) {
+  function swingGridNearestIndex(rawTick, stepTicks, swingPercent = 0, triplet = false) {
     const raw = Number(rawTick) || 0;
-    const step = Math.max(1, pianoRollSnapTicks(ppq));
+    const step = Math.max(1, Number(stepTicks) || 1);
     const approx = Math.round(raw / step);
     let bestIndex = approx;
     let bestDistance = Infinity;
     for (let index = approx - 3; index <= approx + 3; index++) {
-      const tick = pianoRollGridTickAtIndex(index, ppq);
+      const tick = swingGridTickForIndex(index, step, swingPercent, triplet);
       const distance = Math.abs(raw - tick);
       if (distance < bestDistance) {
         bestDistance = distance;
@@ -11294,6 +11295,65 @@ body.timeline-ruler-zooming {
       }
     }
     return bestIndex;
+  }
+
+  function pianoRollNearestGridIndex(rawTick, ppq = state.project?.ppq || 480) {
+    return swingGridNearestIndex(
+      rawTick,
+      pianoRollSnapTicks(ppq),
+      pianoRollSwingPercent(),
+      pianoRollSnapIsTriplet()
+    );
+  }
+
+  function remapProjectNotesForSwingChange(previousSwing, nextSwing) {
+    const project = state.project;
+    if (!project) return 0;
+
+    const before = Math.max(0, Math.min(100, Number(previousSwing) || 0));
+    const after = Math.max(0, Math.min(100, Number(nextSwing) || 0));
+    if (before === after || pianoRollSnapIsTriplet()) return 0;
+
+    const ppq = Math.max(1, Number(project.ppq) || 480);
+    const step = Math.max(1, pianoRollSnapTicks(ppq));
+    let changed = 0;
+    const changedTrackIds = new Set();
+
+    for (const track of project.tracks || []) {
+      let trackChanged = false;
+      for (const note of track.notes || []) {
+        const oldTick = Math.max(0, Math.round(Number(note.tick) || 0));
+        const index = swingGridNearestIndex(oldTick, step, before, false);
+        const oldGridTick = swingGridTickForIndex(index, step, before, false);
+
+        // Only notes that are already attached to the current quantize grid
+        // follow the Swing slider. Free/humanized notes remain untouched.
+        if (oldTick !== oldGridTick) continue;
+
+        const newTick = Math.max(0, swingGridTickForIndex(index, step, after, false));
+        if (newTick === oldTick) continue;
+        note.tick = newTick;
+        changed++;
+        trackChanged = true;
+      }
+
+      if (trackChanged) {
+        changedTrackIds.add(track.id);
+        track.notes.sort(
+          (a, b) => (Number(a.tick) || 0) - (Number(b.tick) || 0) ||
+            (Number(a.note) || 0) - (Number(b.note) || 0)
+        );
+      }
+    }
+
+    for (const clip of project.clips || []) {
+      if (changedTrackIds.has(clip.targetTrackId)) {
+        markClipContentEdited(clip, "swing-grid-live");
+      }
+    }
+
+    if (changed) recomputeLength(project);
+    return changed;
   }
 
   function pianoRollSnapTick(rawTick, ctx = pianoRollContext()) {
@@ -17505,17 +17565,38 @@ body.timeline-ruler-zooming {
 
   document.getElementById("swing")?.addEventListener("input", (e) => {
     if (!state.project) return;
-    state.project.swing = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+    const previousSwing = projectSwingPercent(state.project);
+    const nextSwing = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+    const moved = remapProjectNotesForSwingChange(previousSwing, nextSwing);
+    state.project.swing = nextSwing;
     updatePerformanceControlsUi();
-    refreshPianoRollSwingGrid();
-    markHostProjectDirty();
+
+    if (state.pianoRollClipId) {
+      scheduleUiFrame("piano-swing-live", () => renderPianoRoll());
+    } else {
+      refreshPianoRollSwingGrid();
+    }
+
+    if (moved) markHostProjectDirty();
+    else markHostProjectDirty();
     scheduleHostAutosave();
   });
   document.getElementById("swing")?.addEventListener("change", () => {
     if (!state.project) return;
     const swing = Math.round(projectSwingPercent(state.project));
+
+    // The scheduler queue is built from stored ticks. Rebuild it once the
+    // slider gesture finishes so live playback picks up the newly written timing.
+    if (state.playing) {
+      const tick = currentTransportTick();
+      stopPlayback();
+      state.startTick = tick;
+      runScheduler(tick);
+    }
+
     setStatus(
-      "Swing Grid: " + swing + "% · grid/snap only · existing notes and playback stay unchanged until Apply Swing or manual editing",
+      "Swing Grid: " + swing +
+      "% · grid-attached notes follow live · free-timing notes remain untouched · MIDI export uses stored ticks exactly",
       "ok"
     );
   });
