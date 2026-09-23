@@ -10494,7 +10494,7 @@ body.timeline-ruler-zooming {
     state.pianoRollUndoStack = [];
     state.pianoRollRedoStack = [];
     if (trackIsPercussion(track)) {
-      const owned = hostClipOwnedNotes(clip, track);
+      const owned = clip.nativeTrackPart ? (track.notes || []) : hostClipOwnedNotes(clip, track);
       state.pianoRollDrumViewMap =
         isXr20DrumTrack(track) && owned.some((note) => !!note.drumUnresolved)
           ? "gm"
