@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-24 — Dedicated Sequencer download folder
+
+### Changed
+- MIDI-файлы из кнопки **MIDI**, общего **Export MIDI** и кнопки **↓** в MIDI Pool теперь сохраняются через local bridge в `Downloads/Sequencer`, а не смешиваются с обычными загрузками браузера.
+- Папка создаётся автоматически при первом сохранении. Если local bridge недоступен, используется прежний browser-download fallback.
+
+
 ## 2026-09-24 — Drag-and-drop track ordering
 
 ### Added

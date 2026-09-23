@@ -4313,7 +4313,7 @@ body.timeline-ruler-zooming {
       .trim() || "track";
   }
 
-  function exportSingleTrackMidi(track) {
+  async function exportSingleTrackMidi(track) {
     if (!state.project || !track) {
       setStatus("Nothing to export.", "err");
       return;
@@ -4323,8 +4323,13 @@ body.timeline-ruler-zooming {
     const projectStem = safeMidiStem(state.project.name || "project");
     const trackStem = safeMidiStem(track.name || `ch-${track.channel || 1}`);
     const filename = `${projectStem} - ${trackStem}.mid`;
-    download(filename, buildSingleTrackMidi(state.project, track), "audio/midi");
-    setStatus(`Exported single MIDI track: ${track.name} · ch ${track.channel}`, "ok");
+    const result = await saveMidiDownload(filename, buildSingleTrackMidi(state.project, track));
+    setStatus(
+      result.savedToFolder
+        ? `Saved MIDI: Downloads\\Sequencer\\${result.filename}`
+        : `Downloaded MIDI: ${result.filename}`,
+      "ok"
+    );
   }
 
   // ─── State / playback ────────────────────────────────────────────
@@ -5286,7 +5291,7 @@ body.timeline-ruler-zooming {
           '</div>' +
         '</div>' +
         '<div class="midi-pool-card-actions">' +
-          '<button class="rhythm-mini-btn" type="button" data-pool-download title="Download a copy">↓</button>' +
+          '<button class="rhythm-mini-btn" type="button" data-pool-download title="Save a copy to Downloads/Sequencer">↓</button>' +
         '</div>';
 
       card.addEventListener("dragstart", (event) => {
@@ -5301,7 +5306,16 @@ body.timeline-ruler-zooming {
         event.stopPropagation();
         try {
           const buffer = await fetchHostLoopMidi(entry);
-          download(entry.name || "track.mid", new Uint8Array(buffer), "audio/midi");
+          const result = await saveMidiDownload(
+            entry.name || "track.mid",
+            new Uint8Array(buffer)
+          );
+          midiPoolSetStatus(
+            result.savedToFolder
+              ? "Saved to Downloads/Sequencer: " + result.filename
+              : "Downloaded: " + result.filename,
+            true
+          );
         } catch (err) {
           midiPoolSetStatus("Download failed: " + err.message);
         }
@@ -14812,7 +14826,7 @@ body.timeline-ruler-zooming {
             <button class="btn" type="button" data-edit-track="${track.id}" title="Edit project-authored notes on this track in Piano Roll / Drum Roll">Edit</button>
             <button class="btn" type="button" data-preview="${track.id}">Preview</button>
             <button class="btn" type="button" data-pool-track="${track.id}" title="Write this track as a .mid file into the local MIDI Pool">⇄</button>
-            <button class="btn" type="button" data-export-track="${track.id}" title="Download this track as a one-track MIDI file">MIDI</button>
+            <button class="btn" type="button" data-export-track="${track.id}" title="Save this track as a one-track MIDI file to Downloads/Sequencer">MIDI</button>
           </div>
         </div>
         <div class="track-body" data-body="${track.id}" style="--bar-w:${state.barW}px;width:${totalW}px"></div>
@@ -15130,7 +15144,7 @@ body.timeline-ruler-zooming {
         void sendTrackToMidiPool(track);
       });
       el.querySelector(`[data-export-track="${track.id}"]`).addEventListener("click", () => {
-        exportSingleTrackMidi(track);
+        void exportSingleTrackMidi(track);
       });
 
       fragment.appendChild(el);
@@ -15613,6 +15627,43 @@ body.timeline-ruler-zooming {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function saveMidiDownload(filename, data) {
+    const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+
+    try {
+      if (state.bridgeReady || (await detectLocalBridge())) {
+        const response = await fetch("/api/midi-download/save", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            filename: String(filename || "track.mid"),
+            data: bytesToBase64(bytes),
+          }),
+        });
+        const reply = await response.json().catch(() => ({}));
+        if (!response.ok || !reply.ok) {
+          throw new Error(reply.error || ("HTTP " + response.status));
+        }
+        return {
+          savedToFolder: true,
+          filename: reply.filename || filename,
+          path: reply.path || "",
+          root: reply.root || "",
+        };
+      }
+    } catch (err) {
+      console.warn("Dedicated MIDI download folder unavailable; using browser download.", err);
+    }
+
+    download(filename, bytes, "audio/midi");
+    return {
+      savedToFolder: false,
+      filename: String(filename || "track.mid"),
+      path: "",
+      root: "",
+    };
   }
 
   function setFileMenuOpen(open) {
@@ -16902,12 +16953,18 @@ body.timeline-ruler-zooming {
     updateMidiHostApp();
   });
 
-  document.getElementById("btnExportMid").addEventListener("click", () => {
+  document.getElementById("btnExportMid").addEventListener("click", async () => {
     if (!state.project) { setStatus("Nothing to export.", "err"); return; }
     state.project.name = document.getElementById("projectName").value || state.project.name;
     state.project.tempo = Number(document.getElementById("tempo").value) || state.project.tempo;
-    download(`${state.project.name || "export"}.mid`, buildMidi(state.project), "audio/midi");
-    setStatus("Exported MIDI.", "ok");
+    const filename = safeMidiStem(state.project.name || "export") + ".mid";
+    const result = await saveMidiDownload(filename, buildMidi(state.project));
+    setStatus(
+      result.savedToFolder
+        ? `Saved MIDI: Downloads\\Sequencer\\${result.filename}`
+        : `Downloaded MIDI: ${result.filename}`,
+      "ok"
+    );
   });
 
   document.getElementById("projectName").addEventListener("input", () => {

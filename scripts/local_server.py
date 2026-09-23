@@ -70,6 +70,12 @@ MIDI_POOL_ROOT = Path(
     )
 ).resolve()
 MIDI_POOL_MAX_FILE = 16 * 1024 * 1024
+SEQUENCER_DOWNLOAD_ROOT = Path(
+    os.environ.get(
+        "SEQUENCER_DOWNLOAD_ROOT",
+        str(Path.home() / "Downloads" / "Sequencer"),
+    )
+).resolve()
 try:
     GM_PROGRAM_NAMES = json.loads((ROOT / "scripts" / "gm-instruments.json").read_text(encoding="utf-8")).get("programs", [])
 except (OSError, ValueError, json.JSONDecodeError):
@@ -1798,6 +1804,41 @@ def open_midi_pool_folder() -> dict:
     return {"ok": True, "root": str(root)}
 
 
+def ensure_sequencer_download_root() -> Path:
+    SEQUENCER_DOWNLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    return SEQUENCER_DOWNLOAD_ROOT
+
+
+def save_midi_download(payload: dict) -> dict:
+    filename = safe_midi_pool_name(str(payload.get("filename") or "track.mid"))
+    encoded = payload.get("data")
+    if not isinstance(encoded, str) or not encoded:
+        raise ValueError("Missing base64 MIDI data")
+    try:
+        data = base64.b64decode(encoded, validate=True)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid base64 MIDI data") from exc
+    if not data or len(data) > MIDI_POOL_MAX_FILE:
+        raise ValueError("MIDI file is empty or too large")
+    if not data.startswith(b"MThd"):
+        raise ValueError("Only Standard MIDI files can be saved here")
+
+    root = ensure_sequencer_download_root()
+    path = (root / filename).resolve()
+    if path.parent != root:
+        raise ValueError("Invalid download filename")
+
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_bytes(data)
+    tmp.replace(path)
+    return {
+        "ok": True,
+        "filename": path.name,
+        "path": str(path),
+        "root": str(root),
+    }
+
+
 class Handler(SimpleHTTPRequestHandler):
     server_version = "SequencerLocalBridge/1.0"
 
@@ -1934,6 +1975,14 @@ class Handler(SimpleHTTPRequestHandler):
             try:
                 self._send_json(200, open_midi_pool_folder())
             except (OSError, subprocess.SubprocessError) as exc:
+                self._send_json(409, {"ok": False, "error": str(exc)})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/midi-download/save":
+            try:
+                self._send_json(200, save_midi_download(self._read_json()))
+            except (ValueError, OSError) as exc:
                 self._send_json(409, {"ok": False, "error": str(exc)})
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})
