@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-24 — Grid-attached notes follow Swing live
+
+### Fixed
+- Moving the Swing slider now moves notes that are already exactly attached to the current straight/swung quantize grid together with the shifted grid lines.
+- Free/humanized notes between grid lines are deliberately left untouched.
+- Moving Swing back toward 0% remaps the same grid-attached notes back toward their straight positions, so the operation does not accumulate timing offsets.
+- Playback scheduling is rebuilt when the slider gesture finishes; MIDI export continues to use the stored ticks literally.
+
 ## 2026-09-24 — Swing becomes an editable quantize grid
 
 ### Changed
