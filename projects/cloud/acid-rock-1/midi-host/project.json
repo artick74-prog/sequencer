@@ -21670,7 +21670,8 @@
           "velocity": 86
         }
       ],
-      "midiControls": []
+      "midiControls": [],
+      "drumListen": "xr20"
     }
   ]
 }
