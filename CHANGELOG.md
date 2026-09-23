@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-24 — Clearer Piano Roll note ends
+
+### Changed
+- Piano Roll notes now use slightly more rounded corners so the start/end of each note is easier to read at a glance.
+- The right edge gets a subtle inner highlight, making long note durations and note-on-note overlaps easier to spot.
+- The resize handle and selected-note overlay follow the same rounded shape.
+
 ## 2026-09-24 — Shift fine-drag for Swing
 
 ### Changed
