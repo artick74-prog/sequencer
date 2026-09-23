@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-24 — Larger Swing control and 1% wheel steps
+
+### Changed
+- Made the **Swing Grid** label and percentage readout larger in the transport.
+- Hovering the Swing slider and turning the mouse wheel now adjusts Swing in exact **1%** steps.
+- Wheel fine-tuning uses the same live swing-grid remapping as dragging the slider and commits playback timing after the wheel gesture settles.
+
 ## 2026-09-24 — Grid-attached notes follow Swing live
 
 ### Fixed
