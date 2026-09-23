@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-24 — Marker row seeks the clicked bar
+
+### Fixed
+- Обычный клик по marker row или по подписи marker flag теперь ставит playhead на реально выбранный такт, а не притягивает его к началу секции. Двойной клик и ПКМ по флажку по-прежнему открывают редактор маркера.
+
+
 ## 2026-09-24 — Marker flags stay locked to bars while zooming
 
 ### Fixed
