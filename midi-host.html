@@ -2791,10 +2791,11 @@ body.timeline-ruler-zooming {
     <label class="field">BPM
       <input type="number" id="tempo" min="40" max="240" value="120" step="1">
     </label>
-    <label class="field performance-field" title="16th-note swing, same 0–50% range as Chiptune Sequencer">Swing
-      <input type="range" id="swing" min="0" max="50" value="0" step="1">
+    <label class="field performance-field" title="Swing quantize grid · 0% = straight, 100% = 2:1 triplet feel. Moving Swing changes the visible Piano Roll grid; Apply Swing writes that timing into note ticks.">Swing Grid
+      <input type="range" id="swing" min="0" max="100" value="0" step="1">
       <span class="performance-value" id="swingValue">0%</span>
     </label>
+    <button class="btn" id="btnApplySwing" type="button" title="Quantize selected Piano Roll notes to the current grid + Swing. If nothing is selected, applies to all project notes. Safe to press again: notes already on the swung grid do not move further.">Apply Swing</button>
     <span class="transport-transpose" title="Master semitone transpose. Drums / percussion are never transposed.">
       <span class="transport-transpose-label">Transpose</span>
       <button class="pitch-step-btn" id="masterTransposeDown" type="button" title="Master transpose −1 semitone">−</button>
@@ -4310,11 +4311,10 @@ body.timeline-ruler-zooming {
       });
       const ch = ((track.channel || 1) - 1) & 0x0f;
       for (const n of track.notes || []) {
-        const swingOffset = projectSwingOffsetTicks(project, n.tick, ppq);
-        const startTick = Math.max(0, Math.round(n.tick + swingOffset));
+        const startTick = Math.max(0, Math.round(n.tick));
         const endTick = Math.max(
           startTick + 1,
-          Math.round(td3SlideEndTick(track, n, ppq) + swingOffset)
+          Math.round(td3SlideEndTick(track, n, ppq))
         );
         const pitch = projectPlaybackNote(project, track, n.note);
         events.push({
@@ -4373,11 +4373,10 @@ body.timeline-ruler-zooming {
 
     const ch = ((track.channel || 1) - 1) & 0x0f;
     for (const note of track.notes || []) {
-      const swingOffset = projectSwingOffsetTicks(project, note.tick, ppq);
-      const startTick = Math.max(0, Math.round(note.tick + swingOffset));
+      const startTick = Math.max(0, Math.round(note.tick));
       const endTick = Math.max(
         startTick + 1,
-        Math.round(td3SlideEndTick(track, note, ppq) + swingOffset)
+        Math.round(td3SlideEndTick(track, note, ppq))
       );
       const pitch = projectPlaybackNote(project, track, note.note);
       events.push({
@@ -6782,9 +6781,8 @@ body.timeline-ruler-zooming {
     const ppq = state.project.ppq || 480;
     return rawNotes.map((note) => {
       const local = note.tick - startTick;
-      const swing = projectSwingOffsetTicks(state.project, local, ppq);
       return {
-        tick: Math.max(0, Math.round(local + swing)),
+        tick: Math.max(0, Math.round(local)),
         duration: Math.max(1, note.duration),
         note: projectPlaybackNote(state.project, targetTrack, note.note),
         velocity: note.velocity,
@@ -7439,7 +7437,7 @@ body.timeline-ruler-zooming {
       project: {
         name: projectName,
         tempo,
-        swing: Math.max(0, Math.min(50, Number(state.project.swing) || 0)),
+        swing: Math.max(0, Math.min(100, Number(state.project.swing) || 0)),
         masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(state.project.masterTranspose) || 0))),
         cloudProject: state.project.cloudProject ? {...state.project.cloudProject} : null,
         drumKitProfiles: JSON.parse(JSON.stringify(state.project.drumKitProfiles || [])),
@@ -7542,7 +7540,7 @@ body.timeline-ruler-zooming {
     if (saved.project.name) project.name = saved.project.name;
     if (Number.isFinite(Number(saved.project.tempo))) project.tempo = Number(saved.project.tempo);
     if (Number.isFinite(Number(saved.project.swing))) {
-      project.swing = Math.max(0, Math.min(50, Number(saved.project.swing)));
+      project.swing = Math.max(0, Math.min(100, Number(saved.project.swing)));
     }
     if (Number.isFinite(Number(saved.project.masterTranspose))) {
       project.masterTranspose = Math.max(-36, Math.min(36, Math.round(Number(saved.project.masterTranspose))));
@@ -8660,18 +8658,25 @@ body.timeline-ruler-zooming {
     return Math.max(0, Math.min(127, Math.round(raw + master + octaves * 12)));
   }
 
-  function projectSwingOffsetTicks(project, noteStartTick, ppq = project?.ppq || 480) {
-    const swing = Math.max(0, Math.min(50, Number(project?.swing) || 0));
-    if (!swing) return 0;
-    const stepTicks = Math.max(1, ppq / 4); // 1/16 note, matching Chiptune Sequencer
-    const nearestStep = Math.round(Number(noteStartTick || 0) / stepTicks);
-    if ((nearestStep & 1) === 0) return 0;
-    return (swing / 100) * stepTicks * 0.5;
+  function projectSwingPercent(project = state.project) {
+    return Math.max(0, Math.min(100, Number(project?.swing) || 0));
+  }
+
+  // DAW-style swing belongs to the quantize grid, not to playback.
+  // For a straight grid step S, 100% moves every second line by S/3:
+  // pair spacing becomes 4S/3 then 2S/3, i.e. the familiar 2:1 triplet feel.
+  // Note ticks themselves are the source of truth for playback and MIDI export.
+  function swingGridTickForIndex(index, stepTicks, swingPercent = 0, triplet = false) {
+    const i = Math.round(Number(index) || 0);
+    const step = Math.max(1, Number(stepTicks) || 1);
+    if (triplet || (i & 1) === 0) return Math.round(i * step);
+    const swing = Math.max(0, Math.min(100, Number(swingPercent) || 0));
+    return Math.round(i * step + (swing / 100) * step / 3);
   }
 
   function updatePerformanceControlsUi() {
     const project = state.project;
-    const swing = Math.max(0, Math.min(50, Number(project?.swing) || 0));
+    const swing = Math.max(0, Math.min(100, Number(project?.swing) || 0));
     const transpose = Math.max(-36, Math.min(36, Math.round(Number(project?.masterTranspose) || 0)));
     const swingEl = document.getElementById("swing");
     const swingValue = document.getElementById("swingValue");
@@ -8744,13 +8749,12 @@ body.timeline-ruler-zooming {
         const noteEnd = td3SlideEndTick(track, n, project.ppq || 480);
         if (range && (noteStart < range.start || noteStart >= range.end)) continue;
         const offTick = range ? Math.min(noteEnd, range.end) : noteEnd;
-        const swingOffset = projectSwingOffsetTicks(project, noteStart, project.ppq || 480);
         const playbackStart = range
-          ? Math.min(range.end - 1, noteStart + swingOffset)
-          : noteStart + swingOffset;
+          ? Math.min(range.end - 1, noteStart)
+          : noteStart;
         const playbackEnd = range
-          ? Math.min(range.end, offTick + swingOffset)
-          : offTick + swingOffset;
+          ? Math.min(range.end, offTick)
+          : offTick;
         const playbackNote = projectPlaybackNote(project, track, n.note);
         const sourceDrumNote =
           trackIsPercussion(track) && n.drumSourceNote != null
@@ -9335,7 +9339,7 @@ body.timeline-ruler-zooming {
       name: data.name || fallbackName || "untitled",
       ppq: data.ppq || 480,
       tempo: data.tempo || 120,
-      swing: Math.max(0, Math.min(50, Number(data.swing) || 0)),
+      swing: Math.max(0, Math.min(100, Number(data.swing) || 0)),
       masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(data.masterTranspose) || 0))),
       lengthTicks: data.lengthTicks || 0,
       minimumLengthTicks: Math.max(0, Number(data.minimumLengthTicks) || 0),
@@ -9846,7 +9850,7 @@ body.timeline-ruler-zooming {
       version: 2,
       name: project.name,
       tempo: project.tempo,
-      swing: Math.max(0, Math.min(50, Number(project.swing) || 0)),
+      swing: Math.max(0, Math.min(100, Number(project.swing) || 0)),
       masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(project.masterTranspose) || 0))),
       ppq,
       totalBars,
@@ -16340,7 +16344,7 @@ body.timeline-ruler-zooming {
       name: p.name,
       ppq: p.ppq,
       tempo: p.tempo,
-      swing: Math.max(0, Math.min(50, Number(p.swing) || 0)),
+      swing: Math.max(0, Math.min(100, Number(p.swing) || 0)),
       masterTranspose: Math.max(-36, Math.min(36, Math.round(Number(p.masterTranspose) || 0))),
       lengthTicks: p.lengthTicks,
       minimumLengthTicks: Math.max(0, Number(p.minimumLengthTicks) || 0),
@@ -17266,7 +17270,7 @@ body.timeline-ruler-zooming {
 
   document.getElementById("swing")?.addEventListener("input", (e) => {
     if (!state.project) return;
-    state.project.swing = Math.max(0, Math.min(50, Number(e.target.value) || 0));
+    state.project.swing = Math.max(0, Math.min(100, Number(e.target.value) || 0));
     updatePerformanceControlsUi();
     markHostProjectDirty();
     scheduleHostAutosave();
