@@ -408,6 +408,8 @@ Playback в Style Library использует короткий lookahead schedu
 | **3** | XR20 percussion / 1-Shot (железо) |
 | **4–9, 11–16** | GM-скетч (по одному инструменту на канал) |
 
+В MIDI Host **канал является текущим playback destination**. Если GM-партию временно переключить на **ch 1 / 2 / 3 / 10**, аппаратный route имеет приоритет над её GM-именем: та же MIDI-партия играет соответственно XR20 Synth/Bass, TD-3, XR20 1-Shot или XR20 Drums. Возврат на канал из GM-пула снова включает SoundFont и восстанавливает GM program из имени дорожки.
+
 Новый GM-трек: возьми **первый свободный** канал из `4–9, 11–16` (см. `nextFreeGmChannel` в `midi-host.html`).
 
 ### Как работать с Acid
@@ -454,7 +456,7 @@ Playback в Style Library использует короткий lookahead schedu
 
 - **Export MIDI** — отдельная Cubase-дорожка на каждый трек; имя `56 Trumpet` сохраняется; маркеры в conductor.
 - На каждой дорожке есть кнопка **MIDI**: экспортирует только эту дорожку как **SMF Format 0** с одним `MTrk`; сохраняются tempo, 4/4, markers, исходный MIDI channel, note/velocity/duration. Это удобно для быстрой проверки/редактирования одной партии в Fender Studio/Cubase.
-- **Browser audio (SF2)** в `midi-host.html`: при **Play** загружается GM SoundFont (Yamaha XG с CDN, или свой `.sf2` через **Load SF2**). Program берётся из **номера в имени** дорожки (`56 Trumpet` → preset 56). GM-треки играют только в SF2; железо (ch 1/2/10) — опционально через **Hardware MIDI Out**.
+- **Browser audio (SF2)** в `midi-host.html`: при **Play** загружается GM SoundFont (Yamaha XG с CDN, или свой `.sf2` через **Load SF2**). Program берётся из **номера в имени** дорожки (`56 Trumpet` → preset 56). На GM-каналах 4–9 и 11–16 дорожка играет через SF2; временный перевод этой же партии на аппаратный ch 1/2/3/10 сразу переключает playback на соответствующее железо. При возврате на GM-канал исходный GM program сохраняется.
 - Финальные тембры — Kontakt / другие VST в Cubase; MIDI-дорожки те же.
 
 ### Типичные запросы
