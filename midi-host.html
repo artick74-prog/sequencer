@@ -3441,6 +3441,9 @@ body.timeline-ruler-zooming {
   function resolveGmDrumToXr20(track, gmNote, project = state.project) {
     const profile = currentXr20KitProfile(track, project);
     const source = Number(gmNote);
+
+    // User Kit assignments have priority: they can deliberately remap a GM
+    // source note to any XR20 pad.
     for (const hardware of XR20_DRUM_HARDWARE_MAP) {
       const assignment = xr20KitAssignment(profile, hardware.pad);
       if (Number(assignment.gmNote) === source) {
@@ -3452,6 +3455,21 @@ body.timeline-ruler-zooming {
         };
       }
     }
+
+    // The XR20's default drum note numbers intentionally overlap the common GM
+    // notes (Kick 36, Snare 38, Closed Hat 42, etc.). When a Kit Profile has no
+    // explicit assignment, use that exact hardware note instead of marking the
+    // hit unresolved and silently suppressing it on MIDI Out.
+    const direct = xr20HardwarePadByMidi(source);
+    if (direct) {
+      return {
+        pad: direct.pad,
+        midiNote: direct.midiNote,
+        gmNote: source,
+        label: gmDrumName(source),
+      };
+    }
+
     return null;
   }
 
