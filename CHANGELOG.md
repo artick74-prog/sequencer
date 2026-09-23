@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-23 — XR20 direct drum-note fallback
+
+### Fixed
+- Library drum loops on XR20 tracks no longer go silent when the Kit Profile has no explicit GM assignment for notes that already match XR20 hardware note numbers.
+- Explicit Kit Profile mappings still win; otherwise common direct notes such as 36/38/42 are routed straight to the matching XR20 pads.
+- Acid Rock 1 now persists CH10 as `xr20-drums` with `drumMap=xr20`, `drumListen=xr20`, and the default XR20 kit profile in both current and cloud project snapshots.
+
+
+
 ## 2026-09-23 — Full-track Piano Roll and Acid Rock drum cleanup
 
 ### Changed

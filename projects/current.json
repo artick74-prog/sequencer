@@ -21529,7 +21529,10 @@
           "note": 42,
           "velocity": 86
         }
-      ]
+      ],
+      "drumMap": "xr20",
+      "drumKitProfileId": "xr20-kit-1",
+      "drumListen": "xr20"
     }
   ]
 }
