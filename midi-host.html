@@ -2175,7 +2175,7 @@ body.timeline-ruler-zooming {
 }
 .tracks { display: flex; flex-direction: column; gap: 0; }
 .track {
-  --track-lane-h: 110px;
+  --track-lane-h: 138px;
   display: flex;
   align-items: stretch;
   min-height: var(--track-lane-h);
@@ -2305,17 +2305,28 @@ body.timeline-ruler-zooming {
   margin: 4px;
   background: var(--border);
 }
-.track-actions-row {
+.track-actions-row,
+.track-command-row {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 3px;
   min-width: 0;
   white-space: nowrap;
 }
-.track-actions-row > .btn {
-  padding: 4px 5px;
-  font-size: 10px;
+.track-actions-row {
+  gap: 6px;
+}
+.track-command-row {
+  gap: 5px;
+}
+.track-command-row > .btn {
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 12px;
+  line-height: 18px;
+}
+.track-command-row > .btn[data-preview] {
+  flex: 1 1 auto;
 }
 .track-mix {
   display: inline-flex;
@@ -14662,6 +14673,8 @@ body.timeline-ruler-zooming {
               <span class="performance-value">${trackIsPercussion(track) ? "dr" : ((track.transposeOctaves || 0) > 0 ? "+" : "") + (track.transposeOctaves || 0)}</span>
               <button class="pitch-step-btn" type="button" data-oct-up="${track.id}" ${trackIsPercussion(track) ? "disabled" : ""} title="Octave up">+</button>
             </span>
+          </div>
+          <div class="track-command-row">
             <button class="btn" type="button" data-edit-track="${track.id}" title="Edit project-authored notes on this track in Piano Roll / Drum Roll">Edit</button>
             <button class="btn" type="button" data-preview="${track.id}">Preview</button>
             <button class="btn" type="button" data-pool-track="${track.id}" title="Write this track as a .mid file into the local MIDI Pool">⇄</button>
