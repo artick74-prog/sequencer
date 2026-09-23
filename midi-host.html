@@ -12081,68 +12081,140 @@ body.timeline-ruler-zooming {
     };
   }
 
+  function pianoRollGridBackgroundGeometry(ctx, rollW) {
+    const cssW = Math.max(1, Number(rollW) || 1);
+    const startTick = Number(ctx?.startTick) || 0;
+    const endTick = Math.max(startTick + 1, Number(ctx?.endTick) || (startTick + 1));
+    const spanTicks = Math.max(1, endTick - startTick);
+    const ppq = Math.max(1, Number(ctx?.ppq) || 480);
+    const tpb = ticksPerBar(ppq);
+    const snapTicks = Math.max(1, pianoRollSnapTicks(ppq));
+    const pxPerTick = cssW / spanTicks;
+    const beatPx = Math.max(2, ppq * pxPerTick);
+    const barPx = Math.max(2, tpb * pxPerTick);
+    const firstBeatTick = Math.ceil(startTick / ppq) * ppq;
+    const firstBarTick = Math.ceil(startTick / tpb) * tpb;
+    const beatOffset = (firstBeatTick - startTick) * pxPerTick;
+    const barOffset = (firstBarTick - startTick) * pxPerTick;
+
+    const swing = pianoRollSwingPercent();
+    const swung = swing > 0 && !pianoRollSnapIsTriplet();
+
+    if (!swung) {
+      const snapPx = Math.max(2, snapTicks * pxPerTick);
+      const firstSnapTick = Math.ceil(startTick / snapTicks) * snapTicks;
+      const snapOffset = (firstSnapTick - startTick) * pxPerTick;
+      return {
+        swung: false,
+        barPx,
+        beatPx,
+        barOffset,
+        beatOffset,
+        snapPx,
+        snapOffset,
+      };
+    }
+
+    const pairTicks = snapTicks * 2;
+    const pairPx = Math.max(2, pairTicks * pxPerTick);
+    const oddOriginTick = pianoRollGridTickAtIndex(1, ppq);
+    const phasePx = (originTick) => {
+      const delta = ((originTick - startTick) % pairTicks + pairTicks) % pairTicks;
+      return delta * pxPerTick;
+    };
+
+    return {
+      swung: true,
+      barPx,
+      beatPx,
+      barOffset,
+      beatOffset,
+      pairPx,
+      evenOffset: phasePx(0),
+      oddOffset: phasePx(oddOriginTick),
+    };
+  }
+
+  function applyPianoRollGridBackground(grid, ruler, ctx, rollW) {
+    if (!grid || !ruler || !ctx) return;
+    const geometry = pianoRollGridBackgroundGeometry(ctx, rollW);
+    const barGrid = "linear-gradient(90deg, rgba(135,157,188,.62) 0 2px, transparent 2px)";
+    const beatGrid = "linear-gradient(90deg, rgba(111,130,155,.44) 0 1px, transparent 1px)";
+    const snapGrid = "linear-gradient(90deg, rgba(90,104,123,.24) 0 1px, transparent 1px)";
+    const barRuler = "linear-gradient(90deg, rgba(180,202,232,.52) 0 2px, transparent 2px)";
+    const beatRuler = "linear-gradient(90deg, rgba(153,171,196,.38) 0 1px, transparent 1px)";
+    const snapRuler = "linear-gradient(90deg, rgba(120,140,168,.22) 0 1px, transparent 1px)";
+
+    if (geometry.swung) {
+      // A swung binary grid has two alternating spacings. Two background tiles,
+      // both repeating every pair of grid steps, draw the even and delayed odd lines.
+      grid.style.backgroundImage = [barGrid, beatGrid, snapGrid, snapGrid].join(",");
+      grid.style.backgroundSize = [
+        geometry.barPx + "px 100%",
+        geometry.beatPx + "px 100%",
+        geometry.pairPx + "px 100%",
+        geometry.pairPx + "px 100%"
+      ].join(",");
+      grid.style.backgroundPosition = [
+        geometry.barOffset + "px 0",
+        geometry.beatOffset + "px 0",
+        geometry.evenOffset + "px 0",
+        geometry.oddOffset + "px 0"
+      ].join(",");
+
+      ruler.style.backgroundImage = [barRuler, beatRuler, snapRuler, snapRuler].join(",");
+      ruler.style.backgroundSize = [
+        geometry.barPx + "px 100%",
+        geometry.beatPx + "px 100%",
+        geometry.pairPx + "px 100%",
+        geometry.pairPx + "px 100%"
+      ].join(",");
+      ruler.style.backgroundPosition = [
+        geometry.barOffset + "px 0",
+        geometry.beatOffset + "px 0",
+        geometry.evenOffset + "px 0",
+        geometry.oddOffset + "px 0"
+      ].join(",");
+    } else {
+      grid.style.backgroundImage = [barGrid, beatGrid, snapGrid].join(",");
+      grid.style.backgroundSize = [
+        geometry.barPx + "px 100%",
+        geometry.beatPx + "px 100%",
+        geometry.snapPx + "px 100%"
+      ].join(",");
+      grid.style.backgroundPosition = [
+        geometry.barOffset + "px 0",
+        geometry.beatOffset + "px 0",
+        geometry.snapOffset + "px 0"
+      ].join(",");
+
+      ruler.style.backgroundImage = [barRuler, beatRuler, snapRuler].join(",");
+      ruler.style.backgroundSize = [
+        geometry.barPx + "px 100%",
+        geometry.beatPx + "px 100%",
+        geometry.snapPx + "px 100%"
+      ].join(",");
+      ruler.style.backgroundPosition = [
+        geometry.barOffset + "px 0",
+        geometry.beatOffset + "px 0",
+        geometry.snapOffset + "px 0"
+      ].join(",");
+    }
+
+    grid.style.backgroundRepeat = "repeat";
+    ruler.style.backgroundRepeat = "repeat";
+  }
+
   function drawPianoRollGridCanvases(grid, ruler, ctx, rollW) {
     if (!grid || !ruler || !ctx) return;
 
-    // The Piano Roll can be hundreds of thousands of CSS pixels wide at deep zoom.
-    // Stretching an 8K canvas across that distance turns 1px grid lines into soft,
-    // wide bands. Use native CSS background tiles instead: the browser keeps the
-    // separators pixel-sharp at any zoom level without creating thousands of DOM nodes.
+    // Keep the grid in CSS rather than a stretched canvas so lines remain sharp
+    // at extreme zoom. Swing is represented by the real shifted quantize lines.
     const gridCanvas = grid.querySelector(".piano-roll-grid-canvas");
     const rulerCanvas = ruler.querySelector(".piano-roll-ruler-canvas");
     if (gridCanvas) gridCanvas.style.display = "none";
     if (rulerCanvas) rulerCanvas.style.display = "none";
-
-    const cssW = Math.max(1, Number(rollW) || 1);
-    const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
-    const ppq = Math.max(1, ctx.ppq || 480);
-    const tpb = ticksPerBar(ppq);
-    const snapTicks = Math.max(1, pianoRollSnapTicks(ppq));
-
-    const pxPerTick = cssW / spanTicks;
-    const snapPx = Math.max(2, snapTicks * pxPerTick);
-    const beatPx = Math.max(2, ppq * pxPerTick);
-    const barPx = Math.max(2, tpb * pxPerTick);
-
-    const firstSnapTick = Math.ceil(ctx.startTick / snapTicks) * snapTicks;
-    const firstBeatTick = Math.ceil(ctx.startTick / ppq) * ppq;
-    const firstBarTick = Math.ceil(ctx.startTick / tpb) * tpb;
-
-    const snapOffset = ((firstSnapTick - ctx.startTick) * pxPerTick);
-    const beatOffset = ((firstBeatTick - ctx.startTick) * pxPerTick);
-    const barOffset = ((firstBarTick - ctx.startTick) * pxPerTick);
-
-    grid.style.backgroundImage = [
-      "linear-gradient(90deg, rgba(135,157,188,.62) 0 2px, transparent 2px)",
-      "linear-gradient(90deg, rgba(111,130,155,.44) 0 1px, transparent 1px)",
-      "linear-gradient(90deg, rgba(90,104,123,.24) 0 1px, transparent 1px)"
-    ].join(",");
-    grid.style.backgroundSize = [
-      barPx + "px 100%",
-      beatPx + "px 100%",
-      snapPx + "px 100%"
-    ].join(",");
-    grid.style.backgroundPosition = [
-      barOffset + "px 0",
-      beatOffset + "px 0",
-      snapOffset + "px 0"
-    ].join(",");
-    grid.style.backgroundRepeat = "repeat";
-
-    // The ruler gets crisp full-height divisions as well. Bar labels remain DOM text.
-    ruler.style.backgroundImage = [
-      "linear-gradient(90deg, rgba(180,202,232,.52) 0 2px, transparent 2px)",
-      "linear-gradient(90deg, rgba(153,171,196,.38) 0 1px, transparent 1px)"
-    ].join(",");
-    ruler.style.backgroundSize = [
-      barPx + "px 100%",
-      beatPx + "px 100%"
-    ].join(",");
-    ruler.style.backgroundPosition = [
-      barOffset + "px 0",
-      beatOffset + "px 0"
-    ].join(",");
-    ruler.style.backgroundRepeat = "repeat";
+    applyPianoRollGridBackground(grid, ruler, ctx, rollW);
   }
 
   function createPianoRollNoteVector(ctx, displayRows, rowH, rollH, rollW, color) {
@@ -12295,28 +12367,14 @@ body.timeline-ruler-zooming {
     grid.dataset.rollWidth = String(rollW);
     if (content) content.style.width = rollW + "px";
 
-    // Update only the tiled grid backgrounds. Notes, labels and parameter bars
-    // are percentage-positioned and follow the parent width automatically.
-    const snapTicks = Math.max(1, pianoRollSnapTicks(ppq));
-    const pxPerTick = rollW / spanTicks;
-    const snapPx = Math.max(2, snapTicks * pxPerTick);
-    const beatPx = Math.max(2, ppq * pxPerTick);
-    const barPx = Math.max(2, tpb * pxPerTick);
-    const firstSnapTick = Math.ceil(startTick / snapTicks) * snapTicks;
-    const firstBeatTick = Math.ceil(startTick / ppq) * ppq;
-    const firstBarTick = Math.ceil(startTick / tpb) * tpb;
-    const snapOffset = (firstSnapTick - startTick) * pxPerTick;
-    const beatOffset = (firstBeatTick - startTick) * pxPerTick;
-    const barOffset = (firstBarTick - startTick) * pxPerTick;
-
-    grid.style.backgroundSize =
-      barPx + "px 100%," + beatPx + "px 100%," + snapPx + "px 100%";
-    grid.style.backgroundPosition =
-      barOffset + "px 0," + beatOffset + "px 0," + snapOffset + "px 0";
-    ruler.style.backgroundSize =
-      barPx + "px 100%," + beatPx + "px 100%";
-    ruler.style.backgroundPosition =
-      barOffset + "px 0," + beatOffset + "px 0";
+    // Update the very same grid geometry used by the full render. This keeps
+    // swing lines, notes and snap positions locked together while zooming.
+    applyPianoRollGridBackground(
+      grid,
+      ruler,
+      { startTick, endTick, ppq },
+      rollW
+    );
 
     const meta = document.getElementById("pianoRollMeta");
     if (meta) {
