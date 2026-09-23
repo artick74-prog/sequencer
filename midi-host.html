@@ -1944,10 +1944,12 @@ body.piano-roll-parameter-resizing .piano-roll-parameter-vector {
   position: absolute;
   z-index: 2;
   min-width: 3px;
-  border: 1px solid rgba(255,255,255,.22);
-  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 4px;
   background: var(--accent-dim);
-  box-shadow: inset 0 0 0 1px rgba(61,220,151,.08);
+  box-shadow:
+    inset -1px 0 0 rgba(255,255,255,.18),
+    inset 0 0 0 1px rgba(61,220,151,.08);
   color: #e8fff6;
   overflow: hidden;
   white-space: nowrap;
@@ -1974,6 +1976,7 @@ body.piano-roll-parameter-resizing .piano-roll-parameter-vector {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  border-radius: inherit;
   background: rgba(255,255,255,.88);
   mix-blend-mode: difference;
 }
@@ -1991,6 +1994,7 @@ body.piano-roll-parameter-resizing .piano-roll-parameter-vector {
   width: 6px;
   z-index: 8;
   border-left: 1px solid rgba(255,255,255,.35);
+  border-radius: 0 4px 4px 0;
   background: rgba(255,255,255,.08);
   cursor: ew-resize;
 }
