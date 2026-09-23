@@ -17567,7 +17567,7 @@ body.timeline-ruler-zooming {
     if (!state.project) return;
     const previousSwing = projectSwingPercent(state.project);
     const nextSwing = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-    const moved = remapProjectNotesForSwingChange(previousSwing, nextSwing);
+    remapProjectNotesForSwingChange(previousSwing, nextSwing);
     state.project.swing = nextSwing;
     updatePerformanceControlsUi();
 
@@ -17577,8 +17577,7 @@ body.timeline-ruler-zooming {
       refreshPianoRollSwingGrid();
     }
 
-    if (moved) markHostProjectDirty();
-    else markHostProjectDirty();
+    markHostProjectDirty();
     scheduleHostAutosave();
   });
   document.getElementById("swing")?.addEventListener("change", () => {
@@ -17595,8 +17594,11 @@ body.timeline-ruler-zooming {
     }
 
     setStatus(
-      "Swing Grid: " + swing +
-      "% · grid-attached notes follow live · free-timing notes remain untouched · MIDI export uses stored ticks exactly",
+      pianoRollSnapIsTriplet()
+        ? "Swing Grid: " + swing + "% · current " + pianoRollSnapLabel() +
+          " grid is triplet-based, so Swing does not shift its lines or notes"
+        : "Swing Grid: " + swing +
+          "% · grid-attached notes follow live · free-timing notes remain untouched · MIDI export uses stored ticks exactly",
       "ok"
     );
   });
