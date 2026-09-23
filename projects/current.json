@@ -118,7 +118,10 @@
       "repeatCount": 1,
       "sourcePpq": 480,
       "noteCount": 207,
-      "insertedAt": "2026-09-20T01:43:21.230Z"
+      "insertedAt": "2026-09-20T01:43:21.230Z",
+      "drumSourceMap": "gm",
+      "drumTargetMap": "xr20",
+      "unresolvedDrumNotes": 0
     },
     {
       "id": "fb0ec8299b4fce00df98",
@@ -15126,1449 +15129,1863 @@
           "duration": 84,
           "note": 36,
           "velocity": 84,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 0,
           "duration": 85,
           "note": 42,
           "velocity": 119,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 240,
           "duration": 85,
           "note": 42,
           "velocity": 69,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 480,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 480,
           "duration": 85,
           "note": 42,
           "velocity": 107,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 720,
           "duration": 84,
           "note": 42,
           "velocity": 74,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 960,
           "duration": 85,
           "note": 42,
           "velocity": 116,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 1200,
           "duration": 84,
           "note": 36,
           "velocity": 68,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 1200,
           "duration": 86,
           "note": 42,
           "velocity": 80,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 1440,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 1440,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 1680,
           "duration": 85,
           "note": 42,
           "velocity": 86,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 1920,
           "duration": 1,
           "note": 36,
           "velocity": 65,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 1920,
           "duration": 85,
           "note": 42,
           "velocity": 95,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 2160,
           "duration": 85,
           "note": 42,
           "velocity": 75,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 2400,
           "duration": 84,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 2400,
           "duration": 85,
           "note": 42,
           "velocity": 87,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 2640,
           "duration": 85,
           "note": 42,
           "velocity": 87,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 2880,
           "duration": 85,
           "note": 42,
           "velocity": 102,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 3120,
           "duration": 85,
           "note": 36,
           "velocity": 70,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 3120,
           "duration": 85,
           "note": 42,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 3360,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 3360,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 3600,
           "duration": 85,
           "note": 42,
           "velocity": 87,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 3720,
           "duration": 85,
           "note": 36,
           "velocity": 43,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 3840,
           "duration": 85,
           "note": 36,
           "velocity": 73,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 3840,
           "duration": 85,
           "note": 42,
           "velocity": 87,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 4080,
           "duration": 85,
           "note": 42,
           "velocity": 64,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 4320,
           "duration": 84,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 4320,
           "duration": 85,
           "note": 42,
           "velocity": 116,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 4560,
           "duration": 85,
           "note": 42,
           "velocity": 109,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 4800,
           "duration": 85,
           "note": 42,
           "velocity": 126,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 5040,
           "duration": 85,
           "note": 36,
           "velocity": 66,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 5040,
           "duration": 85,
           "note": 42,
           "velocity": 49,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 5280,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 5280,
           "duration": 85,
           "note": 42,
           "velocity": 124,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 5520,
           "duration": 85,
           "note": 42,
           "velocity": 83,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 5640,
           "duration": 85,
           "note": 36,
           "velocity": 46,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 5760,
           "duration": 85,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 5760,
           "duration": 86,
           "note": 42,
           "velocity": 76,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 6000,
           "duration": 85,
           "note": 42,
           "velocity": 57,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 6240,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 6240,
           "duration": 85,
           "note": 42,
           "velocity": 117,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 6480,
           "duration": 85,
           "note": 42,
           "velocity": 108,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 6720,
           "duration": 84,
           "note": 42,
           "velocity": 117,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 6960,
           "duration": 84,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 6960,
           "duration": 86,
           "note": 42,
           "velocity": 62,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 7200,
           "duration": 84,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 7200,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 7440,
           "duration": 84,
           "note": 42,
           "velocity": 98,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 7560,
           "duration": 85,
           "note": 36,
           "velocity": 42,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 7680,
           "duration": 85,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 7680,
           "duration": 86,
           "note": 42,
           "velocity": 104,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 7920,
           "duration": 85,
           "note": 42,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 8160,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 8160,
           "duration": 85,
           "note": 42,
           "velocity": 113,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 8400,
           "duration": 86,
           "note": 42,
           "velocity": 84,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 8640,
           "duration": 85,
           "note": 42,
           "velocity": 107,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 8880,
           "duration": 84,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 8880,
           "duration": 85,
           "note": 42,
           "velocity": 41,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 9120,
           "duration": 84,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 9120,
           "duration": 86,
           "note": 42,
           "velocity": 126,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 9360,
           "duration": 85,
           "note": 42,
           "velocity": 93,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 9480,
           "duration": 85,
           "note": 36,
           "velocity": 43,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 9600,
           "duration": 84,
           "note": 36,
           "velocity": 71,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 9600,
           "duration": 85,
           "note": 42,
           "velocity": 75,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 9840,
           "duration": 85,
           "note": 42,
           "velocity": 77,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 10080,
           "duration": 84,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 10080,
           "duration": 86,
           "note": 42,
           "velocity": 110,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 10320,
           "duration": 85,
           "note": 42,
           "velocity": 117,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 10560,
           "duration": 85,
           "note": 42,
           "velocity": 109,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 10800,
           "duration": 84,
           "note": 36,
           "velocity": 69,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 10800,
           "duration": 85,
           "note": 42,
           "velocity": 57,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 11040,
           "duration": 85,
           "note": 38,
           "velocity": 125,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 11040,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 11280,
           "duration": 85,
           "note": 42,
           "velocity": 93,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 11400,
           "duration": 84,
           "note": 36,
           "velocity": 45,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 11520,
           "duration": 85,
           "note": 36,
           "velocity": 70,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 11520,
           "duration": 85,
           "note": 42,
           "velocity": 74,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 11760,
           "duration": 85,
           "note": 42,
           "velocity": 85,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 12000,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 12000,
           "duration": 85,
           "note": 42,
           "velocity": 113,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 12240,
           "duration": 86,
           "note": 42,
           "velocity": 82,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 12480,
           "duration": 85,
           "note": 42,
           "velocity": 125,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 12720,
           "duration": 85,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 12720,
           "duration": 85,
           "note": 42,
           "velocity": 57,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 12960,
           "duration": 85,
           "note": 38,
           "velocity": 121,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 12960,
           "duration": 86,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 13200,
           "duration": 85,
           "note": 42,
           "velocity": 105,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 13320,
           "duration": 84,
           "note": 36,
           "velocity": 43,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 13440,
           "duration": 85,
           "note": 36,
           "velocity": 66,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 13440,
           "duration": 85,
           "note": 42,
           "velocity": 76,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 13680,
           "duration": 86,
           "note": 42,
           "velocity": 72,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 13920,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 13920,
           "duration": 85,
           "note": 42,
           "velocity": 124,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 14160,
           "duration": 85,
           "note": 42,
           "velocity": 82,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 14400,
           "duration": 85,
           "note": 42,
           "velocity": 119,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 14640,
           "duration": 85,
           "note": 36,
           "velocity": 69,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 14640,
           "duration": 85,
           "note": 42,
           "velocity": 61,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 14880,
           "duration": 85,
           "note": 38,
           "velocity": 125,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 14880,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 15120,
           "duration": 85,
           "note": 42,
           "velocity": 98,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 15240,
           "duration": 84,
           "note": 36,
           "velocity": 44,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 15360,
           "duration": 84,
           "note": 36,
           "velocity": 69,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 15360,
           "duration": 85,
           "note": 42,
           "velocity": 72,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 15600,
           "duration": 85,
           "note": 42,
           "velocity": 63,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 15840,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 15840,
           "duration": 85,
           "note": 42,
           "velocity": 125,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 16080,
           "duration": 85,
           "note": 42,
           "velocity": 111,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 16320,
           "duration": 86,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 16560,
           "duration": 85,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 16560,
           "duration": 85,
           "note": 42,
           "velocity": 53,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 16800,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 16800,
           "duration": 85,
           "note": 42,
           "velocity": 120,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 17040,
           "duration": 85,
           "note": 42,
           "velocity": 87,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 17160,
           "duration": 85,
           "note": 36,
           "velocity": 46,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 17280,
           "duration": 86,
           "note": 36,
           "velocity": 70,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 17280,
           "duration": 85,
           "note": 42,
           "velocity": 69,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 17520,
           "duration": 85,
           "note": 42,
           "velocity": 64,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 17760,
           "duration": 84,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 17760,
           "duration": 85,
           "note": 42,
           "velocity": 115,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 18000,
           "duration": 85,
           "note": 42,
           "velocity": 114,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 18240,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 18480,
           "duration": 85,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 18480,
           "duration": 86,
           "note": 42,
           "velocity": 75,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 18720,
           "duration": 86,
           "note": 38,
           "velocity": 124,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 18720,
           "duration": 85,
           "note": 42,
           "velocity": 123,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 18960,
           "duration": 85,
           "note": 42,
           "velocity": 95,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 19080,
           "duration": 85,
           "note": 36,
           "velocity": 44,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 19200,
           "duration": 85,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 19200,
           "duration": 85,
           "note": 42,
           "velocity": 89,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 19440,
           "duration": 85,
           "note": 42,
           "velocity": 78,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 19680,
           "duration": 84,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 19680,
           "duration": 85,
           "note": 42,
           "velocity": 116,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 19920,
           "duration": 85,
           "note": 42,
           "velocity": 118,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 20160,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 20400,
           "duration": 85,
           "note": 36,
           "velocity": 68,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 20400,
           "duration": 86,
           "note": 42,
           "velocity": 68,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 20640,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 20640,
           "duration": 86,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 20880,
           "duration": 85,
           "note": 42,
           "velocity": 98,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 21000,
           "duration": 85,
           "note": 36,
           "velocity": 45,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 21120,
           "duration": 84,
           "note": 36,
           "velocity": 74,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 21120,
           "duration": 85,
           "note": 42,
           "velocity": 99,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 21360,
           "duration": 85,
           "note": 42,
           "velocity": 81,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 21600,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 21600,
           "duration": 86,
           "note": 42,
           "velocity": 114,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 21840,
           "duration": 86,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 22080,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 22320,
           "duration": 85,
           "note": 36,
           "velocity": 65,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 22320,
           "duration": 85,
           "note": 42,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 22560,
           "duration": 84,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 22560,
           "duration": 85,
           "note": 42,
           "velocity": 120,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 22800,
           "duration": 84,
           "note": 42,
           "velocity": 112,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 22920,
           "duration": 85,
           "note": 36,
           "velocity": 46,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 23040,
           "duration": 85,
           "note": 36,
           "velocity": 71,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 23040,
           "duration": 85,
           "note": 42,
           "velocity": 83,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 23280,
           "duration": 86,
           "note": 42,
           "velocity": 96,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 23520,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 23520,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 23760,
           "duration": 86,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 24000,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 24240,
           "duration": 84,
           "note": 36,
           "velocity": 69,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 24240,
           "duration": 85,
           "note": 42,
           "velocity": 75,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 24480,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 24480,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 24720,
           "duration": 85,
           "note": 42,
           "velocity": 100,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 24840,
           "duration": 85,
           "note": 36,
           "velocity": 47,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 24960,
           "duration": 84,
           "note": 36,
           "velocity": 70,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 24960,
           "duration": 85,
           "note": 42,
           "velocity": 78,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 25200,
           "duration": 85,
           "note": 42,
           "velocity": 84,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 25440,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 25440,
           "duration": 85,
           "note": 42,
           "velocity": 122,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 25680,
           "duration": 85,
           "note": 42,
           "velocity": 117,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 25920,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 26160,
           "duration": 85,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 26160,
           "duration": 85,
           "note": 42,
           "velocity": 64,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 26400,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 26400,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 26640,
           "duration": 84,
           "note": 42,
           "velocity": 103,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 26760,
           "duration": 85,
           "note": 36,
           "velocity": 43,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 26880,
           "duration": 85,
           "note": 36,
           "velocity": 65,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 26880,
           "duration": 86,
           "note": 42,
           "velocity": 72,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 27120,
           "duration": 85,
           "note": 42,
           "velocity": 69,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 27360,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 27360,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 27600,
           "duration": 86,
           "note": 42,
           "velocity": 118,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 27840,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 28080,
           "duration": 85,
           "note": 36,
           "velocity": 69,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 28080,
           "duration": 85,
           "note": 42,
           "velocity": 61,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 28320,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 28320,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 28560,
           "duration": 86,
           "note": 42,
           "velocity": 93,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 28680,
           "duration": 85,
           "note": 36,
           "velocity": 45,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 28800,
           "duration": 86,
           "note": 36,
           "velocity": 68,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 28800,
           "duration": 85,
           "note": 42,
           "velocity": 98,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 29040,
           "duration": 85,
           "note": 42,
           "velocity": 71,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 29280,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 29280,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 29520,
           "duration": 86,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 29760,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 30000,
           "duration": 85,
           "note": 36,
           "velocity": 67,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 30000,
           "duration": 86,
           "note": 42,
           "velocity": 87,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 30240,
           "duration": 85,
           "note": 38,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 38,
+          "drumSourceName": "Acoustic Snare"
         },
         {
           "tick": 30240,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 30480,
           "duration": 85,
           "note": 42,
           "velocity": 127,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 42,
+          "drumSourceName": "Closed Hi-Hat"
         },
         {
           "tick": 30600,
           "duration": 85,
           "note": 36,
           "velocity": 46,
-          "clipId": "clip-mu95jvkd-xigyg7"
+          "clipId": "clip-mu95jvkd-xigyg7",
+          "drumSourceNote": 36,
+          "drumSourceName": "Bass Drum 1"
         },
         {
           "tick": 61440,
