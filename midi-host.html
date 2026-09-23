@@ -11978,7 +11978,18 @@ body.timeline-ruler-zooming {
     const snap = pianoRollEditStepTicks(ctx.ppq);
     const minTick = Math.min(...notes.map((note) => Number(note.tick) || 0));
     const maxEnd = Math.max(...notes.map((note) => (Number(note.tick) || 0) + Math.max(1, Number(note.duration) || 1)));
-    const span = Math.max(snap, Math.ceil((maxEnd - minTick) / snap) * snap);
+    let span;
+    if (state.pianoRollSnapEnabled) {
+      const cells = Math.max(1, Math.ceil((maxEnd - minTick) / Math.max(1, snap)));
+      const startIndex = pianoRollNearestGridIndex(minTick, ctx.ppq);
+      span = Math.max(
+        1,
+        pianoRollGridTickAtIndex(startIndex + cells, ctx.ppq) -
+        pianoRollGridTickAtIndex(startIndex, ctx.ppq)
+      );
+    } else {
+      span = Math.max(1, Math.ceil(maxEnd - minTick));
+    }
     const instanceId = hostClipInstanceId(
       ctx.clip,
       Math.max(0, (state.project.clips || []).indexOf(ctx.clip))
@@ -12610,10 +12621,9 @@ body.timeline-ruler-zooming {
     if (!ctx || !grid) return;
     const point = pianoRollGridPoint(event, grid, ctx);
     const gridStep = pianoRollSnapTicks(ctx.ppq);
-    const editStep = pianoRollEditStepTicks(ctx.ppq);
     const defaultDuration = Math.max(1, Math.min(gridStep, ctx.endTick - ctx.startTick));
     const latestStart = Math.max(ctx.startTick, ctx.endTick - defaultDuration);
-    let tick = Math.round(point.rawTick / editStep) * editStep;
+    let tick = pianoRollSnapTick(point.rawTick, ctx);
     tick = Math.max(ctx.startTick, Math.min(latestStart, tick));
     const duration = Math.max(1, Math.min(defaultDuration, ctx.endTick - tick));
     const instanceId = hostClipInstanceId(
@@ -12720,8 +12730,11 @@ body.timeline-ruler-zooming {
         const dx = clientX - originX;
         const dy = clientY - originY;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
-        const editStep = pianoRollEditStepTicks(ctx.ppq);
-        let deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
+        const rawAnchorTick = minTick + rawDeltaTicks;
+        const snappedAnchorTick = state.pianoRollSnapEnabled
+          ? pianoRollSnapTick(rawAnchorTick, ctx)
+          : Math.round(rawAnchorTick);
+        let deltaTicks = snappedAnchorTick - minTick;
         deltaTicks = Math.max(ctx.startTick - minTick, Math.min(ctx.endTick - maxEnd, deltaTicks));
         let deltaPitch = 0;
         let deltaRows = 0;
@@ -12850,6 +12863,8 @@ body.timeline-ruler-zooming {
       const maxDelta = Math.min(...origins.map(
         (item) => item.maxDuration - item.duration
       ));
+      const resizeAnchor = origins.find((item) => item.id === noteId) || origins[0];
+      const resizeAnchorEnd = resizeAnchor.tick + resizeAnchor.duration;
       const originX = event.clientX;
       let previewDeltaTicks = 0;
       let changed = false;
@@ -12862,8 +12877,13 @@ body.timeline-ruler-zooming {
         if (!resizeActive) return;
         const dx = clientX - originX;
         const rawDeltaTicks = (dx / Math.max(1, rollW)) * spanTicks;
-        const editStep = pianoRollEditStepTicks(ctx.ppq);
-        let deltaTicks = Math.round(rawDeltaTicks / editStep) * editStep;
+        let deltaTicks;
+        if (state.pianoRollSnapEnabled) {
+          const snappedEnd = pianoRollSnapTick(resizeAnchorEnd + rawDeltaTicks, ctx);
+          deltaTicks = snappedEnd - resizeAnchorEnd;
+        } else {
+          deltaTicks = Math.round(rawDeltaTicks);
+        }
         deltaTicks = Math.max(minDelta, Math.min(maxDelta, deltaTicks));
         previewDeltaTicks = deltaTicks;
         changed = deltaTicks !== 0;
@@ -17495,8 +17515,14 @@ body.timeline-ruler-zooming {
       if (code === "ArrowLeft" || code === "ArrowRight") {
         e.preventDefault();
         if (selectedNotes.length) {
-          const step = pianoRollEditStepTicks(state.project?.ppq || 480);
-          moveSelectedPianoRollNotes(code === "ArrowLeft" ? -step : step);
+          const anchorTick = Math.min(...selectedNotes.map((note) => Number(note.tick) || 0));
+          const direction = code === "ArrowLeft" ? -1 : 1;
+          const delta = pianoRollAdjacentGridDelta(
+            anchorTick,
+            direction,
+            state.project?.ppq || 480
+          );
+          moveSelectedPianoRollNotes(delta);
         }
         return;
       }
