@@ -11345,6 +11345,13 @@ body.timeline-ruler-zooming {
       applyPianoRollGridBackground(grid, ruler, ctx, rollW);
     }
     updatePianoRollSnapUi();
+    const meta = document.getElementById("pianoRollMeta");
+    if (meta && !meta.hidden) {
+      meta.textContent = meta.textContent.replace(
+        / · snap .* · EDIT$/,
+        " · snap " + pianoRollSnapStatusLabel() + " · EDIT"
+      );
+    }
   }
 
   function applySwingGridToNotes() {
