@@ -9898,7 +9898,7 @@ body.timeline-ruler-zooming {
     lines.push("");
     lines.push(`- Tempo: **${ov.tempo}** BPM · PPQ ${ov.ppq} · **${ov.totalBars}** bars`);
     lines.push(
-      `- Performance: swing **${ov.swing || 0}%** · master transpose **${(ov.masterTranspose || 0) > 0 ? "+" : ""}${ov.masterTranspose || 0} st** (drums/percussion excluded)`
+      `- Quantize grid: swing **${ov.swing || 0}%** (stored note ticks are played/exported literally) · master transpose **${(ov.masterTranspose || 0) > 0 ? "+" : ""}${ov.masterTranspose || 0} st** (drums/percussion excluded)`
     );
     lines.push(`- Hardware: TD-3 USB → DIN → XR20 (ch2 acid, ch1 bass, ch10 drums)`);
     if (ov.grid) {
@@ -13931,9 +13931,9 @@ body.timeline-ruler-zooming {
     state.pianoRollSnapDenominator = value;
     scheduleLocalStorageSet("midi_host_piano_roll_snap_v1", value);
     renderPianoRoll();
+    updatePerformanceControlsUi();
     setStatus(
-      "Piano Roll · grid " + pianoRollSnapLabel() +
-      (state.pianoRollSnapEnabled ? " · Snap ON" : " · Snap OFF"),
+      "Piano Roll · grid " + pianoRollSnapStatusLabel(),
       "ok"
     );
   });
@@ -13963,10 +13963,11 @@ body.timeline-ruler-zooming {
         "snap " + pianoRollSnapStatusLabel()
       );
     }
+    updatePerformanceControlsUi();
     setStatus(
       state.pianoRollSnapEnabled
-        ? "Piano Roll · Snap to Grid ON · " + pianoRollSnapLabel()
-        : "Piano Roll · Snap to Grid OFF · free timing for humanization",
+        ? "Piano Roll · Snap to Grid ON · " + pianoRollSnapStatusLabel()
+        : "Piano Roll · Snap to Grid OFF · visible grid stays " + pianoRollSnapStatusLabel(),
       "ok"
     );
   });
