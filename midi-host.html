@@ -689,6 +689,49 @@ a { color: var(--accent); }
 }
 .loop-card:hover { border-color: var(--accent-dim); }
 .loop-card.dragging { opacity: .55; border-color: var(--accent); }
+.midi-pool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.midi-pool-dropzone {
+  margin-top: 9px;
+  padding: 11px;
+  border: 1px dashed #344254;
+  border-radius: 6px;
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+  background: #0b1016;
+}
+.midi-pool-dropzone.drag-over {
+  border-color: var(--accent);
+  color: #fff;
+  background: rgba(61,220,151,.08);
+}
+.midi-pool-card {
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+}
+.midi-pool-icon {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent-dim);
+  border-radius: 4px;
+  color: var(--accent);
+  font: 700 9px/1 ui-monospace, Consolas, monospace;
+}
+.midi-pool-card-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+.midi-pool-card .loop-card-meta {
+  margin-top: 3px;
+}
 .rhythm-card { cursor: pointer; grid-template-columns: 28px 1fr; }
 .rhythm-card.active { border-color: var(--accent); background: rgba(61,220,151,.08); }
 .rhythm-card.has-revisions { border-color: #36584f; }
@@ -2614,6 +2657,7 @@ body.timeline-ruler-zooming {
     <span class="midi-route-summary" id="midiRouteSummary">MIDI: not connected</span>
     <span style="flex:1"></span>
     <button class="btn" id="btnLoops" type="button" title="Browse, preview and drag MIDI loops into the arrangement">♫ Loops</button>
+    <button class="btn" id="btnMidiPool" type="button" title="Exchange single-track MIDI files with Ableton / Studio One / Fender">⇄ MIDI Pool</button>
     <button class="btn" id="btnRhythms" type="button" title="Audition pitch-free rhythm patterns on any track without editing the project">♬ Rhythms</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
     <input class="file-hidden" id="fileJson" type="file" accept=".json">
@@ -2677,6 +2721,31 @@ body.timeline-ruler-zooming {
     <div class="loop-drawer-foot">
       <span id="hostLoopCount">—</span>
       <span>Preview · drag onto a track/bar</span>
+    </div>
+  </aside>
+
+  <aside class="loop-drawer" id="midiPoolBrowser" aria-hidden="true">
+    <div class="loop-drawer-head">
+      <div class="loop-drawer-title">
+        <strong>⇄ MIDI EXCHANGE POOL</strong>
+        <span class="spacer"></span>
+        <button class="btn" id="btnCloseMidiPool" type="button">Close</button>
+      </div>
+      <div class="midi-pool-actions">
+        <button class="btn" id="btnMidiPoolOpenFolder" type="button" title="Open the real local MIDI Pool folder in Explorer">Open folder</button>
+        <button class="btn" id="btnMidiPoolAdd" type="button" title="Copy .mid files into the MIDI Pool">+ MIDI…</button>
+        <button class="btn" id="btnMidiPoolRefresh" type="button">Refresh</button>
+      </div>
+      <div class="midi-pool-dropzone" id="midiPoolDropZone">
+        Drop .mid / .midi files here. The pool is a real local folder: use <strong>Open folder</strong> to drag files into Ableton, Studio One or Fender.
+      </div>
+      <input class="file-hidden" id="fileMidiPool" type="file" accept=".mid,.midi" multiple>
+    </div>
+    <div class="loop-drawer-status" id="midiPoolStatus">Open the pool to scan the local exchange folder.</div>
+    <div class="loop-list" id="midiPoolList"></div>
+    <div class="loop-drawer-foot">
+      <span id="midiPoolCount">—</span>
+      <span>Drag a pool file onto any track/bar</span>
     </div>
   </aside>
 
@@ -4333,6 +4402,9 @@ body.timeline-ruler-zooming {
   const hostLoopNoteTimers = new Set();
   const hostLoopPreviewMeta = new Map();
 
+  let midiPoolEntries = [];
+  let midiPoolLoading = false;
+
   const RHYTHM_REVISIONS_KEY = "midi_host_rhythm_revisions_v1";
   const RHYTHM_CUSTOM_KEY = "midi_host_custom_rhythms_v1";
   const RHYTHM_VARIANTS_KEY = "midi_host_rhythm_variant_cursors_v1";
@@ -5094,9 +5166,10 @@ body.timeline-ruler-zooming {
   }
 
   async function fetchHostLoopMidi(entry) {
-    const response = await fetch("/api/library/midi?id=" + encodeURIComponent(entry.id), {
-      cache: "no-store",
-    });
+    const url = entry?.poolFile
+      ? ("/api/midi-pool/file?name=" + encodeURIComponent(entry.poolFile))
+      : ("/api/library/midi?id=" + encodeURIComponent(entry.id));
+    const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) {
       let message = "MIDI load failed";
       try { message = (await response.json()).error || message; } catch {}
@@ -5104,6 +5177,182 @@ body.timeline-ruler-zooming {
     }
     const buffer = await response.arrayBuffer();
     return normalizeHostLoopMidiBuffer(buffer, entry);
+  }
+
+  function midiPoolSetStatus(message, ok = false) {
+    const el = document.getElementById("midiPoolStatus");
+    if (!el) return;
+    el.textContent = message;
+    el.style.color = ok ? "var(--accent)" : "var(--dim)";
+  }
+
+  function midiPoolEntryByFile(name) {
+    const key = String(name || "");
+    return midiPoolEntries.find((entry) => String(entry.poolFile || entry.name || "") === key) || {
+      id: "pool:" + key,
+      name: key,
+      poolFile: key,
+      source: "MIDI Pool",
+      kind: "exchange",
+      classificationRoles: [],
+      classificationPrograms: [],
+    };
+  }
+
+  function formatMidiPoolSize(bytes) {
+    const n = Math.max(0, Number(bytes) || 0);
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(n < 10 * 1024 ? 1 : 0) + " KB";
+    return (n / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function renderMidiPool() {
+    const list = document.getElementById("midiPoolList");
+    const count = document.getElementById("midiPoolCount");
+    if (!list) return;
+
+    list.innerHTML = "";
+    if (count) count.textContent = midiPoolEntries.length + " MIDI file" + (midiPoolEntries.length === 1 ? "" : "s");
+
+    if (!midiPoolEntries.length) {
+      list.innerHTML = '<div class="cloud-project-empty">MIDI Pool is empty.<br>Drop a .mid file above, or send a track with the ⇄ button in its track header.</div>';
+      return;
+    }
+
+    for (const entry of midiPoolEntries) {
+      const card = document.createElement("div");
+      card.className = "loop-card midi-pool-card";
+      card.draggable = true;
+      const modified = entry.modified ? new Date(entry.modified).toLocaleString() : "";
+      card.innerHTML =
+        '<span class="midi-pool-icon">MID</span>' +
+        '<div style="min-width:0">' +
+          '<div class="loop-card-name" title="' + escapeHtml(entry.name || "") + '">' +
+            escapeHtml(entry.name || "MIDI") +
+          '</div>' +
+          '<div class="loop-card-meta">' +
+            escapeHtml(formatMidiPoolSize(entry.size)) +
+            (modified ? " · " + escapeHtml(modified) : "") +
+          '</div>' +
+        '</div>' +
+        '<div class="midi-pool-card-actions">' +
+          '<button class="rhythm-mini-btn" type="button" data-pool-download title="Download a copy">↓</button>' +
+        '</div>';
+
+      card.addEventListener("dragstart", (event) => {
+        event.dataTransfer.effectAllowed = "copy";
+        event.dataTransfer.setData("application/x-midi-pool-file", String(entry.poolFile || entry.name || ""));
+        event.dataTransfer.setData("text/plain", String(entry.poolFile || entry.name || ""));
+        card.classList.add("dragging");
+      });
+      card.addEventListener("dragend", () => card.classList.remove("dragging"));
+      card.querySelector("[data-pool-download]")?.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        try {
+          const buffer = await fetchHostLoopMidi(entry);
+          download(entry.name || "track.mid", new Uint8Array(buffer), "audio/midi");
+        } catch (err) {
+          midiPoolSetStatus("Download failed: " + err.message);
+        }
+      });
+      list.appendChild(card);
+    }
+  }
+
+  async function refreshMidiPool({ quiet = false } = {}) {
+    if (midiPoolLoading) return midiPoolEntries;
+    midiPoolLoading = true;
+    if (!quiet) midiPoolSetStatus("Scanning local MIDI Pool…");
+    try {
+      const response = await fetch("/api/midi-pool?_=" + Date.now(), { cache: "no-store" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.error || ("HTTP " + response.status));
+      midiPoolEntries = Array.isArray(data.entries) ? data.entries : [];
+      renderMidiPool();
+      midiPoolSetStatus(
+        "Local exchange folder ready · " + midiPoolEntries.length + " MIDI file" +
+        (midiPoolEntries.length === 1 ? "" : "s"),
+        true
+      );
+      return midiPoolEntries;
+    } finally {
+      midiPoolLoading = false;
+    }
+  }
+
+  async function saveMidiBytesToPool(filename, bytes) {
+    const response = await fetch("/api/midi-pool/save", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        filename: String(filename || "track.mid"),
+        data: bytesToBase64(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)),
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) throw new Error(data.error || ("HTTP " + response.status));
+    const entry = data.entry || midiPoolEntryByFile(filename);
+    await refreshMidiPool({ quiet: true });
+    return entry;
+  }
+
+  async function saveMidiFileObjectToPool(file) {
+    if (!file || !/\.(mid|midi)$/i.test(file.name || "")) {
+      throw new Error("MIDI Pool accepts .mid / .midi files only");
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (
+      bytes.length < 4 ||
+      bytes[0] !== 0x4d || bytes[1] !== 0x54 || bytes[2] !== 0x68 || bytes[3] !== 0x64
+    ) {
+      throw new Error((file.name || "File") + " is not Standard MIDI");
+    }
+    return saveMidiBytesToPool(file.name, bytes);
+  }
+
+  async function sendTrackToMidiPool(track) {
+    if (!state.project || !track) return false;
+    const projectStem = safeMidiStem(state.project.name || "project");
+    const trackStem = safeMidiStem(track.name || ("ch-" + (track.channel || 1)));
+    const filename = projectStem + " - " + trackStem + ".mid";
+    try {
+      const entry = await saveMidiBytesToPool(filename, buildSingleTrackMidi(state.project, track));
+      midiPoolSetStatus("Saved to MIDI Pool: " + entry.name, true);
+      setStatus("MIDI Pool ← " + track.name + " · " + entry.name, "ok");
+      return true;
+    } catch (err) {
+      setStatus("MIDI Pool export failed: " + err.message, "err");
+      return false;
+    }
+  }
+
+  async function openMidiPoolFolder() {
+    const response = await fetch("/api/midi-pool/open", { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) throw new Error(data.error || ("HTTP " + response.status));
+    midiPoolSetStatus("Opened local MIDI Pool folder in Explorer.", true);
+  }
+
+  async function openMidiPoolBrowser() {
+    closeHostLoopBrowser();
+    if (document.getElementById("rhythmBrowser")?.classList.contains("open")) closeRhythmBrowser();
+    const drawer = document.getElementById("midiPoolBrowser");
+    drawer?.classList.add("open");
+    drawer?.setAttribute("aria-hidden", "false");
+    document.getElementById("btnMidiPool")?.classList.add("active");
+    try {
+      await refreshMidiPool();
+    } catch (err) {
+      midiPoolSetStatus("MIDI Pool unavailable: " + err.message);
+    }
+  }
+
+  function closeMidiPoolBrowser() {
+    const drawer = document.getElementById("midiPoolBrowser");
+    drawer?.classList.remove("open");
+    drawer?.setAttribute("aria-hidden", "true");
+    document.getElementById("btnMidiPool")?.classList.remove("active");
   }
 
   function hostLoopFallbackProgram(entry) {
@@ -6583,6 +6832,7 @@ body.timeline-ruler-zooming {
 
   async function openRhythmBrowser() {
     closeHostLoopBrowser();
+    closeMidiPoolBrowser();
     const drawer = document.getElementById("rhythmBrowser");
     drawer?.classList.add("open");
     drawer?.setAttribute("aria-hidden", "false");
@@ -6729,6 +6979,7 @@ body.timeline-ruler-zooming {
 
   function openHostLoopBrowser() {
     if (document.getElementById("rhythmBrowser")?.classList.contains("open")) closeRhythmBrowser();
+    closeMidiPoolBrowser();
     const drawer = document.getElementById("hostLoopBrowser");
     drawer?.classList.add("open");
     drawer?.setAttribute("aria-hidden", "false");
@@ -14413,7 +14664,8 @@ body.timeline-ruler-zooming {
             </span>
             <button class="btn" type="button" data-edit-track="${track.id}" title="Edit project-authored notes on this track in Piano Roll / Drum Roll">Edit</button>
             <button class="btn" type="button" data-preview="${track.id}">Preview</button>
-            <button class="btn" type="button" data-export-track="${track.id}" title="Export this track as a one-track MIDI file">MIDI</button>
+            <button class="btn" type="button" data-pool-track="${track.id}" title="Write this track as a .mid file into the local MIDI Pool">⇄</button>
+            <button class="btn" type="button" data-export-track="${track.id}" title="Download this track as a one-track MIDI file">MIDI</button>
           </div>
         </div>
         <div class="track-body" data-body="${track.id}" style="--bar-w:${state.barW}px;width:${totalW}px"></div>
@@ -14431,13 +14683,18 @@ body.timeline-ruler-zooming {
       const body = el.querySelector(".track-body");
       body.addEventListener("dragover", (event) => {
         const types = Array.from(event.dataTransfer?.types || []);
-        if (!types.includes("application/x-style-library-midi")) return;
+        const acceptsMidi =
+          types.includes("application/x-style-library-midi") ||
+          types.includes("application/x-midi-pool-file") ||
+          types.includes("Files");
+        if (!acceptsMidi) return;
         event.preventDefault();
         event.dataTransfer.dropEffect = "copy";
         clearHostLoopDropTargets();
         const pos = hostLoopDropPosition(body, event.clientX);
         body.classList.add("loop-drop-target");
-        body.dataset.dropLabel = "Drop @ bar " + pos.bar;
+        body.dataset.dropLabel =
+          (types.includes("Files") ? "Import MIDI" : "Drop") + " @ bar " + pos.bar;
         body.style.setProperty("--drop-x", pos.x + "px");
       });
       body.addEventListener("dragleave", (event) => {
@@ -14447,21 +14704,37 @@ body.timeline-ruler-zooming {
         body.style.removeProperty("--drop-x");
       });
       body.addEventListener("drop", async (event) => {
-        const entryId =
-          event.dataTransfer?.getData("application/x-style-library-midi") ||
-          event.dataTransfer?.getData("text/plain") ||
-          "";
-        if (!entryId) return;
+        const poolFile = event.dataTransfer?.getData("application/x-midi-pool-file") || "";
+        const libraryId = event.dataTransfer?.getData("application/x-style-library-midi") || "";
+        const externalMidi = Array.from(event.dataTransfer?.files || [])
+          .filter((file) => /\.(mid|midi)$/i.test(file.name || ""));
+        if (!poolFile && !libraryId && !externalMidi.length) return;
+
         event.preventDefault();
         const pos = hostLoopDropPosition(body, event.clientX);
         clearHostLoopDropTargets();
         try {
+          if (poolFile) {
+            const entry = midiPoolEntryByFile(poolFile);
+            await insertHostLoopIntoTrack(entry, track, pos.tick);
+            return;
+          }
+
+          if (externalMidi.length) {
+            if (externalMidi.length > 1) {
+              setStatus("Multiple MIDI files dropped · importing the first file only.", "");
+            }
+            const entry = await saveMidiFileObjectToPool(externalMidi[0]);
+            await insertHostLoopIntoTrack(entry, track, pos.tick);
+            return;
+          }
+
           await ensureHostLoopCatalog();
-          const entry = hostLoopCatalog.find((item) => item.id === entryId);
+          const entry = hostLoopCatalog.find((item) => item.id === libraryId);
           if (!entry) throw new Error("Loop is no longer in the library index");
           await insertHostLoopIntoTrack(entry, track, pos.tick);
         } catch (err) {
-          setStatus("Loop drop failed: " + err.message, "err");
+          setStatus("MIDI drop failed: " + err.message, "err");
           hostLoopSetStatus("Drop error: " + err.message);
         }
       });
@@ -14703,6 +14976,9 @@ body.timeline-ruler-zooming {
       });
       el.querySelector(`[data-preview="${track.id}"]`).addEventListener("click", () => {
         previewTrack(track);
+      });
+      el.querySelector(`[data-pool-track="${track.id}"]`)?.addEventListener("click", () => {
+        void sendTrackToMidiPool(track);
       });
       el.querySelector(`[data-export-track="${track.id}"]`).addEventListener("click", () => {
         exportSingleTrackMidi(track);
@@ -16154,6 +16430,58 @@ body.timeline-ruler-zooming {
   document.getElementById("btnCloseLoops").addEventListener("click", () => {
     closeHostLoopBrowser();
   });
+
+  document.getElementById("btnMidiPool")?.addEventListener("click", () => {
+    const open = document.getElementById("midiPoolBrowser")?.classList.contains("open");
+    if (open) closeMidiPoolBrowser();
+    else void openMidiPoolBrowser();
+  });
+  document.getElementById("btnCloseMidiPool")?.addEventListener("click", closeMidiPoolBrowser);
+  document.getElementById("btnMidiPoolRefresh")?.addEventListener("click", () => {
+    void refreshMidiPool().catch((err) => midiPoolSetStatus("Refresh failed: " + err.message));
+  });
+  document.getElementById("btnMidiPoolOpenFolder")?.addEventListener("click", () => {
+    void openMidiPoolFolder().catch((err) => midiPoolSetStatus("Open folder failed: " + err.message));
+  });
+  document.getElementById("btnMidiPoolAdd")?.addEventListener("click", () => {
+    document.getElementById("fileMidiPool")?.click();
+  });
+  document.getElementById("fileMidiPool")?.addEventListener("change", async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!files.length) return;
+    try {
+      for (const file of files) await saveMidiFileObjectToPool(file);
+      await refreshMidiPool({ quiet: true });
+      midiPoolSetStatus("Added " + files.length + " MIDI file" + (files.length === 1 ? "" : "s") + " to the pool.", true);
+    } catch (err) {
+      midiPoolSetStatus("Add MIDI failed: " + err.message);
+    }
+  });
+
+  const midiPoolDropZone = document.getElementById("midiPoolDropZone");
+  midiPoolDropZone?.addEventListener("dragover", (event) => {
+    if (!Array.from(event.dataTransfer?.types || []).includes("Files")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    midiPoolDropZone.classList.add("drag-over");
+  });
+  midiPoolDropZone?.addEventListener("dragleave", () => midiPoolDropZone.classList.remove("drag-over"));
+  midiPoolDropZone?.addEventListener("drop", async (event) => {
+    const files = Array.from(event.dataTransfer?.files || [])
+      .filter((file) => /\.(mid|midi)$/i.test(file.name || ""));
+    if (!files.length) return;
+    event.preventDefault();
+    midiPoolDropZone.classList.remove("drag-over");
+    try {
+      for (const file of files) await saveMidiFileObjectToPool(file);
+      await refreshMidiPool({ quiet: true });
+      midiPoolSetStatus("Dropped " + files.length + " MIDI file" + (files.length === 1 ? "" : "s") + " into the pool.", true);
+    } catch (err) {
+      midiPoolSetStatus("Pool drop failed: " + err.message);
+    }
+  });
+
   document.getElementById("btnRhythms")?.addEventListener("click", () => {
     const open = document.getElementById("rhythmBrowser")?.classList.contains("open");
     if (open) closeRhythmBrowser();

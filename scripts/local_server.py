@@ -63,6 +63,13 @@ PACK_OLD_ROOT = LIBRARY_ROOT / "packs.__old__"
 PACK_INDEX_PATH = PACK_ROOT / "library-index.json"
 PACK_MAX_FILES = max(100, int(os.environ.get("STYLE_PACK_MAX_FILES", "1000")))
 MIDI_CACHE_DIR = Path(os.environ.get("LOCALAPPDATA", str(LIBRARY_ROOT.parent))) / "SequencerStyleLibrary" / "midi-v1"
+MIDI_POOL_ROOT = Path(
+    os.environ.get(
+        "MIDI_EXCHANGE_ROOT",
+        str(Path(os.environ.get("LOCALAPPDATA", str(ROOT.parent))) / "Sequencer" / "MIDI Pool"),
+    )
+).resolve()
+MIDI_POOL_MAX_FILE = 16 * 1024 * 1024
 try:
     GM_PROGRAM_NAMES = json.loads((ROOT / "scripts" / "gm-instruments.json").read_text(encoding="utf-8")).get("programs", [])
 except (OSError, ValueError, json.JSONDecodeError):
@@ -1692,6 +1699,105 @@ def commit_staged(message: str) -> bool:
     return True
 
 
+
+def ensure_midi_pool_root() -> Path:
+    MIDI_POOL_ROOT.mkdir(parents=True, exist_ok=True)
+    return MIDI_POOL_ROOT
+
+
+def safe_midi_pool_name(value: str) -> str:
+    name = Path(str(value or "")).name.strip()
+    if not name:
+        name = "track.mid"
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", name).strip(" .")
+    if not name:
+        name = "track.mid"
+    suffix = Path(name).suffix.lower()
+    if suffix not in {".mid", ".midi"}:
+        name += ".mid"
+    return name
+
+
+def midi_pool_entry(path: Path) -> dict:
+    stat = path.stat()
+    return {
+        "id": "pool:" + path.name,
+        "name": path.name,
+        "poolFile": path.name,
+        "source": "MIDI Pool",
+        "kind": "exchange",
+        "classificationRoles": [],
+        "classificationPrograms": [],
+        "size": stat.st_size,
+        "modified": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+    }
+
+
+def list_midi_pool() -> dict:
+    root = ensure_midi_pool_root()
+    files = [
+        path for path in root.iterdir()
+        if path.is_file() and path.suffix.lower() in {".mid", ".midi"}
+    ]
+    files.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    return {
+        "ok": True,
+        "root": str(root),
+        "entries": [midi_pool_entry(path) for path in files],
+    }
+
+
+def midi_pool_path(name: str) -> Path:
+    root = ensure_midi_pool_root()
+    safe = safe_midi_pool_name(name)
+    path = (root / safe).resolve()
+    if path.parent != root:
+        raise ValueError("Invalid MIDI Pool filename")
+    return path
+
+
+def read_midi_pool_file(name: str) -> tuple[bytes, dict]:
+    path = midi_pool_path(name)
+    if not path.exists() or not path.is_file():
+        raise FileNotFoundError(f"MIDI Pool file not found: {path.name}")
+    data = path.read_bytes()
+    if not data.startswith(b"MThd"):
+        raise ValueError(f"MIDI Pool file is not Standard MIDI: {path.name}")
+    return data, midi_pool_entry(path)
+
+
+def save_midi_pool_file(payload: dict) -> dict:
+    filename = safe_midi_pool_name(str(payload.get("filename") or "track.mid"))
+    encoded = payload.get("data")
+    if not isinstance(encoded, str) or not encoded:
+        raise ValueError("Missing base64 MIDI data")
+    try:
+        data = base64.b64decode(encoded, validate=True)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid base64 MIDI data") from exc
+    if not data or len(data) > MIDI_POOL_MAX_FILE:
+        raise ValueError("MIDI Pool file is empty or too large")
+    if not data.startswith(b"MThd"):
+        raise ValueError("MIDI Pool accepts Standard MIDI files only")
+
+    path = midi_pool_path(filename)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_bytes(data)
+    tmp.replace(path)
+    return {"ok": True, "entry": midi_pool_entry(path), "root": str(MIDI_POOL_ROOT)}
+
+
+def open_midi_pool_folder() -> dict:
+    root = ensure_midi_pool_root()
+    if os.name == "nt":
+        os.startfile(str(root))  # type: ignore[attr-defined]
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", str(root)])
+    else:
+        subprocess.Popen(["xdg-open", str(root)])
+    return {"ok": True, "root": str(root)}
+
+
 class Handler(SimpleHTTPRequestHandler):
     server_version = "SequencerLocalBridge/1.0"
 
@@ -1738,6 +1844,24 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/api/midi-pool":
+            try:
+                self._send_json(200, list_midi_pool())
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/midi-pool/file":
+            try:
+                name = (parse_qs(parsed.query).get("name") or [""])[0]
+                data, entry = read_midi_pool_file(name)
+                self._send_bytes(200, data, "audio/midi", entry["name"])
+            except FileNotFoundError as exc:
+                self._send_json(404, {"ok": False, "error": str(exc)})
+            except (ValueError, OSError) as exc:
+                self._send_json(409, {"ok": False, "error": str(exc)})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
         if path == "/api/projects":
             try:
                 self._send_json(200, list_cloud_projects())
@@ -1798,6 +1922,22 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+        if path == "/api/midi-pool/save":
+            try:
+                self._send_json(200, save_midi_pool_file(self._read_json()))
+            except (ValueError, OSError) as exc:
+                self._send_json(409, {"ok": False, "error": str(exc)})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/midi-pool/open":
+            try:
+                self._send_json(200, open_midi_pool_folder())
+            except (OSError, subprocess.SubprocessError) as exc:
+                self._send_json(409, {"ok": False, "error": str(exc)})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
         if path == "/api/sync":
             self._handle_sync()
             return
@@ -2023,6 +2163,7 @@ def main() -> None:
     print("Sync to AI = save + git commit + push")
     print("Reload from AI = git pull + reload current.json")
     print(f"Style Library root = {LIBRARY_ROOT}")
+    print(f"MIDI Exchange Pool = {MIDI_POOL_ROOT}")
     print("Press Ctrl+C to stop.")
 
     if args.open:

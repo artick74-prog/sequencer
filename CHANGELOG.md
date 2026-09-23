@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-24 — MIDI Exchange Pool
+
+### Added
+- Новый **⇄ MIDI Pool** для быстрого обмена отдельными MIDI-дорожками с Ableton / Studio One / Fender через реальную локальную папку.
+- У каждой дорожки появилась кнопка **⇄**, сохраняющая её как однодорожечный Standard MIDI в Pool; обычная кнопка **MIDI** остаётся браузерным download.
+- Pool drawer умеет открыть папку в Explorer, добавить/перетащить несколько `.mid/.midi`, обновить список и скачать отдельную копию.
+- MIDI из Pool можно перетащить прямо на нужную дорожку и такт; внешний MIDI-файл можно также бросить прямо на timeline, после чего он автоматически попадает в Pool и вставляется в проект.
+- Local bridge получил API для list/read/save/open MIDI Pool; сами обменные файлы не попадают в Git.
+
+
 ## 2026-09-24 — Channel-driven instrument routing
 
 ### Changed

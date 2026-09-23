@@ -114,6 +114,18 @@ python scripts/local_server.py --open
 
 Плеер Standard MIDI для живого сетапа + цикл правок через GitHub. Браузер и ассистент синхронизируются через папку `projects/`.
 
+### MIDI Exchange Pool
+
+Для быстрого обмена отдельными MIDI-партиями с Ableton / Studio One / Fender MIDI Host имеет локальный **⇄ MIDI Pool**.
+
+- Локальный bridge хранит реальные `.mid/.midi` файлы вне Git-репозитория в `%LOCALAPPDATA%\Sequencer\MIDI Pool` (путь можно переопределить через `MIDI_EXCHANGE_ROOT`).
+- Кнопка **⇄** в заголовке дорожки пишет текущую дорожку в Pool как однодорожечный Standard MIDI; старая кнопка **MIDI** по-прежнему скачивает файл обычным браузерным download.
+- Кнопка **⇄ MIDI Pool** в toolbar открывает drawer со списком файлов, **Open folder**, **+ MIDI…** и Refresh. Open folder нужен для надёжного обмена с внешними DAW через обычный Explorer, без зависимости от browser-to-desktop drag API.
+- Файлы из Pool можно drag-and-drop на любую дорожку/такт MIDI Host; они вставляются как обычный Project Clip с текущим non-destructive provenance/revert snapshot.
+- Внешний `.mid/.midi` также можно бросить прямо на timeline-дорожку: файл сначала сохраняется в Pool, затем вставляется в выбранный такт.
+- Drag нескольких внешних MIDI на одну дорожку пока импортирует только первый файл; сам Pool принимает несколько файлов за раз.
+- API bridge: `GET /api/midi-pool`, `GET /api/midi-pool/file?name=...`, `POST /api/midi-pool/save`, `POST /api/midi-pool/open`.
+
 ### Цепочка
 
 Текущий Windows studio-route строится через loopMIDI + MIDI-OX, чтобы Fender Studio и браузерный MIDI Host могли оставаться открытыми одновременно и не захватывали физические MIDI-порты напрямую:
