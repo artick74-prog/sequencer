@@ -8689,11 +8689,14 @@ body.timeline-ruler-zooming {
     if (swingValue) swingValue.textContent = Math.round(swing) + "%";
     const applySwing = document.getElementById("btnApplySwing");
     if (applySwing) {
-      applySwing.title =
-        "Apply current " + pianoRollSnapLabel() +
-        " grid" + (swing ? " with Swing " + Math.round(swing) + "%" : " straight") +
-        " to selected notes, or to the whole project when nothing is selected. " +
-        "Playback/export never add another swing layer.";
+      const tripletSwingIgnored = swing > 0 && pianoRollSnapIsTriplet();
+      applySwing.title = tripletSwingIgnored
+        ? "Current " + pianoRollSnapLabel() +
+          " grid is triplet-based, so Swing is ignored. Choose a straight grid before Apply Swing."
+        : "Apply current " + pianoRollSnapLabel() +
+          " grid" + (swing ? " with Swing " + Math.round(swing) + "%" : " straight") +
+          " to selected notes, or to the whole project when nothing is selected. " +
+          "Playback/export never add another swing layer.";
     }
     if (transposeValue) transposeValue.textContent = (transpose > 0 ? "+" : "") + transpose + " st";
   }
@@ -13944,25 +13947,7 @@ body.timeline-ruler-zooming {
       "midi_host_piano_roll_snap_enabled_v1",
       state.pianoRollSnapEnabled ? "1" : "0"
     );
-    updatePianoRollSnapUi();
-    const ctx = pianoRollContext();
-    const grid = document.getElementById("pianoRollGrid");
-    const ruler = document.getElementById("pianoRollRuler");
-    if (ctx && grid && ruler) {
-      drawPianoRollGridCanvases(
-        grid,
-        ruler,
-        ctx,
-        Math.max(1, Number(grid.dataset.rollWidth) || grid.offsetWidth || 1)
-      );
-    }
-    const meta = document.getElementById("pianoRollMeta");
-    if (meta) {
-      meta.textContent = meta.textContent.replace(
-        /snap (?:OFF · grid )?1\/(?:4|8T?|16T?|32|64)/,
-        "snap " + pianoRollSnapStatusLabel()
-      );
-    }
+    renderPianoRoll();
     updatePerformanceControlsUi();
     setStatus(
       state.pianoRollSnapEnabled
