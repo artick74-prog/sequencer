@@ -2,10 +2,10 @@
   "version": 1,
   "name": "Acid Rock 1",
   "ppq": 480,
-  "tempo": 120,
+  "tempo": 112,
   "swing": 23,
   "masterTranspose": 7,
-  "lengthTicks": 138240,
+  "lengthTicks": 157440,
   "minimumLengthTicks": 138240,
   "hardware": {
     "output": "TD-3 USB (thru to XR20 DIN)",
@@ -67,11 +67,15 @@
     {
       "tick": 122880,
       "text": "DJ Outro / Return · H3A · One note"
+    },
+    {
+      "tick": 138240,
+      "text": "Timbre Test · 2-bar Acid Breaks"
     }
   ],
   "loopRange": {
-    "startBar": 1,
-    "endBar": 8
+    "startBar": 73,
+    "endBar": 74
   },
   "cloudProject": {
     "id": "acid-rock-1",
@@ -2380,6 +2384,66 @@
           "duration": 212,
           "note": 60,
           "velocity": 90
+        },
+        {
+          "tick": 138240,
+          "duration": 600,
+          "note": 48,
+          "velocity": 108
+        },
+        {
+          "tick": 138960,
+          "duration": 300,
+          "note": 60,
+          "velocity": 90
+        },
+        {
+          "tick": 139440,
+          "duration": 180,
+          "note": 55,
+          "velocity": 100
+        },
+        {
+          "tick": 139680,
+          "duration": 210,
+          "note": 55,
+          "velocity": 94
+        },
+        {
+          "tick": 139920,
+          "duration": 180,
+          "note": 60,
+          "velocity": 86
+        },
+        {
+          "tick": 140160,
+          "duration": 300,
+          "note": 48,
+          "velocity": 106
+        },
+        {
+          "tick": 140520,
+          "duration": 420,
+          "note": 55,
+          "velocity": 92
+        },
+        {
+          "tick": 141120,
+          "duration": 360,
+          "note": 60,
+          "velocity": 98
+        },
+        {
+          "tick": 141600,
+          "duration": 240,
+          "note": 48,
+          "velocity": 100
+        },
+        {
+          "tick": 141840,
+          "duration": 180,
+          "note": 55,
+          "velocity": 84
         }
       ],
       "midiControls": []
@@ -18135,6 +18199,180 @@
           "duration": 85,
           "note": 42,
           "velocity": 86
+        },
+        {
+          "tick": 138240,
+          "duration": 86,
+          "note": 36,
+          "velocity": 112
+        },
+        {
+          "tick": 138240,
+          "duration": 85,
+          "note": 42,
+          "velocity": 104
+        },
+        {
+          "tick": 138480,
+          "duration": 85,
+          "note": 42,
+          "velocity": 62
+        },
+        {
+          "tick": 138720,
+          "duration": 86,
+          "note": 38,
+          "velocity": 118
+        },
+        {
+          "tick": 138720,
+          "duration": 85,
+          "note": 42,
+          "velocity": 88
+        },
+        {
+          "tick": 138960,
+          "duration": 86,
+          "note": 36,
+          "velocity": 96
+        },
+        {
+          "tick": 138960,
+          "duration": 85,
+          "note": 42,
+          "velocity": 67
+        },
+        {
+          "tick": 139200,
+          "duration": 85,
+          "note": 42,
+          "velocity": 98
+        },
+        {
+          "tick": 139440,
+          "duration": 86,
+          "note": 36,
+          "velocity": 88
+        },
+        {
+          "tick": 139440,
+          "duration": 85,
+          "note": 42,
+          "velocity": 64
+        },
+        {
+          "tick": 139560,
+          "duration": 86,
+          "note": 38,
+          "velocity": 45
+        },
+        {
+          "tick": 139680,
+          "duration": 86,
+          "note": 38,
+          "velocity": 122
+        },
+        {
+          "tick": 139680,
+          "duration": 85,
+          "note": 42,
+          "velocity": 112
+        },
+        {
+          "tick": 139920,
+          "duration": 85,
+          "note": 42,
+          "velocity": 72
+        },
+        {
+          "tick": 140160,
+          "duration": 86,
+          "note": 36,
+          "velocity": 110
+        },
+        {
+          "tick": 140160,
+          "duration": 85,
+          "note": 42,
+          "velocity": 102
+        },
+        {
+          "tick": 140400,
+          "duration": 85,
+          "note": 42,
+          "velocity": 60
+        },
+        {
+          "tick": 140520,
+          "duration": 86,
+          "note": 36,
+          "velocity": 78
+        },
+        {
+          "tick": 140640,
+          "duration": 86,
+          "note": 38,
+          "velocity": 120
+        },
+        {
+          "tick": 140640,
+          "duration": 85,
+          "note": 42,
+          "velocity": 90
+        },
+        {
+          "tick": 140880,
+          "duration": 85,
+          "note": 42,
+          "velocity": 66
+        },
+        {
+          "tick": 141000,
+          "duration": 86,
+          "note": 38,
+          "velocity": 50
+        },
+        {
+          "tick": 141120,
+          "duration": 86,
+          "note": 36,
+          "velocity": 98
+        },
+        {
+          "tick": 141120,
+          "duration": 85,
+          "note": 42,
+          "velocity": 100
+        },
+        {
+          "tick": 141360,
+          "duration": 85,
+          "note": 42,
+          "velocity": 63
+        },
+        {
+          "tick": 141600,
+          "duration": 86,
+          "note": 38,
+          "velocity": 124
+        },
+        {
+          "tick": 141600,
+          "duration": 85,
+          "note": 42,
+          "velocity": 110
+        },
+        {
+          "tick": 141840,
+          "duration": 86,
+          "note": 36,
+          "velocity": 84
+        },
+        {
+          "tick": 141840,
+          "duration": 85,
+          "note": 42,
+          "velocity": 74
         }
       ],
       "midiControls": [],
