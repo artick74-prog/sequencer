@@ -131,11 +131,24 @@ a { color: var(--accent); }
   width: 86px;
   accent-color: var(--accent);
 }
+.swing-field {
+  color: var(--text);
+}
+.swing-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
 .performance-value {
   min-width: 32px;
   color: var(--text);
   font: 11px ui-monospace, Consolas, monospace;
   text-align: center;
+}
+.swing-field #swingValue {
+  min-width: 42px;
+  font-size: 14px;
+  font-weight: 700;
 }
 .performance-value.wide { min-width: 38px; }
 .transport-bar {
@@ -2791,8 +2804,9 @@ body.timeline-ruler-zooming {
     <label class="field">BPM
       <input type="number" id="tempo" min="40" max="240" value="120" step="1">
     </label>
-    <label class="field performance-field" title="Swing quantize grid · 0% = straight, 100% = 2:1 triplet feel. Moving Swing changes the visible Piano Roll grid; Apply Swing writes that timing into note ticks.">Swing Grid
-      <input type="range" id="swing" min="0" max="100" value="0" step="1">
+    <label class="field performance-field swing-field" title="Swing quantize grid · 0% = straight, 100% = 2:1 triplet feel. Hover the slider and use the mouse wheel for precise 1% steps.">
+      <span class="swing-label">Swing Grid</span>
+      <input type="range" id="swing" min="0" max="100" value="0" step="1" aria-label="Swing Grid percent">
       <span class="performance-value" id="swingValue">0%</span>
     </label>
     <button class="btn" id="btnApplySwing" type="button" title="Quantize selected Piano Roll notes to the current grid + Swing. If nothing is selected, applies to all project notes. Safe to press again: notes already on the swung grid do not move further.">Apply Swing</button>
@@ -17562,6 +17576,26 @@ body.timeline-ruler-zooming {
       runScheduler(tick);
     }
   });
+
+  let swingWheelCommitTimer = null;
+  document.getElementById("swing")?.addEventListener("wheel", (e) => {
+    if (!state.project) return;
+    e.preventDefault();
+
+    const swingEl = e.currentTarget;
+    const current = Math.round(Number(swingEl.value) || projectSwingPercent(state.project));
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const next = Math.max(0, Math.min(100, current + direction));
+    if (next === current) return;
+
+    swingEl.value = String(next);
+    swingEl.dispatchEvent(new Event("input", { bubbles: true }));
+
+    clearTimeout(swingWheelCommitTimer);
+    swingWheelCommitTimer = setTimeout(() => {
+      swingEl.dispatchEvent(new Event("change", { bubbles: true }));
+    }, 140);
+  }, { passive: false });
 
   document.getElementById("swing")?.addEventListener("input", (e) => {
     if (!state.project) return;
