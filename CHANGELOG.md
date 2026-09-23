@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-24 — Swing becomes an editable quantize grid
+
+### Changed
+- Swing is now a **0–100% quantize-grid parameter** instead of a hidden playback/export timing transform. 0% is straight; 100% gives the classic 2:1 triplet feel.
+- Piano Roll draws the shifted swing subdivisions and uses the same positions for Snap, Draw, note drag, resize and Arrow Left/Right.
+- Added **Apply Swing**: selected Piano Roll notes are quantized when a selection exists; otherwise the whole project is quantized. Applying it again does not accumulate extra swing.
+- Playback and MIDI export now use stored note ticks literally, so a MIDI file that already contains swing is never swung a second time by the sequencer.
+- Triplet quantize grids remain triplet grids and ignore Swing.
+
 ## 2026-09-24 — Marker row seeks the clicked bar
 
 ### Fixed
