@@ -11228,14 +11228,26 @@ body.timeline-ruler-zooming {
     return ["4","8","8T","16","16T","32","64"].includes(raw) ? raw : "16";
   }
 
+  function pianoRollSnapIsTriplet() {
+    return pianoRollSnapValue().endsWith("T");
+  }
+
+  function pianoRollSwingPercent() {
+    return projectSwingPercent(state.project);
+  }
+
   function pianoRollSnapLabel() {
     return "1/" + pianoRollSnapValue();
   }
 
   function pianoRollSnapStatusLabel() {
-    return state.pianoRollSnapEnabled
+    const base = state.pianoRollSnapEnabled
       ? pianoRollSnapLabel()
       : "OFF · grid " + pianoRollSnapLabel();
+    const swing = pianoRollSwingPercent();
+    if (!swing) return base + " · straight";
+    if (pianoRollSnapIsTriplet()) return base + " · swing ignored on triplets";
+    return base + " · swing " + Math.round(swing) + "%";
   }
 
   function pianoRollSnapTicks(ppq = state.project?.ppq || 480) {
@@ -11251,12 +11263,48 @@ body.timeline-ruler-zooming {
     return state.pianoRollSnapEnabled ? pianoRollSnapTicks(ppq) : 1;
   }
 
-  function pianoRollSnapTick(rawTick, ctx = pianoRollContext()) {
-    if (!ctx) return Math.max(0, Number(rawTick) || 0);
+  function pianoRollGridTickAtIndex(index, ppq = state.project?.ppq || 480) {
+    return swingGridTickForIndex(
+      index,
+      pianoRollSnapTicks(ppq),
+      pianoRollSwingPercent(),
+      pianoRollSnapIsTriplet()
+    );
+  }
+
+  function pianoRollNearestGridIndex(rawTick, ppq = state.project?.ppq || 480) {
     const raw = Number(rawTick) || 0;
-    const step = pianoRollEditStepTicks(ctx.ppq);
-    const snapped = Math.round(raw / step) * step;
+    const step = Math.max(1, pianoRollSnapTicks(ppq));
+    const approx = Math.round(raw / step);
+    let bestIndex = approx;
+    let bestDistance = Infinity;
+    for (let index = approx - 3; index <= approx + 3; index++) {
+      const tick = pianoRollGridTickAtIndex(index, ppq);
+      const distance = Math.abs(raw - tick);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    }
+    return bestIndex;
+  }
+
+  function pianoRollSnapTick(rawTick, ctx = pianoRollContext()) {
+    if (!ctx) return Math.max(0, Math.round(Number(rawTick) || 0));
+    const raw = Number(rawTick) || 0;
+    const snapped = state.pianoRollSnapEnabled
+      ? pianoRollGridTickAtIndex(pianoRollNearestGridIndex(raw, ctx.ppq), ctx.ppq)
+      : Math.round(raw);
     return Math.max(ctx.startTick, Math.min(ctx.endTick, snapped));
+  }
+
+  function pianoRollAdjacentGridDelta(anchorTick, direction, ppq = state.project?.ppq || 480) {
+    const anchor = Number(anchorTick) || 0;
+    const dir = direction < 0 ? -1 : 1;
+    if (!state.pianoRollSnapEnabled) return dir;
+    const currentIndex = pianoRollNearestGridIndex(anchor, ppq);
+    const targetTick = pianoRollGridTickAtIndex(currentIndex + dir, ppq);
+    return Math.round(targetTick - anchor);
   }
 
   function updatePianoRollSnapUi() {
@@ -11268,10 +11316,17 @@ body.timeline-ruler-zooming {
       button.setAttribute("aria-pressed", enabled ? "true" : "false");
       button.textContent = "Snap to Grid";
       button.title = enabled
-        ? "Snap ON · note movement and editing follow the selected grid"
+        ? "Snap ON · editing follows the visible quantize grid, including Swing"
         : "Snap OFF · notes can move freely between grid lines";
     }
-    if (select) select.value = pianoRollSnapValue();
+    if (select) {
+      select.value = pianoRollSnapValue();
+      select.title =
+        pianoRollSnapLabel() +
+        (pianoRollSwingPercent() && !pianoRollSnapIsTriplet()
+          ? " · Swing " + Math.round(pianoRollSwingPercent()) + "%"
+          : "");
+    }
   }
 
   function pianoRollSelectedIdSet() {
