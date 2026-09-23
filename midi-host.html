@@ -10219,6 +10219,10 @@ body.timeline-ruler-zooming {
     }, 0);
   }
 
+  function timelineTickX(tick, ppq = state.project?.ppq || 480) {
+    return (Math.max(0, Number(tick) || 0) / ticksPerBar(ppq)) * state.barW;
+  }
+
   function renderRuler() {
     const wrap = document.getElementById("rulerWrap");
     const project = state.project;
@@ -10271,9 +10275,9 @@ body.timeline-ruler-zooming {
     mRuler.title = "Click / drag here to move the red playhead";
     for (let markerIndex = 0; markerIndex < markers.length; markerIndex++) {
       const m = markers[markerIndex];
-      const x = (m.tick / length) * totalW;
+      const x = timelineTickX(m.tick, project.ppq);
       const nextMarker = markers[markerIndex + 1] || null;
-      const nextX = nextMarker ? (nextMarker.tick / length) * totalW : totalW;
+      const nextX = nextMarker ? timelineTickX(nextMarker.tick, project.ppq) : totalW;
       const availableSlotWidth = Math.max(42, nextX - x - 4);
       const flag = document.createElement("button");
       flag.type = "button";
@@ -10451,11 +10455,16 @@ body.timeline-ruler-zooming {
     const markerRuler = wrap.querySelector(".ruler.markers-ruler");
     if (markerRuler) {
       markerRuler.style.width = totalW + "px";
-      markerRuler.querySelectorAll(".marker-tick[data-tick]").forEach((el) => {
-        el.style.left = ((Number(el.dataset.tick) || 0) / length * totalW) + "px";
-      });
-      markerRuler.querySelectorAll(".marker-label[data-tick]").forEach((el) => {
-        el.style.left = (((Number(el.dataset.tick) || 0) / length * totalW) + 4) + "px";
+      const flags = [...markerRuler.querySelectorAll(".marker-flag[data-tick]")];
+      flags.forEach((el, index) => {
+        const tick = Math.max(0, Number(el.dataset.tick) || 0);
+        const x = timelineTickX(tick, project.ppq);
+        const next = flags[index + 1] || null;
+        const nextTick = next ? Math.max(0, Number(next.dataset.tick) || 0) : null;
+        const nextX = nextTick != null ? timelineTickX(nextTick, project.ppq) : totalW;
+        const availableSlotWidth = Math.max(42, nextX - x - 4);
+        el.style.left = x + "px";
+        el.style.setProperty("--marker-slot-width", availableSlotWidth + "px");
       });
     }
 
@@ -10483,7 +10492,7 @@ body.timeline-ruler-zooming {
       const g = document.createElement("div");
       g.className = "marker-guide";
       g.dataset.tick = String(m.tick);
-      g.style.left = `${(m.tick / length) * totalW}px`;
+      g.style.left = `${timelineTickX(m.tick, project.ppq)}px`;
       g.title = `${m.text} · bar ${m.bar}`;
       fragment.appendChild(g);
     }
@@ -10509,7 +10518,7 @@ body.timeline-ruler-zooming {
     guides.style.left = HEAD_W + "px";
     guides.style.width = totalW + "px";
     markerGuides.forEach((el) => {
-      el.style.left = ((Number(el.dataset.tick) || 0) / length * totalW) + "px";
+      el.style.left = timelineTickX(Number(el.dataset.tick) || 0, project.ppq) + "px";
     });
   }
 

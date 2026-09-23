@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-24 — Marker flags stay locked to bars while zooming
+
+### Fixed
+- Marker flags and vertical marker guides now derive their X-position directly from musical ticks and the current `barW`, so zooming the timeline moves them together with the bar grid instead of leaving the flags behind.
+- Marker section widths are recalculated on every zoom step, preserving the existing ellipsis behavior without breaking bar alignment.
+
+
 ## 2026-09-24 — Marker labels stay inside their sections
 
 ### Fixed
