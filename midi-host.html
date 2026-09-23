@@ -2804,7 +2804,7 @@ body.timeline-ruler-zooming {
     <label class="field">BPM
       <input type="number" id="tempo" min="40" max="240" value="120" step="1">
     </label>
-    <label class="field performance-field swing-field" title="Swing quantize grid · 0% = straight, 100% = 2:1 triplet feel. Hover the slider and use the mouse wheel for precise 1% steps.">
+    <label class="field performance-field swing-field" title="Swing quantize grid · 0% = straight, 100% = 2:1 triplet feel. Mouse wheel = exact 1% steps. Hold Shift while dragging for slow fine adjustment.">
       <span class="swing-label">Swing Grid</span>
       <input type="range" id="swing" min="0" max="100" value="0" step="1" aria-label="Swing Grid percent">
       <span class="performance-value" id="swingValue">0%</span>
@@ -8699,7 +8699,7 @@ body.timeline-ruler-zooming {
       swingEl.value = String(swing);
       swingEl.title =
         "Swing Grid " + Math.round(swing) +
-        "% · grid-attached notes follow the shifted lines live; free-timing notes stay where they are";
+        "% · wheel = 1% · Shift+drag = slow fine adjustment · grid-attached notes follow live";
     }
     if (swingValue) swingValue.textContent = Math.round(swing) + "%";
     const applySwing = document.getElementById("btnApplySwing");
@@ -17574,6 +17574,67 @@ body.timeline-ruler-zooming {
     if (wasPlaying) {
       state.startTick = tick;
       runScheduler(tick);
+    }
+  });
+
+  let swingFineDragSuppressClickUntil = 0;
+  document.getElementById("swing")?.addEventListener("pointerdown", (e) => {
+    if (!state.project || !e.shiftKey || e.button !== 0) return;
+
+    const swingEl = e.currentTarget;
+    const pointerId = e.pointerId;
+    const originX = e.clientX;
+    const originValue = Math.round(Number(swingEl.value) || projectSwingPercent(state.project));
+    const pixelsPerPercent = 4;
+
+    e.preventDefault();
+    e.stopPropagation();
+    swingEl.setPointerCapture?.(pointerId);
+
+    let lastValue = originValue;
+    const applyFineDrag = (clientX) => {
+      const deltaPercent = Math.round((clientX - originX) / pixelsPerPercent);
+      const next = Math.max(0, Math.min(100, originValue + deltaPercent));
+      if (next === lastValue) return;
+      lastValue = next;
+      swingEl.value = String(next);
+      swingEl.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+
+    const onMove = (moveEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      moveEvent.preventDefault();
+      applyFineDrag(moveEvent.clientX);
+    };
+
+    const finish = (upEvent) => {
+      if (upEvent.pointerId !== pointerId) return;
+      applyFineDrag(upEvent.clientX);
+      swingEl.removeEventListener("pointermove", onMove);
+      swingEl.removeEventListener("pointerup", finish);
+      swingEl.removeEventListener("pointercancel", cancel);
+      try { swingEl.releasePointerCapture?.(pointerId); } catch {}
+      swingFineDragSuppressClickUntil = performance.now() + 120;
+      swingEl.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+
+    const cancel = (cancelEvent) => {
+      if (cancelEvent.pointerId !== pointerId) return;
+      swingEl.removeEventListener("pointermove", onMove);
+      swingEl.removeEventListener("pointerup", finish);
+      swingEl.removeEventListener("pointercancel", cancel);
+      try { swingEl.releasePointerCapture?.(pointerId); } catch {}
+    };
+
+    swingEl.addEventListener("pointermove", onMove);
+    swingEl.addEventListener("pointerup", finish);
+    swingEl.addEventListener("pointercancel", cancel);
+  });
+
+  document.getElementById("swing")?.addEventListener("click", (e) => {
+    if (performance.now() < swingFineDragSuppressClickUntil) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   });
 
