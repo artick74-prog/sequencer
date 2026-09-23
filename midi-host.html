@@ -1685,6 +1685,8 @@ select, input[type="number"], input[type="text"] {
   right: 0;
   z-index: 1;
   display: flex;
+  cursor: pointer;
+  user-select: none;
   align-items: center;
   justify-content: flex-start;
   padding: 0 4px 0 7px;
@@ -1731,6 +1733,19 @@ select, input[type="number"], input[type="text"] {
   padding: 0 7px 0 4px;
   font-weight: 700;
   color: #111820;
+}
+.piano-roll-key.auditioning {
+  filter: brightness(.88);
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,.24),
+    inset -3px 0 4px rgba(38,46,54,.12);
+}
+.piano-roll-key.black.auditioning::before {
+  filter: brightness(1.45);
+}
+.piano-roll-key.drum-map-key.auditioning {
+  filter: brightness(1.42);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.24);
 }
 .piano-roll-key.drum-map-key,
 .piano-roll-key.drum-map-key.black,
@@ -3017,6 +3032,12 @@ body.timeline-ruler-zooming {
     { pad:7, midiNote:48 }, { pad:8, midiNote:47 }, { pad:9, midiNote:41 },
     { pad:10, midiNote:49 }, { pad:11, midiNote:51 }, { pad:12, midiNote:53 },
   ];
+  const XR20_DEFAULT_PAD_LABELS = {
+    36:"Kick", 38:"Snare", 37:"Side Stick",
+    42:"Closed Hi-Hat", 44:"Pedal Hi-Hat", 46:"Open Hi-Hat",
+    48:"Hi-Mid Tom", 47:"Low-Mid Tom", 41:"Low Floor Tom",
+    49:"Crash Cymbal", 51:"Ride Cymbal", 53:"Ride Bell",
+  };
   const DEFAULT_XR20_KIT_PROFILE_ID = "xr20-kit-1";
   const MIDI_CC_NAMES = {
     0:"Bank Select MSB", 1:"Modulation Wheel", 2:"Breath Controller", 3:"Undefined",
@@ -3601,15 +3622,15 @@ body.timeline-ruler-zooming {
       const assignment = xr20KitAssignment(profile, hardware.pad);
       const semantic = assignment.gmNote == null ? "" : gmDrumName(assignment.gmNote);
       const custom = String(assignment.label || "").trim();
-      const soundLabel = custom || semantic;
+      const fallback = XR20_DEFAULT_PAD_LABELS[hardware.midiNote] || gmDrumName(hardware.midiNote);
+      const soundLabel = custom || semantic || fallback;
       return {
         note: hardware.midiNote,
         pad: hardware.pad,
         label:
           "PAD " + String(hardware.pad).padStart(2,"0") +
-          " · " + NOTE_NAMES[hardware.midiNote % 12] +
-          " · MIDI " + hardware.midiNote +
-          (soundLabel ? " · " + soundLabel : ""),
+          " · " + soundLabel +
+          " · MIDI " + hardware.midiNote,
         sharp:false,
         cNote:false,
         kind:"xr20",
@@ -11741,8 +11762,8 @@ body.timeline-ruler-zooming {
     }
   }
 
-  function auditionPianoRollNote(track, rawNote, velocity = 100) {
-    if (!state.project || !track || state.playing) return;
+  function auditionPianoRollNote(track, rawNote, velocity = 100, { allowDuringPlayback = false } = {}) {
+    if (!state.project || !track || (state.playing && !allowDuringPlayback)) return;
     const route = trackRoute(track);
     if (route === "none") return;
 
@@ -12304,6 +12325,34 @@ body.timeline-ruler-zooming {
       key.style.top = y + "px";
       key.style.height = rowH + "px";
       key.textContent = rowInfo.label;
+      key.title = (rowInfo.label || midiToName(note)) + " · click to audition";
+      key.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        const auditionPitch = drumMode
+          ? drumAuditionPitchForView(track, note, drumViewMap)
+          : note;
+        if (auditionPitch == null) {
+          setStatus((rowInfo.label || "Drum") + " · no audition mapping for current drum view", "err");
+          return;
+        }
+
+        key.classList.add("auditioning");
+        auditionPianoRollNote(track, auditionPitch, 110, { allowDuringPlayback: true });
+        setStatus(
+          (drumMode ? "Drum Roll" : "Piano Roll") +
+          " audition · " + (rowInfo.label || midiToName(note)),
+          "ok"
+        );
+
+        const release = () => key.classList.remove("auditioning");
+        key.addEventListener("pointerup", release, { once:true });
+        key.addEventListener("pointercancel", release, { once:true });
+        key.addEventListener("pointerleave", release, { once:true });
+        setTimeout(release, 180);
+      });
       keys.appendChild(key);
 
       const row = document.createElement("div");

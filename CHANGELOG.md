@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-23 — Piano/Drum Roll key audition
+
+### Added
+- Левая колонка Piano Roll теперь работает как обычная DAW-клавиатура: по клавишам можно нажимать и прослушивать ноты через текущий route дорожки.
+- В Drum Roll нажатие по строке/pad preview'ит соответствующий GM/XR20 drum sound с учётом текущего drum view/listen режима.
+
+### Fixed
+- XR20 drum rows снова имеют читаемые названия даже при пустом Kit Profile: Kick, Snare, Closed Hi-Hat, Open Hi-Hat, toms, cymbals и т. п.
+- Custom Kit Profile labels и явные GM assignments по-прежнему имеют приоритет над fallback-названиями.
+
+
+
 ## 2026-09-23 — XR20 direct drum-note fallback
 
 ### Fixed
