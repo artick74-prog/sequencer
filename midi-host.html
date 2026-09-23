@@ -2118,7 +2118,7 @@ body.timeline-ruler-zooming {
   position: relative;
   top: 0;
   display: inline-block;
-  max-width: 150px;
+  max-width: var(--marker-label-max, 150px);
   padding: 1px 4px 2px;
   overflow: hidden;
   white-space: nowrap;
@@ -10266,13 +10266,18 @@ body.timeline-ruler-zooming {
     mRuler.className = "ruler markers-ruler";
     mRuler.style.width = `${totalW}px`;
     mRuler.title = "Click / drag here to move the red playhead";
-    for (const m of markers) {
+    for (let markerIndex = 0; markerIndex < markers.length; markerIndex++) {
+      const m = markers[markerIndex];
       const x = (m.tick / length) * totalW;
+      const nextMarker = markers[markerIndex + 1] || null;
+      const nextX = nextMarker ? (nextMarker.tick / length) * totalW : totalW;
+      const availableLabelWidth = Math.max(56, nextX - x - 18);
       const flag = document.createElement("button");
       flag.type = "button";
       flag.className = "marker-flag";
       flag.dataset.tick = String(m.tick);
       flag.style.left = `${x}px`;
+      flag.style.setProperty("--marker-label-max", `${availableLabelWidth}px`);
       flag.title =
         `${m.text} · bar ${m.bar} — click = seek · double-click/right-click = edit/copy`;
       flag.innerHTML =
