@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-24 — Reload from AI replaces stale local working copy
+
+### Fixed
+- **Reload from AI** теперь загружает `projects/current.json` без повторного наложения старого local autosave и сразу переписывает local working copy новым проектом. Это предотвращает возврат удалённых/старых тактов после того, как ассистент перестроил аранжировку в GitHub.
+
+
 ## 2026-09-24 — Dedicated Sequencer download folder
 
 ### Changed
