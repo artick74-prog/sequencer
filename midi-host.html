@@ -16318,7 +16318,8 @@ body.timeline-ruler-zooming {
         if (!res.ok || !reply.ok) throw new Error(reply.error || `HTTP ${res.status}`);
         const data = reply.project;
         if (!data?.tracks) throw new Error("JSON missing tracks[]");
-        setProject(normalizeProject(data, "current"));
+        setProject(normalizeProject(data, "current"), { restoreLocal: false });
+        saveHostAutosaveNow();
         const suffix = reply.commit ? ` · ${reply.commit}` : "";
         setStatus(`Pulled GitHub and reloaded projects/current.json${suffix}`, "ok");
         return;
@@ -16329,7 +16330,8 @@ body.timeline-ruler-zooming {
         const file = await fh.getFile();
         const data = JSON.parse(await file.text());
         if (!data.tracks) throw new Error("JSON missing tracks[]");
-        setProject(normalizeProject(data, "current"));
+        setProject(normalizeProject(data, "current"), { restoreLocal: false });
+        saveHostAutosaveNow();
         setStatus("Reloaded projects/current.json from bound folder", "ok");
         return;
       }
@@ -16337,7 +16339,8 @@ body.timeline-ruler-zooming {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!data.tracks) throw new Error("JSON missing tracks[]");
-      setProject(normalizeProject(data, "current"));
+      setProject(normalizeProject(data, "current"), { restoreLocal: false });
+      saveHostAutosaveNow();
       setStatus("Reloaded projects/current.json", "ok");
     } catch (err) {
       setStatus(`Reload failed: ${err.message}`, "err");
