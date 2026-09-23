@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-24 — Channel-driven instrument routing
+
+### Changed
+- MIDI channel is now the active playback destination in Hardware MIDI Host: switching a GM-authored part to CH 1 / 2 / 3 / 10 routes that same MIDI part to XR20 Synth/Bass, TD-3, XR20 1-Shot or XR20 Drums instead of continuing to play its SoundFont program.
+- The original GM program/name is preserved while auditioning through hardware, so moving the track back to a GM channel (4–9, 11–16) restores its previous SoundFont instrument.
+- The GM Program selector is hidden while a track is on a hardware channel and reappears when it returns to the GM channel pool.
+- SF2 fallback for hardware channels now follows the hardware role (Bass/Acid/Percussion) instead of the source GM program.
+
+
 ## 2026-09-23 — Piano/Drum Roll key audition
 
 ### Added
