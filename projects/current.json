@@ -3,7 +3,7 @@
   "name": "Acid Rock 1",
   "ppq": 480,
   "tempo": 112,
-  "swing": 24,
+  "swing": 0,
   "masterTranspose": 7,
   "lengthTicks": 157440,
   "minimumLengthTicks": 138240,
@@ -6459,7 +6459,7 @@
       "cubaseIndex": 0,
       "notes": [
         {
-          "tick": 14,
+          "tick": 0,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6473,7 +6473,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 1232,
+          "tick": 1200,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6494,7 +6494,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 1934,
+          "tick": 1920,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6508,7 +6508,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 3152,
+          "tick": 3120,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6529,7 +6529,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 3854,
+          "tick": 3840,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6543,7 +6543,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 5072,
+          "tick": 5040,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6564,7 +6564,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 5774,
+          "tick": 5760,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6578,7 +6578,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 6992,
+          "tick": 6960,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6599,7 +6599,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 7694,
+          "tick": 7680,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6613,7 +6613,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 8912,
+          "tick": 8880,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6634,7 +6634,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 9614,
+          "tick": 9600,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6648,7 +6648,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 10832,
+          "tick": 10800,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6669,7 +6669,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 11534,
+          "tick": 11520,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6683,7 +6683,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 12752,
+          "tick": 12720,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6704,7 +6704,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 13454,
+          "tick": 13440,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6718,7 +6718,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 14672,
+          "tick": 14640,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6739,7 +6739,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 15374,
+          "tick": 15360,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6753,7 +6753,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 16592,
+          "tick": 16560,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6774,7 +6774,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 17294,
+          "tick": 17280,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6788,7 +6788,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 18512,
+          "tick": 18480,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6809,7 +6809,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 19214,
+          "tick": 19200,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6823,7 +6823,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 20432,
+          "tick": 20400,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6844,7 +6844,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 21134,
+          "tick": 21120,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6858,7 +6858,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 22352,
+          "tick": 22320,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6879,7 +6879,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 23054,
+          "tick": 23040,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6893,7 +6893,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 24272,
+          "tick": 24240,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6914,7 +6914,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 24974,
+          "tick": 24960,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6928,7 +6928,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 26192,
+          "tick": 26160,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6949,7 +6949,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 26894,
+          "tick": 26880,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6963,7 +6963,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 28112,
+          "tick": 28080,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -6984,7 +6984,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 28814,
+          "tick": 28800,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -6998,7 +6998,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 30032,
+          "tick": 30000,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7019,7 +7019,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 30734,
+          "tick": 30720,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7033,7 +7033,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 31952,
+          "tick": 31920,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7054,7 +7054,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 32654,
+          "tick": 32640,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7068,7 +7068,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 33872,
+          "tick": 33840,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7089,7 +7089,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 34574,
+          "tick": 34560,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7103,7 +7103,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 35792,
+          "tick": 35760,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7124,7 +7124,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 36494,
+          "tick": 36480,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7138,7 +7138,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 37712,
+          "tick": 37680,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7159,7 +7159,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 38414,
+          "tick": 38400,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7173,7 +7173,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 39632,
+          "tick": 39600,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7194,7 +7194,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 40334,
+          "tick": 40320,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7208,7 +7208,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 41552,
+          "tick": 41520,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7229,7 +7229,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 42254,
+          "tick": 42240,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7243,7 +7243,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 43472,
+          "tick": 43440,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7264,7 +7264,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 44174,
+          "tick": 44160,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7278,7 +7278,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 45392,
+          "tick": 45360,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7299,7 +7299,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 46094,
+          "tick": 46080,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7313,7 +7313,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 47312,
+          "tick": 47280,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7334,7 +7334,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 48014,
+          "tick": 48000,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7348,7 +7348,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 49232,
+          "tick": 49200,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7369,7 +7369,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 49934,
+          "tick": 49920,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7383,7 +7383,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 51152,
+          "tick": 51120,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7404,7 +7404,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 51854,
+          "tick": 51840,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7418,7 +7418,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 53072,
+          "tick": 53040,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7439,7 +7439,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 53774,
+          "tick": 53760,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7453,7 +7453,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 54992,
+          "tick": 54960,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7474,7 +7474,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 55694,
+          "tick": 55680,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7488,7 +7488,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 56912,
+          "tick": 56880,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7509,7 +7509,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 57614,
+          "tick": 57600,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7523,7 +7523,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 58832,
+          "tick": 58800,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7544,7 +7544,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 59534,
+          "tick": 59520,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7558,7 +7558,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 60752,
+          "tick": 60720,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7579,7 +7579,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 61454,
+          "tick": 61440,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7593,7 +7593,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 62672,
+          "tick": 62640,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7614,7 +7614,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 63374,
+          "tick": 63360,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7628,7 +7628,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 64592,
+          "tick": 64560,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7649,7 +7649,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 65294,
+          "tick": 65280,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7663,7 +7663,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 66512,
+          "tick": 66480,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7684,7 +7684,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 67214,
+          "tick": 67200,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7698,7 +7698,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 68432,
+          "tick": 68400,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7719,7 +7719,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 69134,
+          "tick": 69120,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7733,7 +7733,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 70352,
+          "tick": 70320,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7754,7 +7754,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 71054,
+          "tick": 71040,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7768,7 +7768,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 72272,
+          "tick": 72240,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7789,7 +7789,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 72974,
+          "tick": 72960,
           "duration": 594,
           "note": 55,
           "velocity": 105,
@@ -7803,7 +7803,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 74178,
+          "tick": 74160,
           "duration": 162,
           "note": 53,
           "velocity": 103,
@@ -7824,35 +7824,35 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 74790,
+          "tick": 74760,
           "duration": 66,
           "note": 53,
           "velocity": 99,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 74892,
+          "tick": 74880,
           "duration": 414,
           "note": 55,
           "velocity": 104,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 75384,
+          "tick": 75360,
           "duration": 162,
           "note": 58,
           "velocity": 91,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 75606,
+          "tick": 75600,
           "duration": 372,
           "note": 50,
           "velocity": 88,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 76092,
+          "tick": 76080,
           "duration": 162,
           "note": 53,
           "velocity": 104,
@@ -7866,21 +7866,21 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 76500,
+          "tick": 76560,
           "duration": 132,
           "note": 58,
           "velocity": 89,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 76710,
+          "tick": 76680,
           "duration": 66,
           "note": 53,
           "velocity": 100,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 76814,
+          "tick": 76800,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7894,7 +7894,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 78032,
+          "tick": 78000,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7915,7 +7915,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 78734,
+          "tick": 78720,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7929,7 +7929,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 79952,
+          "tick": 79920,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7950,7 +7950,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 80654,
+          "tick": 80640,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7964,7 +7964,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 81872,
+          "tick": 81840,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -7985,7 +7985,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 82574,
+          "tick": 82560,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -7999,7 +7999,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 83792,
+          "tick": 83760,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8020,7 +8020,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 84494,
+          "tick": 84480,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8034,7 +8034,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 85712,
+          "tick": 85680,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8055,7 +8055,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 86414,
+          "tick": 86400,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8069,7 +8069,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 87632,
+          "tick": 87600,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8090,7 +8090,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 88334,
+          "tick": 88320,
           "duration": 594,
           "note": 55,
           "velocity": 105,
@@ -8104,7 +8104,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 89538,
+          "tick": 89520,
           "duration": 162,
           "note": 53,
           "velocity": 103,
@@ -8125,35 +8125,35 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 90150,
+          "tick": 90120,
           "duration": 66,
           "note": 53,
           "velocity": 99,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 90252,
+          "tick": 90240,
           "duration": 414,
           "note": 55,
           "velocity": 104,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 90744,
+          "tick": 90720,
           "duration": 162,
           "note": 58,
           "velocity": 91,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 90966,
+          "tick": 90960,
           "duration": 372,
           "note": 50,
           "velocity": 88,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 91452,
+          "tick": 91440,
           "duration": 162,
           "note": 53,
           "velocity": 104,
@@ -8167,21 +8167,21 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 91860,
+          "tick": 91920,
           "duration": 132,
           "note": 58,
           "velocity": 89,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 92070,
+          "tick": 92040,
           "duration": 66,
           "note": 53,
           "velocity": 100,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 92174,
+          "tick": 92160,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8195,7 +8195,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 93392,
+          "tick": 93360,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8216,7 +8216,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 94094,
+          "tick": 94080,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8230,7 +8230,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 95312,
+          "tick": 95280,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8251,7 +8251,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 96014,
+          "tick": 96000,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8265,7 +8265,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 97232,
+          "tick": 97200,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8286,7 +8286,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 97934,
+          "tick": 97920,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8300,7 +8300,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 99152,
+          "tick": 99120,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8321,7 +8321,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 99854,
+          "tick": 99840,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8335,7 +8335,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 101072,
+          "tick": 101040,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8356,7 +8356,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 101774,
+          "tick": 101760,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8370,7 +8370,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 102992,
+          "tick": 102960,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8391,7 +8391,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 103694,
+          "tick": 103680,
           "duration": 594,
           "note": 55,
           "velocity": 105,
@@ -8405,7 +8405,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 104898,
+          "tick": 104880,
           "duration": 162,
           "note": 53,
           "velocity": 103,
@@ -8426,35 +8426,35 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 105510,
+          "tick": 105480,
           "duration": 66,
           "note": 53,
           "velocity": 99,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 105612,
+          "tick": 105600,
           "duration": 414,
           "note": 55,
           "velocity": 104,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 106104,
+          "tick": 106080,
           "duration": 162,
           "note": 58,
           "velocity": 91,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 106326,
+          "tick": 106320,
           "duration": 372,
           "note": 50,
           "velocity": 88,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 106812,
+          "tick": 106800,
           "duration": 162,
           "note": 53,
           "velocity": 104,
@@ -8468,21 +8468,21 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 107220,
+          "tick": 107280,
           "duration": 132,
           "note": 58,
           "velocity": 89,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 107430,
+          "tick": 107400,
           "duration": 66,
           "note": 53,
           "velocity": 100,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 107534,
+          "tick": 107520,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8496,7 +8496,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 108752,
+          "tick": 108720,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8517,7 +8517,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 109454,
+          "tick": 109440,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8531,7 +8531,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 110672,
+          "tick": 110640,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8552,7 +8552,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 111374,
+          "tick": 111360,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8566,7 +8566,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 112592,
+          "tick": 112560,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8587,7 +8587,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 113294,
+          "tick": 113280,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8601,7 +8601,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 114512,
+          "tick": 114480,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8622,7 +8622,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 115214,
+          "tick": 115200,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8636,7 +8636,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 116432,
+          "tick": 116400,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8657,7 +8657,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 117134,
+          "tick": 117120,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8671,7 +8671,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 118352,
+          "tick": 118320,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8692,7 +8692,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 119054,
+          "tick": 119040,
           "duration": 594,
           "note": 55,
           "velocity": 105,
@@ -8706,7 +8706,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 120258,
+          "tick": 120240,
           "duration": 162,
           "note": 53,
           "velocity": 103,
@@ -8727,35 +8727,35 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 120870,
+          "tick": 120840,
           "duration": 66,
           "note": 53,
           "velocity": 99,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 120972,
+          "tick": 120960,
           "duration": 414,
           "note": 55,
           "velocity": 104,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 121464,
+          "tick": 121440,
           "duration": 162,
           "note": 58,
           "velocity": 91,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 121686,
+          "tick": 121680,
           "duration": 372,
           "note": 50,
           "velocity": 88,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 122172,
+          "tick": 122160,
           "duration": 162,
           "note": 53,
           "velocity": 104,
@@ -8769,21 +8769,21 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 122580,
+          "tick": 122640,
           "duration": 132,
           "note": 58,
           "velocity": 89,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 122790,
+          "tick": 122760,
           "duration": 66,
           "note": 53,
           "velocity": 100,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 122894,
+          "tick": 122880,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8797,7 +8797,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 124112,
+          "tick": 124080,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8818,7 +8818,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 124814,
+          "tick": 124800,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8832,7 +8832,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 126032,
+          "tick": 126000,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8853,7 +8853,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 126734,
+          "tick": 126720,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8867,7 +8867,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 127952,
+          "tick": 127920,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8888,7 +8888,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 128654,
+          "tick": 128640,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8902,7 +8902,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 129872,
+          "tick": 129840,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8923,7 +8923,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 130574,
+          "tick": 130560,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8937,7 +8937,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 131792,
+          "tick": 131760,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8958,7 +8958,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 132494,
+          "tick": 132480,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -8972,7 +8972,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 133712,
+          "tick": 133680,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -8993,7 +8993,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 134414,
+          "tick": 134400,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -9007,7 +9007,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 135632,
+          "tick": 135600,
           "duration": 178,
           "note": 55,
           "velocity": 105,
@@ -9028,7 +9028,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 136334,
+          "tick": 136320,
           "duration": 651,
           "note": 48,
           "velocity": 108,
@@ -9042,7 +9042,7 @@
           "clipId": "track-part:bass"
         },
         {
-          "tick": 137552,
+          "tick": 137520,
           "duration": 178,
           "note": 55,
           "velocity": 105,
