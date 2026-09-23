@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-24 — Shift fine-drag for Swing
+
+### Changed
+- Holding **Shift** while dragging the Swing Grid slider now enables a slow fine-adjust mode.
+- Fine drag uses about **4 px per 1%**, making it much easier to land on an exact Swing value without abandoning the familiar Fender Studio gesture.
+- Normal drag remains unchanged, and mouse-wheel tuning still moves in exact 1% steps.
+
 ## 2026-09-24 — Larger Swing control and 1% wheel steps
 
 ### Changed
