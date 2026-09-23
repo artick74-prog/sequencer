@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-24 — Editable marker flags
+
+### Added
+- Маркеры на timeline теперь выглядят как зелёные флажки; полный текст раскрывается при наведении/focus.
+- Двойной клик или ПКМ по флажку открывает редактор названия с **Save**, **Copy name**, **Cancel** и **Delete**; Enter сохраняет, Esc закрывает.
+- Обычный клик по флажку по-прежнему ставит cue на соответствующий такт.
+
+
 ## 2026-09-24 — Reload from AI replaces stale local working copy
 
 ### Fixed
