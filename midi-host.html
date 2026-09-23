@@ -10286,7 +10286,7 @@ body.timeline-ruler-zooming {
       flag.style.left = `${x}px`;
       flag.style.setProperty("--marker-slot-width", `${availableSlotWidth}px`);
       flag.title =
-        `${m.text} · bar ${m.bar} — click = seek · double-click/right-click = edit/copy`;
+        `${m.text} · bar ${m.bar} — click = cue clicked bar · double-click/right-click = edit/copy`;
       flag.innerHTML =
         '<span class="marker-flag-icon" aria-hidden="true"></span>' +
         '<span class="marker-flag-label">' +
@@ -10299,7 +10299,15 @@ body.timeline-ruler-zooming {
       flag.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        seekToTick(m.tick, { restart: true });
+
+        const rect = mRuler.getBoundingClientRect();
+        const x = Math.min(
+          Math.max(0, event.clientX - rect.left),
+          rect.width || 1
+        );
+        const rawTick =
+          (x / Math.max(1, state.barW)) * ticksPerBar(project.ppq);
+        seekToTick(rawTick, { restart: true });
       });
       flag.addEventListener("dblclick", (event) => {
         event.preventDefault();
