@@ -5,7 +5,7 @@
   "tempo": 112,
   "swing": 24,
   "masterTranspose": 7,
-  "lengthTicks": 184320,
+  "lengthTicks": 192000,
   "minimumLengthTicks": 153600,
   "hardware": {
     "output": "TD-3 USB (thru to XR20 DIN)",
@@ -59,6 +59,10 @@
     {
       "tick": 153600,
       "text": "DJ Outro · Mix-out · 8 bars"
+    },
+    {
+      "tick": 176640,
+      "text": "Idea 01 · Refined Chorus Acid Hook · 8 bars"
     }
   ],
   "loopRange": {
@@ -165,13 +169,13 @@
       "endTick": 184320,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 812,
+      "noteCount": 876,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.551Z",
-      "editedAt": "2026-09-25T02:29:00+05:00",
-      "editReason": "ai-restore-chorus-hook-single-harmony"
+      "editedAt": "2026-09-25T02:36:00+05:00",
+      "editReason": "ai-park-refined-hook-bar-93"
     },
     {
       "id": "project-track-part",
@@ -21756,6 +21760,454 @@
           "duration": 67,
           "note": 48,
           "velocity": 64,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 176640,
+          "duration": 100,
+          "note": 48,
+          "velocity": 120,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 177010,
+          "duration": 150,
+          "note": 48,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 177120,
+          "duration": 82,
+          "note": 51,
+          "velocity": 42,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 177490,
+          "duration": 170,
+          "note": 55,
+          "velocity": 34,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 177730,
+          "duration": 78,
+          "note": 48,
+          "velocity": 38,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 177970,
+          "duration": 285,
+          "note": 46,
+          "velocity": 32,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 178210,
+          "duration": 105,
+          "note": 48,
+          "velocity": 114,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 178450,
+          "duration": 92,
+          "note": 55,
+          "velocity": 35,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 178690,
+          "duration": 82,
+          "note": 48,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 178800,
+          "duration": 185,
+          "note": 48,
+          "velocity": 32,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 179040,
+          "duration": 102,
+          "note": 55,
+          "velocity": 121,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 179280,
+          "duration": 170,
+          "note": 51,
+          "velocity": 34,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 179650,
+          "duration": 82,
+          "note": 48,
+          "velocity": 38,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 179760,
+          "duration": 305,
+          "note": 46,
+          "velocity": 30,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 180000,
+          "duration": 105,
+          "note": 48,
+          "velocity": 110,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 180370,
+          "duration": 92,
+          "note": 51,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 180480,
+          "duration": 100,
+          "note": 48,
+          "velocity": 120,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 180850,
+          "duration": 150,
+          "note": 48,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 180960,
+          "duration": 82,
+          "note": 51,
+          "velocity": 42,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 181330,
+          "duration": 170,
+          "note": 55,
+          "velocity": 34,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 181570,
+          "duration": 78,
+          "note": 48,
+          "velocity": 38,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 181810,
+          "duration": 285,
+          "note": 46,
+          "velocity": 32,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 182050,
+          "duration": 105,
+          "note": 48,
+          "velocity": 114,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 182290,
+          "duration": 92,
+          "note": 55,
+          "velocity": 35,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 182530,
+          "duration": 82,
+          "note": 48,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 182640,
+          "duration": 185,
+          "note": 48,
+          "velocity": 32,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 182880,
+          "duration": 102,
+          "note": 55,
+          "velocity": 121,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 183120,
+          "duration": 170,
+          "note": 51,
+          "velocity": 34,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 183490,
+          "duration": 82,
+          "note": 48,
+          "velocity": 38,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 183600,
+          "duration": 305,
+          "note": 46,
+          "velocity": 30,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 183840,
+          "duration": 105,
+          "note": 48,
+          "velocity": 110,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 184210,
+          "duration": 92,
+          "note": 51,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 184320,
+          "duration": 100,
+          "note": 48,
+          "velocity": 120,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 184690,
+          "duration": 150,
+          "note": 48,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 184800,
+          "duration": 82,
+          "note": 51,
+          "velocity": 42,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 185170,
+          "duration": 170,
+          "note": 55,
+          "velocity": 34,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 185410,
+          "duration": 78,
+          "note": 48,
+          "velocity": 38,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 185650,
+          "duration": 285,
+          "note": 46,
+          "velocity": 32,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 185890,
+          "duration": 105,
+          "note": 48,
+          "velocity": 114,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 186130,
+          "duration": 92,
+          "note": 58,
+          "velocity": 42,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 186370,
+          "duration": 82,
+          "note": 48,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 186480,
+          "duration": 185,
+          "note": 48,
+          "velocity": 32,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 186720,
+          "duration": 102,
+          "note": 55,
+          "velocity": 121,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 186960,
+          "duration": 170,
+          "note": 55,
+          "velocity": 40,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 187330,
+          "duration": 82,
+          "note": 48,
+          "velocity": 38,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 187440,
+          "duration": 305,
+          "note": 46,
+          "velocity": 30,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 187680,
+          "duration": 105,
+          "note": 48,
+          "velocity": 110,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 188050,
+          "duration": 92,
+          "note": 51,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 188160,
+          "duration": 100,
+          "note": 55,
+          "velocity": 120,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 188530,
+          "duration": 150,
+          "note": 55,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 188640,
+          "duration": 82,
+          "note": 58,
+          "velocity": 42,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 189010,
+          "duration": 170,
+          "note": 62,
+          "velocity": 34,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 189250,
+          "duration": 78,
+          "note": 55,
+          "velocity": 38,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 189490,
+          "duration": 285,
+          "note": 53,
+          "velocity": 32,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 189730,
+          "duration": 105,
+          "note": 55,
+          "velocity": 114,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 189970,
+          "duration": 92,
+          "note": 62,
+          "velocity": 35,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 190210,
+          "duration": 82,
+          "note": 55,
+          "velocity": 36,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 190320,
+          "duration": 185,
+          "note": 55,
+          "velocity": 32,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 190560,
+          "duration": 102,
+          "note": 62,
+          "velocity": 121,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 190800,
+          "duration": 170,
+          "note": 58,
+          "velocity": 34,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 191170,
+          "duration": 82,
+          "note": 55,
+          "velocity": 38,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 191280,
+          "duration": 305,
+          "note": 53,
+          "velocity": 30,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 191520,
+          "duration": 105,
+          "note": 55,
+          "velocity": 110,
+          "clipId": "track-part:acid"
+        },
+        {
+          "tick": 191890,
+          "duration": 92,
+          "note": 58,
+          "velocity": 36,
           "clipId": "track-part:acid"
         }
       ],
