@@ -1,4 +1,4 @@
-# Acid Rock 1
+# Acid Breaks 1
 
 - Tempo: **112** BPM · PPQ 480 · **96** bars
 - Quantize grid: swing **24%** (stored note ticks are played/exported literally) · master transpose **+7 st** (drums/percussion excluded)
