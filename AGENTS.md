@@ -106,12 +106,15 @@ In Style Library → **Idea Pool**:
 MIDI Host also has a right-side **✦ Ideas** browser for contextual audition against the current arrangement:
 
 - the existing project **Loop range** is the audition slot; if no range exists, Preview creates one from the current cue using the idea length;
+- selecting an Idea and starting Preview are separate actions: card click selects, **▶ PREVIEW** starts audition;
 - shorter ideas repeat to fill the loop, longer ideas are trimmed to the loop;
-- **Replace same role** is the default: matching project tracks (acid/bass/drums/etc.) are temporarily suppressed while the saved idea plays through those tracks' current routing;
-- **Layer** leaves the project tracks audible and adds the idea on top;
-- **APPLY to loop** commits exactly the auditioned repeated/trimmed material into the current project; Replace removes note onsets in the slot on matching tracks, Layer keeps them;
+- **Replace / apply target** answers “which project part does this Idea stand in for?”; Auto matches by id/role/channel, while a project track can be chosen explicitly;
+- **Play through** is independent from Replace: Auto uses the matched track, or the same Idea can be auditioned through TD-3 CH2, XR20 Bass CH1, XR20 Percussion CH3, XR20 Drums CH10, any existing project track, or a selected General MIDI / SoundFont program;
+- explicit Play through routing is audition-only and can temporarily use hardware/SF2 even when that global output toggle is off; the required MIDI Out or SoundFont still has to be available;
+- **Replace** temporarily suppresses the selected/matched project tracks; **Layer** leaves them audible;
+- **APPLY to loop** commits the MIDI to the Replace/apply target using the existing project routing. The temporary Play through timbre is not written into project routing;
 - changing/closing/stopping Preview does not edit project notes;
-- Idea tempo is ignored for contextual audition: the idea follows the current project tempo, swing timing is already stored in its note ticks, and current project transpose/routing are used.
+- Idea tempo is ignored for contextual audition: the Idea follows the current project tempo and project master transpose; saved note timing stays authoritative.
 
 Do not park reusable experiments at the end of `projects/current.json`. Move them into Idea Pool once they are worth preserving.
 
