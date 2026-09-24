@@ -4493,10 +4493,14 @@ body.timeline-ruler-zooming {
       filename,
       buildSingleTrackMidi(state.project, track, { straight: state.dawStraightMidi })
     );
+    const timingLabel = state.dawStraightMidi
+      ? " · straight DAW exchange · Swing " + Math.round(projectSwingPercent(state.project)) + "% bypassed"
+      : " · project timing";
     setStatus(
-      result.savedToFolder
+      (result.savedToFolder
         ? `Saved MIDI: Downloads\\Sequencer\\${result.filename}`
-        : `Downloaded MIDI: ${result.filename}`,
+        : `Downloaded MIDI: ${result.filename}`) +
+      timingLabel,
       "ok"
     );
   }
@@ -5560,9 +5564,20 @@ body.timeline-ruler-zooming {
     const trackStem = safeMidiStem(track.name || ("ch-" + (track.channel || 1)));
     const filename = projectStem + " - " + trackStem + ".mid";
     try {
-      const entry = await saveMidiBytesToPool(filename, buildSingleTrackMidi(state.project, track));
-      midiPoolSetStatus("Saved to MIDI Pool: " + entry.name, true);
-      setStatus("MIDI Pool ← " + track.name + " · " + entry.name, "ok");
+      const entry = await saveMidiBytesToPool(
+        filename,
+        buildSingleTrackMidi(state.project, track, { straight: state.dawStraightMidi })
+      );
+      midiPoolSetStatus(
+        "Saved to MIDI Pool: " + entry.name +
+        (state.dawStraightMidi ? " · straight exchange timing" : " · project timing"),
+        true
+      );
+      setStatus(
+        "MIDI Pool ← " + track.name + " · " + entry.name +
+        (state.dawStraightMidi ? " · Swing bypassed for DAW exchange" : " · current project timing"),
+        "ok"
+      );
       return true;
     } catch (err) {
       setStatus("MIDI Pool export failed: " + err.message, "err");
@@ -17614,11 +17629,18 @@ body.timeline-ruler-zooming {
     state.project.name = document.getElementById("projectName").value || state.project.name;
     state.project.tempo = Number(document.getElementById("tempo").value) || state.project.tempo;
     const filename = safeMidiStem(state.project.name || "export") + ".mid";
-    const result = await saveMidiDownload(filename, buildMidi(state.project));
+    const result = await saveMidiDownload(
+      filename,
+      buildMidi(state.project, { straight: state.dawStraightMidi })
+    );
+    const timingLabel = state.dawStraightMidi
+      ? " · straight DAW exchange · Swing " + Math.round(projectSwingPercent(state.project)) + "% bypassed"
+      : " · project timing";
     setStatus(
-      result.savedToFolder
+      (result.savedToFolder
         ? `Saved MIDI: Downloads\\Sequencer\\${result.filename}`
-        : `Downloaded MIDI: ${result.filename}`,
+        : `Downloaded MIDI: ${result.filename}`) +
+      timingLabel,
       "ok"
     );
   });
