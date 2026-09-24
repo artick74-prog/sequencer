@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "savedAt": "2026-09-24T20:29:57.161Z",
-  "barWidthPx": 45.98115808806831,
-  "loop": true,
+  "savedAt": "2026-09-24T21:35:23.915Z",
+  "barWidthPx": 13.520833333333334,
+  "loop": false,
   "loopStartTick": 107520,
   "loopEndTick": 138240,
   "browserAudioSf2": true,
