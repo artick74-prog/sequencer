@@ -335,7 +335,7 @@
       "channel": 2,
       "role": "td3",
       "gmProgram": null,
-      "mute": false,
+      "mute": true,
       "transposeOctaves": 0,
       "noteCount": 1008,
       "pitchMin": 24,
@@ -425,10 +425,10 @@
     {
       "id": "guitar",
       "name": "29 Overdriven Guitar",
-      "channel": 3,
+      "channel": 4,
       "role": "gm",
       "gmProgram": 29,
-      "mute": false,
+      "mute": true,
       "transposeOctaves": 0,
       "noteCount": 744,
       "pitchMin": 48,
@@ -760,8 +760,8 @@
       "startBar": 1,
       "endBar": 8,
       "heatmap32": {
-        "ascii": "#.o.x.o.|x.o.x.o.|x.o.#oo.|#.o.#.o.",
-        "max": 4.5,
+        "ascii": "#...o.o.|x...x...|o...xoo.|#.o.x.o.",
+        "max": 3,
         "barsSampled": 8
       },
       "tracks": [
@@ -985,7 +985,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 56,
           "hardOffNotes": 0,
           "patterns": [
@@ -1037,8 +1037,8 @@
       "startBar": 9,
       "endBar": 16,
       "heatmap32": {
-        "ascii": "x.o.x.o.|x.o.x.o.|#.o.xoo.|#.o.#.x.",
-        "max": 5,
+        "ascii": "#.o.o.o.|x.o.x.o.|x.o.xoo.|#.o.x.x.",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
@@ -1291,7 +1291,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 72,
           "hardOffNotes": 0,
           "patterns": [
@@ -1343,8 +1343,8 @@
       "startBar": 17,
       "endBar": 32,
       "heatmap32": {
-        "ascii": "x.o.x.o.|#.o.x.o.|#.o.#oo.|#.o.#.o.",
-        "max": 5.9,
+        "ascii": "#.o.o.x.|x.o.x.o.|x.o.xox.|#.o.#.x.",
+        "max": 3.1,
         "barsSampled": 16
       },
       "tracks": [
@@ -1621,7 +1621,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 224,
           "hardOffNotes": 0,
           "patterns": [
@@ -1673,8 +1673,8 @@
       "startBar": 33,
       "endBar": 40,
       "heatmap32": {
-        "ascii": "#.o.x.o.|x.o.x.o.|x.o.#oo.|x.oo#.oo",
-        "max": 4.1,
+        "ascii": "#...o...|o...x...|o...xo..|x..ox.oo",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
@@ -1909,7 +1909,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 56,
           "hardOffNotes": 0,
           "patterns": [
@@ -1961,8 +1961,8 @@
       "startBar": 41,
       "endBar": 48,
       "heatmap32": {
-        "ascii": "#.o.x.o.|#.o.x.o.|x.o.#oo.|#.oo#.oo",
-        "max": 4.5,
+        "ascii": "#.o.o.o.|x.o.x.o.|x.o.xoo.|#.oox.oo",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
@@ -2227,7 +2227,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 56,
           "hardOffNotes": 0,
           "patterns": [
@@ -2279,8 +2279,8 @@
       "startBar": 49,
       "endBar": 56,
       "heatmap32": {
-        "ascii": "x.o.x.x.|#.o.x.o.|#.o.#oo.|#.oo#.oo",
-        "max": 5.6,
+        "ascii": "#.o.o.x.|x.o.x.o.|x.o.xox.|#.oox.xo",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
@@ -2562,7 +2562,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 112,
           "hardOffNotes": 0,
           "patterns": [
@@ -2614,8 +2614,8 @@
       "startBar": 57,
       "endBar": 64,
       "heatmap32": {
-        "ascii": "x.o.x.x.|#.o.x.x.|#.o.#ox.|#.oo#.xo",
-        "max": 5.5,
+        "ascii": "#.o.o.x.|x.o.x.x.|x.o.xox.|#.oox.xo",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
@@ -2897,7 +2897,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 112,
           "hardOffNotes": 0,
           "patterns": [
@@ -2949,8 +2949,8 @@
       "startBar": 65,
       "endBar": 72,
       "heatmap32": {
-        "ascii": "#.o.x.o.|#.o.x.o.|x.o.#oo.|#.o.#.o.",
-        "max": 4.3,
+        "ascii": "#.o.o.o.|x.o.x.o.|o.o.xoo.|#.o.x.o.",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
@@ -3176,7 +3176,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 56,
           "hardOffNotes": 0,
           "patterns": [

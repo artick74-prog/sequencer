@@ -33,7 +33,7 @@
 ### Intro · 8th hats · sparse break (bars 1–8)
 Heatmap (all tracks, avg density):
 ```
-#.o.x.o.|x.o.x.o.|x.o.#oo.|#.o.#.o.
+#...o.o.|x...x...|o...xoo.|#.o.x.o.
 ```
 **Drums** (ch 10, 112 notes)
 - bars 3, 5:
@@ -87,7 +87,7 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
   pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 
-**29 Overdriven Guitar** (ch 3, 56 notes)
+**29 Overdriven Guitar** (ch 4, 56 notes)
 2-bar loop (dominant):
 ```
 A ....x...|x...x...|X...x...|x...x...
@@ -105,7 +105,7 @@ B ....x...|x...x...|X...x...|x...x...
 ### Groove In · hats 8ths → 16ths (bars 9–16)
 Heatmap (all tracks, avg density):
 ```
-x.o.x.o.|x.o.x.o.|#.o.xoo.|#.o.#.x.
+#.o.o.o.|x.o.x.o.|x.o.xoo.|#.o.x.x.
 ```
 **Drums** (ch 10, 174 notes)
 - bars 9:
@@ -159,7 +159,7 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
   pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 
-**29 Overdriven Guitar** (ch 3, 72 notes)
+**29 Overdriven Guitar** (ch 4, 72 notes)
 2-bar loop (dominant):
 ```
 A ....x...|x...x...|*...x...|*...x...
@@ -177,7 +177,7 @@ B ....x...|x...x...|*...x...|*...x...
 ### Development A · full Acid Breaks (bars 17–32)
 Heatmap (all tracks, avg density):
 ```
-x.o.x.o.|#.o.x.o.|#.o.#oo.|#.o.#.o.
+#.o.o.x.|x.o.x.o.|x.o.xox.|#.o.#.x.
 ```
 **Drums** (ch 10, 401 notes)
 2-bar loop (dominant):
@@ -239,7 +239,7 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
   pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 
-**29 Overdriven Guitar** (ch 3, 224 notes)
+**29 Overdriven Guitar** (ch 4, 224 notes)
 2-bar loop (dominant):
 ```
 A ....*...|*...*...|*...*...|*...*...
@@ -257,7 +257,7 @@ B ....*...|*...*...|*...*...|*...*...
 ### Breakdown · space · 8th hats (bars 33–40)
 Heatmap (all tracks, avg density):
 ```
-#.o.x.o.|x.o.x.o.|x.o.#oo.|x.oo#.oo
+#...o...|o...x...|o...xo..|x..ox.oo
 ```
 **Drums** (ch 10, 94 notes)
 - bars 33–34:
@@ -321,7 +321,7 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
   pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 
-**29 Overdriven Guitar** (ch 3, 56 notes)
+**29 Overdriven Guitar** (ch 4, 56 notes)
 2-bar loop (dominant):
 ```
 A ....x...|x...x...|X...x...|x...x...
@@ -339,7 +339,7 @@ B ....x...|x...x...|X...x...|x...x...
 ### Rebuild · hats 8ths → 16ths (bars 41–48)
 Heatmap (all tracks, avg density):
 ```
-#.o.x.o.|#.o.x.o.|x.o.#oo.|#.oo#.oo
+#.o.o.o.|x.o.x.o.|x.o.xoo.|#.oox.oo
 ```
 **Drums** (ch 10, 152 notes)
 - bars 41:
@@ -403,7 +403,7 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
   pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 
-**29 Overdriven Guitar** (ch 3, 56 notes)
+**29 Overdriven Guitar** (ch 4, 56 notes)
 2-bar loop (dominant):
 ```
 A ....x...|x...x...|X...x...|x...x...
@@ -421,7 +421,7 @@ B ....x...|x...x...|X...x...|x...x...
 ### Climax A · full 16th hats (bars 49–56)
 Heatmap (all tracks, avg density):
 ```
-x.o.x.x.|#.o.x.o.|#.o.#oo.|#.oo#.oo
+#.o.o.x.|x.o.x.o.|x.o.xox.|#.oox.xo
 ```
 **Drums** (ch 10, 207 notes)
 2-bar loop (dominant):
@@ -493,7 +493,7 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
   pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 
-**29 Overdriven Guitar** (ch 3, 112 notes)
+**29 Overdriven Guitar** (ch 4, 112 notes)
 2-bar loop (dominant):
 ```
 A ....*...|*...*...|*...*...|*...*...
@@ -511,7 +511,7 @@ B ....*...|*...*...|*...*...|*...*...
 ### Climax B · peak breaks (bars 57–64)
 Heatmap (all tracks, avg density):
 ```
-x.o.x.x.|#.o.x.x.|#.o.#ox.|#.oo#.xo
+#.o.o.x.|x.o.x.x.|x.o.xox.|#.oox.xo
 ```
 **Drums** (ch 10, 207 notes)
 2-bar loop (dominant):
@@ -583,7 +583,7 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
   pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 
-**29 Overdriven Guitar** (ch 3, 112 notes)
+**29 Overdriven Guitar** (ch 4, 112 notes)
 2-bar loop (dominant):
 ```
 A ....*...|*...*...|*...*...|*...*...
@@ -601,7 +601,7 @@ B ....*...|*...*...|*...*...|*...*...
 ### Outro · 16ths → 8ths · decay (bars 65–72)
 Heatmap (all tracks, avg density):
 ```
-#.o.x.o.|#.o.x.o.|x.o.#oo.|#.o.#.o.
+#.o.o.o.|x.o.x.o.|o.o.xoo.|#.o.x.o.
 ```
 **Drums** (ch 10, 131 notes)
 - bars 67–68:
@@ -655,7 +655,7 @@ X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.
 ```
   pitches: C3 C3 C2 C2 C3 C1 C3 C3 C2 C1 C3 C3 A#3 C3
 
-**29 Overdriven Guitar** (ch 3, 56 notes)
+**29 Overdriven Guitar** (ch 4, 56 notes)
 2-bar loop (dominant):
 ```
 A ....x...|x...x...|X...x...|x...x...
@@ -711,7 +711,7 @@ x.....x.|....x...|........|x...x...
 - **Drums** (id `drums`, ch 10, xr20-drums) — 1507 notes · C2–C#3
 - **Bass A · Kick Lock Long** (id `bass`, ch 1, xr20-bass · octave -1) — 382 notes · C3–C4
 - **Acid** (id `acid`, ch 2, td3) — 1008 notes · C1–F4
-- **29 Overdriven Guitar** (id `guitar`, ch 3, gm · GM 29) — 744 notes · C3–A#3
+- **29 Overdriven Guitar** (id `guitar`, ch 4, gm · GM 29) — 744 notes · C3–A#3
 - **4 Electric Piano 1** (id `keys`, ch 4, gm · GM 4) — 0 notes
 
 ## Activity (notes per 8 bars)
