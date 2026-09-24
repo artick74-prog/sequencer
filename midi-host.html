@@ -7241,7 +7241,7 @@ body.timeline-ruler-zooming {
     drawer?.setAttribute("aria-hidden", "false");
     document.getElementById("btnIdeas")?.classList.add("active");
     try {
-      await loadIdeaCatalog();
+      await loadIdeaCatalog(true);
       renderIdeaBrowser();
       ideaStatus(
         "Idea Pool ready · current " +
@@ -17206,12 +17206,18 @@ body.timeline-ruler-zooming {
     for(const track of (state.project.tracks||[])) {
       const notes=(track.notes||[])
         .filter((note)=>note.tick>=start && note.tick<end)
-        .map((note)=>({
-          tick:Math.max(0,Math.round(note.tick-start)),
-          duration:Math.max(1,Math.round(Number(note.duration)||1)),
-          note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
-          velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
-        }));
+        .map((note)=>{
+          const saved={
+            tick:Math.max(0,Math.round(note.tick-start)),
+            duration:Math.max(1,Math.round(Number(note.duration)||1)),
+            note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
+            velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
+          };
+          if(note.drumSourceNote!=null) saved.drumSourceNote=note.drumSourceNote;
+          if(note.drumPad!=null) saved.drumPad=note.drumPad;
+          if(note.drumUnresolved!=null) saved.drumUnresolved=!!note.drumUnresolved;
+          return saved;
+        });
       if(!notes.length) continue;
       capturedTracks.push({
         id:track.id||("track-"+capturedTracks.length),
@@ -19106,13 +19112,19 @@ body.timeline-ruler-zooming {
         target.channel=Math.max(1,Math.min(16,Number(sourceTrack.channel)||target.channel||1));
         target.role=String(sourceTrack.role||target.role||inferTrackRole(target,target.channel));
         target.transposeOctaves=Math.max(-3,Math.min(3,Math.round(Number(sourceTrack.transposeOctaves)||0)));
-        target.notes=(sourceTrack.notes||[]).map((note)=>({
-          tick:Math.max(0,Math.round(Number(note.tick)||0)),
-          duration:Math.max(1,Math.round(Number(note.duration)||1)),
-          note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
-          velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
-          clipId:"idea:"+String(idea.id||ideaId),
-        }));
+        target.notes=(sourceTrack.notes||[]).map((note)=>{
+          const loaded={
+            tick:Math.max(0,Math.round(Number(note.tick)||0)),
+            duration:Math.max(1,Math.round(Number(note.duration)||1)),
+            note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
+            velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
+            clipId:"idea:"+String(idea.id||ideaId),
+          };
+          if(note.drumSourceNote!=null) loaded.drumSourceNote=note.drumSourceNote;
+          if(note.drumPad!=null) loaded.drumPad=note.drumPad;
+          if(note.drumUnresolved!=null) loaded.drumUnresolved=!!note.drumUnresolved;
+          return loaded;
+        });
       }
 
       setProject(normalizeProject(project),{
