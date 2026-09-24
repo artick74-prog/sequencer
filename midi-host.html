@@ -3860,7 +3860,11 @@ body.timeline-ruler-zooming {
     }
 
     const profile = currentXr20KitProfile(track);
-    return XR20_DRUM_HARDWARE_MAP.map((hardware) => {
+    // Drum Roll is displayed bottom-up: low/basic drums (Kick, Snare, Side Stick)
+    // live at the bottom, while hats, toms and cymbals rise upward. Keep the
+    // hardware map itself in pad order because routing/audition code depends on it;
+    // reverse only this view-layer copy.
+    return XR20_DRUM_HARDWARE_MAP.slice().reverse().map((hardware) => {
       const assignment = xr20KitAssignment(profile, hardware.pad);
       const semantic = assignment.gmNote == null ? "" : gmDrumName(assignment.gmNote);
       const custom = String(assignment.label || "").trim();
