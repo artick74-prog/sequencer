@@ -287,6 +287,9 @@ a { color: var(--accent); }
   background: #1a2330;
   color: #fff;
 }
+.file-menu-item[aria-pressed="true"] {
+  color: var(--accent);
+}
 .file-menu-item:disabled {
   opacity: .45;
   cursor: default;
@@ -2780,6 +2783,10 @@ body.timeline-ruler-zooming {
             title="Show every MIDI message sent by MIDI Host to hardware">MIDI Monitor</button>
           <button class="file-menu-item" id="btnTimingDiagnostics" type="button"
             title="Browser / audio / scheduler timing diagnostics">Timing</button>
+          <div class="file-menu-separator"></div>
+          <button class="file-menu-item" id="btnDawStraightMidi" type="button"
+            aria-pressed="false"
+            title="DAW exchange mode. ON: explicit MIDI exports remove the current Swing, and MIDI files returned through MIDI Pool are conformed back to the current project Swing. Project save/sync is unchanged.">DAW exchange · Project timing</button>
         </div>
       </div>
       <div class="header-project-row">
@@ -4289,7 +4296,53 @@ body.timeline-ruler-zooming {
     return order;
   }
 
-  function buildMidi(project) {
+  function midiExchangeStraightTick(project, rawTick) {
+    const tick = Math.max(0, Math.round(Number(rawTick) || 0));
+    const swing = projectSwingPercent(project);
+    if (!swing || pianoRollSnapIsTriplet()) return tick;
+
+    const ppq = Math.max(1, Number(project?.ppq) || 480);
+    const step = Math.max(1, pianoRollSnapTicks(ppq));
+    const index = swingGridNearestIndex(tick, step, swing, false);
+    const swungTick = swingGridTickForIndex(index, step, swing, false);
+
+    // Remove only the project's actual swing component. A note that sits
+    // between grid lines (manual timing / humanize) is not force-quantized.
+    if (tick !== swungTick) return tick;
+    return Math.max(0, swingGridTickForIndex(index, step, 0, false));
+  }
+
+  function midiExchangeSwingTick(project, rawTick) {
+    const tick = Math.max(0, Math.round(Number(rawTick) || 0));
+    const swing = projectSwingPercent(project);
+    if (!swing || pianoRollSnapIsTriplet()) return tick;
+
+    const ppq = Math.max(1, Number(project?.ppq) || 480);
+    const step = Math.max(1, pianoRollSnapTicks(ppq));
+    const index = swingGridNearestIndex(tick, step, 0, false);
+    const straightTick = swingGridTickForIndex(index, step, 0, false);
+
+    // MIDI returned from the DAW is treated as straight only when it is
+    // actually attached to the straight grid. Free timing stays free.
+    if (tick !== straightTick) return tick;
+    return Math.max(0, swingGridTickForIndex(index, step, swing, false));
+  }
+
+  function trackForMidiExport(project, track, { straight = false } = {}) {
+    if (!straight || !projectSwingPercent(project) || pianoRollSnapIsTriplet()) return track;
+
+    let changed = false;
+    const notes = (track.notes || []).map((note) => {
+      const tick = midiExchangeStraightTick(project, note.tick);
+      if (tick === Math.max(0, Math.round(Number(note.tick) || 0))) return note;
+      changed = true;
+      return { ...note, tick };
+    });
+
+    return changed ? { ...track, notes } : track;
+  }
+
+  function buildMidi(project, { straight = false } = {}) {
     const ppq = project.ppq || 480;
     const tempo = project.tempo || 120;
     const usPerBeat = Math.round(60000000 / tempo);
@@ -4320,7 +4373,8 @@ body.timeline-ruler-zooming {
     trackChunks.push(mtrkChunk(eventsToTrackBytes(conductor)));
 
     // One MTrk per project track — same layout as Cubase import expects.
-    for (const track of project.tracks || []) {
+    for (const sourceTrack of project.tracks || []) {
+      const track = trackForMidiExport(project, sourceTrack, { straight });
       const events = [];
       order = 0;
       events.push({
@@ -4359,7 +4413,8 @@ body.timeline-ruler-zooming {
     return new Uint8Array([...header, ...trackChunks.flat()]);
   }
 
-  function buildSingleTrackMidi(project, track) {
+  function buildSingleTrackMidi(project, sourceTrack, { straight = false } = {}) {
+    const track = trackForMidiExport(project, sourceTrack, { straight });
     const ppq = project.ppq || 480;
     const tempo = Number(document.getElementById("tempo")?.value) || project.tempo || 120;
     const usPerBeat = Math.round(60000000 / tempo);
@@ -4437,11 +4492,18 @@ body.timeline-ruler-zooming {
     const projectStem = safeMidiStem(state.project.name || "project");
     const trackStem = safeMidiStem(track.name || `ch-${track.channel || 1}`);
     const filename = `${projectStem} - ${trackStem}.mid`;
-    const result = await saveMidiDownload(filename, buildSingleTrackMidi(state.project, track));
+    const result = await saveMidiDownload(
+      filename,
+      buildSingleTrackMidi(state.project, track, { straight: state.dawStraightMidi })
+    );
+    const timingLabel = state.dawStraightMidi
+      ? " · straight DAW exchange · Swing " + Math.round(projectSwingPercent(state.project)) + "% bypassed"
+      : " · project timing";
     setStatus(
-      result.savedToFolder
+      (result.savedToFolder
         ? `Saved MIDI: Downloads\\Sequencer\\${result.filename}`
-        : `Downloaded MIDI: ${result.filename}`,
+        : `Downloaded MIDI: ${result.filename}`) +
+      timingLabel,
       "ok"
     );
   }
@@ -4452,10 +4514,20 @@ body.timeline-ruler-zooming {
   // height, the active MIDI parameter lane follows more gently instead of
   // staying fixed or taking the full resize delta.
   const PIANO_ROLL_PARAMETER_COUPLED_RESIZE_RATIO = 0.23;
+  const MIDI_DAW_EXCHANGE_STRAIGHT_KEY = "midi_host_daw_exchange_straight_v1";
+
+  function readDawStraightMidiPreference() {
+    try {
+      return localStorage.getItem(MIDI_DAW_EXCHANGE_STRAIGHT_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
 
   const state = {
     project: null,
     projectDirty: false,
+    dawStraightMidi: readDawStraightMidiPreference(),
     midiAccess: null,
     inputId: "",
     inputName: "",
@@ -5495,9 +5567,20 @@ body.timeline-ruler-zooming {
     const trackStem = safeMidiStem(track.name || ("ch-" + (track.channel || 1)));
     const filename = projectStem + " - " + trackStem + ".mid";
     try {
-      const entry = await saveMidiBytesToPool(filename, buildSingleTrackMidi(state.project, track));
-      midiPoolSetStatus("Saved to MIDI Pool: " + entry.name, true);
-      setStatus("MIDI Pool ← " + track.name + " · " + entry.name, "ok");
+      const entry = await saveMidiBytesToPool(
+        filename,
+        buildSingleTrackMidi(state.project, track, { straight: state.dawStraightMidi })
+      );
+      midiPoolSetStatus(
+        "Saved to MIDI Pool: " + entry.name +
+        (state.dawStraightMidi ? " · straight exchange timing" : " · project timing"),
+        true
+      );
+      setStatus(
+        "MIDI Pool ← " + track.name + " · " + entry.name +
+        (state.dawStraightMidi ? " · Swing bypassed for DAW exchange" : " · current project timing"),
+        "ok"
+      );
       return true;
     } catch (err) {
       setStatus("MIDI Pool export failed: " + err.message, "err");
@@ -7291,10 +7374,16 @@ body.timeline-ruler-zooming {
     if (!selectedControls.length && flattenedControls.length) selectedControls = flattenedControls;
 
     const clipInstanceId = newHostClipInstanceId();
+    const straightDawReturn =
+      !!state.dawStraightMidi &&
+      !!entry?.poolFile;
     let insertedEnd = startTick;
     let unresolvedDrumNotes = 0;
     const newNotes = selected.map((note) => {
-      const tick = startTick + Math.max(0, Math.round(note.tick * scale));
+      const sourceTick = startTick + Math.max(0, Math.round(note.tick * scale));
+      const tick = straightDawReturn
+        ? midiExchangeSwingTick(state.project, sourceTick)
+        : sourceTick;
       const duration = Math.max(1, Math.round(note.duration * scale));
       insertedEnd = Math.max(insertedEnd, tick + duration);
 
@@ -7392,6 +7481,9 @@ body.timeline-ruler-zooming {
       "Inserted loop “" + hostLoopDisplayName(entry) + "” → " + targetTrack.name +
       " @ bar " + tickToBar(startTick, targetPpq) +
       " · " + newNotes.length + " notes" +
+      (straightDawReturn && projectSwingPercent(state.project)
+        ? " · straight DAW return → Swing " + Math.round(projectSwingPercent(state.project)) + "%"
+        : "") +
       (unresolvedDrumNotes ? " · " + unresolvedDrumNotes + " unresolved GM drum hits (not sent to XR20)" : "") +
       " · UNSAVED cloud changes",
       "ok"
@@ -16280,6 +16372,35 @@ body.timeline-ruler-zooming {
     setSettingsMenuOpen(false);
   }
 
+  function updateDawStraightMidiUi() {
+    const button = document.getElementById("btnDawStraightMidi");
+    if (!button) return;
+    const enabled = !!state.dawStraightMidi;
+    button.setAttribute("aria-pressed", enabled ? "true" : "false");
+    button.textContent = enabled
+      ? "✓ DAW exchange · Straight MIDI"
+      : "DAW exchange · Project timing";
+    button.title = enabled
+      ? "ON: explicit MIDI exports remove the current Swing without changing the project. MIDI returned through MIDI Pool is treated as straight and conformed back to the current project Swing. Save Project / Sync to AI remain unchanged."
+      : "OFF: explicit MIDI export uses the exact stored project timing, including Swing. MIDI Pool returns keep their incoming timing.";
+  }
+
+  function setDawStraightMidi(enabled) {
+    state.dawStraightMidi = !!enabled;
+    try {
+      localStorage.setItem(MIDI_DAW_EXCHANGE_STRAIGHT_KEY, state.dawStraightMidi ? "1" : "0");
+    } catch {
+      // Preference persistence is optional; exchange behavior still works for this session.
+    }
+    updateDawStraightMidiUi();
+    setStatus(
+      state.dawStraightMidi
+        ? "DAW exchange: Straight MIDI · export ignores project Swing · MIDI Pool return reapplies current Swing"
+        : "DAW exchange: Project timing · MIDI export keeps the stored Swing/timing",
+      "ok"
+    );
+  }
+
   function currentProjectHasUnsavedWork() {
     const project = state.project;
     if (!project) return false;
@@ -17150,6 +17271,11 @@ body.timeline-ruler-zooming {
     });
   }
 
+  updateDawStraightMidiUi();
+  document.getElementById("btnDawStraightMidi")?.addEventListener("click", () => {
+    setDawStraightMidi(!state.dawStraightMidi);
+  });
+
   document.getElementById("btnSettingsMenu").addEventListener("click", (event) => {
     event.stopPropagation();
     const open = !document.getElementById("settingsMenu")?.classList.contains("open");
@@ -17549,11 +17675,18 @@ body.timeline-ruler-zooming {
     state.project.name = document.getElementById("projectName").value || state.project.name;
     state.project.tempo = Number(document.getElementById("tempo").value) || state.project.tempo;
     const filename = safeMidiStem(state.project.name || "export") + ".mid";
-    const result = await saveMidiDownload(filename, buildMidi(state.project));
+    const result = await saveMidiDownload(
+      filename,
+      buildMidi(state.project, { straight: state.dawStraightMidi })
+    );
+    const timingLabel = state.dawStraightMidi
+      ? " · straight DAW exchange · Swing " + Math.round(projectSwingPercent(state.project)) + "% bypassed"
+      : " · project timing";
     setStatus(
-      result.savedToFolder
+      (result.savedToFolder
         ? `Saved MIDI: Downloads\\Sequencer\\${result.filename}`
-        : `Downloaded MIDI: ${result.filename}`,
+        : `Downloaded MIDI: ${result.filename}`) +
+      timingLabel,
       "ok"
     );
   });

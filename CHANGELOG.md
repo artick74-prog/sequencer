@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-24 — Straight MIDI DAW exchange mode
+
+### Added
+- Added **⚙ Settings → DAW exchange · Straight MIDI** for Fender / Studio One / Ableton round-trips.
+- When enabled, explicit full-project MIDI export, single-track MIDI export and MIDI Pool export remove the current Swing from grid-attached note starts in the exported copy only; the open project and Swing value are not changed.
+- MIDI returned through MIDI Pool is treated as straight and automatically conformed back to the current project Swing Grid. Free/humanized notes between grid lines remain untouched.
+- Turning the mode off restores ordinary export of the exact stored project timing, including Swing, for final MIDI delivery.
+- Save Project / Sync to AI are deliberately unaffected and continue saving the real project timing.
+
 ## 2026-09-24 — Clearer Piano Roll note ends
 
 ### Changed
