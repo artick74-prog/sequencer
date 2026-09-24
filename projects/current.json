@@ -237,6 +237,14 @@
           "clipId": "track-part:drums"
         },
         {
+          "tick": 0,
+          "duration": 180,
+          "note": 49,
+          "velocity": 112,
+          "clipId": "track-part:drums",
+          "drumPad": 10
+        },
+        {
           "tick": 240,
           "duration": 78,
           "note": 44,
@@ -1019,6 +1027,14 @@
           "note": 42,
           "velocity": 98,
           "clipId": "track-part:drums"
+        },
+        {
+          "tick": 15360,
+          "duration": 180,
+          "note": 49,
+          "velocity": 114,
+          "clipId": "track-part:drums",
+          "drumPad": 10
         },
         {
           "tick": 15600,
@@ -2230,6 +2246,14 @@
           "note": 42,
           "velocity": 102,
           "clipId": "track-part:drums"
+        },
+        {
+          "tick": 30720,
+          "duration": 180,
+          "note": 49,
+          "velocity": 118,
+          "clipId": "track-part:drums",
+          "drumPad": 10
         },
         {
           "tick": 30850,
@@ -5032,6 +5056,14 @@
           "clipId": "track-part:drums"
         },
         {
+          "tick": 61440,
+          "duration": 180,
+          "note": 49,
+          "velocity": 108,
+          "clipId": "track-part:drums",
+          "drumPad": 10
+        },
+        {
           "tick": 61680,
           "duration": 78,
           "note": 44,
@@ -5681,6 +5713,14 @@
           "note": 42,
           "velocity": 85,
           "clipId": "track-part:drums"
+        },
+        {
+          "tick": 76800,
+          "duration": 180,
+          "note": 49,
+          "velocity": 116,
+          "clipId": "track-part:drums",
+          "drumPad": 10
         },
         {
           "tick": 77040,
@@ -6738,6 +6778,14 @@
           "note": 42,
           "velocity": 110,
           "clipId": "track-part:drums"
+        },
+        {
+          "tick": 92160,
+          "duration": 180,
+          "note": 49,
+          "velocity": 122,
+          "clipId": "track-part:drums",
+          "drumPad": 10
         },
         {
           "tick": 92290,
@@ -8182,6 +8230,14 @@
           "clipId": "track-part:drums"
         },
         {
+          "tick": 107520,
+          "duration": 180,
+          "note": 49,
+          "velocity": 127,
+          "clipId": "track-part:drums",
+          "drumPad": 10
+        },
+        {
           "tick": 107650,
           "duration": 68,
           "note": 42,
@@ -9622,6 +9678,14 @@
           "note": 42,
           "velocity": 102,
           "clipId": "track-part:drums"
+        },
+        {
+          "tick": 122880,
+          "duration": 180,
+          "note": 49,
+          "velocity": 108,
+          "clipId": "track-part:drums",
+          "drumPad": 10
         },
         {
           "tick": 123010,
