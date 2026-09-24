@@ -1912,7 +1912,6 @@ body.piano-roll-resizing .piano-roll-note {
 }
 body.piano-roll-playback-lite .piano-roll-note {
   opacity: 1 !important;
-  box-shadow: none !important;
 }
 body.piano-roll-playback-lite .piano-roll-note-vector {
   display: block;
@@ -4635,6 +4634,8 @@ body.timeline-ruler-zooming {
     pianoRollTool: "draw",
     pianoRollNoteIdCounter: 0,
     pianoRollControlIdCounter: 0,
+    pianoRollVirtualScrollTimer: null,
+    pianoRollProgrammaticScroll: false,
     lastClipClickId: "",
     lastClipClickAt: 0,
     loopStartTick: 0,
@@ -11462,11 +11463,6 @@ body.timeline-ruler-zooming {
     );
   }
 
-  function pianoRollInteractivePlaybackRange() {
-    if (!state.playing || !state.loop) return null;
-    return loopRangeBounds();
-  }
-
   function pianoRollNoteOverlapsRange(note, range) {
     if (!range) return true;
     const start = Number(note?.tick) || 0;
@@ -11480,6 +11476,92 @@ body.timeline-ruler-zooming {
     return value >= range.start && value < range.end;
   }
 
+  function pianoRollNoteOverlapsRanges(note, ranges) {
+    if (!Array.isArray(ranges) || !ranges.length) return true;
+    return ranges.some((range) => pianoRollNoteOverlapsRange(note, range));
+  }
+
+  function pianoRollTickInRanges(tick, ranges) {
+    if (!Array.isArray(ranges) || !ranges.length) return true;
+    return ranges.some((range) => pianoRollTickInRange(tick, range));
+  }
+
+  function pianoRollVisibleTickRange(
+    ctx = pianoRollContext(),
+    rollW = null,
+    scrollLeftOverride = null
+  ) {
+    if (!ctx) return null;
+    const scroll = document.getElementById("pianoRollScroll");
+    const grid = document.getElementById("pianoRollGrid");
+    const width = Math.max(
+      1,
+      Number(rollW) ||
+      Number(grid?.dataset.rollWidth) ||
+      grid?.offsetWidth ||
+      1
+    );
+    const keyW = Math.max(
+      0,
+      Number(grid?.dataset.keyWidth) ||
+      pianoRollKeyWidth(ctx) ||
+      78
+    );
+    const viewportW = Math.max(
+      1,
+      (scroll?.clientWidth || 760) - keyW
+    );
+    const scrollLeft =
+      scrollLeftOverride == null
+        ? Math.max(0, Number(scroll?.scrollLeft) || 0)
+        : Math.max(0, Number(scrollLeftOverride) || 0);
+    const gridLeft = Math.max(0, scrollLeft - keyW);
+    const overscan = viewportW * 0.45;
+    const leftPx = Math.max(0, gridLeft - overscan);
+    const rightPx = Math.min(width, gridLeft + viewportW + overscan);
+    const span = Math.max(1, ctx.endTick - ctx.startTick);
+    return {
+      start: ctx.startTick + (leftPx / width) * span,
+      end: ctx.startTick + (rightPx / width) * span,
+    };
+  }
+
+  function pianoRollMergeRanges(ranges) {
+    const sorted = (ranges || [])
+      .filter((range) => range && Number(range.end) > Number(range.start))
+      .map((range) => ({
+        start: Number(range.start),
+        end: Number(range.end),
+      }))
+      .sort((a, b) => a.start - b.start);
+    const merged = [];
+    for (const range of sorted) {
+      const previous = merged[merged.length - 1];
+      if (previous && range.start <= previous.end) {
+        previous.end = Math.max(previous.end, range.end);
+      } else {
+        merged.push({ ...range });
+      }
+    }
+    return merged;
+  }
+
+  function pianoRollInteractivePlaybackRanges(
+    ctx = pianoRollContext(),
+    rollW = null,
+    scrollLeftOverride = null
+  ) {
+    if (!state.playing || !ctx) return null;
+    const ranges = [];
+    const visible = pianoRollVisibleTickRange(ctx, rollW, scrollLeftOverride);
+    if (visible) ranges.push(visible);
+    if (state.loop) {
+      const loop = loopRangeBounds();
+      if (loop) ranges.push(loop);
+    }
+    return pianoRollMergeRanges(ranges);
+  }
+
   function closePianoRoll({ silent = false } = {}) {
     state.pianoRollClipId = "";
     state.pianoRollSelectedNoteId = "";
@@ -11488,6 +11570,10 @@ body.timeline-ruler-zooming {
     state.pianoRollRedoStack = [];
     state.pianoRollResizing = false;
     state.pianoRollParameterResizing = false;
+    if (state.pianoRollVirtualScrollTimer) {
+      clearTimeout(state.pianoRollVirtualScrollTimer);
+      state.pianoRollVirtualScrollTimer = null;
+    }
     document.body.classList.remove(
       "piano-roll-resizing",
       "piano-roll-parameter-resizing",
@@ -12276,9 +12362,9 @@ body.timeline-ruler-zooming {
     const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
     const selected = pianoRollSelectedIdSet();
     const info = trackDisplayInfo(ctx.track);
-    const interactiveRange = pianoRollInteractivePlaybackRange();
-    const interactiveNotes = interactiveRange
-      ? ctx.notes.filter((note) => pianoRollNoteOverlapsRange(note, interactiveRange))
+    const interactiveRanges = pianoRollInteractivePlaybackRanges(ctx, width);
+    const interactiveNotes = interactiveRanges
+      ? ctx.notes.filter((note) => pianoRollNoteOverlapsRanges(note, interactiveRanges))
       : ctx.notes;
     content.style.width = width + "px";
     const fragment = document.createDocumentFragment();
@@ -12321,7 +12407,7 @@ body.timeline-ruler-zooming {
       }
     } else {
       for (const control of ctx.midiControls || []) {
-        if (!pianoRollTickInRange(control.tick, interactiveRange)) continue;
+        if (!pianoRollTickInRanges(control.tick, interactiveRanges)) continue;
         if (!pianoRollParameterMatches(control, spec)) continue;
         const tick = Number(control.tick) || 0;
         if (tick < ctx.startTick || tick >= ctx.endTick) continue;
@@ -12765,7 +12851,7 @@ body.timeline-ruler-zooming {
     rollH,
     rollW,
     color,
-    excludeRange = null
+    excludeRanges = null
   ) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.classList.add("piano-roll-note-vector");
@@ -12779,7 +12865,11 @@ body.timeline-ruler-zooming {
     const pathData = [];
 
     for (const note of ctx.notes || []) {
-      if (excludeRange && pianoRollNoteOverlapsRange(note, excludeRange)) continue;
+      if (
+        Array.isArray(excludeRanges) &&
+        excludeRanges.length &&
+        pianoRollNoteOverlapsRanges(note, excludeRanges)
+      ) continue;
       const displayNote = pianoRollDisplayNote(ctx, note);
       const rowIndex = rowIndexByNote.get(displayNote);
       if (rowIndex == null) continue;
@@ -12948,6 +13038,9 @@ body.timeline-ruler-zooming {
 
     const displayRows = pianoRollDisplayRows(ctx);
     const rowIndexByNote = new Map(displayRows.map((row, index) => [row.note, index]));
+    const previousLeft = scroll.scrollLeft;
+    const previousTop = scroll.scrollTop;
+
     const rowH = Math.max(10, Math.min(48, Number(state.pianoRollRowH) || 18));
     const keyW = pianoRollKeyWidth(ctx);
     const parameterLane = document.getElementById("pianoRollParameterLane");
@@ -13602,6 +13695,19 @@ body.timeline-ruler-zooming {
     const pxPerBar = Math.max(PIANO_ROLL_BAR_W_MIN, Math.min(PIANO_ROLL_BAR_W_MAX, Number(state.pianoRollBarW) || 96));
     const rollW = Math.max(availableW, Math.max(1, barSpan) * pxPerBar);
 
+    let plannedScrollLeft = Math.max(0, Number(previousLeft) || 0);
+    if (centerPitch && state.playing) {
+      const playTick = Math.max(startTick, Math.min(endTick, currentTransportTick()));
+      const playX = keyW + ((playTick - startTick) / spanTicks) * rollW;
+      const maxScroll = Math.max(0, keyW + rollW - (scroll.clientWidth || 760));
+      plannedScrollLeft = Math.max(
+        0,
+        Math.min(maxScroll, playX - (scroll.clientWidth || 760) * 0.5)
+      );
+    } else if (centerPitch) {
+      plannedScrollLeft = 0;
+    }
+
     const stage = document.createElement("div");
     stage.className = "piano-roll-stage";
     stage.style.setProperty("--pr-key-w", keyW + "px");
@@ -13717,9 +13823,13 @@ body.timeline-ruler-zooming {
     grid.dataset.rowNotes = displayRows.map((row) => row.note).join(",");
 
     const info = trackDisplayInfo(track);
-    const interactiveRange = pianoRollInteractivePlaybackRange();
-    const vectorExcludeRange = state.playing
-      ? (interactiveRange || { start: ctx.startTick, end: ctx.endTick })
+    const interactiveRanges = pianoRollInteractivePlaybackRanges(
+      ctx,
+      rollW,
+      plannedScrollLeft
+    );
+    const vectorExcludeRanges = state.playing
+      ? (interactiveRanges || [{ start: ctx.startTick, end: ctx.endTick }])
       : null;
     grid.appendChild(
       createPianoRollNoteVector(
@@ -13729,11 +13839,11 @@ body.timeline-ruler-zooming {
         rollH,
         rollW,
         info.color,
-        vectorExcludeRange
+        vectorExcludeRanges
       )
     );
-    const interactiveNotes = interactiveRange
-      ? notes.filter((note) => pianoRollNoteOverlapsRange(note, interactiveRange))
+    const interactiveNotes = interactiveRanges
+      ? notes.filter((note) => pianoRollNoteOverlapsRanges(note, interactiveRanges))
       : notes;
     for (const note of interactiveNotes) {
       const displayNote = pianoRollDisplayNote(ctx, note);
@@ -13923,11 +14033,10 @@ body.timeline-ruler-zooming {
 
     stage.append(corner, ruler, keys, grid);
 
-    const previousLeft = scroll.scrollLeft;
-    const previousTop = scroll.scrollTop;
     scroll.innerHTML = "";
     scroll.appendChild(stage);
 
+    state.pianoRollProgrammaticScroll = true;
     if (centerPitch) {
       if (drumMode) {
         scroll.scrollTop = 0;
@@ -13938,11 +14047,14 @@ body.timeline-ruler-zooming {
         const centerY = rulerH + (127 - centerNote + 0.5) * rowH;
         scroll.scrollTop = Math.max(0, centerY - scroll.clientHeight / 2);
       }
-      scroll.scrollLeft = 0;
+      scroll.scrollLeft = plannedScrollLeft;
     } else {
       scroll.scrollLeft = previousLeft;
       scroll.scrollTop = previousTop;
     }
+    requestAnimationFrame(() => {
+      state.pianoRollProgrammaticScroll = false;
+    });
 
     renderPianoRollParameterLane(ctx, rollW);
     syncPianoRollParameterLaneScroll();
@@ -14142,6 +14254,23 @@ body.timeline-ruler-zooming {
 
   document.getElementById("pianoRollScroll")?.addEventListener("scroll", () => {
     scheduleUiFrame("piano-parameter-scroll", syncPianoRollParameterLaneScroll);
+
+    if (
+      !state.playing ||
+      !state.pianoRollClipId ||
+      state.pianoRollProgrammaticScroll ||
+      state.pianoRollRulerGesture
+    ) return;
+
+    if (state.pianoRollVirtualScrollTimer) {
+      clearTimeout(state.pianoRollVirtualScrollTimer);
+    }
+    state.pianoRollVirtualScrollTimer = setTimeout(() => {
+      state.pianoRollVirtualScrollTimer = null;
+      if (!state.playing || !state.pianoRollClipId) return;
+      renderPianoRoll();
+      syncPianoRollPlaybackLiteMode();
+    }, 90);
   }, { passive: true });
 
   document.getElementById("pianoRollScroll")?.addEventListener("wheel", (event) => {
