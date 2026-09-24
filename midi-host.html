@@ -2780,6 +2780,10 @@ body.timeline-ruler-zooming {
             title="Show every MIDI message sent by MIDI Host to hardware">MIDI Monitor</button>
           <button class="file-menu-item" id="btnTimingDiagnostics" type="button"
             title="Browser / audio / scheduler timing diagnostics">Timing</button>
+          <div class="file-menu-separator"></div>
+          <button class="file-menu-item" id="btnDawStraightMidi" type="button"
+            aria-pressed="false"
+            title="DAW exchange mode. ON: explicit MIDI exports remove the current Swing, and MIDI files returned through MIDI Pool are conformed back to the current project Swing. Project save/sync is unchanged.">DAW exchange · Project timing</button>
         </div>
       </div>
       <div class="header-project-row">
@@ -4452,10 +4456,20 @@ body.timeline-ruler-zooming {
   // height, the active MIDI parameter lane follows more gently instead of
   // staying fixed or taking the full resize delta.
   const PIANO_ROLL_PARAMETER_COUPLED_RESIZE_RATIO = 0.23;
+  const MIDI_DAW_EXCHANGE_STRAIGHT_KEY = "midi_host_daw_exchange_straight_v1";
+
+  function readDawStraightMidiPreference() {
+    try {
+      return localStorage.getItem(MIDI_DAW_EXCHANGE_STRAIGHT_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
 
   const state = {
     project: null,
     projectDirty: false,
+    dawStraightMidi: readDawStraightMidiPreference(),
     midiAccess: null,
     inputId: "",
     inputName: "",
