@@ -139,13 +139,13 @@
       "endTick": 184320,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 394,
+      "noteCount": 414,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.551Z",
       "editedAt": "2026-09-24T00:26:40.369Z",
-      "editReason": "swing-grid-live"
+      "editReason": "ai-dj-intro-bass"
     },
     {
       "id": "project-track-part",
@@ -12084,6 +12084,146 @@
       "transposeOctaves": -1,
       "cubaseIndex": 0,
       "notes": [
+        {
+          "tick": 0,
+          "duration": 480,
+          "note": 48,
+          "velocity": 68,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 1920,
+          "duration": 480,
+          "note": 48,
+          "velocity": 70,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 3840,
+          "duration": 420,
+          "note": 48,
+          "velocity": 72,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 5520,
+          "duration": 180,
+          "note": 48,
+          "velocity": 62,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 5760,
+          "duration": 420,
+          "note": 48,
+          "velocity": 74,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 7440,
+          "duration": 180,
+          "note": 48,
+          "velocity": 64,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 7680,
+          "duration": 420,
+          "note": 48,
+          "velocity": 78,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 8640,
+          "duration": 240,
+          "note": 48,
+          "velocity": 68,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 9360,
+          "duration": 180,
+          "note": 48,
+          "velocity": 70,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 9600,
+          "duration": 420,
+          "note": 48,
+          "velocity": 80,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 10560,
+          "duration": 240,
+          "note": 48,
+          "velocity": 70,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 11280,
+          "duration": 180,
+          "note": 48,
+          "velocity": 72,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 11520,
+          "duration": 420,
+          "note": 48,
+          "velocity": 84,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 12240,
+          "duration": 220,
+          "note": 48,
+          "velocity": 72,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 12480,
+          "duration": 240,
+          "note": 48,
+          "velocity": 76,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 13200,
+          "duration": 180,
+          "note": 48,
+          "velocity": 78,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 13440,
+          "duration": 420,
+          "note": 48,
+          "velocity": 88,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 14160,
+          "duration": 220,
+          "note": 48,
+          "velocity": 74,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 14400,
+          "duration": 240,
+          "note": 48,
+          "velocity": 80,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 15120,
+          "duration": 180,
+          "note": 48,
+          "velocity": 82,
+          "clipId": "track-part:bass"
+        },
         {
           "tick": 15374,
           "duration": 651,
