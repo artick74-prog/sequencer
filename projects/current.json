@@ -42,15 +42,15 @@
     },
     {
       "tick": 92160,
-      "text": "Post-Chorus · Rebuild · 8 bars"
+      "text": "Verse B · sparse acid · 8 bars"
     },
     {
       "tick": 107520,
-      "text": "Climax A · full 16th hats"
+      "text": "Chorus B · full 16th hats · 8 bars"
     },
     {
       "tick": 122880,
-      "text": "Climax B · peak breaks"
+      "text": "Climax · peak breaks · 8 bars"
     },
     {
       "tick": 138240,
@@ -143,13 +143,13 @@
       "endTick": 184320,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 414,
+      "noteCount": 411,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.551Z",
-      "editedAt": "2026-09-24T00:26:40.369Z",
-      "editReason": "ai-dj-intro-bass"
+      "editedAt": "2026-09-25T02:08:00+05:00",
+      "editReason": "ai-copy-verse-a-to-verse-b"
     },
     {
       "id": "project-track-part",
@@ -165,13 +165,13 @@
       "endTick": 184320,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 956,
+      "noteCount": 908,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.551Z",
-      "editedAt": "2026-09-25T01:05:00+05:00",
-      "editReason": "ai-main-acid-a-prime-and-interlude"
+      "editedAt": "2026-09-25T02:08:00+05:00",
+      "editReason": "ai-copy-verse-a-to-verse-b"
     },
     {
       "id": "project-track-part",
@@ -187,11 +187,13 @@
       "endTick": 184320,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 744,
+      "noteCount": 800,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
-      "insertedAt": "2026-09-23T21:12:18.551Z"
+      "insertedAt": "2026-09-23T21:12:18.551Z",
+      "editedAt": "2026-09-25T02:08:00+05:00",
+      "editReason": "ai-copy-verse-a-to-verse-b"
     },
     {
       "id": "project-track-part",
@@ -207,13 +209,13 @@
       "endTick": 184320,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 1788,
+      "noteCount": 1837,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.552Z",
-      "editedAt": "2026-09-25T02:05:00+05:00",
-      "editReason": "ai-verse-chorus-structure-bars-33-48"
+      "editedAt": "2026-09-25T02:08:00+05:00",
+      "editReason": "ai-copy-verse-a-to-verse-b"
     }
   ],
   "tracks": [
@@ -7375,743 +7377,1057 @@
           "tick": 92160,
           "duration": 96,
           "note": 36,
-          "velocity": 90,
+          "velocity": 108,
           "clipId": "track-part:drums"
         },
         {
           "tick": 92160,
           "duration": 78,
           "note": 42,
-          "velocity": 85,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
-          "tick": 92160,
-          "duration": 180,
-          "note": 49,
-          "velocity": 116,
-          "clipId": "track-part:drums",
-          "drumPad": 10
+          "tick": 92290,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
         },
         {
           "tick": 92400,
           "duration": 78,
           "note": 44,
-          "velocity": 59,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 92640,
-          "duration": 92,
-          "note": 38,
-          "velocity": 92,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 92640,
-          "duration": 78,
-          "note": 42,
-          "velocity": 85,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 92880,
-          "duration": 96,
-          "note": 36,
           "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
-          "tick": 92880,
-          "duration": 78,
-          "note": 44,
-          "velocity": 59,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 93120,
-          "duration": 78,
-          "note": 42,
-          "velocity": 85,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 93360,
-          "duration": 96,
-          "note": 36,
-          "velocity": 71,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 93360,
-          "duration": 78,
-          "note": 44,
-          "velocity": 59,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 93600,
-          "duration": 92,
-          "note": 38,
-          "velocity": 98,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 93600,
-          "duration": 78,
-          "note": 42,
-          "velocity": 85,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 93840,
-          "duration": 78,
-          "note": 44,
-          "velocity": 59,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 94080,
-          "duration": 96,
-          "note": 36,
-          "velocity": 93,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 94080,
-          "duration": 78,
-          "note": 42,
-          "velocity": 88,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 94320,
-          "duration": 78,
-          "note": 44,
-          "velocity": 61,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 94560,
-          "duration": 92,
-          "note": 38,
-          "velocity": 95,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 94560,
-          "duration": 78,
-          "note": 42,
-          "velocity": 88,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 94800,
-          "duration": 96,
-          "note": 36,
-          "velocity": 73,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 94800,
-          "duration": 78,
-          "note": 44,
-          "velocity": 61,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 95040,
-          "duration": 96,
-          "note": 36,
-          "velocity": 81,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 95040,
-          "duration": 78,
-          "note": 42,
-          "velocity": 88,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 95280,
-          "duration": 78,
-          "note": 44,
-          "velocity": 61,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 95410,
-          "duration": 96,
-          "note": 36,
-          "velocity": 73,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 95520,
-          "duration": 92,
-          "note": 38,
-          "velocity": 101,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 95520,
-          "duration": 78,
-          "note": 42,
-          "velocity": 88,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 95760,
-          "duration": 96,
-          "note": 36,
-          "velocity": 69,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 95760,
-          "duration": 78,
-          "note": 44,
-          "velocity": 61,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96000,
-          "duration": 96,
-          "note": 36,
-          "velocity": 96,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96000,
-          "duration": 78,
-          "note": 42,
-          "velocity": 90,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96240,
-          "duration": 78,
-          "note": 44,
-          "velocity": 63,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96370,
-          "duration": 96,
-          "note": 36,
-          "velocity": 75,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96480,
-          "duration": 92,
-          "note": 38,
-          "velocity": 97,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96480,
-          "duration": 78,
-          "note": 42,
-          "velocity": 90,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96720,
-          "duration": 78,
-          "note": 44,
-          "velocity": 63,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96960,
-          "duration": 96,
-          "note": 36,
-          "velocity": 84,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 96960,
-          "duration": 78,
-          "note": 42,
-          "velocity": 90,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97200,
-          "duration": 96,
-          "note": 36,
-          "velocity": 75,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97200,
-          "duration": 78,
-          "note": 44,
-          "velocity": 63,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97440,
-          "duration": 92,
-          "note": 38,
-          "velocity": 104,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97440,
-          "duration": 78,
-          "note": 42,
-          "velocity": 90,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97570,
-          "duration": 68,
-          "note": 42,
-          "velocity": 47,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97680,
-          "duration": 96,
-          "note": 36,
-          "velocity": 71,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97680,
-          "duration": 78,
-          "note": 44,
-          "velocity": 63,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97810,
-          "duration": 68,
-          "note": 42,
-          "velocity": 47,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97920,
-          "duration": 96,
-          "note": 36,
-          "velocity": 98,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 97920,
-          "duration": 78,
-          "note": 42,
-          "velocity": 93,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 98160,
-          "duration": 78,
-          "note": 44,
-          "velocity": 64,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 98400,
-          "duration": 92,
-          "note": 38,
-          "velocity": 100,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 98400,
-          "duration": 78,
-          "note": 42,
-          "velocity": 93,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 98640,
-          "duration": 78,
-          "note": 44,
-          "velocity": 64,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 98770,
-          "duration": 96,
-          "note": 36,
-          "velocity": 77,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 98880,
-          "duration": 96,
-          "note": 36,
-          "velocity": 86,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 98880,
-          "duration": 78,
-          "note": 42,
-          "velocity": 93,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99120,
-          "duration": 78,
-          "note": 44,
-          "velocity": 64,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99250,
-          "duration": 96,
-          "note": 36,
-          "velocity": 77,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99360,
-          "duration": 92,
-          "note": 38,
-          "velocity": 107,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99360,
-          "duration": 78,
-          "note": 42,
-          "velocity": 93,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99490,
-          "duration": 68,
-          "note": 42,
-          "velocity": 48,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99600,
-          "duration": 78,
-          "note": 44,
-          "velocity": 64,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99730,
-          "duration": 96,
-          "note": 36,
-          "velocity": 73,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99730,
-          "duration": 68,
-          "note": 42,
-          "velocity": 48,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99840,
-          "duration": 96,
-          "note": 36,
-          "velocity": 101,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 99840,
-          "duration": 78,
-          "note": 42,
-          "velocity": 96,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 100080,
-          "duration": 78,
-          "note": 44,
-          "velocity": 66,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 100320,
-          "duration": 92,
-          "note": 38,
-          "velocity": 103,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 100320,
-          "duration": 78,
-          "note": 42,
-          "velocity": 96,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 100560,
-          "duration": 96,
-          "note": 36,
-          "velocity": 79,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 100560,
-          "duration": 78,
-          "note": 44,
-          "velocity": 66,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 100800,
-          "duration": 78,
-          "note": 42,
-          "velocity": 96,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 100930,
-          "duration": 68,
-          "note": 42,
-          "velocity": 50,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 101040,
-          "duration": 96,
-          "note": 36,
-          "velocity": 79,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 101040,
+          "tick": 92530,
           "duration": 70,
           "note": 38,
-          "velocity": 40,
+          "velocity": 41,
           "clipId": "track-part:drums"
         },
         {
-          "tick": 101040,
-          "duration": 78,
-          "note": 44,
-          "velocity": 66,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 101170,
+          "tick": 92530,
           "duration": 68,
           "note": 42,
-          "velocity": 50,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
-          "tick": 101280,
+          "tick": 92640,
           "duration": 92,
           "note": 38,
           "velocity": 110,
           "clipId": "track-part:drums"
         },
         {
+          "tick": 92640,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 92770,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 92880,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 92880,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93010,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93120,
+          "duration": 96,
+          "note": 36,
+          "velocity": 94,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93120,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93250,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93360,
+          "duration": 70,
+          "note": 38,
+          "velocity": 47,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93360,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93490,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93490,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93600,
+          "duration": 92,
+          "note": 38,
+          "velocity": 118,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93600,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93730,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93840,
+          "duration": 96,
+          "note": 36,
+          "velocity": 80,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93840,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 93970,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94080,
+          "duration": 96,
+          "note": 36,
+          "velocity": 108,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94080,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94210,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94320,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94450,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94450,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94560,
+          "duration": 92,
+          "note": 38,
+          "velocity": 110,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94560,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94690,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94800,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 94930,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95040,
+          "duration": 96,
+          "note": 36,
+          "velocity": 94,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95040,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95170,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95280,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95280,
+          "duration": 70,
+          "note": 38,
+          "velocity": 39,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95280,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95410,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95520,
+          "duration": 92,
+          "note": 38,
+          "velocity": 118,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95520,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95650,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95760,
+          "duration": 96,
+          "note": 36,
+          "velocity": 80,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95760,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 95890,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96000,
+          "duration": 96,
+          "note": 36,
+          "velocity": 108,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96000,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96130,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96240,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96370,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96480,
+          "duration": 92,
+          "note": 38,
+          "velocity": 110,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96480,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96610,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96720,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96850,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96850,
+          "duration": 70,
+          "note": 38,
+          "velocity": 43,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96850,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96960,
+          "duration": 96,
+          "note": 36,
+          "velocity": 94,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 96960,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97090,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97200,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97330,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97330,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97440,
+          "duration": 92,
+          "note": 38,
+          "velocity": 118,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97440,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97570,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97680,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97810,
+          "duration": 96,
+          "note": 36,
+          "velocity": 80,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97810,
+          "duration": 70,
+          "note": 38,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97810,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97920,
+          "duration": 96,
+          "note": 36,
+          "velocity": 108,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 97920,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98050,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98160,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98290,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98290,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98400,
+          "duration": 92,
+          "note": 38,
+          "velocity": 110,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98400,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98530,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98640,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98770,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98880,
+          "duration": 96,
+          "note": 36,
+          "velocity": 94,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 98880,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99010,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99120,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99120,
+          "duration": 70,
+          "note": 38,
+          "velocity": 39,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99120,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99250,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99360,
+          "duration": 92,
+          "note": 38,
+          "velocity": 118,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99360,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99490,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99600,
+          "duration": 96,
+          "note": 36,
+          "velocity": 80,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99600,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99730,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99840,
+          "duration": 96,
+          "note": 36,
+          "velocity": 108,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99840,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 99970,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100080,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100210,
+          "duration": 70,
+          "note": 38,
+          "velocity": 41,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100210,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100320,
+          "duration": 92,
+          "note": 38,
+          "velocity": 110,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100320,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100450,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100560,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100560,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100690,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100800,
+          "duration": 96,
+          "note": 36,
+          "velocity": 94,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100800,
+          "duration": 78,
+          "note": 42,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 100930,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 101040,
+          "duration": 70,
+          "note": 38,
+          "velocity": 47,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 101040,
+          "duration": 78,
+          "note": 44,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 101170,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 101170,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 101280,
+          "duration": 92,
+          "note": 38,
+          "velocity": 118,
+          "clipId": "track-part:drums"
+        },
+        {
           "tick": 101280,
           "duration": 78,
           "note": 42,
-          "velocity": 96,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 101410,
           "duration": 68,
           "note": 42,
-          "velocity": 50,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 101520,
+          "duration": 96,
+          "note": 36,
+          "velocity": 80,
           "clipId": "track-part:drums"
         },
         {
           "tick": 101520,
           "duration": 78,
           "note": 44,
-          "velocity": 66,
+          "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
           "tick": 101650,
           "duration": 68,
           "note": 42,
-          "velocity": 50,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
           "tick": 101760,
           "duration": 96,
           "note": 36,
-          "velocity": 104,
+          "velocity": 108,
           "clipId": "track-part:drums"
         },
         {
           "tick": 101760,
           "duration": 78,
           "note": 42,
-          "velocity": 98,
+          "velocity": 102,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 101890,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102000,
           "duration": 78,
           "note": 44,
-          "velocity": 68,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 102130,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 102130,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102240,
           "duration": 92,
           "note": 38,
-          "velocity": 106,
+          "velocity": 110,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102240,
           "duration": 78,
           "note": 42,
-          "velocity": 98,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
-          "tick": 102480,
-          "duration": 96,
-          "note": 36,
-          "velocity": 81,
+          "tick": 102370,
+          "duration": 68,
+          "note": 42,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102480,
           "duration": 78,
           "note": 44,
-          "velocity": 68,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 102610,
+          "duration": 68,
+          "note": 42,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102720,
           "duration": 96,
           "note": 36,
-          "velocity": 91,
+          "velocity": 94,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102720,
           "duration": 78,
           "note": 42,
-          "velocity": 98,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102850,
           "duration": 68,
           "note": 42,
-          "velocity": 51,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 102960,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102960,
           "duration": 70,
           "note": 38,
-          "velocity": 42,
+          "velocity": 39,
           "clipId": "track-part:drums"
         },
         {
           "tick": 102960,
           "duration": 78,
           "note": 44,
-          "velocity": 68,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 103090,
-          "duration": 96,
-          "note": 36,
-          "velocity": 81,
+          "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103090,
           "duration": 68,
           "note": 42,
-          "velocity": 51,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103200,
           "duration": 92,
           "note": 38,
-          "velocity": 113,
+          "velocity": 118,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103200,
           "duration": 78,
           "note": 42,
-          "velocity": 98,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103330,
           "duration": 68,
           "note": 42,
-          "velocity": 51,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103440,
           "duration": 96,
           "note": 36,
-          "velocity": 77,
+          "velocity": 80,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103440,
           "duration": 78,
           "note": 44,
-          "velocity": 68,
+          "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103570,
           "duration": 68,
           "note": 42,
-          "velocity": 51,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103680,
           "duration": 96,
           "note": 36,
-          "velocity": 107,
+          "velocity": 108,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103680,
           "duration": 78,
           "note": 42,
-          "velocity": 101,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103810,
           "duration": 68,
           "note": 42,
-          "velocity": 56,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 103920,
           "duration": 78,
           "note": 44,
-          "velocity": 70,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 104050,
-          "duration": 96,
-          "note": 36,
-          "velocity": 83,
+          "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
@@ -8125,28 +8441,42 @@
           "tick": 104160,
           "duration": 92,
           "note": 38,
-          "velocity": 109,
+          "velocity": 110,
           "clipId": "track-part:drums"
         },
         {
           "tick": 104160,
           "duration": 78,
           "note": 42,
-          "velocity": 101,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 104290,
           "duration": 68,
           "note": 42,
-          "velocity": 56,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 104400,
           "duration": 78,
           "note": 44,
-          "velocity": 70,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 104530,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 104530,
+          "duration": 70,
+          "note": 38,
+          "velocity": 43,
           "clipId": "track-part:drums"
         },
         {
@@ -8160,42 +8490,35 @@
           "tick": 104640,
           "duration": 96,
           "note": 36,
-          "velocity": 93,
+          "velocity": 94,
           "clipId": "track-part:drums"
         },
         {
           "tick": 104640,
           "duration": 78,
           "note": 42,
-          "velocity": 101,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 104770,
           "duration": 68,
           "note": 42,
-          "velocity": 56,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 104880,
-          "duration": 96,
-          "note": 36,
-          "velocity": 83,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 104880,
-          "duration": 70,
-          "note": 38,
-          "velocity": 43,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 104880,
           "duration": 78,
           "note": 44,
-          "velocity": 70,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 105010,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
           "clipId": "track-part:drums"
         },
         {
@@ -8209,35 +8532,42 @@
           "tick": 105120,
           "duration": 92,
           "note": 38,
-          "velocity": 116,
+          "velocity": 118,
           "clipId": "track-part:drums"
         },
         {
           "tick": 105120,
           "duration": 78,
           "note": 42,
-          "velocity": 101,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 105250,
           "duration": 68,
           "note": 42,
-          "velocity": 56,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 105360,
-          "duration": 96,
-          "note": 36,
-          "velocity": 80,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 105360,
           "duration": 78,
           "note": 44,
-          "velocity": 70,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 105490,
+          "duration": 96,
+          "note": 36,
+          "velocity": 80,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 105490,
+          "duration": 70,
+          "note": 38,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
@@ -8251,189 +8581,203 @@
           "tick": 105600,
           "duration": 96,
           "note": 36,
-          "velocity": 109,
+          "velocity": 108,
           "clipId": "track-part:drums"
         },
         {
           "tick": 105600,
           "duration": 78,
           "note": 42,
-          "velocity": 103,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 105730,
           "duration": 68,
           "note": 42,
-          "velocity": 58,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 105840,
           "duration": 78,
           "note": 44,
-          "velocity": 72,
+          "velocity": 71,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 105970,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
           "clipId": "track-part:drums"
         },
         {
           "tick": 105970,
           "duration": 68,
           "note": 42,
-          "velocity": 50,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106080,
           "duration": 92,
           "note": 38,
-          "velocity": 111,
+          "velocity": 110,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106080,
           "duration": 78,
           "note": 42,
-          "velocity": 103,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106210,
           "duration": 68,
           "note": 42,
-          "velocity": 58,
+          "velocity": 57,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106320,
           "duration": 78,
           "note": 44,
-          "velocity": 72,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 106450,
-          "duration": 96,
-          "note": 36,
-          "velocity": 86,
+          "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106450,
           "duration": 68,
           "note": 42,
-          "velocity": 50,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106560,
           "duration": 96,
           "note": 36,
-          "velocity": 96,
+          "velocity": 94,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106560,
           "duration": 78,
           "note": 42,
-          "velocity": 103,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106690,
           "duration": 68,
           "note": 42,
-          "velocity": 58,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 106800,
+          "duration": 96,
+          "note": 36,
+          "velocity": 84,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106800,
           "duration": 70,
           "note": 38,
-          "velocity": 44,
+          "velocity": 39,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106800,
           "duration": 78,
           "note": 44,
-          "velocity": 72,
+          "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106930,
-          "duration": 96,
+          "duration": 78,
           "note": 36,
-          "velocity": 86,
+          "velocity": 64,
           "clipId": "track-part:drums"
         },
         {
           "tick": 106930,
           "duration": 68,
           "note": 42,
-          "velocity": 50,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107040,
           "duration": 92,
           "note": 38,
-          "velocity": 119,
+          "velocity": 118,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107040,
           "duration": 78,
           "note": 42,
-          "velocity": 103,
+          "velocity": 102,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107170,
           "duration": 65,
           "note": 38,
-          "velocity": 52,
+          "velocity": 51,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107170,
           "duration": 68,
           "note": 42,
-          "velocity": 58,
+          "velocity": 57,
+          "clipId": "track-part:drums"
+        },
+        {
+          "tick": 107280,
+          "duration": 78,
+          "note": 36,
+          "velocity": 86,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107280,
           "duration": 65,
           "note": 38,
-          "velocity": 75,
+          "velocity": 74,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107280,
           "duration": 78,
           "note": 44,
-          "velocity": 72,
+          "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107410,
-          "duration": 96,
+          "duration": 78,
           "note": 36,
-          "velocity": 82,
+          "velocity": 72,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107410,
           "duration": 65,
           "note": 38,
-          "velocity": 104,
+          "velocity": 103,
           "clipId": "track-part:drums"
         },
         {
           "tick": 107410,
           "duration": 68,
           "note": 42,
-          "velocity": 50,
+          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
@@ -14652,93 +14996,72 @@
         },
         {
           "tick": 103694,
-          "duration": 594,
+          "duration": 651,
+          "note": 48,
+          "velocity": 108,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 104400,
+          "duration": 462,
+          "note": 60,
+          "velocity": 88,
+          "clipId": "track-part:bass"
+        },
+        {
+          "tick": 104912,
+          "duration": 178,
           "note": 55,
           "velocity": 105,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 104400,
-          "duration": 378,
-          "note": 50,
-          "velocity": 88,
-          "clipId": "track-part:bass"
-        },
-        {
-          "tick": 104898,
-          "duration": 162,
-          "note": 53,
-          "velocity": 103,
-          "clipId": "track-part:bass"
-        },
-        {
           "tick": 105120,
-          "duration": 186,
-          "note": 58,
+          "duration": 198,
+          "note": 55,
           "velocity": 94,
           "clipId": "track-part:bass"
         },
         {
           "tick": 105360,
-          "duration": 108,
-          "note": 50,
+          "duration": 212,
+          "note": 60,
           "velocity": 90,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 105510,
-          "duration": 66,
-          "note": 53,
-          "velocity": 99,
+          "tick": 105614,
+          "duration": 651,
+          "note": 48,
+          "velocity": 108,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 105612,
-          "duration": 414,
-          "note": 55,
-          "velocity": 104,
-          "clipId": "track-part:bass"
-        },
-        {
-          "tick": 106104,
-          "duration": 162,
-          "note": 58,
-          "velocity": 91,
-          "clipId": "track-part:bass"
-        },
-        {
-          "tick": 106326,
-          "duration": 372,
-          "note": 50,
+          "tick": 106320,
+          "duration": 462,
+          "note": 60,
           "velocity": 88,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 106812,
-          "duration": 162,
-          "note": 53,
-          "velocity": 104,
+          "tick": 106832,
+          "duration": 178,
+          "note": 55,
+          "velocity": 105,
           "clipId": "track-part:bass"
         },
         {
           "tick": 107040,
-          "duration": 150,
-          "note": 50,
+          "duration": 198,
+          "note": 55,
           "velocity": 94,
           "clipId": "track-part:bass"
         },
         {
-          "tick": 107220,
-          "duration": 132,
-          "note": 58,
-          "velocity": 89,
-          "clipId": "track-part:bass"
-        },
-        {
-          "tick": 107430,
-          "duration": 66,
-          "note": 53,
-          "velocity": 100,
+          "tick": 107280,
+          "duration": 212,
+          "note": 60,
+          "velocity": 90,
           "clipId": "track-part:bass"
         },
         {
@@ -19350,787 +19673,451 @@
           "clipId": "track-part:acid"
         },
         {
-          "tick": 92160,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
           "tick": 92290,
-          "duration": 64,
+          "duration": 76,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 92400,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 92530,
           "duration": 72,
           "note": 36,
-          "velocity": 127,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 92640,
-          "duration": 66,
+          "duration": 82,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 92770,
-          "duration": 186,
-          "note": 24,
-          "velocity": 127,
+          "velocity": 34,
           "clipId": "track-part:acid"
         },
         {
           "tick": 93010,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 93120,
-          "duration": 71,
-          "note": 48,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 93250,
-          "duration": 125,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 93361,
-          "duration": 65,
-          "note": 24,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 32,
           "clipId": "track-part:acid"
         },
         {
           "tick": 93490,
-          "duration": 185,
-          "note": 48,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 118,
           "clipId": "track-part:acid"
         },
         {
           "tick": 93719,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 93840,
-          "duration": 135,
-          "note": 58,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 93970,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 94080,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
+          "duration": 84,
+          "note": 46,
+          "velocity": 36,
           "clipId": "track-part:acid"
         },
         {
           "tick": 94210,
-          "duration": 64,
+          "duration": 76,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 94320,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 94450,
           "duration": 72,
           "note": 36,
-          "velocity": 127,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 94560,
-          "duration": 66,
+          "duration": 82,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 94690,
-          "duration": 186,
-          "note": 24,
-          "velocity": 127,
+          "velocity": 34,
           "clipId": "track-part:acid"
         },
         {
           "tick": 94930,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 95040,
-          "duration": 71,
-          "note": 48,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 95170,
-          "duration": 125,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 95281,
-          "duration": 65,
-          "note": 24,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 32,
           "clipId": "track-part:acid"
         },
         {
           "tick": 95410,
-          "duration": 185,
-          "note": 48,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 118,
           "clipId": "track-part:acid"
         },
         {
           "tick": 95639,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 95760,
-          "duration": 135,
-          "note": 58,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 95890,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 96000,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
+          "duration": 260,
+          "note": 46,
+          "velocity": 36,
           "clipId": "track-part:acid"
         },
         {
           "tick": 96130,
-          "duration": 64,
+          "duration": 76,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 96240,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 96370,
           "duration": 72,
           "note": 36,
-          "velocity": 127,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 96480,
-          "duration": 66,
+          "duration": 82,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 96610,
-          "duration": 186,
-          "note": 24,
-          "velocity": 127,
+          "velocity": 34,
           "clipId": "track-part:acid"
         },
         {
           "tick": 96850,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 96960,
-          "duration": 71,
-          "note": 48,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 97090,
-          "duration": 125,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 97201,
-          "duration": 65,
-          "note": 24,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 32,
           "clipId": "track-part:acid"
         },
         {
           "tick": 97330,
-          "duration": 185,
-          "note": 48,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 118,
           "clipId": "track-part:acid"
         },
         {
           "tick": 97559,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 97680,
-          "duration": 135,
-          "note": 58,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 97810,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 97920,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
+          "duration": 84,
+          "note": 46,
+          "velocity": 36,
           "clipId": "track-part:acid"
         },
         {
           "tick": 98050,
-          "duration": 64,
+          "duration": 76,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 98160,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 98290,
           "duration": 72,
           "note": 36,
-          "velocity": 127,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 98400,
-          "duration": 66,
+          "duration": 82,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 98530,
-          "duration": 186,
-          "note": 24,
-          "velocity": 127,
+          "velocity": 34,
           "clipId": "track-part:acid"
         },
         {
           "tick": 98770,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 98880,
-          "duration": 71,
-          "note": 48,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 99010,
-          "duration": 125,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 99121,
-          "duration": 65,
-          "note": 24,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 32,
           "clipId": "track-part:acid"
         },
         {
           "tick": 99250,
-          "duration": 185,
-          "note": 48,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 118,
           "clipId": "track-part:acid"
         },
         {
           "tick": 99479,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 99600,
-          "duration": 135,
-          "note": 58,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 99730,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 99840,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
+          "duration": 260,
+          "note": 46,
+          "velocity": 36,
           "clipId": "track-part:acid"
         },
         {
           "tick": 99970,
-          "duration": 64,
+          "duration": 76,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 100080,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 100210,
           "duration": 72,
           "note": 36,
-          "velocity": 127,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 100320,
-          "duration": 66,
+          "duration": 82,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 100450,
-          "duration": 186,
-          "note": 24,
-          "velocity": 127,
+          "velocity": 34,
           "clipId": "track-part:acid"
         },
         {
           "tick": 100690,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 100800,
-          "duration": 71,
-          "note": 48,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 100930,
-          "duration": 125,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 101041,
-          "duration": 65,
-          "note": 24,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 32,
           "clipId": "track-part:acid"
         },
         {
           "tick": 101170,
-          "duration": 185,
-          "note": 48,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 118,
           "clipId": "track-part:acid"
         },
         {
           "tick": 101399,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 101520,
-          "duration": 135,
-          "note": 58,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 101650,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 101760,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
+          "duration": 84,
+          "note": 46,
+          "velocity": 36,
           "clipId": "track-part:acid"
         },
         {
           "tick": 101890,
-          "duration": 64,
+          "duration": 76,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 102000,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 102130,
           "duration": 72,
           "note": 36,
-          "velocity": 127,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 102240,
-          "duration": 66,
+          "duration": 82,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 102370,
-          "duration": 186,
-          "note": 24,
-          "velocity": 127,
+          "velocity": 34,
           "clipId": "track-part:acid"
         },
         {
           "tick": 102610,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 102720,
-          "duration": 71,
-          "note": 48,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 102850,
-          "duration": 125,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 102961,
-          "duration": 65,
-          "note": 24,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 32,
           "clipId": "track-part:acid"
         },
         {
           "tick": 103090,
-          "duration": 185,
-          "note": 48,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 118,
           "clipId": "track-part:acid"
         },
         {
           "tick": 103319,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 103440,
-          "duration": 135,
-          "note": 58,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 103570,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 103680,
-          "duration": 67,
-          "note": 55,
-          "velocity": 127,
+          "duration": 260,
+          "note": 46,
+          "velocity": 36,
           "clipId": "track-part:acid"
         },
         {
           "tick": 103810,
-          "duration": 64,
-          "note": 55,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 103920,
-          "duration": 67,
-          "note": 43,
-          "velocity": 127,
+          "duration": 76,
+          "note": 48,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 104050,
           "duration": 72,
-          "note": 43,
-          "velocity": 127,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 104160,
-          "duration": 66,
-          "note": 55,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 104290,
-          "duration": 186,
-          "note": 31,
-          "velocity": 127,
+          "duration": 82,
+          "note": 48,
+          "velocity": 34,
           "clipId": "track-part:acid"
         },
         {
           "tick": 104530,
-          "duration": 67,
-          "note": 55,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 104640,
-          "duration": 71,
-          "note": 55,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 104770,
-          "duration": 125,
-          "note": 43,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 104881,
-          "duration": 65,
-          "note": 31,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 32,
           "clipId": "track-part:acid"
         },
         {
           "tick": 105010,
-          "duration": 185,
-          "note": 55,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 118,
           "clipId": "track-part:acid"
         },
         {
           "tick": 105239,
-          "duration": 67,
-          "note": 55,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 105360,
-          "duration": 135,
-          "note": 65,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 105490,
-          "duration": 67,
-          "note": 55,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 105600,
-          "duration": 67,
-          "note": 55,
-          "velocity": 127,
+          "duration": 84,
+          "note": 46,
+          "velocity": 36,
           "clipId": "track-part:acid"
         },
         {
           "tick": 105730,
-          "duration": 64,
-          "note": 55,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 105840,
-          "duration": 67,
-          "note": 43,
-          "velocity": 127,
+          "duration": 76,
+          "note": 48,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 105970,
           "duration": 72,
-          "note": 43,
-          "velocity": 127,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 106080,
-          "duration": 66,
-          "note": 55,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 106210,
-          "duration": 186,
-          "note": 31,
-          "velocity": 127,
+          "duration": 82,
+          "note": 48,
+          "velocity": 34,
           "clipId": "track-part:acid"
         },
         {
           "tick": 106450,
-          "duration": 67,
-          "note": 55,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 106560,
-          "duration": 71,
-          "note": 55,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 30,
           "clipId": "track-part:acid"
         },
         {
           "tick": 106690,
-          "duration": 125,
-          "note": 43,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 106801,
-          "duration": 65,
-          "note": 31,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 32,
           "clipId": "track-part:acid"
         },
         {
           "tick": 106930,
-          "duration": 185,
-          "note": 55,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 118,
           "clipId": "track-part:acid"
         },
         {
           "tick": 107159,
-          "duration": 67,
-          "note": 55,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 107280,
-          "duration": 135,
-          "note": 65,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 28,
           "clipId": "track-part:acid"
         },
         {
           "tick": 107410,
-          "duration": 67,
-          "note": 55,
-          "velocity": 64,
+          "duration": 84,
+          "note": 46,
+          "velocity": 36,
           "clipId": "track-part:acid"
         },
         {
@@ -25365,10 +25352,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 92400,
+          "duration": 54,
+          "note": 51,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 92640,
           "duration": 162,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 92640,
+          "duration": 162,
+          "note": 51,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25379,10 +25380,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 92880,
+          "duration": 54,
+          "note": 51,
+          "velocity": 92,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 93120,
           "duration": 162,
           "note": 48,
           "velocity": 116,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 93120,
+          "duration": 162,
+          "note": 51,
+          "velocity": 106,
           "clipId": "track-part:guitar"
         },
         {
@@ -25393,10 +25408,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 93360,
+          "duration": 108,
+          "note": 51,
+          "velocity": 90,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 93600,
           "duration": 63,
           "note": 48,
           "velocity": 108,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 93600,
+          "duration": 63,
+          "note": 51,
+          "velocity": 98,
           "clipId": "track-part:guitar"
         },
         {
@@ -25407,10 +25436,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 93840,
+          "duration": 108,
+          "note": 51,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 94320,
           "duration": 54,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 94320,
+          "duration": 54,
+          "note": 51,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25421,10 +25464,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 94560,
+          "duration": 162,
+          "note": 51,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 94800,
           "duration": 54,
           "note": 48,
           "velocity": 102,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 94800,
+          "duration": 54,
+          "note": 51,
+          "velocity": 92,
           "clipId": "track-part:guitar"
         },
         {
@@ -25435,10 +25492,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 95040,
+          "duration": 162,
+          "note": 51,
+          "velocity": 106,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 95280,
           "duration": 108,
           "note": 48,
           "velocity": 100,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 95280,
+          "duration": 108,
+          "note": 51,
+          "velocity": 90,
           "clipId": "track-part:guitar"
         },
         {
@@ -25449,10 +25520,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 95520,
+          "duration": 63,
+          "note": 51,
+          "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 95760,
           "duration": 108,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 95760,
+          "duration": 108,
+          "note": 51,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25463,10 +25548,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 96240,
+          "duration": 54,
+          "note": 53,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 96480,
           "duration": 162,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 96480,
+          "duration": 162,
+          "note": 53,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25477,10 +25576,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 96720,
+          "duration": 54,
+          "note": 53,
+          "velocity": 92,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 96960,
           "duration": 162,
           "note": 48,
           "velocity": 116,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 96960,
+          "duration": 162,
+          "note": 53,
+          "velocity": 106,
           "clipId": "track-part:guitar"
         },
         {
@@ -25491,10 +25604,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 97200,
+          "duration": 108,
+          "note": 53,
+          "velocity": 90,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 97440,
           "duration": 63,
           "note": 48,
           "velocity": 108,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 97440,
+          "duration": 63,
+          "note": 53,
+          "velocity": 98,
           "clipId": "track-part:guitar"
         },
         {
@@ -25505,10 +25632,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 97680,
+          "duration": 108,
+          "note": 53,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 98160,
           "duration": 54,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 98160,
+          "duration": 54,
+          "note": 53,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25519,10 +25660,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 98400,
+          "duration": 162,
+          "note": 53,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 98640,
           "duration": 54,
           "note": 48,
           "velocity": 102,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 98640,
+          "duration": 54,
+          "note": 53,
+          "velocity": 92,
           "clipId": "track-part:guitar"
         },
         {
@@ -25533,10 +25688,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 98880,
+          "duration": 162,
+          "note": 53,
+          "velocity": 106,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 99120,
           "duration": 108,
           "note": 48,
           "velocity": 100,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 99120,
+          "duration": 108,
+          "note": 53,
+          "velocity": 90,
           "clipId": "track-part:guitar"
         },
         {
@@ -25547,10 +25716,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 99360,
+          "duration": 63,
+          "note": 53,
+          "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 99600,
           "duration": 108,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 99600,
+          "duration": 108,
+          "note": 53,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25561,10 +25744,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 100080,
+          "duration": 54,
+          "note": 55,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 100320,
           "duration": 162,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 100320,
+          "duration": 162,
+          "note": 55,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25575,10 +25772,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 100560,
+          "duration": 54,
+          "note": 55,
+          "velocity": 92,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 100800,
           "duration": 162,
           "note": 48,
           "velocity": 116,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 100800,
+          "duration": 162,
+          "note": 55,
+          "velocity": 106,
           "clipId": "track-part:guitar"
         },
         {
@@ -25589,10 +25800,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 101040,
+          "duration": 108,
+          "note": 55,
+          "velocity": 90,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 101280,
           "duration": 63,
           "note": 48,
           "velocity": 108,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 101280,
+          "duration": 63,
+          "note": 55,
+          "velocity": 98,
           "clipId": "track-part:guitar"
         },
         {
@@ -25603,10 +25828,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 101520,
+          "duration": 108,
+          "note": 55,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 102000,
           "duration": 54,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 102000,
+          "duration": 54,
+          "note": 55,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25617,10 +25856,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 102240,
+          "duration": 162,
+          "note": 55,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 102480,
           "duration": 54,
           "note": 48,
           "velocity": 102,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 102480,
+          "duration": 54,
+          "note": 55,
+          "velocity": 92,
           "clipId": "track-part:guitar"
         },
         {
@@ -25631,10 +25884,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 102720,
+          "duration": 162,
+          "note": 55,
+          "velocity": 106,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 102960,
           "duration": 108,
           "note": 48,
           "velocity": 100,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 102960,
+          "duration": 108,
+          "note": 55,
+          "velocity": 90,
           "clipId": "track-part:guitar"
         },
         {
@@ -25645,10 +25912,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 103200,
+          "duration": 63,
+          "note": 55,
+          "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 103440,
           "duration": 108,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 103440,
+          "duration": 108,
+          "note": 55,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25659,10 +25940,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 103920,
+          "duration": 54,
+          "note": 58,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 104160,
           "duration": 162,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 104160,
+          "duration": 162,
+          "note": 58,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25673,10 +25968,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 104400,
+          "duration": 54,
+          "note": 58,
+          "velocity": 92,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 104640,
           "duration": 162,
           "note": 48,
           "velocity": 116,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 104640,
+          "duration": 162,
+          "note": 58,
+          "velocity": 106,
           "clipId": "track-part:guitar"
         },
         {
@@ -25687,10 +25996,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 104880,
+          "duration": 108,
+          "note": 58,
+          "velocity": 90,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 105120,
           "duration": 63,
           "note": 48,
           "velocity": 108,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 105120,
+          "duration": 63,
+          "note": 58,
+          "velocity": 98,
           "clipId": "track-part:guitar"
         },
         {
@@ -25701,10 +26024,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 105360,
+          "duration": 108,
+          "note": 58,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 105840,
           "duration": 54,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 105840,
+          "duration": 54,
+          "note": 58,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
@@ -25715,10 +26052,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 106080,
+          "duration": 162,
+          "note": 58,
+          "velocity": 88,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 106320,
           "duration": 54,
           "note": 48,
           "velocity": 102,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 106320,
+          "duration": 54,
+          "note": 58,
+          "velocity": 92,
           "clipId": "track-part:guitar"
         },
         {
@@ -25729,10 +26080,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 106560,
+          "duration": 162,
+          "note": 58,
+          "velocity": 106,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 106800,
           "duration": 108,
           "note": 48,
           "velocity": 100,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 106800,
+          "duration": 108,
+          "note": 58,
+          "velocity": 90,
           "clipId": "track-part:guitar"
         },
         {
@@ -25743,10 +26108,24 @@
           "clipId": "track-part:guitar"
         },
         {
+          "tick": 107040,
+          "duration": 63,
+          "note": 58,
+          "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
           "tick": 107280,
           "duration": 108,
           "note": 48,
           "velocity": 98,
+          "clipId": "track-part:guitar"
+        },
+        {
+          "tick": 107280,
+          "duration": 108,
+          "note": 58,
+          "velocity": 88,
           "clipId": "track-part:guitar"
         },
         {
