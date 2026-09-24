@@ -4558,6 +4558,8 @@ body.timeline-ruler-zooming {
     dawStraightMidi: readDawStraightMidiPreference(),
     timelineFollowMode: readTimelineFollowModePreference(),
     timelineFollowLastPage: -1,
+    timelineFollowManualHold: false,
+    timelineFollowWheelReleaseTimer: null,
     midiAccess: null,
     inputId: "",
     inputName: "",
@@ -8613,6 +8615,11 @@ body.timeline-ruler-zooming {
     const refreshEditedTimeline = !!state.pianoRollTimelineDirty;
     state.pianoRollTimelineDirty = false;
     state.timelineFollowLastPage = -1;
+    state.timelineFollowManualHold = false;
+    if (state.timelineFollowWheelReleaseTimer) {
+      clearTimeout(state.timelineFollowWheelReleaseTimer);
+      state.timelineFollowWheelReleaseTimer = null;
+    }
     state.playing = false;
     syncPianoRollPlaybackLiteMode();
     state.playbackToken++;
@@ -9200,6 +9207,7 @@ body.timeline-ruler-zooming {
     );
     state.playing = true;
     state.timelineFollowLastPage = -1;
+    state.timelineFollowManualHold = false;
     syncPianoRollPlaybackLiteMode();
 
     // TD-3 transport-start guard.
@@ -9415,10 +9423,30 @@ body.timeline-ruler-zooming {
     if (select) select.value = timelineFollowMode();
   }
 
+  function beginTimelineFollowManualHold() {
+    if (!state.playing || timelineFollowMode() !== "center") return false;
+    state.timelineFollowManualHold = true;
+    return true;
+  }
+
+  function endTimelineFollowManualHold({ snapBack = true } = {}) {
+    if (!state.timelineFollowManualHold) return false;
+    state.timelineFollowManualHold = false;
+    if (state.timelineFollowWheelReleaseTimer) {
+      clearTimeout(state.timelineFollowWheelReleaseTimer);
+      state.timelineFollowWheelReleaseTimer = null;
+    }
+    if (snapBack && state.playing && timelineFollowMode() === "center") {
+      applyTimelinePlaybackFollow(currentTransportTick(), state.lengthTicks || 1);
+    }
+    return true;
+  }
+
   function applyTimelinePlaybackFollow(tick, lengthTicks) {
     if (!state.playing) return;
     const mode = timelineFollowMode();
     if (mode === "off") return;
+    if (mode === "center" && state.timelineFollowManualHold) return;
 
     const scroll = document.getElementById("timelineScroll");
     if (!scroll) return;
@@ -18071,6 +18099,28 @@ body.timeline-ruler-zooming {
   });
   updateTimelineFollowUi();
 
+  const timelineScrollEl = document.getElementById("timelineScroll");
+  timelineScrollEl?.addEventListener("pointerdown", () => {
+    beginTimelineFollowManualHold();
+  }, { passive: true });
+
+  const finishTimelineManualPointer = () => {
+    endTimelineFollowManualHold({ snapBack: true });
+  };
+  document.addEventListener("pointerup", finishTimelineManualPointer, { passive: true });
+  document.addEventListener("pointercancel", finishTimelineManualPointer, { passive: true });
+
+  timelineScrollEl?.addEventListener("wheel", () => {
+    if (!beginTimelineFollowManualHold()) return;
+    if (state.timelineFollowWheelReleaseTimer) {
+      clearTimeout(state.timelineFollowWheelReleaseTimer);
+    }
+    state.timelineFollowWheelReleaseTimer = setTimeout(() => {
+      state.timelineFollowWheelReleaseTimer = null;
+      endTimelineFollowManualHold({ snapBack: true });
+    }, 180);
+  }, { passive: true });
+
   document.getElementById("btnApplySwing")?.addEventListener("click", () => {
     applySwingGridToNotes();
   });
@@ -18087,6 +18137,11 @@ body.timeline-ruler-zooming {
     const value = String(e.target.value || "off");
     state.timelineFollowMode = ["off","page","center"].includes(value) ? value : "off";
     state.timelineFollowLastPage = -1;
+    state.timelineFollowManualHold = false;
+    if (state.timelineFollowWheelReleaseTimer) {
+      clearTimeout(state.timelineFollowWheelReleaseTimer);
+      state.timelineFollowWheelReleaseTimer = null;
+    }
     try { localStorage.setItem(TIMELINE_FOLLOW_MODE_KEY, state.timelineFollowMode); } catch {}
     updateTimelineFollowUi();
     if (state.playing) {
