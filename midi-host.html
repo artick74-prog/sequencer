@@ -3155,6 +3155,14 @@ body.timeline-ruler-zooming {
         <button class="btn" id="btnZoomIn" type="button" title="Zoom in">+</button>
         <button class="btn" id="btnZoomFit" type="button" title="Fit arrangement in view">Fit</button>
         <span class="zoom-label" id="zoomLabel">40 px/bar</span>
+        <label class="field" title="Arrangement playback display mode">
+          Follow
+          <select id="timelineFollowMode" aria-label="Arrangement playback follow mode">
+            <option value="off">Off</option>
+            <option value="page">Page</option>
+            <option value="center">Center</option>
+          </select>
+        </label>
         <span style="color:var(--dim);font-size:12px">Markers row: click/drag seek · Bars row: horizontal pan · vertical zoom · Shift+drag loop · green edges locators · Ctrl+wheel zoom</span>
       </div>
       <div class="timeline-scroll" id="timelineScroll">
@@ -4525,6 +4533,16 @@ body.timeline-ruler-zooming {
   // staying fixed or taking the full resize delta.
   const PIANO_ROLL_PARAMETER_COUPLED_RESIZE_RATIO = 0.23;
   const MIDI_DAW_EXCHANGE_STRAIGHT_KEY = "midi_host_daw_exchange_straight_v1";
+  const TIMELINE_FOLLOW_MODE_KEY = "midi_host_timeline_follow_mode_v1";
+
+  function readTimelineFollowModePreference() {
+    try {
+      const value = localStorage.getItem(TIMELINE_FOLLOW_MODE_KEY);
+      return ["off","page","center"].includes(value) ? value : "off";
+    } catch {
+      return "off";
+    }
+  }
 
   function readDawStraightMidiPreference() {
     try {
@@ -4538,6 +4556,8 @@ body.timeline-ruler-zooming {
     project: null,
     projectDirty: false,
     dawStraightMidi: readDawStraightMidiPreference(),
+    timelineFollowMode: readTimelineFollowModePreference(),
+    timelineFollowLastPage: -1,
     midiAccess: null,
     inputId: "",
     inputName: "",
@@ -8592,6 +8612,7 @@ body.timeline-ruler-zooming {
     state.pianoRollLiveEditTick = 0;
     const refreshEditedTimeline = !!state.pianoRollTimelineDirty;
     state.pianoRollTimelineDirty = false;
+    state.timelineFollowLastPage = -1;
     state.playing = false;
     syncPianoRollPlaybackLiteMode();
     state.playbackToken++;
@@ -9178,6 +9199,7 @@ body.timeline-ruler-zooming {
       scheduleStart
     );
     state.playing = true;
+    state.timelineFollowLastPage = -1;
     syncPianoRollPlaybackLiteMode();
 
     // TD-3 transport-start guard.
@@ -9382,12 +9404,62 @@ body.timeline-ruler-zooming {
     runScheduler(tick);
   }
 
+  function timelineFollowMode() {
+    return ["off","page","center"].includes(state.timelineFollowMode)
+      ? state.timelineFollowMode
+      : "off";
+  }
+
+  function updateTimelineFollowUi() {
+    const select = document.getElementById("timelineFollowMode");
+    if (select) select.value = timelineFollowMode();
+  }
+
+  function applyTimelinePlaybackFollow(tick, lengthTicks) {
+    if (!state.playing) return;
+    const mode = timelineFollowMode();
+    if (mode === "off") return;
+
+    const scroll = document.getElementById("timelineScroll");
+    if (!scroll) return;
+
+    const length = Math.max(1, Number(lengthTicks) || state.lengthTicks || 1);
+    const contentX =
+      Math.max(0, Math.min(1, Number(tick) / length)) * timelineWidth();
+    const viewportW = Math.max(1, scroll.clientWidth - HEAD_W);
+    const maxScroll = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+
+    if (mode === "center") {
+      // Continuous DAW-style follow: the playhead stays centred while the
+      // arrangement moves underneath it. Near the song edges the scroll clamps,
+      // so the playhead naturally moves until the centre lock becomes possible.
+      const target = Math.max(
+        0,
+        Math.min(maxScroll, contentX - viewportW * 0.5)
+      );
+      scroll.scrollLeft = target;
+      state.timelineFollowLastPage = -1;
+      return;
+    }
+
+    // Page follow: the playhead travels left-to-right through one viewport.
+    // Crossing the right edge jumps to the next viewport, where it starts again
+    // at the left side — the classic sequencer "page" playback mode.
+    const page = Math.max(0, Math.floor(contentX / viewportW));
+    if (page !== state.timelineFollowLastPage) {
+      state.timelineFollowLastPage = page;
+      const target = Math.max(0, Math.min(maxScroll, page * viewportW));
+      scroll.scrollLeft = target;
+    }
+  }
+
   function updatePlayheads(tick, lengthTicks) {
     const length = lengthTicks || state.lengthTicks || 1;
     const ratio = Math.min(1, Math.max(0, tick / Math.max(1, length)));
     const xPx = (ratio * timelineWidth()) + "px";
     document.getElementById("tracks")?.style.setProperty("--playhead-x", xPx);
     document.getElementById("rulerWrap")?.style.setProperty("--playhead-x", xPx);
+    applyTimelinePlaybackFollow(tick, length);
     updateSectionPlaylistActive(tick);
     const now = performance.now();
     if (
@@ -17997,6 +18069,8 @@ body.timeline-ruler-zooming {
       "ok"
     );
   });
+  updateTimelineFollowUi();
+
   document.getElementById("btnApplySwing")?.addEventListener("click", () => {
     applySwingGridToNotes();
   });
@@ -18007,6 +18081,23 @@ body.timeline-ruler-zooming {
   document.getElementById("masterTransposeUp")?.addEventListener("click", () => {
     if (!state.project) return;
     setMasterTranspose((Number(state.project.masterTranspose) || 0) + 1);
+  });
+
+  document.getElementById("timelineFollowMode")?.addEventListener("change", (e) => {
+    const value = String(e.target.value || "off");
+    state.timelineFollowMode = ["off","page","center"].includes(value) ? value : "off";
+    state.timelineFollowLastPage = -1;
+    try { localStorage.setItem(TIMELINE_FOLLOW_MODE_KEY, state.timelineFollowMode); } catch {}
+    updateTimelineFollowUi();
+    if (state.playing) {
+      applyTimelinePlaybackFollow(currentTransportTick(), state.lengthTicks || 1);
+    }
+    const labels = {
+      off: "Off · arrangement stays where you put it",
+      page: "Page · playhead crosses the screen, then the next page jumps in",
+      center: "Center · playhead stays centred and the arrangement scrolls underneath",
+    };
+    setStatus("Arrangement Follow: " + labels[state.timelineFollowMode], "ok");
   });
 
   document.addEventListener("change", (e) => {
