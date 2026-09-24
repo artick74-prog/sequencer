@@ -6876,12 +6876,13 @@ body.timeline-ruler-zooming {
   function ideaTrackRoleKey(track) {
     const id = String(track?.id || "").toLowerCase();
     const role = String(track?.role || "").toLowerCase();
-    if (id) return id;
-    if (role.includes("drum")) return "drums";
-    if (role.includes("percussion")) return "percussion";
-    if (role.includes("bass")) return "bass";
-    if (role.includes("td3") || role.includes("acid")) return "acid";
-    return role;
+    if (role.includes("drum") || id === "drums") return "drums";
+    if (role.includes("percussion") || id === "percussion") return "percussion";
+    if (role.includes("bass") || id === "bass") return "bass";
+    if (role.includes("td3") || role.includes("acid") || id === "acid") return "acid";
+    if (role.includes("guitar") || id === "guitar") return "guitar";
+    if (role.includes("keys") || role.includes("piano") || id === "keys") return "keys";
+    return role || id;
   }
 
   function ideaTargetTrack(project, sourceTrack) {
@@ -10363,6 +10364,9 @@ body.timeline-ruler-zooming {
 
   function setProject(project, { restoreLocal = true, statusText = "" } = {}) {
     stopPlayback();
+    ideaLoadToken++;
+    ideaAudition = null;
+    ideaSelectedId = "";
     state.startTick = 0;
     state.selectedClipId = "";
     closePianoRoll({ silent: true });
@@ -17287,6 +17291,10 @@ body.timeline-ruler-zooming {
       const reply=await response.json().catch(()=>({}));
       if(!response.ok || !reply.ok) throw new Error(reply.error||("HTTP "+response.status));
       const saved=reply.idea||{};
+      ideaCatalogLoaded=false;
+      if(document.getElementById("ideaBrowser")?.classList.contains("open")) {
+        try { await loadIdeaCatalog(true); } catch {}
+      }
       setStatus(
         "Saved to Idea Pool: "+String(saved.id||"idea").toUpperCase()+" · "+name+
         (reply.commit?" · "+reply.commit:""),
