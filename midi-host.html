@@ -7371,10 +7371,16 @@ body.timeline-ruler-zooming {
     if (!selectedControls.length && flattenedControls.length) selectedControls = flattenedControls;
 
     const clipInstanceId = newHostClipInstanceId();
+    const straightDawReturn =
+      !!state.dawStraightMidi &&
+      !!entry?.poolFile;
     let insertedEnd = startTick;
     let unresolvedDrumNotes = 0;
     const newNotes = selected.map((note) => {
-      const tick = startTick + Math.max(0, Math.round(note.tick * scale));
+      const sourceTick = startTick + Math.max(0, Math.round(note.tick * scale));
+      const tick = straightDawReturn
+        ? midiExchangeSwingTick(state.project, sourceTick)
+        : sourceTick;
       const duration = Math.max(1, Math.round(note.duration * scale));
       insertedEnd = Math.max(insertedEnd, tick + duration);
 
@@ -7472,6 +7478,9 @@ body.timeline-ruler-zooming {
       "Inserted loop “" + hostLoopDisplayName(entry) + "” → " + targetTrack.name +
       " @ bar " + tickToBar(startTick, targetPpq) +
       " · " + newNotes.length + " notes" +
+      (straightDawReturn && projectSwingPercent(state.project)
+        ? " · straight DAW return → Swing " + Math.round(projectSwingPercent(state.project)) + "%"
+        : "") +
       (unresolvedDrumNotes ? " · " + unresolvedDrumNotes + " unresolved GM drum hits (not sent to XR20)" : "") +
       " · UNSAVED cloud changes",
       "ok"
