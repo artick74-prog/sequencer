@@ -4293,7 +4293,53 @@ body.timeline-ruler-zooming {
     return order;
   }
 
-  function buildMidi(project) {
+  function midiExchangeStraightTick(project, rawTick) {
+    const tick = Math.max(0, Math.round(Number(rawTick) || 0));
+    const swing = projectSwingPercent(project);
+    if (!swing || pianoRollSnapIsTriplet()) return tick;
+
+    const ppq = Math.max(1, Number(project?.ppq) || 480);
+    const step = Math.max(1, pianoRollSnapTicks(ppq));
+    const index = swingGridNearestIndex(tick, step, swing, false);
+    const swungTick = swingGridTickForIndex(index, step, swing, false);
+
+    // Remove only the project's actual swing component. A note that sits
+    // between grid lines (manual timing / humanize) is not force-quantized.
+    if (tick !== swungTick) return tick;
+    return Math.max(0, swingGridTickForIndex(index, step, 0, false));
+  }
+
+  function midiExchangeSwingTick(project, rawTick) {
+    const tick = Math.max(0, Math.round(Number(rawTick) || 0));
+    const swing = projectSwingPercent(project);
+    if (!swing || pianoRollSnapIsTriplet()) return tick;
+
+    const ppq = Math.max(1, Number(project?.ppq) || 480);
+    const step = Math.max(1, pianoRollSnapTicks(ppq));
+    const index = swingGridNearestIndex(tick, step, 0, false);
+    const straightTick = swingGridTickForIndex(index, step, 0, false);
+
+    // MIDI returned from the DAW is treated as straight only when it is
+    // actually attached to the straight grid. Free timing stays free.
+    if (tick !== straightTick) return tick;
+    return Math.max(0, swingGridTickForIndex(index, step, swing, false));
+  }
+
+  function trackForMidiExport(project, track, { straight = false } = {}) {
+    if (!straight || !projectSwingPercent(project) || pianoRollSnapIsTriplet()) return track;
+
+    let changed = false;
+    const notes = (track.notes || []).map((note) => {
+      const tick = midiExchangeStraightTick(project, note.tick);
+      if (tick === Math.max(0, Math.round(Number(note.tick) || 0))) return note;
+      changed = true;
+      return { ...note, tick };
+    });
+
+    return changed ? { ...track, notes } : track;
+  }
+
+  function buildMidi(project, { straight = false } = {}) {
     const ppq = project.ppq || 480;
     const tempo = project.tempo || 120;
     const usPerBeat = Math.round(60000000 / tempo);
@@ -4324,7 +4370,8 @@ body.timeline-ruler-zooming {
     trackChunks.push(mtrkChunk(eventsToTrackBytes(conductor)));
 
     // One MTrk per project track — same layout as Cubase import expects.
-    for (const track of project.tracks || []) {
+    for (const sourceTrack of project.tracks || []) {
+      const track = trackForMidiExport(project, sourceTrack, { straight });
       const events = [];
       order = 0;
       events.push({
@@ -4363,7 +4410,8 @@ body.timeline-ruler-zooming {
     return new Uint8Array([...header, ...trackChunks.flat()]);
   }
 
-  function buildSingleTrackMidi(project, track) {
+  function buildSingleTrackMidi(project, sourceTrack, { straight = false } = {}) {
+    const track = trackForMidiExport(project, sourceTrack, { straight });
     const ppq = project.ppq || 480;
     const tempo = Number(document.getElementById("tempo")?.value) || project.tempo || 120;
     const usPerBeat = Math.round(60000000 / tempo);
@@ -4441,7 +4489,10 @@ body.timeline-ruler-zooming {
     const projectStem = safeMidiStem(state.project.name || "project");
     const trackStem = safeMidiStem(track.name || `ch-${track.channel || 1}`);
     const filename = `${projectStem} - ${trackStem}.mid`;
-    const result = await saveMidiDownload(filename, buildSingleTrackMidi(state.project, track));
+    const result = await saveMidiDownload(
+      filename,
+      buildSingleTrackMidi(state.project, track, { straight: state.dawStraightMidi })
+    );
     setStatus(
       result.savedToFolder
         ? `Saved MIDI: Downloads\\Sequencer\\${result.filename}`
