@@ -16069,7 +16069,7 @@
       "drumMap": "",
       "drumKitProfileId": "xr20-kit-1",
       "drumListen": "xr20",
-      "mute": true,
+      "mute": false,
       "solo": false,
       "transposeOctaves": 0,
       "cubaseIndex": 1,
