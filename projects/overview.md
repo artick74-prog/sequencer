@@ -35,9 +35,9 @@
 ### DJ Intro · Mix-in · 8 bars (bars 1–8)
 Heatmap (all tracks, avg density):
 ```
-x...o...|#...o...|x...o.o.|#...x...
+#...o...|#...o...|x...o.o.|x...x...
 ```
-**Drums** (ch 10, 111 notes)
+**Drums** (ch 10, 110 notes)
 2-bar loop (dominant):
 ```
 A *...o...|*...o...|*...o...|*...o...
@@ -61,6 +61,28 @@ B *...o...|*...o...|*...o...|*...o...
 *...x...|*...x...|*...x.x.|*...*...
 ```
   pitches: C2 F#2 C2 F#2 C#2 F#2 C#2 D2 C#2
+
+**Bass A · Kick Lock Long** (ch 1, 20 notes)
+- bars 1–2:
+```
+x.......|........|........|........
+```
+  pitches: C3
+- bars 3–4:
+```
+x.......|........|........|....x...
+```
+  pitches: C3 C3
+- bars 5–6:
+```
+x.......|........|x.......|....x...
+```
+  pitches: C3 C3 C3
+- bars 7–8:
+```
+x.......|....x...|x.......|....x...
+```
+  pitches: C3 C3 C3 C3
 
 ### Intro · 8th hats · sparse break (bars 9–16)
 Heatmap (all tracks, avg density):
@@ -750,14 +772,14 @@ x.......|........|........|........
   pitches: C3
 
 ## Tracks
-- **Drums** (id `drums`, ch 10, xr20-drums) — 1676 notes · C2–C#3
-- **Bass A · Kick Lock Long** (id `bass`, ch 1, xr20-bass · octave -1) — 394 notes · C3–C4
+- **Drums** (id `drums`, ch 10, xr20-drums) — 1675 notes · C2–C#3
+- **Bass A · Kick Lock Long** (id `bass`, ch 1, xr20-bass · octave -1) — 414 notes · C3–C4
 - **Acid** (id `acid`, ch 2, td3) — 1008 notes · C1–F4
 - **29 Overdriven Guitar** (id `guitar`, ch 4, gm · GM 29) — 744 notes · C3–A#3
 - **4 Electric Piano 1** (id `keys`, ch 4, gm · GM 4) — 0 notes
 
 ## Activity (notes per 8 bars)
-- Bars 1-8: total 111 — Drums:111
+- Bars 1-8: total 130 — Drums:110, Bass A · Kick Lock Long:20
 - Bars 9-16: total 320 — Drums:112, Bass A · Kick Lock Long:40, Acid:112, 29 Overdriven Guitar:56
 - Bars 17-24: total 398 — Drums:174, Bass A · Kick Lock Long:40, Acid:112, 29 Overdriven Guitar:72
 - Bars 25-32: total 464 — Drums:200, Bass A · Kick Lock Long:40, Acid:112, 29 Overdriven Guitar:112

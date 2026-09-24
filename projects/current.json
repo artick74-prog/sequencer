@@ -58,8 +58,8 @@
     }
   ],
   "loopRange": {
-    "startBar": 7,
-    "endBar": 8
+    "startBar": 57,
+    "endBar": 72
   },
   "cloudProject": {
     "id": "acid-rock-1",
@@ -203,7 +203,7 @@
       "endTick": 184320,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 1676,
+      "noteCount": 1675,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
