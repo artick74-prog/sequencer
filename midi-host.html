@@ -16369,6 +16369,35 @@ body.timeline-ruler-zooming {
     setSettingsMenuOpen(false);
   }
 
+  function updateDawStraightMidiUi() {
+    const button = document.getElementById("btnDawStraightMidi");
+    if (!button) return;
+    const enabled = !!state.dawStraightMidi;
+    button.setAttribute("aria-pressed", enabled ? "true" : "false");
+    button.textContent = enabled
+      ? "✓ DAW exchange · Straight MIDI"
+      : "DAW exchange · Project timing";
+    button.title = enabled
+      ? "ON: explicit MIDI exports remove the current Swing without changing the project. MIDI returned through MIDI Pool is treated as straight and conformed back to the current project Swing. Save Project / Sync to AI remain unchanged."
+      : "OFF: explicit MIDI export uses the exact stored project timing, including Swing. MIDI Pool returns keep their incoming timing.";
+  }
+
+  function setDawStraightMidi(enabled) {
+    state.dawStraightMidi = !!enabled;
+    try {
+      localStorage.setItem(MIDI_DAW_EXCHANGE_STRAIGHT_KEY, state.dawStraightMidi ? "1" : "0");
+    } catch {
+      // Preference persistence is optional; exchange behavior still works for this session.
+    }
+    updateDawStraightMidiUi();
+    setStatus(
+      state.dawStraightMidi
+        ? "DAW exchange: Straight MIDI · export ignores project Swing · MIDI Pool return reapplies current Swing"
+        : "DAW exchange: Project timing · MIDI export keeps the stored Swing/timing",
+      "ok"
+    );
+  }
+
   function currentProjectHasUnsavedWork() {
     const project = state.project;
     if (!project) return false;
@@ -17238,6 +17267,11 @@ body.timeline-ruler-zooming {
       restartPlaybackForRoutingChange();
     });
   }
+
+  updateDawStraightMidiUi();
+  document.getElementById("btnDawStraightMidi")?.addEventListener("click", () => {
+    setDawStraightMidi(!state.dawStraightMidi);
+  });
 
   document.getElementById("btnSettingsMenu").addEventListener("click", (event) => {
     event.stopPropagation();
