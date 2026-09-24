@@ -1709,12 +1709,19 @@ def save_user_idea(payload: dict) -> dict:
             duration = max(1, int(note.get("duration") or 1))
             pitch = max(0, min(127, int(note.get("note") or 0)))
             velocity = max(1, min(127, int(note.get("velocity") or 1)))
-            clean_notes.append({
+            clean_note = {
                 "tick": tick,
                 "duration": duration,
                 "note": pitch,
                 "velocity": velocity,
-            })
+            }
+            if note.get("drumSourceNote") is not None:
+                clean_note["drumSourceNote"] = max(0, min(127, int(note.get("drumSourceNote") or 0)))
+            if note.get("drumPad") is not None:
+                clean_note["drumPad"] = int(note.get("drumPad") or 0)
+            if note.get("drumUnresolved") is not None:
+                clean_note["drumUnresolved"] = bool(note.get("drumUnresolved"))
+            clean_notes.append(clean_note)
         clean_notes.sort(key=lambda row: (row["tick"], row["note"]))
         normalized_tracks.append({
             "id": str(track.get("id") or f"track-{i}"),
