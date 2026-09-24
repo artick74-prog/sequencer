@@ -9530,7 +9530,10 @@ body.timeline-ruler-zooming {
   }
 
   function eventIsAudible(event) {
-    if (event.ideaPreview) return trackIsAudible(event.track, state.project);
+    if (event.ideaPreview) {
+      if (event.type === "off") return true;
+      return trackIsAudible(event.track, state.project);
+    }
     if (
       ideaAudition?.active &&
       ideaAudition.mode === "replace" &&
