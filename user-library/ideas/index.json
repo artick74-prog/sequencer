@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "title": "Idea Pool",
+  "description": "User-created musical fragments captured from projects before they are promoted into reusable styles.",
+  "ideas": [
+    {
+      "id": "idea-001",
+      "name": "Refined Chorus Acid Hook",
+      "status": "promising",
+      "style": "acid-breaks",
+      "family": "acid-breaks",
+      "type": "phrase",
+      "roles": [
+        "acid"
+      ],
+      "function": "unassigned",
+      "bars": 8,
+      "tempo": 112,
+      "summary": "Asymmetric 8-bar TD-3 phrase preserved from an alternate chorus experiment.",
+      "tags": [
+        "acid-breaks",
+        "td-3",
+        "acid",
+        "hook",
+        "melodic",
+        "asymmetric"
+      ],
+      "path": "user-library/ideas/items/idea-001.json"
+    }
+  ]
+}
