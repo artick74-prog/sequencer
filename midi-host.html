@@ -1832,12 +1832,16 @@ select, input[type="number"], input[type="text"] {
   position: relative;
   overflow: hidden;
   background: #0c1219;
-  cursor: crosshair;
+  cursor: default;
   user-select: none;
   contain: layout paint style;
 }
 .piano-roll-grid.tool-select { cursor: default; }
-.piano-roll-grid.tool-draw { cursor: crosshair; }
+.piano-roll-grid.tool-draw {
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 16.5V20h3.5L18.1 9.4l-3.5-3.5L4 16.5Z' fill='%23f3f6f9' stroke='%23101820' stroke-width='1.4'/%3E%3Cpath d='m15.4 5.1 1.7-1.7a1.6 1.6 0 0 1 2.3 0l1.2 1.2a1.6 1.6 0 0 1 0 2.3l-1.7 1.7-3.5-3.5Z' fill='%23e8c170' stroke='%23101820' stroke-width='1.4'/%3E%3Cpath d='m4 20 1-3 2 2-3 1Z' fill='%23101820'/%3E%3C/svg%3E") 3 20,
+    crosshair;
+}
 .piano-roll-grid-canvas,
 .piano-roll-ruler-canvas {
   position: absolute;
@@ -1907,20 +1911,22 @@ body.piano-roll-resizing .piano-roll-note {
   display: none !important;
 }
 body.piano-roll-playback-lite .piano-roll-note {
-  opacity: 0 !important;
+  opacity: .96 !important;
   box-shadow: none !important;
 }
 body.piano-roll-playback-lite .piano-roll-note-vector {
   display: block;
+  opacity: .48;
 }
 body.piano-roll-playback-lite .piano-roll-velocity-bar,
 body.piano-roll-playback-lite .piano-roll-control-bar,
 body.piano-roll-playback-lite .piano-roll-slide-step {
-  opacity: 0 !important;
+  opacity: .9 !important;
   box-shadow: none !important;
 }
 body.piano-roll-playback-lite .piano-roll-parameter-vector {
   display: block;
+  opacity: .45;
 }
 body.piano-roll-fast-geometry .piano-roll-note-vector,
 body.piano-roll-resizing .piano-roll-note-vector {
@@ -4553,6 +4559,10 @@ body.timeline-ruler-zooming {
     transportRestartTimer: null,
     pendingLoopState: null,
     pendingLoopAtPerf: 0,
+    pianoRollLiveEditPending: false,
+    pianoRollLiveEditAtPerf: 0,
+    pianoRollLiveEditTick: 0,
+    pianoRollTimelineDirty: false,
     timingDiagnosticResult: null,
     playheadEls: [],
     rulerPlayheadEls: [],
@@ -8577,6 +8587,11 @@ body.timeline-ruler-zooming {
   ) {
     state.pendingLoopState = null;
     state.pendingLoopAtPerf = 0;
+    state.pianoRollLiveEditPending = false;
+    state.pianoRollLiveEditAtPerf = 0;
+    state.pianoRollLiveEditTick = 0;
+    const refreshEditedTimeline = !!state.pianoRollTimelineDirty;
+    state.pianoRollTimelineDirty = false;
     state.playing = false;
     syncPianoRollPlaybackLiteMode();
     state.playbackToken++;
@@ -8610,6 +8625,11 @@ body.timeline-ruler-zooming {
       playButton.textContent = "▶";
       playButton.title = "Play · Space";
       playButton.setAttribute("aria-label", "Play");
+    }
+    if (refreshEditedTimeline) {
+      requestAnimationFrame(() => {
+        if (!state.playing && state.project) renderTracks();
+      });
     }
   }
 
@@ -8727,6 +8747,48 @@ body.timeline-ruler-zooming {
       }
     }
     return length > 0 ? Math.min(tick, length) : tick;
+  }
+
+  function queuePianoRollLivePlaybackRefresh() {
+    if (!state.project || !state.playing) return false;
+    const now = performance.now();
+    const ppq = state.playbackPpq || state.project.ppq || 480;
+    const tempo = state.playbackTempo || state.project.tempo || 120;
+    const safeLeadMs = Math.max(HARDWARE_LOOKAHEAD_MS, SF2_LOOKAHEAD_MS) + 45;
+    const absoluteTick = absoluteTransportTick(now);
+    let targetTick = 0;
+    let targetPerf = 0;
+
+    if (state.loop) {
+      const range = loopRangeBounds();
+      if (!range?.span) return false;
+      const phase = ((absoluteTick - range.start) % range.span + range.span) % range.span;
+      let remainingTicks = phase < 1 ? range.span : (range.span - phase);
+      targetTick = range.start;
+      targetPerf = now + ticksToMs(remainingTicks, tempo, ppq);
+
+      // If the hardware lookahead may already contain the next loop start,
+      // wait one more cycle instead of clearing/restarting the transport.
+      if (targetPerf - now <= safeLeadMs) {
+        targetPerf += ticksToMs(range.span, tempo, ppq);
+      }
+    } else {
+      const tpb = ticksPerBar(ppq);
+      targetTick = Math.ceil((absoluteTick + 1) / tpb) * tpb;
+      const projectLength = Math.max(tpb, Number(state.project.lengthTicks) || tpb);
+      if (targetTick >= projectLength) return false;
+      targetPerf = state.startPerf + ticksToMs(targetTick - state.startTick, tempo, ppq);
+      if (targetPerf - now <= safeLeadMs) {
+        targetTick += tpb;
+        if (targetTick >= projectLength) return false;
+        targetPerf += ticksToMs(tpb, tempo, ppq);
+      }
+    }
+
+    state.pianoRollLiveEditPending = true;
+    state.pianoRollLiveEditAtPerf = targetPerf;
+    state.pianoRollLiveEditTick = targetTick;
+    return true;
   }
 
   function snapToBar(tick) {
@@ -9144,8 +9206,15 @@ body.timeline-ruler-zooming {
         pendingLoop == null || !Number.isFinite(state.pendingLoopAtPerf)
           ? null
           : state.pendingLoopAtPerf;
+      const liveEditHandoffPerf =
+        state.pianoRollLiveEditPending && Number.isFinite(state.pianoRollLiveEditAtPerf)
+          ? state.pianoRollLiveEditAtPerf
+          : null;
+      const earliestHandoffPerf = [handoffPerf, liveEditHandoffPerf]
+        .filter((value) => value != null)
+        .reduce((best, value) => best == null ? value : Math.min(best, value), null);
       const oldScheduleDeadline =
-        handoffPerf == null ? Infinity : Math.max(now, handoffPerf - 0.5);
+        earliestHandoffPerf == null ? Infinity : Math.max(now, earliestHandoffPerf - 0.5);
 
       if (hw && !scheduleHardwareWindow(
         hardwareCursor,
@@ -9169,6 +9238,40 @@ body.timeline-ruler-zooming {
           ppq,
           token
         );
+      }
+
+      if (
+        liveEditHandoffPerf != null &&
+        (handoffPerf == null || liveEditHandoffPerf <= handoffPerf)
+      ) {
+        const handoffLeadMs = Math.max(
+          PLAYBACK_START_LEAD_MS,
+          Math.min(90, sf2OutputLatencyMs() + 20)
+        );
+        if (now >= liveEditHandoffPerf - handoffLeadMs) {
+          const handoffTick = Math.max(0, Number(state.pianoRollLiveEditTick) || 0);
+
+          if (state.timer) {
+            clearInterval(state.timer);
+            state.timer = null;
+          }
+          if (state.playbackUiFrame) {
+            cancelAnimationFrame(state.playbackUiFrame);
+            state.playbackUiFrame = 0;
+          }
+
+          state.pianoRollLiveEditPending = false;
+          state.pianoRollLiveEditAtPerf = 0;
+          state.pianoRollLiveEditTick = 0;
+          state.startTick = handoffTick;
+
+          runScheduler(handoffTick, {
+            startAtPerf: liveEditHandoffPerf,
+            resetHardware: false,
+            preserveToken: true,
+          });
+          return;
+        }
       }
 
       if (pendingLoop != null && handoffPerf != null) {
@@ -9195,6 +9298,9 @@ body.timeline-ruler-zooming {
           state.loop = !!pendingLoop;
           state.pendingLoopState = null;
           state.pendingLoopAtPerf = 0;
+          state.pianoRollLiveEditPending = false;
+          state.pianoRollLiveEditAtPerf = 0;
+          state.pianoRollLiveEditTick = 0;
 
           const nextRange = state.loop ? ensureLoopRangeAtTick(handoffTick) : null;
           if (nextRange && (handoffTick < nextRange.start || handoffTick >= nextRange.end)) {
@@ -11245,6 +11351,24 @@ body.timeline-ruler-zooming {
     );
   }
 
+  function pianoRollInteractivePlaybackRange() {
+    if (!state.playing || !state.loop) return null;
+    return loopRangeBounds();
+  }
+
+  function pianoRollNoteOverlapsRange(note, range) {
+    if (!range) return true;
+    const start = Number(note?.tick) || 0;
+    const end = start + Math.max(1, Number(note?.duration) || 1);
+    return start < range.end && end > range.start;
+  }
+
+  function pianoRollTickInRange(tick, range) {
+    if (!range) return true;
+    const value = Number(tick) || 0;
+    return value >= range.start && value < range.end;
+  }
+
   function closePianoRoll({ silent = false } = {}) {
     state.pianoRollClipId = "";
     state.pianoRollSelectedNoteId = "";
@@ -12041,12 +12165,16 @@ body.timeline-ruler-zooming {
     const spanTicks = Math.max(1, ctx.endTick - ctx.startTick);
     const selected = pianoRollSelectedIdSet();
     const info = trackDisplayInfo(ctx.track);
+    const interactiveRange = pianoRollInteractivePlaybackRange();
+    const interactiveNotes = interactiveRange
+      ? ctx.notes.filter((note) => pianoRollNoteOverlapsRange(note, interactiveRange))
+      : ctx.notes;
     content.style.width = width + "px";
     const fragment = document.createDocumentFragment();
     fragment.appendChild(createPianoRollParameterVector(ctx, spec, info.color));
 
     if (spec.kind === "velocity") {
-      for (const note of ctx.notes) {
+      for (const note of interactiveNotes) {
         if (trackIsPercussion(ctx.track) && pianoRollDisplayNote(ctx, note) == null) continue;
         const tick = Number(note.tick) || 0;
         if (tick < ctx.startTick || tick >= ctx.endTick) continue;
@@ -12065,7 +12193,7 @@ body.timeline-ruler-zooming {
         fragment.appendChild(bar);
       }
     } else if (spec.kind === "slide") {
-      for (const note of ctx.notes) {
+      for (const note of interactiveNotes) {
         const tick = Number(note.tick) || 0;
         if (tick < ctx.startTick || tick >= ctx.endTick) continue;
         const ratio = Math.max(0, Math.min(1, (tick - ctx.startTick) / spanTicks));
@@ -12082,6 +12210,7 @@ body.timeline-ruler-zooming {
       }
     } else {
       for (const control of ctx.midiControls || []) {
+        if (!pianoRollTickInRange(control.tick, interactiveRange)) continue;
         if (!pianoRollParameterMatches(control, spec)) continue;
         const tick = Number(control.tick) || 0;
         if (tick < ctx.startTick || tick >= ctx.endTick) continue;
@@ -12842,9 +12971,7 @@ body.timeline-ruler-zooming {
   function commitPianoRollEdit(ctx, message, auditionRawNote = null) {
     if (!ctx || !state.project) return;
     const wasPlaying = !!state.playing;
-    const resumeTick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
-
-    if (wasPlaying) stopPlayback();
+    const liveTick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
 
     ctx.track.notes.sort((a,b) => Number(a.tick) - Number(b.tick) || Number(a.note) - Number(b.note));
     ctx.track.midiControls = Array.isArray(ctx.track.midiControls) ? ctx.track.midiControls : [];
@@ -12872,20 +12999,32 @@ body.timeline-ruler-zooming {
     markHostProjectDirty();
     scheduleHostAutosave();
 
-    state.startTick = Math.max(0, resumeTick);
-    renderAll();
-
     if (wasPlaying) {
-      runScheduler(state.startTick);
-    } else if (auditionRawNote != null) {
-      auditionPianoRollNote(ctx.track, auditionRawNote, 100);
+      // Live loop editing must stay musical: do not Stop/Panic, rebuild the whole
+      // timeline, and restart transport for every pencil stroke. Update only the
+      // editor now; the scheduler swaps to the edited queue at the next safe loop
+      // boundary (or bar boundary when Loop is off).
+      state.pianoRollTimelineDirty = true;
+      state.startTick = Math.max(0, liveTick);
+      queuePianoRollLivePlaybackRefresh();
+      renderPianoRoll();
+      syncPianoRollPlaybackLiteMode();
+      updatePlayheads(currentTransportTick(), state.lengthTicks || state.project.lengthTicks || 1);
+    } else {
+      state.startTick = Math.max(0, liveTick);
+      renderAll();
+      if (auditionRawNote != null) {
+        auditionPianoRollNote(ctx.track, auditionRawNote, 100);
+      }
     }
 
     setStatus(
       "Piano Roll · " + message + " · snap " + pianoRollSnapStatusLabel() +
-      (ctx.fullTrack
-        ? " · full project track edited · timeline keeps " + TIMELINE_RUNWAY_BARS + " empty bars ahead"
-        : " · Project Clip is now an edited instance"),
+      (wasPlaying
+        ? (state.loop ? " · LIVE EDIT · next loop pass" : " · LIVE EDIT · next bar")
+        : (ctx.fullTrack
+          ? " · full project track edited · timeline keeps " + TIMELINE_RUNWAY_BARS + " empty bars ahead"
+          : " · Project Clip is now an edited instance")),
       "ok"
     );
   }
@@ -13461,7 +13600,11 @@ body.timeline-ruler-zooming {
     grid.appendChild(
       createPianoRollNoteVector(ctx, displayRows, rowH, rollH, rollW, info.color)
     );
-    for (const note of notes) {
+    const interactiveRange = pianoRollInteractivePlaybackRange();
+    const interactiveNotes = interactiveRange
+      ? notes.filter((note) => pianoRollNoteOverlapsRange(note, interactiveRange))
+      : notes;
+    for (const note of interactiveNotes) {
       const displayNote = pianoRollDisplayNote(ctx, note);
       if (displayNote == null) continue;
       const noteRowIndex = rowIndexByNote.get(displayNote);
