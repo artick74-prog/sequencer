@@ -864,6 +864,32 @@ a { color: var(--accent); }
 }
 .rhythm-now strong { color: var(--accent); }
 
+
+.idea-audition-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--border);
+}
+.idea-card {
+  cursor: pointer;
+  grid-template-columns: 28px minmax(0,1fr);
+}
+.idea-card.active {
+  border-color: var(--accent);
+  background: rgba(61,220,151,.08);
+}
+.idea-card .idea-tags {
+  margin-top: 4px;
+  color: #728093;
+  font-size: 9px;
+  line-height: 1.35;
+}
+.idea-mode-badge {
+  color: var(--gm);
+  font-weight: 700;
+}
 .rhythm-editor-modal { width: min(780px, 96vw); }
 .rhythm-editor-body {
   padding: 14px;
@@ -2838,6 +2864,7 @@ body.timeline-ruler-zooming {
     <button class="btn" id="btnLoops" type="button" title="Browse, preview and drag MIDI loops into the arrangement">♫ Loops</button>
     <button class="btn" id="btnMidiPool" type="button" title="Exchange single-track MIDI files with Ableton / Studio One / Fender">⇄ MIDI Pool</button>
     <button class="btn" id="btnRhythms" type="button" title="Audition pitch-free rhythm patterns on any track without editing the project">♬ Rhythms</button>
+    <button class="btn" id="btnIdeas" type="button" title="Audition saved Idea Pool fragments inside the current project">✦ Ideas</button>
     <input class="file-hidden" id="fileMid" type="file" accept=".mid,.midi">
     <input class="file-hidden" id="fileJson" type="file" accept=".json">
     <input class="file-hidden" id="fileSf2" type="file" accept=".sf2,.SF2">
@@ -2965,6 +2992,38 @@ body.timeline-ruler-zooming {
     <div class="loop-drawer-foot">
       <span id="rhythmCount">—</span>
       <span>Click = audition · pattern sets project loop</span>
+    </div>
+  </aside>
+
+  <aside class="loop-drawer" id="ideaBrowser" aria-hidden="true">
+    <div class="loop-drawer-head">
+      <div class="loop-drawer-title">
+        <strong>✦ IDEA POOL</strong>
+        <span class="spacer"></span>
+        <button class="btn" id="btnCloseIdeas" type="button">Close</button>
+      </div>
+      <div class="loop-filters">
+        <input class="wide" id="ideaSearch" type="search" placeholder="Search ideas…">
+        <select id="ideaMode" title="Replace temporarily mutes matching project tracks; Layer keeps them playing">
+          <option value="replace" selected>Preview · Replace same role</option>
+          <option value="layer">Preview · Layer</option>
+        </select>
+      </div>
+    </div>
+    <div class="idea-audition-actions">
+      <button class="btn" id="ideaPrev" type="button">← Previous</button>
+      <button class="btn" id="ideaNext" type="button">Next →</button>
+      <button class="btn" id="ideaStop" type="button" disabled>Stop preview</button>
+      <button class="btn primary" id="ideaApply" type="button" disabled>APPLY to loop</button>
+    </div>
+    <div class="rhythm-now" id="ideaNow">
+      Set a project Loop range, then click an idea. Short ideas repeat to fill the loop; long ideas are trimmed.
+    </div>
+    <div class="loop-drawer-status" id="ideaStatus">Open the browser to load Idea Pool.</div>
+    <div class="loop-list" id="ideaList"></div>
+    <div class="loop-drawer-foot">
+      <span id="ideaCount">—</span>
+      <span>Preview in current loop · Replace / Layer · APPLY when it fits</span>
     </div>
   </aside>
 
@@ -4689,6 +4748,11 @@ body.timeline-ruler-zooming {
   let rhythmLibraryLoaded = false;
   let rhythmSelectedId = "";
   let rhythmAudition = null;
+  let ideaCatalog = [];
+  let ideaCatalogLoaded = false;
+  let ideaSelectedId = "";
+  let ideaAudition = null;
+  let ideaLoadToken = 0;
   let rhythmRevisions = {};
   let rhythmCustomPatterns = [];
   let rhythmVariantCursors = {};
@@ -5634,6 +5698,7 @@ body.timeline-ruler-zooming {
   async function openMidiPoolBrowser() {
     closeHostLoopBrowser();
     if (document.getElementById("rhythmBrowser")?.classList.contains("open")) closeRhythmBrowser();
+    if (document.getElementById("ideaBrowser")?.classList.contains("open")) closeIdeaBrowser();
     const drawer = document.getElementById("midiPoolBrowser");
     drawer?.classList.add("open");
     drawer?.setAttribute("aria-hidden", "false");
@@ -6774,6 +6839,430 @@ body.timeline-ruler-zooming {
     }
   }
 
+  function ideaStatus(text, ok = false) {
+    const el = document.getElementById("ideaStatus");
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle("ok", !!ok);
+  }
+
+  function ideaStyleLabel(value) {
+    return String(value || "other").replace(/-/g, " ");
+  }
+
+  async function loadIdeaCatalog(force = false) {
+    if (ideaCatalogLoaded && !force) return ideaCatalog;
+    const response = await fetch("user-library/ideas/index.json?_=" + Date.now(), { cache:"no-store" });
+    if (!response.ok) throw new Error("Idea index HTTP " + response.status);
+    const data = await response.json();
+    ideaCatalog = Array.isArray(data.ideas) ? data.ideas : [];
+    ideaCatalogLoaded = true;
+    renderIdeaBrowser();
+    return ideaCatalog;
+  }
+
+  function filteredIdeas() {
+    const query = String(document.getElementById("ideaSearch")?.value || "").trim().toLowerCase();
+    if (!query) return ideaCatalog.slice();
+    return ideaCatalog.filter((entry) => {
+      const hay = [
+        entry.id, entry.name, entry.summary, entry.style, entry.family,
+        entry.type, entry.function, ...(entry.roles || []), ...(entry.tags || [])
+      ].join(" ").toLowerCase();
+      return hay.includes(query);
+    });
+  }
+
+  function ideaTrackRoleKey(track) {
+    const id = String(track?.id || "").toLowerCase();
+    const role = String(track?.role || "").toLowerCase();
+    if (role.includes("drum") || id === "drums") return "drums";
+    if (role.includes("percussion") || id === "percussion") return "percussion";
+    if (role.includes("bass") || id === "bass") return "bass";
+    if (role.includes("td3") || role.includes("acid") || id === "acid") return "acid";
+    if (role.includes("guitar") || id === "guitar") return "guitar";
+    if (role.includes("keys") || role.includes("piano") || id === "keys") return "keys";
+    return role || id;
+  }
+
+  function ideaTargetTrack(project, sourceTrack) {
+    if (!project || !sourceTrack) return null;
+    const sourceId = String(sourceTrack.id || "");
+    if (sourceId) {
+      const exact = project.tracks.find((track) => String(track.id || "") === sourceId);
+      if (exact) return exact;
+    }
+    const sourceRole = ideaTrackRoleKey(sourceTrack);
+    if (sourceRole) {
+      const byRole = project.tracks.find((track) => ideaTrackRoleKey(track) === sourceRole);
+      if (byRole) return byRole;
+    }
+    const sourceChannel = Number(sourceTrack.channel);
+    if (Number.isInteger(sourceChannel)) {
+      const byChannel = project.tracks.find((track) => Number(track.channel) === sourceChannel);
+      if (byChannel) return byChannel;
+    }
+    return null;
+  }
+
+  function ideaCurrentRange() {
+    if (!state.project) return null;
+    const existing = loopRangeBounds();
+    if (existing) return existing;
+    if (!ideaAudition?.idea) return null;
+    const ppq = state.project.ppq || 480;
+    const bars = Math.max(1, Number(ideaAudition.idea.bars) || 1);
+    const startBar = Math.max(1, Math.min(totalBars(), tickToBar(state.startTick || 0, ppq)));
+    const endBar = Math.max(startBar, Math.min(totalBars(), startBar + bars - 1));
+    return setLoopRangeBars(startBar, endBar);
+  }
+
+  function ideaMappedTracks(idea) {
+    if (!state.project || !idea) return [];
+    const rows = [];
+    for (const sourceTrack of (idea.tracks || [])) {
+      const target = ideaTargetTrack(state.project, sourceTrack);
+      if (target) rows.push({ sourceTrack, target });
+    }
+    return rows;
+  }
+
+  function ideaRawMaterial(idea, range = ideaCurrentRange()) {
+    if (!state.project || !idea || !range) return [];
+    const projectPpq = state.project.ppq || 480;
+    const sourcePpq = Math.max(24, Number(idea.ppq) || 480);
+    const scale = projectPpq / sourcePpq;
+    const sourceBars = Math.max(1, Number(idea.bars) || 1);
+    const cycleTicks = Math.max(1, Math.round(sourceBars * sourcePpq * 4 * scale));
+    const mapped = ideaMappedTracks(idea);
+    const out = [];
+
+    for (const { sourceTrack, target } of mapped) {
+      const notes = [];
+      for (let cycleStart = range.start; cycleStart < range.end; cycleStart += cycleTicks) {
+        for (const sourceNote of (sourceTrack.notes || [])) {
+          const localTick = Math.max(0, Math.round((Number(sourceNote.tick) || 0) * scale));
+          const tick = cycleStart + localTick;
+          if (tick < range.start || tick >= range.end) continue;
+          const duration = Math.max(1, Math.round((Number(sourceNote.duration) || 1) * scale));
+          const note = {
+            tick,
+            duration: Math.min(duration, Math.max(1, range.end - tick)),
+            note: Math.max(0, Math.min(127, Math.round(Number(sourceNote.note) || 0))),
+            velocity: Math.max(1, Math.min(127, Math.round(Number(sourceNote.velocity) || 1))),
+          };
+          if (sourceNote.drumSourceNote != null) note.drumSourceNote = sourceNote.drumSourceNote;
+          if (sourceNote.drumPad != null) note.drumPad = sourceNote.drumPad;
+          if (sourceNote.drumUnresolved != null) note.drumUnresolved = !!sourceNote.drumUnresolved;
+          notes.push(note);
+        }
+      }
+      notes.sort((a,b)=>a.tick-b.tick || a.note-b.note);
+      out.push({ sourceTrack, target, notes });
+    }
+    return out;
+  }
+
+  function buildIdeaAuditionEvents(project, range = null) {
+    if (!ideaAudition?.active || !ideaAudition.idea || !project) return [];
+    const slot = range || ideaCurrentRange();
+    if (!slot) return [];
+    const events = [];
+
+    for (const row of ideaRawMaterial(ideaAudition.idea, slot)) {
+      const track = row.target;
+      const route = trackRoute(track);
+      if (route === "none") continue;
+      const ch = ((track.channel || 1) - 1) & 0x0f;
+      for (const n of row.notes) {
+        const playbackNote = projectPlaybackNote(project, track, n.note);
+        const sf2Note =
+          trackIsPercussion(track) && n.drumSourceNote != null
+            ? Math.max(0, Math.min(127, Number(n.drumSourceNote) || 0))
+            : playbackNote;
+        const skipHardware = isXr20DrumTrack(track) && !!n.drumUnresolved;
+        events.push({
+          tick:n.tick,
+          type:"on",
+          note:playbackNote,
+          sf2Note,
+          skipHardware,
+          velocity:n.velocity,
+          ch,
+          route,
+          track,
+          trackId:track.id,
+          ideaPreview:true,
+        });
+        events.push({
+          tick:Math.max(n.tick + 1, Math.min(slot.end, n.tick + n.duration)),
+          type:"off",
+          note:playbackNote,
+          sf2Note,
+          skipHardware,
+          velocity:0,
+          ch,
+          route,
+          track,
+          trackId:track.id,
+          ideaPreview:true,
+        });
+      }
+    }
+    return events;
+  }
+
+  function renderIdeaBrowser() {
+    const list = document.getElementById("ideaList");
+    if (!list) return;
+    const rows = filteredIdeas();
+    list.innerHTML = "";
+
+    for (const entry of rows) {
+      const active = ideaAudition?.active && ideaSelectedId === entry.id;
+      const card = document.createElement("div");
+      card.className = "loop-card idea-card" + (active ? " active" : "");
+      card.innerHTML =
+        '<button class="loop-preview idea-play ' + (active ? 'active' : '') +
+          '" type="button" title="' + (active ? 'Stop preview' : 'Preview in current project loop') + '">' +
+          (active ? '■' : '▶') + '</button>' +
+        '<div style="min-width:0">' +
+          '<div class="loop-card-name">' + escapeHtml(String(entry.id || "").toUpperCase() + " · " + (entry.name || "Idea")) + '</div>' +
+          '<div class="loop-card-meta">' +
+            escapeHtml(ideaStyleLabel(entry.style || entry.family)) + ' · ' +
+            escapeHtml((entry.roles || []).join(", ") || entry.type || "fragment") + ' · ' +
+            escapeHtml(String(entry.bars || "—")) + ' bars · ' +
+            escapeHtml(String(entry.tempo || "—")) + ' BPM · ' +
+            escapeHtml(entry.status || "raw") +
+          '</div>' +
+          '<div class="idea-tags">' + escapeHtml(entry.summary || "") + '</div>' +
+        '</div>';
+
+      card.addEventListener("click", (event) => {
+        if (event.target.closest("button")) return;
+        void previewIdeaEntry(entry);
+      });
+      card.querySelector(".idea-play")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (active) stopIdeaAudition({ restartProject:true });
+        else void previewIdeaEntry(entry);
+      });
+      list.appendChild(card);
+    }
+
+    const count = document.getElementById("ideaCount");
+    if (count) count.textContent = rows.length + " idea" + (rows.length === 1 ? "" : "s");
+    const stop = document.getElementById("ideaStop");
+    const apply = document.getElementById("ideaApply");
+    if (stop) stop.disabled = !ideaAudition?.active;
+    if (apply) apply.disabled = !ideaAudition?.active;
+    renderIdeaNow();
+  }
+
+  function renderIdeaNow() {
+    const now = document.getElementById("ideaNow");
+    if (!now) return;
+    const range = loopRangeBounds();
+    if (!ideaAudition?.active) {
+      now.innerHTML = range
+        ? 'Target: <strong>Loop ' + range.startBar + '–' + range.endBar + '</strong> · click an idea to audition it in context.'
+        : 'Set a project <strong>Loop range</strong>, then click an idea. Without a range, Preview creates one from the current bar.';
+      return;
+    }
+    const entry = ideaCatalog.find((item) => item.id === ideaSelectedId);
+    const mode = ideaAudition.mode === "layer" ? "Layer" : "Replace same role";
+    const mapped = ideaMappedTracks(ideaAudition.idea).map((row) => row.target.name);
+    now.innerHTML =
+      '<strong>' + escapeHtml(String(entry?.id || "").toUpperCase() + " · " + (entry?.name || ideaAudition.idea.name || "Idea")) + '</strong>' +
+      ' · <span class="idea-mode-badge">' + escapeHtml(mode) + '</span>' +
+      (range ? ' · Loop ' + range.startBar + '–' + range.endBar : '') +
+      ' · ' + escapeHtml(mapped.join(", ") || "no mapped tracks");
+  }
+
+  async function previewIdeaEntry(entry) {
+    if (!state.project || !entry?.path) return;
+    const token = ++ideaLoadToken;
+    try {
+      ideaStatus("Loading " + (entry.name || entry.id) + "…");
+      const response = await fetch(entry.path + "?_=" + Date.now(), { cache:"no-store" });
+      if (!response.ok) throw new Error("Idea HTTP " + response.status);
+      const idea = await response.json();
+      if (token !== ideaLoadToken) return;
+
+      if (state.playing) stopPlayback();
+      hostLoopStopPreview({ rerender:false });
+      rhythmAudition = null;
+
+      ideaSelectedId = entry.id;
+      ideaAudition = {
+        active:true,
+        entryId:entry.id,
+        idea,
+        mode:document.getElementById("ideaMode")?.value === "layer" ? "layer" : "replace",
+        targetTrackIds:[],
+      };
+      let range = ideaCurrentRange();
+      if (!range) throw new Error("Cannot create an audition range.");
+      const mapped = ideaMappedTracks(idea);
+      if (!mapped.length) throw new Error("No Idea tracks match tracks in the current project.");
+      ideaAudition.targetTrackIds = mapped.map((row) => row.target.id);
+
+      state.loop = true;
+      updateLoopButtonUi();
+      updateLoopRangeVisuals();
+      state.startTick = range.start;
+
+      if (useSf2Output() && !(await ensureSf2Loaded())) {
+        ideaAudition = null;
+        renderIdeaBrowser();
+        return;
+      }
+      if (!useSf2Output() && !getOutput()) {
+        ideaAudition = null;
+        throw new Error("Enable Browser audio or select MIDI Out.");
+      }
+
+      runScheduler(range.start);
+      if (!state.playing) {
+        ideaAudition = null;
+        renderIdeaBrowser();
+        return;
+      }
+      renderIdeaBrowser();
+      ideaStatus(
+        "Previewing " + String(entry.id || "").toUpperCase() +
+        " · " + (ideaAudition.mode === "layer" ? "Layer" : "Replace same role") +
+        " · loop " + range.startBar + "–" + range.endBar,
+        true
+      );
+    } catch (err) {
+      ideaAudition = null;
+      renderIdeaBrowser();
+      ideaStatus("Idea preview failed: " + err.message);
+      setStatus("Idea preview failed: " + err.message, "err");
+    }
+  }
+
+  function stopIdeaAudition({ restartProject = false } = {}) {
+    const wasActive = !!ideaAudition?.active;
+    const wasPlaying = state.playing;
+    const tick = wasPlaying ? currentTransportTick() : (state.startTick || 0);
+    ideaLoadToken++;
+    ideaAudition = null;
+    if (wasActive && restartProject && wasPlaying && state.project) {
+      stopPlayback();
+      state.startTick = tick;
+      runScheduler(tick);
+    }
+    renderIdeaBrowser();
+    if (wasActive) ideaStatus("Idea preview stopped · original project restored.", true);
+  }
+
+  function stepIdea(direction) {
+    const rows = filteredIdeas();
+    if (!rows.length) return;
+    let index = rows.findIndex((entry) => entry.id === ideaSelectedId);
+    if (index < 0) index = direction > 0 ? -1 : 0;
+    index = (index + direction + rows.length) % rows.length;
+    void previewIdeaEntry(rows[index]);
+  }
+
+  function detachOverlappingClipsForIdea(track, startTick, endTick) {
+    const removedIds = new Set();
+    state.project.clips = (state.project.clips || []).filter((clip) => {
+      if (clip.targetTrackId !== track.id || clip.nativeTrackPart) return true;
+      const a = Number(clip.startTick) || 0;
+      const b = Math.max(a + 1, Number(clip.endTick) || a + 1);
+      const overlap = a < endTick && b > startTick;
+      if (overlap && clip.instanceId) removedIds.add(clip.instanceId);
+      return !overlap;
+    });
+    if (removedIds.size) {
+      for (const note of track.notes || []) {
+        if (note.clipId && removedIds.has(note.clipId)) delete note.clipId;
+      }
+    }
+  }
+
+  function applyIdeaAudition() {
+    if (!state.project || !ideaAudition?.active || !ideaAudition.idea) return;
+    const range = ideaCurrentRange();
+    if (!range) return;
+    const entry = ideaCatalog.find((item) => item.id === ideaSelectedId);
+    const mode = ideaAudition.mode === "layer" ? "layer" : "replace";
+    const material = ideaRawMaterial(ideaAudition.idea, range);
+    if (!material.length) return;
+
+    const summary = material.map((row) => row.target.name).join(", ");
+    if (!window.confirm(
+      "Apply “" + (entry?.name || ideaAudition.idea.name || ideaSelectedId) + "” to loop " +
+      range.startBar + "–" + range.endBar + "?\n\n" +
+      (mode === "replace"
+        ? "Matching project tracks will be replaced inside this loop: "
+        : "Idea notes will be layered onto existing notes: ") +
+      summary
+    )) return;
+
+    if (state.playing) stopPlayback();
+    hostLoopStopPreview({ rerender:false });
+
+    const clipId = "idea:" + (ideaSelectedId || "fragment") + ":" + Date.now().toString(36);
+    for (const row of material) {
+      const track = row.target;
+      if (mode === "replace") {
+        detachOverlappingClipsForIdea(track, range.start, range.end);
+        track.notes = (track.notes || []).filter((note) => note.tick < range.start || note.tick >= range.end);
+      }
+      track.notes.push(...row.notes.map((note) => ({ ...note, clipId })));
+      track.notes.sort((a,b)=>a.tick-b.tick || a.note-b.note);
+      ensureNativeTrackPart(state.project, track, { createEmpty:true });
+    }
+
+    ideaAudition = null;
+    recomputeLength(state.project);
+    markHostProjectDirty();
+    scheduleHostAutosave();
+    renderAll();
+    renderIdeaBrowser();
+    setStatus(
+      "Applied " + String(entry?.id || ideaSelectedId || "idea").toUpperCase() +
+      " · " + (mode === "replace" ? "Replace" : "Layer") +
+      " · loop " + range.startBar + "–" + range.endBar + " · UNSAVED cloud changes",
+      "ok"
+    );
+    ideaStatus("Applied to project · save/sync when ready.", true);
+  }
+
+  async function openIdeaBrowser() {
+    closeHostLoopBrowser();
+    closeMidiPoolBrowser();
+    if (document.getElementById("rhythmBrowser")?.classList.contains("open")) closeRhythmBrowser();
+    const drawer = document.getElementById("ideaBrowser");
+    drawer?.classList.add("open");
+    drawer?.setAttribute("aria-hidden", "false");
+    document.getElementById("btnIdeas")?.classList.add("active");
+    try {
+      await loadIdeaCatalog(true);
+      renderIdeaBrowser();
+      ideaStatus(
+        "Idea Pool ready · current " +
+        (loopRangeBounds() ? "project loop is the audition slot." : "cue will define the audition slot."),
+        true
+      );
+    } catch (err) {
+      ideaStatus("Idea Pool unavailable: " + err.message);
+      setStatus("Idea Pool error: " + err.message, "err");
+    }
+  }
+
+  function closeIdeaBrowser() {
+    const drawer = document.getElementById("ideaBrowser");
+    drawer?.classList.remove("open");
+    drawer?.setAttribute("aria-hidden", "true");
+    document.getElementById("btnIdeas")?.classList.remove("active");
+    stopIdeaAudition({ restartProject:true });
+  }
+
   function renderRhythmBrowser() {
     populateRhythmControls();
     const list = document.getElementById("rhythmList");
@@ -7128,6 +7617,7 @@ body.timeline-ruler-zooming {
 
   async function openRhythmBrowser() {
     closeHostLoopBrowser();
+    if (document.getElementById("ideaBrowser")?.classList.contains("open")) closeIdeaBrowser();
     closeMidiPoolBrowser();
     const drawer = document.getElementById("rhythmBrowser");
     drawer?.classList.add("open");
@@ -7275,6 +7765,7 @@ body.timeline-ruler-zooming {
 
   function openHostLoopBrowser() {
     if (document.getElementById("rhythmBrowser")?.classList.contains("open")) closeRhythmBrowser();
+    if (document.getElementById("ideaBrowser")?.classList.contains("open")) closeIdeaBrowser();
     closeMidiPoolBrowser();
     const drawer = document.getElementById("hostLoopBrowser");
     drawer?.classList.add("open");
@@ -8762,6 +9253,7 @@ body.timeline-ruler-zooming {
     document.querySelectorAll(".ruler-loop-label").forEach((el) => {
       el.textContent = range ? (range.startBar + "–" + range.endBar) : "";
     });
+    if (document.getElementById("ideaBrowser")?.classList.contains("open")) renderIdeaNow();
   }
 
   function currentTransportTick(atPerf = performance.now()) {
@@ -9027,6 +9519,9 @@ body.timeline-ruler-zooming {
         });
       }
     }
+    if (ideaAudition?.active) {
+      queue.push(...buildIdeaAuditionEvents(project, range));
+    }
     queue.sort((a, b) => {
       if (a.tick !== b.tick) return a.tick - b.tick;
       const priority = (event) => event.type === "off" ? 0 : (event.type === "on" ? 2 : 1);
@@ -9036,6 +9531,16 @@ body.timeline-ruler-zooming {
   }
 
   function eventIsAudible(event) {
+    if (event.ideaPreview) {
+      if (event.type === "off") return true;
+      return trackIsAudible(event.track, state.project);
+    }
+    if (
+      ideaAudition?.active &&
+      ideaAudition.mode === "replace" &&
+      event.trackId &&
+      ideaAudition.targetTrackIds?.includes(event.trackId)
+    ) return false;
     if (event.type === "off") return true;
     if (
       rhythmAudition?.active &&
@@ -9859,6 +10364,9 @@ body.timeline-ruler-zooming {
 
   function setProject(project, { restoreLocal = true, statusText = "" } = {}) {
     stopPlayback();
+    ideaLoadToken++;
+    ideaAudition = null;
+    ideaSelectedId = "";
     state.startTick = 0;
     state.selectedClipId = "";
     closePianoRoll({ silent: true });
@@ -16705,12 +17213,18 @@ body.timeline-ruler-zooming {
     for(const track of (state.project.tracks||[])) {
       const notes=(track.notes||[])
         .filter((note)=>note.tick>=start && note.tick<end)
-        .map((note)=>({
-          tick:Math.max(0,Math.round(note.tick-start)),
-          duration:Math.max(1,Math.round(Number(note.duration)||1)),
-          note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
-          velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
-        }));
+        .map((note)=>{
+          const saved={
+            tick:Math.max(0,Math.round(note.tick-start)),
+            duration:Math.max(1,Math.round(Number(note.duration)||1)),
+            note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
+            velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
+          };
+          if(note.drumSourceNote!=null) saved.drumSourceNote=note.drumSourceNote;
+          if(note.drumPad!=null) saved.drumPad=note.drumPad;
+          if(note.drumUnresolved!=null) saved.drumUnresolved=!!note.drumUnresolved;
+          return saved;
+        });
       if(!notes.length) continue;
       capturedTracks.push({
         id:track.id||("track-"+capturedTracks.length),
@@ -16777,6 +17291,10 @@ body.timeline-ruler-zooming {
       const reply=await response.json().catch(()=>({}));
       if(!response.ok || !reply.ok) throw new Error(reply.error||("HTTP "+response.status));
       const saved=reply.idea||{};
+      ideaCatalogLoaded=false;
+      if(document.getElementById("ideaBrowser")?.classList.contains("open")) {
+        try { await loadIdeaCatalog(true); } catch {}
+      }
       setStatus(
         "Saved to Idea Pool: "+String(saved.id||"idea").toUpperCase()+" · "+name+
         (reply.commit?" · "+reply.commit:""),
@@ -17850,6 +18368,32 @@ body.timeline-ruler-zooming {
     if (open) closeRhythmBrowser();
     else openRhythmBrowser();
   });
+  document.getElementById("btnIdeas")?.addEventListener("click", () => {
+    const open = document.getElementById("ideaBrowser")?.classList.contains("open");
+    if (open) closeIdeaBrowser();
+    else void openIdeaBrowser();
+  });
+  document.getElementById("btnCloseIdeas")?.addEventListener("click", closeIdeaBrowser);
+  document.getElementById("ideaSearch")?.addEventListener("input", renderIdeaBrowser);
+  document.getElementById("ideaPrev")?.addEventListener("click", () => stepIdea(-1));
+  document.getElementById("ideaNext")?.addEventListener("click", () => stepIdea(1));
+  document.getElementById("ideaStop")?.addEventListener("click", () => stopIdeaAudition({ restartProject:true }));
+  document.getElementById("ideaApply")?.addEventListener("click", applyIdeaAudition);
+  document.getElementById("ideaMode")?.addEventListener("change", () => {
+    if (!ideaAudition?.active) {
+      renderIdeaBrowser();
+      return;
+    }
+    const wasPlaying = state.playing;
+    const range = ideaCurrentRange();
+    if (wasPlaying) stopPlayback();
+    ideaAudition.mode = document.getElementById("ideaMode")?.value === "layer" ? "layer" : "replace";
+    if (range) {
+      state.startTick = range.start;
+      if (wasPlaying) runScheduler(range.start);
+    }
+    renderIdeaBrowser();
+  });
   document.getElementById("btnCloseRhythms")?.addEventListener("click", closeRhythmBrowser);
   document.getElementById("rhythmPrev")?.addEventListener("click", () => stepRhythm(-1));
   document.getElementById("rhythmNext")?.addEventListener("click", () => stepRhythm(1));
@@ -18579,13 +19123,19 @@ body.timeline-ruler-zooming {
         target.channel=Math.max(1,Math.min(16,Number(sourceTrack.channel)||target.channel||1));
         target.role=String(sourceTrack.role||target.role||inferTrackRole(target,target.channel));
         target.transposeOctaves=Math.max(-3,Math.min(3,Math.round(Number(sourceTrack.transposeOctaves)||0)));
-        target.notes=(sourceTrack.notes||[]).map((note)=>({
-          tick:Math.max(0,Math.round(Number(note.tick)||0)),
-          duration:Math.max(1,Math.round(Number(note.duration)||1)),
-          note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
-          velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
-          clipId:"idea:"+String(idea.id||ideaId),
-        }));
+        target.notes=(sourceTrack.notes||[]).map((note)=>{
+          const loaded={
+            tick:Math.max(0,Math.round(Number(note.tick)||0)),
+            duration:Math.max(1,Math.round(Number(note.duration)||1)),
+            note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
+            velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
+            clipId:"idea:"+String(idea.id||ideaId),
+          };
+          if(note.drumSourceNote!=null) loaded.drumSourceNote=note.drumSourceNote;
+          if(note.drumPad!=null) loaded.drumPad=note.drumPad;
+          if(note.drumUnresolved!=null) loaded.drumUnresolved=!!note.drumUnresolved;
+          return loaded;
+        });
       }
 
       setProject(normalizeProject(project),{
@@ -18720,6 +19270,7 @@ body.timeline-ruler-zooming {
     },
     openLoops: () => openHostLoopBrowser(),
     openRhythms: () => openRhythmBrowser(),
+    openIdeas: () => openIdeaBrowser(),
     getRhythmUserData: () => ({
       revisions: JSON.parse(JSON.stringify(rhythmRevisions)),
       customPatterns: JSON.parse(JSON.stringify(rhythmCustomPatterns)),

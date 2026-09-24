@@ -103,6 +103,16 @@ In Style Library → **Idea Pool**:
 - Hardware preview uses the idea's stored MIDI channels, so current conventions such as TD-3 ch2 / XR20 bass ch1 / XR20 drums ch10 survive;
 - **Open in Host** loads the idea as an editable standalone fragment.
 
+MIDI Host also has a right-side **✦ Ideas** browser for contextual audition against the current arrangement:
+
+- the existing project **Loop range** is the audition slot; if no range exists, Preview creates one from the current cue using the idea length;
+- shorter ideas repeat to fill the loop, longer ideas are trimmed to the loop;
+- **Replace same role** is the default: matching project tracks (acid/bass/drums/etc.) are temporarily suppressed while the saved idea plays through those tracks' current routing;
+- **Layer** leaves the project tracks audible and adds the idea on top;
+- **APPLY to loop** commits exactly the auditioned repeated/trimmed material into the current project; Replace removes note onsets in the slot on matching tracks, Layer keeps them;
+- changing/closing/stopping Preview does not edit project notes;
+- Idea tempo is ignored for contextual audition: the idea follows the current project tempo, swing timing is already stored in its note ticks, and current project transpose/routing are used.
+
 Do not park reusable experiments at the end of `projects/current.json`. Move them into Idea Pool once they are worth preserving.
 
 
