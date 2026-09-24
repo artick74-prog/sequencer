@@ -1,11 +1,12 @@
 {
   "version": 1,
-  "savedAt": "2026-09-21T01:24:48.890Z",
-  "barWidthPx": 125.3440008534169,
+  "savedAt": "2026-09-24T20:25:19.028Z",
+  "barWidthPx": 45.98115808806831,
   "loop": true,
-  "loopStartTick": 0,
-  "loopEndTick": 30720,
+  "loopStartTick": 107520,
+  "loopEndTick": 138240,
   "browserAudioSf2": true,
   "hardwareMidiOut": true,
-  "midiOutputName": "TD-3"
+  "midiInputName": "Bitstream In",
+  "midiOutputName": "Studio Out"
 }

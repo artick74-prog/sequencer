@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "name": "Acid Rock 1",
-  "tempo": 120,
-  "swing": 23,
+  "name": "Acid Breakes",
+  "tempo": 112,
+  "swing": 24,
   "masterTranspose": 7,
   "ppq": 480,
-  "totalBars": 104,
-  "lengthTicks": 199680,
+  "totalBars": 96,
+  "lengthTicks": 184320,
   "grid": {
     "resolution": "1/32",
     "slotsPerBar": 32,
@@ -34,175 +34,227 @@
     {
       "tick": 0,
       "bar": 1,
-      "text": "Start"
+      "text": "DJ Intro · Mix-in · 8 bars"
     },
     {
-      "tick": 61440,
-      "bar": 33,
-      "text": "H1 · Pedal one note"
+      "tick": 15360,
+      "bar": 9,
+      "text": "Intro · 8th hats · sparse break"
+    },
+    {
+      "tick": 30720,
+      "bar": 17,
+      "text": "Groove In · hats 8ths → 16ths"
+    },
+    {
+      "tick": 46080,
+      "bar": 25,
+      "text": "Development A · full Acid Breaks"
     },
     {
       "tick": 76800,
       "bar": 41,
-      "text": "H2 · Pedal + accent thirds"
+      "text": "Breakdown · space · 8th hats"
     },
     {
       "tick": 92160,
       "bar": 49,
-      "text": "H3A · One note"
+      "text": "Rebuild · hats 8ths → 16ths"
     },
     {
       "tick": 107520,
       "bar": 57,
-      "text": "H3B · Full thirds"
+      "text": "Climax A · full 16th hats"
     },
     {
       "tick": 122880,
       "bar": 65,
-      "text": "H4 · Fixed note + moving voice"
+      "text": "Climax B · peak breaks"
     },
     {
       "tick": 138240,
       "bar": 73,
-      "text": "H5 · 6 tonic + 2 dominant"
-    },
-    {
-      "tick": 149760,
-      "bar": 79,
-      "text": "H5 · dominant · low-register new bass"
+      "text": "Outro · 16ths → 8ths · decay"
     },
     {
       "tick": 153600,
       "bar": 81,
-      "text": "H6 · Pedal over harmony"
-    },
-    {
-      "tick": 165120,
-      "bar": 87,
-      "text": "H6 · dominant · low-register new bass"
-    },
-    {
-      "tick": 168960,
-      "bar": 89,
-      "text": "H456 · Combined 4+5+6"
-    },
-    {
-      "tick": 180480,
-      "bar": 95,
-      "text": "H456 · dominant 1 · low-register bass"
-    },
-    {
-      "tick": 184320,
-      "bar": 97,
-      "text": "H456 · cycle 2"
-    },
-    {
-      "tick": 195840,
-      "bar": 103,
-      "text": "H456 · dominant 2 · low-register bass"
+      "text": "DJ Outro · Mix-out · 8 bars"
     }
   ],
   "sections": [
     {
-      "name": "Start",
+      "name": "DJ Intro · Mix-in · 8 bars",
       "startBar": 1,
-      "endBar": 32,
+      "endBar": 8,
       "startTick": 0,
-      "endTick": 61440
+      "endTick": 15360
     },
     {
-      "name": "H1 · Pedal one note",
-      "startBar": 33,
+      "name": "Intro · 8th hats · sparse break",
+      "startBar": 9,
+      "endBar": 16,
+      "startTick": 15360,
+      "endTick": 30720
+    },
+    {
+      "name": "Groove In · hats 8ths → 16ths",
+      "startBar": 17,
+      "endBar": 24,
+      "startTick": 30720,
+      "endTick": 46080
+    },
+    {
+      "name": "Development A · full Acid Breaks",
+      "startBar": 25,
       "endBar": 40,
-      "startTick": 61440,
+      "startTick": 46080,
       "endTick": 76800
     },
     {
-      "name": "H2 · Pedal + accent thirds",
+      "name": "Breakdown · space · 8th hats",
       "startBar": 41,
       "endBar": 48,
       "startTick": 76800,
       "endTick": 92160
     },
     {
-      "name": "H3A · One note",
+      "name": "Rebuild · hats 8ths → 16ths",
       "startBar": 49,
       "endBar": 56,
       "startTick": 92160,
       "endTick": 107520
     },
     {
-      "name": "H3B · Full thirds",
+      "name": "Climax A · full 16th hats",
       "startBar": 57,
       "endBar": 64,
       "startTick": 107520,
       "endTick": 122880
     },
     {
-      "name": "H4 · Fixed note + moving voice",
+      "name": "Climax B · peak breaks",
       "startBar": 65,
       "endBar": 72,
       "startTick": 122880,
       "endTick": 138240
     },
     {
-      "name": "H5 · 6 tonic + 2 dominant",
+      "name": "Outro · 16ths → 8ths · decay",
       "startBar": 73,
-      "endBar": 78,
-      "startTick": 138240,
-      "endTick": 149760
-    },
-    {
-      "name": "H5 · dominant · low-register new bass",
-      "startBar": 79,
       "endBar": 80,
-      "startTick": 149760,
+      "startTick": 138240,
       "endTick": 153600
     },
     {
-      "name": "H6 · Pedal over harmony",
+      "name": "DJ Outro · Mix-out · 8 bars",
       "startBar": 81,
-      "endBar": 86,
-      "startTick": 153600,
-      "endTick": 165120
-    },
-    {
-      "name": "H6 · dominant · low-register new bass",
-      "startBar": 87,
-      "endBar": 88,
-      "startTick": 165120,
-      "endTick": 168960
-    },
-    {
-      "name": "H456 · Combined 4+5+6",
-      "startBar": 89,
-      "endBar": 94,
-      "startTick": 168960,
-      "endTick": 180480
-    },
-    {
-      "name": "H456 · dominant 1 · low-register bass",
-      "startBar": 95,
       "endBar": 96,
-      "startTick": 180480,
+      "startTick": 153600,
       "endTick": 184320
-    },
-    {
-      "name": "H456 · cycle 2",
-      "startBar": 97,
-      "endBar": 102,
-      "startTick": 184320,
-      "endTick": 195840
-    },
-    {
-      "name": "H456 · dominant 2 · low-register bass",
-      "startBar": 103,
-      "endBar": 104,
-      "startTick": 195840,
-      "endTick": 199680
     }
   ],
   "tracks": [
+    {
+      "id": "drums",
+      "name": "Drums",
+      "channel": 10,
+      "role": "xr20-drums",
+      "gmProgram": null,
+      "mute": false,
+      "transposeOctaves": 0,
+      "noteCount": 1675,
+      "pitchMin": 36,
+      "pitchMax": 49,
+      "pitchMinName": "C2",
+      "pitchMaxName": "C#3",
+      "densityPer8Bars": [
+        {
+          "bars": "1-8",
+          "startBar": 1,
+          "endBar": 8,
+          "notes": 110,
+          "avgVel": 75
+        },
+        {
+          "bars": "9-16",
+          "startBar": 9,
+          "endBar": 16,
+          "notes": 112,
+          "avgVel": 79
+        },
+        {
+          "bars": "17-24",
+          "startBar": 17,
+          "endBar": 24,
+          "notes": 174,
+          "avgVel": 76
+        },
+        {
+          "bars": "25-32",
+          "startBar": 25,
+          "endBar": 32,
+          "notes": 200,
+          "avgVel": 76
+        },
+        {
+          "bars": "33-40",
+          "startBar": 33,
+          "endBar": 40,
+          "notes": 201,
+          "avgVel": 76
+        },
+        {
+          "bars": "41-48",
+          "startBar": 41,
+          "endBar": 48,
+          "notes": 94,
+          "avgVel": 67
+        },
+        {
+          "bars": "49-56",
+          "startBar": 49,
+          "endBar": 56,
+          "notes": 152,
+          "avgVel": 78
+        },
+        {
+          "bars": "57-64",
+          "startBar": 57,
+          "endBar": 64,
+          "notes": 207,
+          "avgVel": 81
+        },
+        {
+          "bars": "65-72",
+          "startBar": 65,
+          "endBar": 72,
+          "notes": 207,
+          "avgVel": 86
+        },
+        {
+          "bars": "73-80",
+          "startBar": 73,
+          "endBar": 80,
+          "notes": 131,
+          "avgVel": 66
+        },
+        {
+          "bars": "81-88",
+          "startBar": 81,
+          "endBar": 88,
+          "notes": 87,
+          "avgVel": 88
+        },
+        {
+          "bars": "89-96",
+          "startBar": 89,
+          "endBar": 96,
+          "notes": 0,
+          "avgVel": 0
+        }
+      ]
+    },
     {
       "id": "bass",
       "name": "Bass A · Kick Lock Long",
@@ -211,39 +263,39 @@
       "gmProgram": null,
       "mute": false,
       "transposeOctaves": -1,
-      "noteCount": 467,
-      "pitchMin": 41,
-      "pitchMax": 63,
-      "pitchMinName": "F2",
-      "pitchMaxName": "D#4",
+      "noteCount": 414,
+      "pitchMin": 48,
+      "pitchMax": 60,
+      "pitchMinName": "C3",
+      "pitchMaxName": "C4",
       "densityPer8Bars": [
         {
           "bars": "1-8",
           "startBar": 1,
           "endBar": 8,
-          "notes": 47,
-          "avgVel": 97
+          "notes": 20,
+          "avgVel": 74
         },
         {
           "bars": "9-16",
           "startBar": 9,
           "endBar": 16,
-          "notes": 48,
+          "notes": 40,
           "avgVel": 97
         },
         {
           "bars": "17-24",
           "startBar": 17,
           "endBar": 24,
-          "notes": 0,
-          "avgVel": 0
+          "notes": 40,
+          "avgVel": 97
         },
         {
           "bars": "25-32",
           "startBar": 25,
           "endBar": 32,
-          "notes": 0,
-          "avgVel": 0
+          "notes": 40,
+          "avgVel": 97
         },
         {
           "bars": "33-40",
@@ -256,57 +308,50 @@
           "bars": "41-48",
           "startBar": 41,
           "endBar": 48,
-          "notes": 40,
+          "notes": 43,
           "avgVel": 97
         },
         {
           "bars": "49-56",
           "startBar": 49,
           "endBar": 56,
-          "notes": 40,
+          "notes": 43,
           "avgVel": 97
         },
         {
           "bars": "57-64",
           "startBar": 57,
           "endBar": 64,
-          "notes": 40,
+          "notes": 43,
           "avgVel": 97
         },
         {
           "bars": "65-72",
           "startBar": 65,
           "endBar": 72,
-          "notes": 40,
+          "notes": 43,
           "avgVel": 97
         },
         {
           "bars": "73-80",
           "startBar": 73,
           "endBar": 80,
-          "notes": 43,
+          "notes": 40,
           "avgVel": 97
         },
         {
           "bars": "81-88",
           "startBar": 81,
           "endBar": 88,
-          "notes": 43,
-          "avgVel": 97
+          "notes": 22,
+          "avgVel": 93
         },
         {
           "bars": "89-96",
           "startBar": 89,
           "endBar": 96,
-          "notes": 43,
-          "avgVel": 97
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 43,
-          "avgVel": 97
+          "notes": 0,
+          "avgVel": 0
         }
       ]
     },
@@ -316,9 +361,9 @@
       "channel": 2,
       "role": "td3",
       "gmProgram": null,
-      "mute": false,
+      "mute": true,
       "transposeOctaves": 0,
-      "noteCount": 1232,
+      "noteCount": 1008,
       "pitchMin": 24,
       "pitchMax": 65,
       "pitchMinName": "C1",
@@ -328,8 +373,8 @@
           "bars": "1-8",
           "startBar": 1,
           "endBar": 8,
-          "notes": 112,
-          "avgVel": 105
+          "notes": 0,
+          "avgVel": 0
         },
         {
           "bars": "9-16",
@@ -342,15 +387,15 @@
           "bars": "17-24",
           "startBar": 17,
           "endBar": 24,
-          "notes": 0,
-          "avgVel": 0
+          "notes": 112,
+          "avgVel": 105
         },
         {
           "bars": "25-32",
           "startBar": 25,
           "endBar": 32,
-          "notes": 0,
-          "avgVel": 0
+          "notes": 112,
+          "avgVel": 105
         },
         {
           "bars": "33-40",
@@ -398,34 +443,27 @@
           "bars": "81-88",
           "startBar": 81,
           "endBar": 88,
-          "notes": 112,
-          "avgVel": 105
+          "notes": 0,
+          "avgVel": 0
         },
         {
           "bars": "89-96",
           "startBar": 89,
           "endBar": 96,
-          "notes": 112,
-          "avgVel": 105
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 112,
-          "avgVel": 105
+          "notes": 0,
+          "avgVel": 0
         }
       ]
     },
     {
       "id": "guitar",
       "name": "29 Overdriven Guitar",
-      "channel": 3,
+      "channel": 4,
       "role": "gm",
       "gmProgram": 29,
-      "mute": false,
+      "mute": true,
       "transposeOctaves": 0,
-      "noteCount": 751,
+      "noteCount": 744,
       "pitchMin": 48,
       "pitchMax": 58,
       "pitchMinName": "C3",
@@ -435,42 +473,42 @@
           "bars": "1-8",
           "startBar": 1,
           "endBar": 8,
-          "notes": 7,
-          "avgVel": 103
+          "notes": 0,
+          "avgVel": 0
         },
         {
           "bars": "9-16",
           "startBar": 9,
           "endBar": 16,
-          "notes": 0,
-          "avgVel": 0
+          "notes": 56,
+          "avgVel": 103
         },
         {
           "bars": "17-24",
           "startBar": 17,
           "endBar": 24,
-          "notes": 0,
-          "avgVel": 0
+          "notes": 72,
+          "avgVel": 103
         },
         {
           "bars": "25-32",
           "startBar": 25,
           "endBar": 32,
-          "notes": 0,
-          "avgVel": 0
+          "notes": 112,
+          "avgVel": 98
         },
         {
           "bars": "33-40",
           "startBar": 33,
           "endBar": 40,
-          "notes": 56,
-          "avgVel": 103
+          "notes": 112,
+          "avgVel": 98
         },
         {
           "bars": "41-48",
           "startBar": 41,
           "endBar": 48,
-          "notes": 72,
+          "notes": 56,
           "avgVel": 103
         },
         {
@@ -505,22 +543,15 @@
           "bars": "81-88",
           "startBar": 81,
           "endBar": 88,
-          "notes": 56,
-          "avgVel": 103
+          "notes": 0,
+          "avgVel": 0
         },
         {
           "bars": "89-96",
           "startBar": 89,
           "endBar": 96,
-          "notes": 112,
-          "avgVel": 98
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 112,
-          "avgVel": 98
+          "notes": 0,
+          "avgVel": 0
         }
       ]
     },
@@ -621,120 +652,6 @@
           "endBar": 96,
           "notes": 0,
           "avgVel": 0
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 0,
-          "avgVel": 0
-        }
-      ]
-    },
-    {
-      "id": "drums",
-      "name": "Drums",
-      "channel": 10,
-      "role": "xr20-drums",
-      "gmProgram": null,
-      "mute": false,
-      "transposeOctaves": 0,
-      "noteCount": 1075,
-      "pitchMin": 36,
-      "pitchMax": 53,
-      "pitchMinName": "C2",
-      "pitchMaxName": "F3",
-      "densityPer8Bars": [
-        {
-          "bars": "1-8",
-          "startBar": 1,
-          "endBar": 8,
-          "notes": 103,
-          "avgVel": 92
-        },
-        {
-          "bars": "9-16",
-          "startBar": 9,
-          "endBar": 16,
-          "notes": 104,
-          "avgVel": 97
-        },
-        {
-          "bars": "17-24",
-          "startBar": 17,
-          "endBar": 24,
-          "notes": 4,
-          "avgVel": 100
-        },
-        {
-          "bars": "25-32",
-          "startBar": 25,
-          "endBar": 32,
-          "notes": 0,
-          "avgVel": 0
-        },
-        {
-          "bars": "33-40",
-          "startBar": 33,
-          "endBar": 40,
-          "notes": 96,
-          "avgVel": 99
-        },
-        {
-          "bars": "41-48",
-          "startBar": 41,
-          "endBar": 48,
-          "notes": 96,
-          "avgVel": 99
-        },
-        {
-          "bars": "49-56",
-          "startBar": 49,
-          "endBar": 56,
-          "notes": 96,
-          "avgVel": 99
-        },
-        {
-          "bars": "57-64",
-          "startBar": 57,
-          "endBar": 64,
-          "notes": 96,
-          "avgVel": 99
-        },
-        {
-          "bars": "65-72",
-          "startBar": 65,
-          "endBar": 72,
-          "notes": 96,
-          "avgVel": 99
-        },
-        {
-          "bars": "73-80",
-          "startBar": 73,
-          "endBar": 80,
-          "notes": 96,
-          "avgVel": 99
-        },
-        {
-          "bars": "81-88",
-          "startBar": 81,
-          "endBar": 88,
-          "notes": 96,
-          "avgVel": 99
-        },
-        {
-          "bars": "89-96",
-          "startBar": 89,
-          "endBar": 96,
-          "notes": 96,
-          "avgVel": 99
-        },
-        {
-          "bars": "97-104",
-          "startBar": 97,
-          "endBar": 104,
-          "notes": 96,
-          "avgVel": 99
         }
       ]
     }
@@ -744,484 +661,301 @@
       "bars": "1-8",
       "startBar": 1,
       "endBar": 8,
-      "notes": 269,
+      "notes": 130,
       "byTrack": {
-        "Bass A · Kick Lock Long": 47,
-        "Acid": 112,
-        "29 Overdriven Guitar": 7,
-        "4 Electric Piano 1": 0,
-        "Drums": 103
+        "Drums": 110,
+        "Bass A · Kick Lock Long": 20,
+        "Acid": 0,
+        "29 Overdriven Guitar": 0,
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "9-16",
       "startBar": 9,
       "endBar": 16,
-      "notes": 264,
+      "notes": 320,
       "byTrack": {
-        "Bass A · Kick Lock Long": 48,
+        "Drums": 112,
+        "Bass A · Kick Lock Long": 40,
         "Acid": 112,
-        "29 Overdriven Guitar": 0,
-        "4 Electric Piano 1": 0,
-        "Drums": 104
+        "29 Overdriven Guitar": 56,
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "17-24",
       "startBar": 17,
       "endBar": 24,
-      "notes": 4,
+      "notes": 398,
       "byTrack": {
-        "Bass A · Kick Lock Long": 0,
-        "Acid": 0,
-        "29 Overdriven Guitar": 0,
-        "4 Electric Piano 1": 0,
-        "Drums": 4
+        "Drums": 174,
+        "Bass A · Kick Lock Long": 40,
+        "Acid": 112,
+        "29 Overdriven Guitar": 72,
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "25-32",
       "startBar": 25,
       "endBar": 32,
-      "notes": 0,
+      "notes": 464,
       "byTrack": {
-        "Bass A · Kick Lock Long": 0,
-        "Acid": 0,
-        "29 Overdriven Guitar": 0,
-        "4 Electric Piano 1": 0,
-        "Drums": 0
+        "Drums": 200,
+        "Bass A · Kick Lock Long": 40,
+        "Acid": 112,
+        "29 Overdriven Guitar": 112,
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "33-40",
       "startBar": 33,
       "endBar": 40,
-      "notes": 304,
+      "notes": 465,
       "byTrack": {
+        "Drums": 201,
         "Bass A · Kick Lock Long": 40,
         "Acid": 112,
-        "29 Overdriven Guitar": 56,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
+        "29 Overdriven Guitar": 112,
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "41-48",
       "startBar": 41,
       "endBar": 48,
-      "notes": 320,
+      "notes": 305,
       "byTrack": {
-        "Bass A · Kick Lock Long": 40,
+        "Drums": 94,
+        "Bass A · Kick Lock Long": 43,
         "Acid": 112,
-        "29 Overdriven Guitar": 72,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
+        "29 Overdriven Guitar": 56,
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "49-56",
       "startBar": 49,
       "endBar": 56,
-      "notes": 304,
+      "notes": 363,
       "byTrack": {
-        "Bass A · Kick Lock Long": 40,
+        "Drums": 152,
+        "Bass A · Kick Lock Long": 43,
         "Acid": 112,
         "29 Overdriven Guitar": 56,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "57-64",
       "startBar": 57,
       "endBar": 64,
-      "notes": 360,
+      "notes": 474,
       "byTrack": {
-        "Bass A · Kick Lock Long": 40,
+        "Drums": 207,
+        "Bass A · Kick Lock Long": 43,
         "Acid": 112,
         "29 Overdriven Guitar": 112,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "65-72",
       "startBar": 65,
       "endBar": 72,
-      "notes": 360,
+      "notes": 474,
       "byTrack": {
-        "Bass A · Kick Lock Long": 40,
+        "Drums": 207,
+        "Bass A · Kick Lock Long": 43,
         "Acid": 112,
         "29 Overdriven Guitar": 112,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "73-80",
       "startBar": 73,
       "endBar": 80,
-      "notes": 307,
+      "notes": 339,
       "byTrack": {
-        "Bass A · Kick Lock Long": 43,
+        "Drums": 131,
+        "Bass A · Kick Lock Long": 40,
         "Acid": 112,
         "29 Overdriven Guitar": 56,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "81-88",
       "startBar": 81,
       "endBar": 88,
-      "notes": 307,
+      "notes": 109,
       "byTrack": {
-        "Bass A · Kick Lock Long": 43,
-        "Acid": 112,
-        "29 Overdriven Guitar": 56,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
+        "Drums": 87,
+        "Bass A · Kick Lock Long": 22,
+        "Acid": 0,
+        "29 Overdriven Guitar": 0,
+        "4 Electric Piano 1": 0
       }
     },
     {
       "bars": "89-96",
       "startBar": 89,
       "endBar": 96,
-      "notes": 363,
+      "notes": 0,
       "byTrack": {
-        "Bass A · Kick Lock Long": 43,
-        "Acid": 112,
-        "29 Overdriven Guitar": 112,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
-      }
-    },
-    {
-      "bars": "97-104",
-      "startBar": 97,
-      "endBar": 104,
-      "notes": 363,
-      "byTrack": {
-        "Bass A · Kick Lock Long": 43,
-        "Acid": 112,
-        "29 Overdriven Guitar": 112,
-        "4 Electric Piano 1": 0,
-        "Drums": 96
+        "Drums": 0,
+        "Bass A · Kick Lock Long": 0,
+        "Acid": 0,
+        "29 Overdriven Guitar": 0,
+        "4 Electric Piano 1": 0
       }
     }
   ],
   "asciiBySection": [
     {
-      "name": "Start",
+      "name": "DJ Intro · Mix-in · 8 bars",
       "startBar": 1,
-      "endBar": 32,
+      "endBar": 8,
       "heatmap32": {
-        "ascii": "x.o.xoo.|xoooxoo.|xoo.#oo.|xoo.xoxo",
-        "max": 3.6,
-        "barsSampled": 17
+        "ascii": "#...o...|#...o...|x...o.o.|x...x...",
+        "max": 3,
+        "barsSampled": 8
       },
       "tracks": [
-        {
-          "trackId": "bass",
-          "trackName": "Bass A · Kick Lock Long",
-          "channel": 1,
-          "noteCount": 95,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "........|........|........|........",
-              "bars": "17–32",
-              "barCount": 16,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "x.......|....x...|....x...|x.x....x",
-              "bars": "2, 4, 8",
-              "barCount": 3,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G#2",
-                "G#3",
-                "D#3",
-                "G#2",
-                "D#3",
-                "D#3"
-              ]
-            },
-            {
-              "ascii": "x.......|....x...|....x...|x...x.xx",
-              "bars": "5, 9",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C4",
-                "G3",
-                "G3",
-                "C4",
-                "G#2",
-                "G#2"
-              ]
-            },
-            {
-              "ascii": "........|....x...|....x...|x.x...xx",
-              "bars": "6, 14",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G#3",
-                "D#3",
-                "G#2",
-                "D#3",
-                "F2",
-                "F2"
-              ]
-            },
-            {
-              "ascii": "........|....x...|....x...|x.x...x.",
-              "bars": "10, 16",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G#3",
-                "D#3",
-                "G#2",
-                "D#3",
-                "D#3"
-              ]
-            },
-            {
-              "ascii": "........|....x...|....x...|x...x.xx",
-              "bars": "13, 15",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C4",
-                "G3",
-                "G3",
-                "C4",
-                "G#2",
-                "G#2"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 224,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "........|........|........|........",
-              "bars": "17–32",
-              "barCount": 16,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "1, 3, 5, 7, 9, 11, 13, 15",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C2",
-                "C2",
-                "C3",
-                "C1",
-                "C3",
-                "C3",
-                "C2",
-                "C1",
-                "C3",
-                "C3",
-                "A#3",
-                "C3"
-              ]
-            },
-            {
-              "ascii": "X.X.X...|x.X.X.X.|x.X.X.X.|..x.x.x.",
-              "bars": "2, 6, 10, 14",
-              "barCount": 4,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C2",
-                "C3",
-                "C1",
-                "C2",
-                "C3",
-                "C3",
-                "C2",
-                "C1",
-                "C3",
-                "C3",
-                "A#3",
-                "C3"
-              ]
-            },
-            {
-              "ascii": "X...X.X.|x.X.X.X.|x.X.X.X.|x...x.x.",
-              "bars": "4, 8, 12, 16",
-              "barCount": 4,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C2",
-                "C2",
-                "C3",
-                "C1",
-                "C3",
-                "C3",
-                "C3",
-                "C2",
-                "C1",
-                "C3",
-                "C3",
-                "A#3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 7,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "........|........|........|........",
-              "bars": "2–32",
-              "barCount": 31,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "....x...|x...x...|X...x...|x...x...",
-              "bars": "1",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
         {
           "trackId": "drums",
           "trackName": "Drums",
           "channel": 10,
-          "noteCount": 211,
+          "noteCount": 110,
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "........|........|........|........",
-              "bars": "17, 19–32",
-              "barCount": 15,
-              "hardOffNotes": 0,
-              "pitches": []
-            },
-            {
-              "ascii": "*...x...|*...x...|X...*...|*....x.o",
-              "bars": "3–4",
-              "barCount": 2,
+              "ascii": "*...o...|*...o...|*...o...|*...o...",
+              "bars": "1–4",
+              "barCount": 4,
               "hardOffNotes": 0,
               "pitches": [
                 "C2",
                 "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2",
-                "C2"
-              ]
-            },
-            {
-              "ascii": "*....x..|.*...x..|.x...*..|.*...x..",
-              "bars": "1",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
                 "C2",
                 "F#2",
-                "D2",
-                "F#2",
+                "C2",
                 "F#2",
                 "C2",
-                "D2",
                 "F#2"
               ]
             },
             {
-              "ascii": "*...x...|Xx...x..|x...*...|*...x..o",
-              "bars": "2",
-              "barCount": 1,
+              "ascii": "*...x...|*...x...|*...x...|*...*...",
+              "bars": "5–7",
+              "barCount": 3,
               "hardOffNotes": 0,
               "pitches": [
                 "C2",
                 "F#2",
-                "D2",
-                "F#2",
-                "F#2",
+                "C2",
                 "F#2",
                 "C2",
-                "D2",
                 "F#2",
-                "C2"
+                "C2",
+                "F#2"
               ]
             },
             {
-              "ascii": "*....x..|*....x..|x...*...|*...x.ox",
-              "bars": "5",
+              "ascii": "*...x...|*...x...|*...x.x.|*...*...",
+              "bars": "8",
               "barCount": 1,
               "hardOffNotes": 0,
               "pitches": [
                 "C2",
                 "F#2",
-                "D2",
-                "F#2",
-                "F#2",
                 "C2",
-                "D2",
                 "F#2",
-                "C2",
-                "C2"
+                "C#2",
+                "F#2",
+                "C#2",
+                "D2",
+                "C#2"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "*...o...|*...o...|*...o...|*...o...",
+            "asciiB": "*...o...|*...o...|*...o...|*...o...",
+            "pitchesA": [
+              "C2",
+              "F#2",
+              "C2",
+              "F#2",
+              "C2",
+              "F#2",
+              "C2",
+              "F#2"
+            ],
+            "pitchesB": [
+              "C2",
+              "F#2",
+              "C2",
+              "F#2",
+              "C2",
+              "F#2",
+              "C2",
+              "F#2"
+            ],
+            "repeats": 2,
+            "bars": "1–4"
+          }
+        },
+        {
+          "trackId": "bass",
+          "trackName": "Bass A · Kick Lock Long",
+          "channel": 1,
+          "noteCount": 20,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "x.......|........|........|........",
+              "bars": "1–2",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3"
               ]
             },
             {
-              "ascii": "x...x...|*...X...|x...*...|*...x.ox",
-              "bars": "6",
-              "barCount": 1,
+              "ascii": "x.......|........|........|....x...",
+              "bars": "3–4",
+              "barCount": 2,
               "hardOffNotes": 0,
               "pitches": [
-                "F#2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2",
-                "C2",
-                "C2"
+                "C3",
+                "C3"
+              ]
+            },
+            {
+              "ascii": "x.......|........|x.......|....x...",
+              "bars": "5–6",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C3"
+              ]
+            },
+            {
+              "ascii": "x.......|....x...|x.......|....x...",
+              "bars": "7–8",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C3",
+                "C3"
               ]
             }
           ],
@@ -1230,15 +964,125 @@
       ]
     },
     {
-      "name": "H1 · Pedal one note",
-      "startBar": 33,
-      "endBar": 40,
+      "name": "Intro · 8th hats · sparse break",
+      "startBar": 9,
+      "endBar": 16,
       "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.xoo.",
-        "max": 4,
+        "ascii": "#...o.o.|x...x...|o...xoo.|#.o.x.o.",
+        "max": 3,
         "barsSampled": 8
       },
       "tracks": [
+        {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 112,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "*...x...|*...*...|x...*...|*...x...",
+              "bars": "11, 13",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "C2",
+                "D2",
+                "G#2"
+              ]
+            },
+            {
+              "ascii": "*...x...|x...x...|x...x...|x...x...",
+              "bars": "9",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "G#2"
+              ]
+            },
+            {
+              "ascii": "*...x...|x...x...|x...*...|*...x...",
+              "bars": "10",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "D2",
+                "G#2"
+              ]
+            },
+            {
+              "ascii": "*...x...|*...*...|x...*.o.|*...*...",
+              "bars": "12",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "C2",
+                "D2",
+                "D2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*...x.x.|*...x...|*...*...|*...*...",
+              "bars": "14",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "C2",
+                "D2",
+                "G#2",
+                "C2",
+                "C2",
+                "D2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*...x...|*...*...|x...*...|*.o.x.o.",
+              "bars": "15",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
         {
           "trackId": "bass",
           "trackName": "Bass A · Kick Lock Long",
@@ -1248,7 +1092,7 @@
           "patterns": [
             {
               "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "33–40",
+              "bars": "9–16",
               "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
@@ -1278,7 +1122,7 @@
               "C4"
             ],
             "repeats": 4,
-            "bars": "33–40"
+            "bars": "9–16"
           }
         },
         {
@@ -1290,7 +1134,7 @@
           "patterns": [
             {
               "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "33–40",
+              "bars": "9–16",
               "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
@@ -1343,19 +1187,19 @@
               "C3"
             ],
             "repeats": 4,
-            "bars": "33–40"
+            "bars": "9–16"
           }
         },
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 56,
           "hardOffNotes": 0,
           "patterns": [
             {
               "ascii": "....x...|x...x...|X...x...|x...x...",
-              "bars": "33–40",
+              "bars": "9–16",
               "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
@@ -1391,72 +1235,160 @@
               "C3"
             ],
             "repeats": 4,
-            "bars": "33–40"
-          }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 96,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "33–40",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 4,
-            "bars": "33–40"
+            "bars": "9–16"
           }
         }
       ]
     },
     {
-      "name": "H2 · Pedal + accent thirds",
-      "startBar": 41,
-      "endBar": 48,
+      "name": "Groove In · hats 8ths → 16ths",
+      "startBar": 17,
+      "endBar": 24,
       "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.xoo.",
-        "max": 4,
+        "ascii": "#.o.o.o.|x.o.x.o.|x.o.xoo.|#.o.x.x.",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
+        {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 174,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "*...x.o.|*...*...|*...x.x.|*.o.*.o.",
+              "bars": "17",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "D2",
+                "C2",
+                "C2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*...x.x.|*...x...|*...*...|*.o.*.o.",
+              "bars": "18",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "C2",
+                "D2",
+                "G#2",
+                "C2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*...x.o.|*...x.x.|*.o.x.*.|*.o.x.*.",
+              "bars": "19",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "D2",
+                "G#2",
+                "C2",
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*...x...|*...*...|x.o.*.o.|*.o.x.*.",
+              "bars": "20",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*.o.x.*.|*.o.*.o.|*.o.x.*.|*.o.*.o.",
+              "bars": "21",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "D2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*.o.x.*.|*.o.x.o.|*.o.*.o.|*.o.*.o.",
+              "bars": "22",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
         {
           "trackId": "bass",
           "trackName": "Bass A · Kick Lock Long",
@@ -1466,7 +1398,7 @@
           "patterns": [
             {
               "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "41–48",
+              "bars": "17–24",
               "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
@@ -1496,7 +1428,7 @@
               "C4"
             ],
             "repeats": 4,
-            "bars": "41–48"
+            "bars": "17–24"
           }
         },
         {
@@ -1508,7 +1440,7 @@
           "patterns": [
             {
               "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "41–48",
+              "bars": "17–24",
               "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
@@ -1561,19 +1493,19 @@
               "C3"
             ],
             "repeats": 4,
-            "bars": "41–48"
+            "bars": "17–24"
           }
         },
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 72,
           "hardOffNotes": 0,
           "patterns": [
             {
               "ascii": "....x...|x...x...|*...x...|*...x...",
-              "bars": "41–48",
+              "bars": "17–24",
               "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
@@ -1609,83 +1541,195 @@
               "C3"
             ],
             "repeats": 4,
-            "bars": "41–48"
-          }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 96,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "41–48",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 4,
-            "bars": "41–48"
+            "bars": "17–24"
           }
         }
       ]
     },
     {
-      "name": "H3A · One note",
-      "startBar": 49,
-      "endBar": 56,
+      "name": "Development A · full Acid Breaks",
+      "startBar": 25,
+      "endBar": 40,
       "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.xoo.",
-        "max": 4,
-        "barsSampled": 8
+        "ascii": "#.o.o.x.|x.o.x.o.|x.o.xox.|#.o.#.x.",
+        "max": 3.1,
+        "barsSampled": 16
       },
       "tracks": [
+        {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 401,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "*.x.x.*.|*.x.x.o.|*.x.*.o.|*.x.*.o.",
+              "bars": "26, 28, 30, 34, 36, 38",
+              "barCount": 6,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.*.o.|*.x.*.*.|*.x.*.o.",
+              "bars": "25, 29, 33, 37",
+              "barCount": 4,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "D2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.o.|*.x.x.*.|*.x.x.*.|*.x.x.*.",
+              "bars": "27, 31, 35, 39",
+              "barCount": 4,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2",
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.x.o.|*.x.*.o.|*.*.*.*.",
+              "bars": "32",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "D2",
+                "C2",
+                "D2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.x.o.|*.x.*.*.|*.*.*.*.",
+              "bars": "40",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "C2",
+                "D2",
+                "D2",
+                "C2",
+                "C2"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "*.x.x.*.|*.x.*.o.|*.x.*.*.|*.x.*.o.",
+            "asciiB": "*.x.x.*.|*.x.x.o.|*.x.*.o.|*.x.*.o.",
+            "pitchesA": [
+              "C2",
+              "F#2",
+              "G#2",
+              "D2",
+              "D2",
+              "F#2",
+              "C2",
+              "F#2",
+              "C2",
+              "F#2",
+              "D2",
+              "C2"
+            ],
+            "pitchesB": [
+              "C2",
+              "F#2",
+              "G#2",
+              "C2",
+              "D2",
+              "F#2",
+              "G#2",
+              "F#2",
+              "C2",
+              "F#2",
+              "C2",
+              "F#2"
+            ],
+            "repeats": 4,
+            "bars": "25–26, 29–30, 33–34, 37–38"
+          }
+        },
         {
           "trackId": "bass",
           "trackName": "Bass A · Kick Lock Long",
           "channel": 1,
-          "noteCount": 40,
+          "noteCount": 80,
           "hardOffNotes": 0,
           "patterns": [
             {
               "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "49–56",
-              "barCount": 8,
+              "bars": "25–40",
+              "barCount": 16,
               "hardOffNotes": 0,
               "pitches": [
                 "C3",
@@ -1713,8 +1757,614 @@
               "G3",
               "C4"
             ],
+            "repeats": 8,
+            "bars": "25–40"
+          }
+        },
+        {
+          "trackId": "acid",
+          "trackName": "Acid",
+          "channel": 2,
+          "noteCount": 224,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+              "bars": "25–40",
+              "barCount": 16,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C2",
+                "C2",
+                "C3",
+                "C1",
+                "C3",
+                "C3",
+                "C2",
+                "C1",
+                "C3",
+                "C3",
+                "A#3",
+                "C3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+            "pitchesA": [
+              "C3",
+              "C3",
+              "C2",
+              "C2",
+              "C3",
+              "C1",
+              "C3",
+              "C3",
+              "C2",
+              "C1",
+              "C3",
+              "C3"
+            ],
+            "pitchesB": [
+              "C3",
+              "C3",
+              "C2",
+              "C2",
+              "C3",
+              "C1",
+              "C3",
+              "C3",
+              "C2",
+              "C1",
+              "C3",
+              "C3"
+            ],
+            "repeats": 8,
+            "bars": "25–40"
+          }
+        },
+        {
+          "trackId": "guitar",
+          "trackName": "29 Overdriven Guitar",
+          "channel": 4,
+          "noteCount": 224,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "....*...|*...*...|*...*...|*...*...",
+              "bars": "25–40",
+              "barCount": 16,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "....*...|*...*...|*...*...|*...*...",
+            "asciiB": "....*...|*...*...|*...*...|*...*...",
+            "pitchesA": [
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3"
+            ],
+            "pitchesB": [
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3"
+            ],
+            "repeats": 8,
+            "bars": "25–40"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Breakdown · space · 8th hats",
+      "startBar": 41,
+      "endBar": 48,
+      "heatmap32": {
+        "ascii": "#...o...|o...x...|o...xo..|x..ox.oo",
+        "max": 3.1,
+        "barsSampled": 8
+      },
+      "tracks": [
+        {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 94,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "*...o...|x...o...|x...*...|*...o...",
+              "bars": "41–42",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "D2",
+                "G#2"
+              ]
+            },
+            {
+              "ascii": "*...o...|x...o...|*...o...|x...o...",
+              "bars": "43–44",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "F#2",
+                "G#2",
+                "D2",
+                "G#2",
+                "F#2",
+                "G#2"
+              ]
+            },
+            {
+              "ascii": "*...o...|x...o...|*...o...|x...*.o.",
+              "bars": "45–46",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "F#2",
+                "G#2",
+                "D2",
+                "G#2",
+                "F#2",
+                "C2",
+                "D2"
+              ]
+            },
+            {
+              "ascii": "*...o...|*...*...|x...*...|*...o...",
+              "bars": "47",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "C2",
+                "D2",
+                "G#2"
+              ]
+            },
+            {
+              "ascii": "*...o...|*...*...|x...*...|*...o.o.",
+              "bars": "48",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "C2",
+                "D2",
+                "G#2",
+                "D2"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "bass",
+          "trackName": "Bass A · Kick Lock Long",
+          "channel": 1,
+          "noteCount": 43,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "x.......|....x...|.....x..|x...x...",
+              "bars": "41–46",
+              "barCount": 6,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C4",
+                "G3",
+                "G3",
+                "C4"
+              ]
+            },
+            {
+              "ascii": "x.......|....x...|....x...|x...x..x",
+              "bars": "47",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "G3",
+                "D3",
+                "F3",
+                "A#3",
+                "D3",
+                "F3"
+              ]
+            },
+            {
+              "ascii": "x.......|x...x...|....x...|x..x...x",
+              "bars": "48",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "G3",
+                "A#3",
+                "D3",
+                "F3",
+                "D3",
+                "A#3",
+                "F3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "x.......|....x...|.....x..|x...x...",
+            "asciiB": "x.......|....x...|.....x..|x...x...",
+            "pitchesA": [
+              "C3",
+              "C4",
+              "G3",
+              "G3",
+              "C4"
+            ],
+            "pitchesB": [
+              "C3",
+              "C4",
+              "G3",
+              "G3",
+              "C4"
+            ],
+            "repeats": 3,
+            "bars": "41–46"
+          }
+        },
+        {
+          "trackId": "acid",
+          "trackName": "Acid",
+          "channel": 2,
+          "noteCount": 112,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+              "bars": "41–48",
+              "barCount": 8,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C2",
+                "C2",
+                "C3",
+                "C1",
+                "C3",
+                "C3",
+                "C2",
+                "C1",
+                "C3",
+                "C3",
+                "A#3",
+                "C3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+            "pitchesA": [
+              "C3",
+              "C3",
+              "C2",
+              "C2",
+              "C3",
+              "C1",
+              "C3",
+              "C3",
+              "C2",
+              "C1",
+              "C3",
+              "C3"
+            ],
+            "pitchesB": [
+              "C3",
+              "C3",
+              "C2",
+              "C2",
+              "C3",
+              "C1",
+              "C3",
+              "C3",
+              "C2",
+              "C1",
+              "C3",
+              "C3"
+            ],
             "repeats": 4,
-            "bars": "49–56"
+            "bars": "41–48"
+          }
+        },
+        {
+          "trackId": "guitar",
+          "trackName": "29 Overdriven Guitar",
+          "channel": 4,
+          "noteCount": 56,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "....x...|x...x...|X...x...|x...x...",
+              "bars": "41–48",
+              "barCount": 8,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "....x...|x...x...|X...x...|x...x...",
+            "asciiB": "....x...|x...x...|X...x...|x...x...",
+            "pitchesA": [
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3"
+            ],
+            "pitchesB": [
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3"
+            ],
+            "repeats": 4,
+            "bars": "41–48"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rebuild · hats 8ths → 16ths",
+      "startBar": 49,
+      "endBar": 56,
+      "heatmap32": {
+        "ascii": "#.o.o.o.|x.o.x.o.|x.o.xoo.|#.oox.oo",
+        "max": 3.1,
+        "barsSampled": 8
+      },
+      "tracks": [
+        {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 152,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "*...x...|*...*...|x...*...|*...x...",
+              "bars": "49",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "C2",
+                "D2",
+                "G#2"
+              ]
+            },
+            {
+              "ascii": "*...x...|*...*...|*...x.x.|*...*...",
+              "bars": "50",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "C2",
+                "G#2",
+                "C2",
+                "D2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*...x.x.|*...x...|*...*...|*.o.*.o.",
+              "bars": "51",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "C2",
+                "D2",
+                "G#2",
+                "C2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*...x...|*...x.x.|*...x.x.|*.o.x.*.",
+              "bars": "52",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "G#2",
+                "C2",
+                "C2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*...x...|*...*...|x.o.*.o.|*.o.x.o.",
+              "bars": "53",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*...x...|*...*...|*.o.*.*.|*.o.*.o.",
+              "bars": "54",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "C2",
+                "F#2",
+                "D2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
+        {
+          "trackId": "bass",
+          "trackName": "Bass A · Kick Lock Long",
+          "channel": 1,
+          "noteCount": 43,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "x.......|....x...|.....x..|x...x...",
+              "bars": "49–54",
+              "barCount": 6,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C4",
+                "G3",
+                "G3",
+                "C4"
+              ]
+            },
+            {
+              "ascii": "x.......|....x...|....x...|x...x..x",
+              "bars": "55",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "G3",
+                "D3",
+                "F3",
+                "A#3",
+                "D3",
+                "F3"
+              ]
+            },
+            {
+              "ascii": "x.......|x...x...|....x...|x..x...x",
+              "bars": "56",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "G3",
+                "A#3",
+                "D3",
+                "F3",
+                "D3",
+                "A#3",
+                "F3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "x.......|....x...|.....x..|x...x...",
+            "asciiB": "x.......|....x...|.....x..|x...x...",
+            "pitchesA": [
+              "C3",
+              "C4",
+              "G3",
+              "G3",
+              "C4"
+            ],
+            "pitchesB": [
+              "C3",
+              "C4",
+              "G3",
+              "G3",
+              "C4"
+            ],
+            "repeats": 3,
+            "bars": "49–54"
           }
         },
         {
@@ -1785,7 +2435,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 56,
           "hardOffNotes": 0,
           "patterns": [
@@ -1829,81 +2479,169 @@
             "repeats": 4,
             "bars": "49–56"
           }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 96,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "49–56",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 4,
-            "bars": "49–56"
-          }
         }
       ]
     },
     {
-      "name": "H3B · Full thirds",
+      "name": "Climax A · full 16th hats",
       "startBar": 57,
       "endBar": 64,
       "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.#oo.",
-        "max": 4,
+        "ascii": "#.o.o.x.|x.o.x.o.|x.o.xox.|#.oox.xo",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
         {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 207,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "*.x.x.*.|*.x.x.o.|*.x.*.o.|*.x.*.o.",
+              "bars": "57, 61",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.x.*.|*.x.*.*.|*.x.x.*.",
+              "bars": "58, 62",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "D2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2",
+                "C2",
+                "F#2",
+                "D2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.*.o.|*.x.*.*.|*.x.*.o.",
+              "bars": "59, 63",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "D2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.x.*.|*.x.*.*.|*.*.*.*.",
+              "bars": "60, 64",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "D2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2",
+                "C2",
+                "F#2",
+                "D2",
+                "C2",
+                "D2",
+                "D2",
+                "D2",
+                "C2"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "*.x.x.*.|*.x.x.o.|*.x.*.o.|*.x.*.o.",
+            "asciiB": "*.x.x.*.|*.x.x.*.|*.x.*.*.|*.x.x.*.",
+            "pitchesA": [
+              "C2",
+              "F#2",
+              "G#2",
+              "C2",
+              "D2",
+              "F#2",
+              "G#2",
+              "F#2",
+              "C2",
+              "F#2",
+              "C2",
+              "F#2"
+            ],
+            "pitchesB": [
+              "C2",
+              "F#2",
+              "G#2",
+              "D2",
+              "D2",
+              "F#2",
+              "G#2",
+              "C2",
+              "C2",
+              "F#2",
+              "D2",
+              "C2"
+            ],
+            "repeats": 2,
+            "bars": "57–58, 61–62"
+          }
+        },
+        {
           "trackId": "bass",
           "trackName": "Bass A · Kick Lock Long",
           "channel": 1,
-          "noteCount": 40,
+          "noteCount": 43,
           "hardOffNotes": 0,
           "patterns": [
             {
               "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "57–64",
-              "barCount": 8,
+              "bars": "57–62",
+              "barCount": 6,
               "hardOffNotes": 0,
               "pitches": [
                 "C3",
@@ -1911,6 +2649,35 @@
                 "G3",
                 "G3",
                 "C4"
+              ]
+            },
+            {
+              "ascii": "x.......|....x...|....x...|x...x..x",
+              "bars": "63",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "G3",
+                "D3",
+                "F3",
+                "A#3",
+                "D3",
+                "F3"
+              ]
+            },
+            {
+              "ascii": "x.......|x...x...|....x...|x..x...x",
+              "bars": "64",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "G3",
+                "A#3",
+                "D3",
+                "F3",
+                "D3",
+                "A#3",
+                "F3"
               ]
             }
           ],
@@ -1931,8 +2698,8 @@
               "G3",
               "C4"
             ],
-            "repeats": 4,
-            "bars": "57–64"
+            "repeats": 3,
+            "bars": "57–62"
           }
         },
         {
@@ -2003,7 +2770,7 @@
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
+          "channel": 4,
           "noteCount": 112,
           "hardOffNotes": 0,
           "patterns": [
@@ -2047,70 +2814,466 @@
             "repeats": 4,
             "bars": "57–64"
           }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 96,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "57–64",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 4,
-            "bars": "57–64"
-          }
         }
       ]
     },
     {
-      "name": "H4 · Fixed note + moving voice",
+      "name": "Climax B · peak breaks",
       "startBar": 65,
       "endBar": 72,
       "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.#oo.",
-        "max": 4,
+        "ascii": "#.o.o.x.|x.o.x.x.|x.o.xox.|#.oox.xo",
+        "max": 3.1,
         "barsSampled": 8
       },
       "tracks": [
+        {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 207,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "*.x.x.x.|*.x.x.*.|*.x.*.*.|*.x.x.*.",
+              "bars": "65, 67, 69, 71",
+              "barCount": 4,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2",
+                "C2",
+                "F#2",
+                "D2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.x.x.|*.x.*.x.|*.x.*.*.",
+              "bars": "66, 70",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "C2",
+                "D2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.*.x.|*.x.*.*.|*.x.*.*.",
+              "bars": "68",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "D2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.*.|*.x.*.x.|*.x.*.*.|*.*.*.*.",
+              "bars": "72",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "D2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "C2",
+                "D2",
+                "D2",
+                "C2",
+                "C2"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "*.x.x.x.|*.x.x.*.|*.x.*.*.|*.x.x.*.",
+            "asciiB": "*.x.x.*.|*.x.x.x.|*.x.*.x.|*.x.*.*.",
+            "pitchesA": [
+              "C2",
+              "F#2",
+              "G#2",
+              "F#2",
+              "D2",
+              "F#2",
+              "G#2",
+              "C2",
+              "C2",
+              "F#2",
+              "D2",
+              "C2"
+            ],
+            "pitchesB": [
+              "C2",
+              "F#2",
+              "G#2",
+              "C2",
+              "D2",
+              "F#2",
+              "G#2",
+              "F#2",
+              "C2",
+              "F#2",
+              "C2",
+              "F#2"
+            ],
+            "repeats": 2,
+            "bars": "65–66, 69–70"
+          }
+        },
+        {
+          "trackId": "bass",
+          "trackName": "Bass A · Kick Lock Long",
+          "channel": 1,
+          "noteCount": 43,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "x.......|....x...|.....x..|x...x...",
+              "bars": "65–70",
+              "barCount": 6,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C4",
+                "G3",
+                "G3",
+                "C4"
+              ]
+            },
+            {
+              "ascii": "x.......|....x...|....x...|x...x..x",
+              "bars": "71",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "G3",
+                "D3",
+                "F3",
+                "A#3",
+                "D3",
+                "F3"
+              ]
+            },
+            {
+              "ascii": "x.......|x...x...|....x...|x..x...x",
+              "bars": "72",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "G3",
+                "A#3",
+                "D3",
+                "F3",
+                "D3",
+                "A#3",
+                "F3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "x.......|....x...|.....x..|x...x...",
+            "asciiB": "x.......|....x...|.....x..|x...x...",
+            "pitchesA": [
+              "C3",
+              "C4",
+              "G3",
+              "G3",
+              "C4"
+            ],
+            "pitchesB": [
+              "C3",
+              "C4",
+              "G3",
+              "G3",
+              "C4"
+            ],
+            "repeats": 3,
+            "bars": "65–70"
+          }
+        },
+        {
+          "trackId": "acid",
+          "trackName": "Acid",
+          "channel": 2,
+          "noteCount": 112,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+              "bars": "65–72",
+              "barCount": 8,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C2",
+                "C2",
+                "C3",
+                "C1",
+                "C3",
+                "C3",
+                "C2",
+                "C1",
+                "C3",
+                "C3",
+                "A#3",
+                "C3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
+            "pitchesA": [
+              "C3",
+              "C3",
+              "C2",
+              "C2",
+              "C3",
+              "C1",
+              "C3",
+              "C3",
+              "C2",
+              "C1",
+              "C3",
+              "C3"
+            ],
+            "pitchesB": [
+              "C3",
+              "C3",
+              "C2",
+              "C2",
+              "C3",
+              "C1",
+              "C3",
+              "C3",
+              "C2",
+              "C1",
+              "C3",
+              "C3"
+            ],
+            "repeats": 4,
+            "bars": "65–72"
+          }
+        },
+        {
+          "trackId": "guitar",
+          "trackName": "29 Overdriven Guitar",
+          "channel": 4,
+          "noteCount": 112,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "....*...|*...*...|*...*...|*...*...",
+              "bars": "65–72",
+              "barCount": 8,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3",
+                "C3"
+              ]
+            }
+          ],
+          "twoBarLoop": {
+            "asciiA": "....*...|*...*...|*...*...|*...*...",
+            "asciiB": "....*...|*...*...|*...*...|*...*...",
+            "pitchesA": [
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3"
+            ],
+            "pitchesB": [
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3",
+              "C3"
+            ],
+            "repeats": 4,
+            "bars": "65–72"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Outro · 16ths → 8ths · decay",
+      "startBar": 73,
+      "endBar": 80,
+      "heatmap32": {
+        "ascii": "#.o.o.o.|x.o.x.o.|o.o.xoo.|#.o.x.o.",
+        "max": 3.1,
+        "barsSampled": 8
+      },
+      "tracks": [
+        {
+          "trackId": "drums",
+          "trackName": "Drums",
+          "channel": 10,
+          "noteCount": 131,
+          "hardOffNotes": 0,
+          "patterns": [
+            {
+              "ascii": "*...x...|*...*...|x.o.*.o.|*.o.x.o.",
+              "bars": "75–76",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "C2",
+                "F#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*...o...|*...o...|x...*...|*.o.o.o.",
+              "bars": "77–78",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "D2",
+                "G#2",
+                "F#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*...o...|x...o...|x...o...|*...o...",
+              "bars": "79–80",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "G#2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "G#2",
+                "D2",
+                "G#2"
+              ]
+            },
+            {
+              "ascii": "*.x.x.o.|*.x.*.o.|*.x.*.*.|*.x.*.o.",
+              "bars": "73",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "C2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            },
+            {
+              "ascii": "*.o.x.*.|*.o.x.o.|*.o.*.o.|*.o.*.o.",
+              "bars": "74",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "G#2",
+                "C2",
+                "D2",
+                "F#2",
+                "G#2",
+                "F#2",
+                "C2",
+                "F#2",
+                "C2",
+                "F#2",
+                "D2",
+                "F#2",
+                "C2",
+                "F#2"
+              ]
+            }
+          ],
+          "twoBarLoop": null
+        },
         {
           "trackId": "bass",
           "trackName": "Bass A · Kick Lock Long",
@@ -2120,7 +3283,7 @@
           "patterns": [
             {
               "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "65–72",
+              "bars": "73–80",
               "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
@@ -2150,7 +3313,7 @@
               "C4"
             ],
             "repeats": 4,
-            "bars": "65–72"
+            "bars": "73–80"
           }
         },
         {
@@ -2162,7 +3325,7 @@
           "patterns": [
             {
               "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "65–72",
+              "bars": "73–80",
               "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
@@ -2215,238 +3378,20 @@
               "C3"
             ],
             "repeats": 4,
-            "bars": "65–72"
+            "bars": "73–80"
           }
         },
         {
           "trackId": "guitar",
           "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 112,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "....*...|*...*...|*...*...|*...*...",
-              "bars": "65–72",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "....*...|*...*...|*...*...|*...*...",
-            "asciiB": "....*...|*...*...|*...*...|*...*...",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3"
-            ],
-            "repeats": 4,
-            "bars": "65–72"
-          }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 96,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "65–72",
-              "barCount": 8,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 4,
-            "bars": "65–72"
-          }
-        }
-      ]
-    },
-    {
-      "name": "H5 · 6 tonic + 2 dominant",
-      "startBar": 73,
-      "endBar": 78,
-      "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.xoo.",
-        "max": 4,
-        "barsSampled": 6
-      },
-      "tracks": [
-        {
-          "trackId": "bass",
-          "trackName": "Bass A · Kick Lock Long",
-          "channel": 1,
-          "noteCount": 30,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "73–78",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C4",
-                "G3",
-                "G3",
-                "C4"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "x.......|....x...|.....x..|x...x...",
-            "asciiB": "x.......|....x...|.....x..|x...x...",
-            "pitchesA": [
-              "C3",
-              "C4",
-              "G3",
-              "G3",
-              "C4"
-            ],
-            "pitchesB": [
-              "C3",
-              "C4",
-              "G3",
-              "G3",
-              "C4"
-            ],
-            "repeats": 3,
-            "bars": "73–78"
-          }
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 84,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "73–78",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C2",
-                "C2",
-                "C3",
-                "C1",
-                "C3",
-                "C3",
-                "C2",
-                "C1",
-                "C3",
-                "C3",
-                "A#3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "repeats": 3,
-            "bars": "73–78"
-          }
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 42,
+          "channel": 4,
+          "noteCount": 56,
           "hardOffNotes": 0,
           "patterns": [
             {
               "ascii": "....x...|x...x...|X...x...|x...x...",
-              "bars": "73–78",
-              "barCount": 6,
+              "bars": "73–80",
+              "barCount": 8,
               "hardOffNotes": 0,
               "pitches": [
                 "C3",
@@ -2480,922 +3425,132 @@
               "C3",
               "C3"
             ],
-            "repeats": 3,
-            "bars": "73–78"
-          }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 72,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "73–78",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 3,
-            "bars": "73–78"
+            "repeats": 4,
+            "bars": "73–80"
           }
         }
       ]
     },
     {
-      "name": "H5 · dominant · low-register new bass",
-      "startBar": 79,
-      "endBar": 80,
-      "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxooxooo",
-        "max": 4,
-        "barsSampled": 2
-      },
-      "tracks": [
-        {
-          "trackId": "bass",
-          "trackName": "Bass A · Kick Lock Long",
-          "channel": 1,
-          "noteCount": 13,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "x.......|....x...|....x...|x...x..x",
-              "bars": "79",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "D3",
-                "F3",
-                "B3",
-                "D3",
-                "F3"
-              ]
-            },
-            {
-              "ascii": "x.......|x...x...|....x...|x..x...x",
-              "bars": "80",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "B3",
-                "D3",
-                "F3",
-                "D3",
-                "B3",
-                "F3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 28,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "79–80",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "G3",
-                "G2",
-                "G2",
-                "G3",
-                "G1",
-                "G3",
-                "G3",
-                "G2",
-                "G1",
-                "G3",
-                "G3",
-                "F4",
-                "G3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 14,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "....x...|x...x...|X...x...|x...x...",
-              "bars": "79–80",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "G3",
-                "G3",
-                "G3",
-                "G3",
-                "G3",
-                "G3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 24,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "79–80",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        }
-      ]
-    },
-    {
-      "name": "H6 · Pedal over harmony",
+      "name": "DJ Outro · Mix-out · 8 bars",
       "startBar": 81,
-      "endBar": 86,
-      "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.xoo.",
-        "max": 4,
-        "barsSampled": 6
-      },
-      "tracks": [
-        {
-          "trackId": "bass",
-          "trackName": "Bass A · Kick Lock Long",
-          "channel": 1,
-          "noteCount": 30,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "81–86",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C4",
-                "G3",
-                "G3",
-                "C4"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "x.......|....x...|.....x..|x...x...",
-            "asciiB": "x.......|....x...|.....x..|x...x...",
-            "pitchesA": [
-              "C3",
-              "C4",
-              "G3",
-              "G3",
-              "C4"
-            ],
-            "pitchesB": [
-              "C3",
-              "C4",
-              "G3",
-              "G3",
-              "C4"
-            ],
-            "repeats": 3,
-            "bars": "81–86"
-          }
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 84,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "81–86",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C2",
-                "C2",
-                "C3",
-                "C1",
-                "C3",
-                "C3",
-                "C2",
-                "C1",
-                "C3",
-                "C3",
-                "A#3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "repeats": 3,
-            "bars": "81–86"
-          }
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 42,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "....x...|x...x...|X...x...|x...x...",
-              "bars": "81–86",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "....x...|x...x...|X...x...|x...x...",
-            "asciiB": "....x...|x...x...|X...x...|x...x...",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3"
-            ],
-            "repeats": 3,
-            "bars": "81–86"
-          }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 72,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "81–86",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 3,
-            "bars": "81–86"
-          }
-        }
-      ]
-    },
-    {
-      "name": "H6 · dominant · low-register new bass",
-      "startBar": 87,
-      "endBar": 88,
-      "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxooxooo",
-        "max": 4,
-        "barsSampled": 2
-      },
-      "tracks": [
-        {
-          "trackId": "bass",
-          "trackName": "Bass A · Kick Lock Long",
-          "channel": 1,
-          "noteCount": 13,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "x.......|....x...|....x...|x...x..x",
-              "bars": "87",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "D3",
-                "F3",
-                "B3",
-                "D3",
-                "F3"
-              ]
-            },
-            {
-              "ascii": "x.......|x...x...|....x...|x..x...x",
-              "bars": "88",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "B3",
-                "D3",
-                "F3",
-                "D3",
-                "B3",
-                "F3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 28,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "87–88",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "G3",
-                "G2",
-                "G2",
-                "G3",
-                "G1",
-                "G3",
-                "G3",
-                "G2",
-                "G1",
-                "G3",
-                "G3",
-                "F4",
-                "G3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 14,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "....x...|x...x...|X...x...|x...x...",
-              "bars": "87–88",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 24,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "87–88",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        }
-      ]
-    },
-    {
-      "name": "H456 · Combined 4+5+6",
-      "startBar": 89,
-      "endBar": 94,
-      "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.#oo.",
-        "max": 4,
-        "barsSampled": 6
-      },
-      "tracks": [
-        {
-          "trackId": "bass",
-          "trackName": "Bass A · Kick Lock Long",
-          "channel": 1,
-          "noteCount": 30,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "89–94",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C4",
-                "G3",
-                "G3",
-                "C4"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "x.......|....x...|.....x..|x...x...",
-            "asciiB": "x.......|....x...|.....x..|x...x...",
-            "pitchesA": [
-              "C3",
-              "C4",
-              "G3",
-              "G3",
-              "C4"
-            ],
-            "pitchesB": [
-              "C3",
-              "C4",
-              "G3",
-              "G3",
-              "C4"
-            ],
-            "repeats": 3,
-            "bars": "89–94"
-          }
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 84,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "89–94",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C2",
-                "C2",
-                "C3",
-                "C1",
-                "C3",
-                "C3",
-                "C2",
-                "C1",
-                "C3",
-                "C3",
-                "A#3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "repeats": 3,
-            "bars": "89–94"
-          }
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 84,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "....*...|*...*...|*...*...|*...*...",
-              "bars": "89–94",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "....*...|*...*...|*...*...|*...*...",
-            "asciiB": "....*...|*...*...|*...*...|*...*...",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3"
-            ],
-            "repeats": 3,
-            "bars": "89–94"
-          }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 72,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "89–94",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 3,
-            "bars": "89–94"
-          }
-        }
-      ]
-    },
-    {
-      "name": "H456 · dominant 1 · low-register bass",
-      "startBar": 95,
       "endBar": 96,
       "heatmap32": {
-        "ascii": "#.o.xoo.|#xo.xoo.|xoo.#xo.|xxoo#ooo",
-        "max": 4,
-        "barsSampled": 2
+        "ascii": "#...o.o.|x...x.o.|x...o.o.|x...x...",
+        "max": 2.8,
+        "barsSampled": 8
       },
       "tracks": [
-        {
-          "trackId": "bass",
-          "trackName": "Bass A · Kick Lock Long",
-          "channel": 1,
-          "noteCount": 13,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "x.......|....x...|....x...|x...x..x",
-              "bars": "95",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "D3",
-                "F3",
-                "B3",
-                "D3",
-                "F3"
-              ]
-            },
-            {
-              "ascii": "x.......|x...x...|....x...|x..x...x",
-              "bars": "96",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "B3",
-                "D3",
-                "F3",
-                "D3",
-                "B3",
-                "F3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 28,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "95–96",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "G3",
-                "G2",
-                "G2",
-                "G3",
-                "G1",
-                "G3",
-                "G3",
-                "G2",
-                "G1",
-                "G3",
-                "G3",
-                "F4",
-                "G3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 28,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "....*...|*...*...|*...*...|*...*...",
-              "bars": "95–96",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
         {
           "trackId": "drums",
           "trackName": "Drums",
           "channel": 10,
-          "noteCount": 24,
+          "noteCount": 87,
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "95–96",
+              "ascii": "........|........|........|........",
+              "bars": "89–96",
+              "barCount": 8,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "*...x...|*...*...|x...*.o.|*...x...",
+              "bars": "81, 83",
               "barCount": 2,
               "hardOffNotes": 0,
               "pitches": [
                 "C2",
                 "F#2",
                 "D2",
-                "F#2",
+                "C2",
                 "F#2",
                 "C2",
                 "D2",
+                "D2",
                 "F#2"
+              ]
+            },
+            {
+              "ascii": "*...x.x.|*...x.o.|*...x...|*...*...",
+              "bars": "82, 84",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "F#2",
+                "C2",
+                "D2",
+                "F#2",
+                "D2",
+                "C2",
+                "F#2",
+                "D2",
+                "C2"
+              ]
+            },
+            {
+              "ascii": "*.......|x.......|x.......|x.......",
+              "bars": "87–88",
+              "barCount": 2,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "D2",
+                "F#2",
+                "D2"
+              ]
+            },
+            {
+              "ascii": "*.......|*...x...|x...x...|*.......",
+              "bars": "85",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "D2",
+                "C2",
+                "F#2",
+                "C2",
+                "D2"
+              ]
+            },
+            {
+              "ascii": "*.....x.|*.......|*.......|*...x...",
+              "bars": "86",
+              "barCount": 1,
+              "hardOffNotes": 0,
+              "pitches": [
+                "C2",
+                "C2",
+                "D2",
+                "C2",
+                "D2",
+                "C2"
               ]
             }
           ],
           "twoBarLoop": null
-        }
-      ]
-    },
-    {
-      "name": "H456 · cycle 2",
-      "startBar": 97,
-      "endBar": 102,
-      "heatmap32": {
-        "ascii": "#.o.xoo.|xxo.xoo.|xoo.xxo.|xxo.#oo.",
-        "max": 4,
-        "barsSampled": 6
-      },
-      "tracks": [
+        },
         {
           "trackId": "bass",
           "trackName": "Bass A · Kick Lock Long",
           "channel": 1,
-          "noteCount": 30,
+          "noteCount": 22,
           "hardOffNotes": 0,
           "patterns": [
             {
-              "ascii": "x.......|....x...|.....x..|x...x...",
-              "bars": "97–102",
-              "barCount": 6,
+              "ascii": "........|........|........|........",
+              "bars": "87–96",
+              "barCount": 10,
+              "hardOffNotes": 0,
+              "pitches": []
+            },
+            {
+              "ascii": "x.......|....x...|....x...|x...x...",
+              "bars": "81, 83",
+              "barCount": 2,
               "hardOffNotes": 0,
               "pitches": [
                 "C3",
@@ -3404,322 +3559,27 @@
                 "G3",
                 "C4"
               ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "x.......|....x...|.....x..|x...x...",
-            "asciiB": "x.......|....x...|.....x..|x...x...",
-            "pitchesA": [
-              "C3",
-              "C4",
-              "G3",
-              "G3",
-              "C4"
-            ],
-            "pitchesB": [
-              "C3",
-              "C4",
-              "G3",
-              "G3",
-              "C4"
-            ],
-            "repeats": 3,
-            "bars": "97–102"
-          }
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 84,
-          "hardOffNotes": 0,
-          "patterns": [
+            },
             {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "97–102",
-              "barCount": 6,
+              "ascii": "x.....x.|....x...|........|x...x...",
+              "bars": "82, 84",
+              "barCount": 2,
               "hardOffNotes": 0,
               "pitches": [
                 "C3",
-                "C3",
-                "C2",
-                "C2",
-                "C3",
-                "C1",
-                "C3",
-                "C3",
-                "C2",
-                "C1",
-                "C3",
-                "C3",
-                "A#3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "asciiB": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C2",
-              "C2",
-              "C3",
-              "C1",
-              "C3",
-              "C3",
-              "C2",
-              "C1",
-              "C3",
-              "C3"
-            ],
-            "repeats": 3,
-            "bars": "97–102"
-          }
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 84,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "....*...|*...*...|*...*...|*...*...",
-              "bars": "97–102",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "....*...|*...*...|*...*...|*...*...",
-            "asciiB": "....*...|*...*...|*...*...|*...*...",
-            "pitchesA": [
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3"
-            ],
-            "pitchesB": [
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3",
-              "C3"
-            ],
-            "repeats": 3,
-            "bars": "97–102"
-          }
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 72,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "97–102",
-              "barCount": 6,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
-              ]
-            }
-          ],
-          "twoBarLoop": {
-            "asciiA": "*....x..|.*...x..|.X...*..|.*...x..",
-            "asciiB": "*....x..|.*...x..|.X...*..|.*...x..",
-            "pitchesA": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "pitchesB": [
-              "C2",
-              "F#2",
-              "D2",
-              "F#2",
-              "F#2",
-              "C2",
-              "D2",
-              "F#2"
-            ],
-            "repeats": 3,
-            "bars": "97–102"
-          }
-        }
-      ]
-    },
-    {
-      "name": "H456 · dominant 2 · low-register bass",
-      "startBar": 103,
-      "endBar": 104,
-      "heatmap32": {
-        "ascii": "#.o.xoo.|#xo.xoo.|xoo.#xo.|xxoo#ooo",
-        "max": 4,
-        "barsSampled": 2
-      },
-      "tracks": [
-        {
-          "trackId": "bass",
-          "trackName": "Bass A · Kick Lock Long",
-          "channel": 1,
-          "noteCount": 13,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "x.......|....x...|....x...|x...x..x",
-              "bars": "103",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
                 "G3",
-                "D3",
-                "F3",
-                "B3",
-                "D3",
-                "F3"
+                "C4",
+                "C3",
+                "G3"
               ]
             },
             {
-              "ascii": "x.......|x...x...|....x...|x..x...x",
-              "bars": "104",
-              "barCount": 1,
-              "hardOffNotes": 0,
-              "pitches": [
-                "G3",
-                "B3",
-                "D3",
-                "F3",
-                "D3",
-                "B3",
-                "F3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "acid",
-          "trackName": "Acid",
-          "channel": 2,
-          "noteCount": 28,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "X.X.X.X.|x.X...X.|x.X.X.X.|..x.x.x.",
-              "bars": "103–104",
+              "ascii": "x.......|........|........|........",
+              "bars": "85–86",
               "barCount": 2,
               "hardOffNotes": 0,
               "pitches": [
-                "G3",
-                "G3",
-                "G2",
-                "G2",
-                "G3",
-                "G1",
-                "G3",
-                "G3",
-                "G2",
-                "G1",
-                "G3",
-                "G3",
-                "F4",
-                "G3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "guitar",
-          "trackName": "29 Overdriven Guitar",
-          "channel": 3,
-          "noteCount": 28,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "....*...|*...*...|*...*...|*...*...",
-              "bars": "103–104",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
-                "C3",
                 "C3"
-              ]
-            }
-          ],
-          "twoBarLoop": null
-        },
-        {
-          "trackId": "drums",
-          "trackName": "Drums",
-          "channel": 10,
-          "noteCount": 24,
-          "hardOffNotes": 0,
-          "patterns": [
-            {
-              "ascii": "*....x..|.*...x..|.X...*..|.*...x..",
-              "bars": "103–104",
-              "barCount": 2,
-              "hardOffNotes": 0,
-              "pitches": [
-                "C2",
-                "F#2",
-                "D2",
-                "F#2",
-                "F#2",
-                "C2",
-                "D2",
-                "F#2"
               ]
             }
           ],
