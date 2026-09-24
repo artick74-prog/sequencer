@@ -73,6 +73,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
 
 <div class="toolbar">
   <button id="referenceMode" class="primary">Reference MIDI</button>
+  <button id="ideaPoolMode">Idea Pool</button>
   <button id="userStylesMode">My Styles</button>
   <input id="search" type="search" placeholder="Поиск по имени, источнику, пути…">
   <select id="genre"><option value="">Все стили</option></select>
@@ -154,7 +155,9 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   const DEFAULT_SF2_URL = "https://cdn.jsdelivr.net/npm/@logue/sf2synth@0.8.0/dist/Yamaha%20XG%20Sound%20Set.sf2";
   const PAGE_SIZE = 100;
   const state = {
-    view: "reference", userStyles: [], userStyleSelected: null,
+    view: "reference",
+    userStyles: [], userStyleSelected: null,
+    userIdeas: [], userIdeaSelected: null, userIdeaData: null,
     catalog: [], filtered: [], page: 0, selected: null, midi: null,
     midiAccess: null, outputId: "", sf2Engine: null, sf2Ready: false,
     sf2Promise: null,
@@ -443,8 +446,9 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     const events=[];
     for(const n of midi.notes) {
       const note=Math.max(0,Math.min(127,n.note+(drums?0:transpose)));
-      events.push({tick:n.tick,type:"on",note,velocity:n.velocity,order:1});
-      events.push({tick:n.tick+n.duration,type:"off",note,velocity:0,order:0});
+      const channel=Math.max(1,Math.min(16,Number(n.channel)||1));
+      events.push({tick:n.tick,type:"on",note,velocity:n.velocity,channel,order:1});
+      events.push({tick:n.tick+n.duration,type:"off",note,velocity:0,channel,order:0});
     }
     events.sort((a,b)=>a.tick-b.tick || a.order-b.order || a.note-b.note);
     return events;
@@ -477,7 +481,9 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   function scheduleHardwareEvent(event,targetTime) {
     const out=state.playConfig.out;
     if(!out) return;
-    const ch=state.playConfig.hwCh;
+    const ch=state.playConfig.useSourceChannels
+      ? Math.max(0,Math.min(15,(Number(event.channel)||1)-1))
+      : state.playConfig.hwCh;
     try {
       out.send(
         event.type==="on"
@@ -591,7 +597,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     state.cycleStartPerf=performance.now()+35;
     state.transportStartPerf=state.cycleStartPerf;
     state.eventIndex=firstEventAtOrAfter(state.cycleStartTick);
-    state.playConfig={gmOn,hwOn,out,hwCh,gmCh};
+    state.playConfig={gmOn,hwOn,out,hwCh,gmCh,useSourceChannels:!!state.selected?.idea};
     state.playing=true;
     $("play").textContent="Playing…";
 
@@ -755,6 +761,153 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
     if(values.includes(keep)) el.value=keep;
   }
 
+  function ideaToMidi(idea) {
+    const ppq=Math.max(24,Number(idea?.ppq)||480);
+    const bars=Math.max(1,Number(idea?.bars)||1);
+    const notes=[];
+    for(const track of (idea?.tracks||[])) {
+      const channel=Math.max(1,Math.min(16,Number(track.channel)||1));
+      for(const note of (track.notes||[])) {
+        notes.push({
+          tick:Math.max(0,Number(note.tick)||0),
+          duration:Math.max(1,Number(note.duration)||1),
+          note:Math.max(0,Math.min(127,Number(note.note)||0)),
+          velocity:Math.max(1,Math.min(127,Number(note.velocity)||1)),
+          channel,
+        });
+      }
+    }
+    notes.sort((a,b)=>a.tick-b.tick || a.note-b.note);
+    return {
+      ppq,
+      tempo:Number(idea?.tempo)||120,
+      endTick:bars*ppq*4,
+      notes,
+    };
+  }
+
+  async function loadUserIdeas() {
+    try {
+      const r=await fetch("user-library/ideas/index.json?_="+Date.now(), {cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const data=await r.json();
+      state.userIdeas=Array.isArray(data.ideas)?data.ideas:[];
+      if(state.view==="ideas") renderUserIdeaList();
+    } catch(e) {
+      state.userIdeas=[];
+      if(state.view==="ideas") {
+        $("list").innerHTML="<div class='empty'>Idea Pool недоступен: "+escapeHtml(e.message)+"</div>";
+      }
+    }
+  }
+
+  function renderUserIdeaSelected() {
+    const e=state.userIdeaSelected;
+    const idea=state.userIdeaData;
+    if(!e) {
+      $("selectedCard").innerHTML="Выбери идею. Её можно прослушать прямо здесь или открыть в MIDI Host.";
+      return;
+    }
+    const roles=(e.roles||idea?.roles||[]).join(", ") || "—";
+    const tracks=Array.isArray(idea?.tracks)?idea.tracks.length:0;
+    $("selectedCard").innerHTML=[
+      "<strong>"+escapeHtml(e.id.toUpperCase()+" · "+e.name)+"</strong>",
+      "<div><span class='badge'>"+escapeHtml(e.status||"raw")+"</span> <span class='badge'>"+escapeHtml(styleLabel(e.style||e.family||"other"))+"</span></div>",
+      "<div>"+escapeHtml(e.summary||"")+"</div>",
+      "<div><strong>"+escapeHtml(String(e.tempo||idea?.tempo||120))+" BPM</strong> · "+escapeHtml(String(e.bars||idea?.bars||"—"))+" bars · "+tracks+" track(s)</div>",
+      "<div>Roles: <strong>"+escapeHtml(roles)+"</strong> · Function: <strong>"+escapeHtml(e.function||idea?.function||"unassigned")+"</strong></div>",
+      "<div style='color:var(--dim);word-break:break-all'>"+escapeHtml(e.path||"")+"</div>",
+      "<div style='color:var(--dim)'>Idea Pool keeps experiments independently from the song arrangement. Hardware preview uses the stored MIDI channels.</div>"
+    ].join("");
+  }
+
+  async function loadUserIdea(entry, autoplay=false) {
+    if(!entry?.path) return false;
+    const seq=++state.loadSeq;
+    stop({reset:true});
+    state.userIdeaSelected=entry;
+    state.userIdeaData=null;
+    state.selected=null;
+    state.midi=null;
+    renderUserIdeaSelected();
+    renderUserIdeaList();
+    setStatus("Loading "+entry.name+"…");
+    try {
+      const r=await fetch(entry.path+"?_="+Date.now(), {cache:"no-store"});
+      if(!r.ok) throw new Error("Idea HTTP "+r.status);
+      const idea=await r.json();
+      if(seq!==state.loadSeq) return false;
+      const midi=ideaToMidi(idea);
+      state.userIdeaData=idea;
+      state.selected={
+        id:"idea:"+entry.id,
+        name:entry.name,
+        source:"Idea Pool",
+        member:entry.path,
+        kind:(entry.roles||[]).length===1 ? String(entry.roles[0]) : "arrangement",
+        genre:entry.style||entry.family||"other",
+        idea:true,
+      };
+      state.midi=midi;
+      state.seekTick=0;
+      state.cycleTicks=midiCycleTicks(midi);
+      $("bpm").value=String(Math.round(Number(idea.tempo)||120));
+      $("transpose").value=String(Math.round(Number(idea.masterTranspose)||0));
+      renderUserIdeaSelected();
+      updateProgressUI(0);
+      renderUserIdeaList();
+      setStatus(
+        "Idea loaded · "+entry.id.toUpperCase()+" · "+displayBars(midi)+" bars · "+midi.notes.length+" notes",
+        "ok"
+      );
+      if(autoplay) await play();
+      return true;
+    } catch(e) {
+      if(seq!==state.loadSeq) return false;
+      state.userIdeaData=null;
+      state.selected=null;
+      state.midi=null;
+      setStatus("Idea load error: "+e.message,"err");
+      renderUserIdeaSelected();
+      updateProgressUI(0);
+      return false;
+    }
+  }
+
+  function openUserIdeaInHost(e) {
+    if(!e) return;
+    location.href="midi-host.html?userIdea="+encodeURIComponent(e.id);
+  }
+
+  function renderUserIdeaList() {
+    const rows=state.userIdeas||[];
+    const list=$("list");
+    list.innerHTML="";
+    if(!rows.length) {
+      list.innerHTML="<div class='empty'>Пока нет сохранённых идей.</div>";
+    } else {
+      for(const e of rows) {
+        const row=document.createElement("div");
+        row.className="item"+(state.userIdeaSelected?.id===e.id?" selected":"");
+        row.innerHTML=
+          "<button title='Play idea'>▶</button>"+
+          "<div><div class='name'>"+escapeHtml(e.id.toUpperCase()+" · "+e.name)+"</div><div class='small'>"+escapeHtml(e.summary||"")+"</div></div>"+
+          "<div class='small'>"+escapeHtml(styleLabel(e.style||e.family||"other"))+"</div>"+
+          "<div class='small hide-small'>"+escapeHtml((e.roles||[]).join(", ")||e.type||"fragment")+"</div>"+
+          "<div class='small hide-small'>"+escapeHtml(e.status||"raw")+"</div>"+
+          "<div class='small hide-small'>"+escapeHtml(String(e.bars||"—"))+" bars</div>";
+        row.addEventListener("click",()=>loadUserIdea(e,false));
+        row.querySelector("button").addEventListener("click",(ev)=>{
+          ev.stopPropagation();
+          loadUserIdea(e,true);
+        });
+        list.appendChild(row);
+      }
+    }
+    $("countLabel").textContent=rows.length+" idea"+(rows.length===1?"":"s");
+    renderUserIdeaSelected();
+  }
+
   async function loadUserStyles() {
     try {
       const r=await fetch("user-library/styles/index.json?_="+Date.now(), {cache:"no-store"});
@@ -771,23 +924,28 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   }
 
   function setLibraryView(view) {
-    state.view=view==="styles"?"styles":"reference";
+    state.view=view==="styles"?"styles":view==="ideas"?"ideas":"reference";
     const isStyles=state.view==="styles";
-    $("referenceMode").classList.toggle("primary",!isStyles);
+    const isIdeas=state.view==="ideas";
+    const isReference=state.view==="reference";
+    $("referenceMode").classList.toggle("primary",isReference);
+    $("ideaPoolMode").classList.toggle("primary",isIdeas);
     $("userStylesMode").classList.toggle("primary",isStyles);
 
     for(const id of ["search","genre","kind","source","rescan","repack","report"]) {
       const el=$(id);
-      if(el) el.style.display=isStyles?"none":"";
+      if(el) el.style.display=isReference?"":"none";
     }
-    $("prev").style.display=isStyles?"none":"";
-    $("next").style.display=isStyles?"none":"";
-    $("pageLabel").style.display=isStyles?"none":"";
+    $("prev").style.display=isReference?"":"none";
+    $("next").style.display=isReference?"":"none";
+    $("pageLabel").style.display=isReference?"":"none";
 
     stop({reset:true});
     if(isStyles) {
       state.selected=null;
       state.midi=null;
+      state.userIdeaSelected=null;
+      state.userIdeaData=null;
       state.seekTick=0;
       updateProgressUI(0);
       renderUserStyleList();
@@ -795,8 +953,21 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
         "My Styles · "+state.userStyles.length+" draft style(s) · reusable arranger patterns",
         "ok"
       );
+    } else if(isIdeas) {
+      state.selected=null;
+      state.midi=null;
+      state.userStyleSelected=null;
+      state.seekTick=0;
+      updateProgressUI(0);
+      renderUserIdeaList();
+      setStatus(
+        "Idea Pool · "+state.userIdeas.length+" saved fragment(s) · audition before promoting into styles",
+        "ok"
+      );
     } else {
       state.userStyleSelected=null;
+      state.userIdeaSelected=null;
+      state.userIdeaData=null;
       renderSelected();
       applyFilters();
       setStatus("Reference MIDI · "+state.catalog.length.toLocaleString("ru-RU")+" entries","ok");
@@ -878,6 +1049,10 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
       renderUserStyleList();
       return;
     }
+    if(state.view==="ideas") {
+      renderUserIdeaList();
+      return;
+    }
     const total=state.filtered.length;
     const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
     state.page=Math.max(0,Math.min(state.page,pages-1));
@@ -947,6 +1122,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   }
 
   $("referenceMode").addEventListener("click",()=>setLibraryView("reference"));
+  $("ideaPoolMode").addEventListener("click",()=>setLibraryView("ideas"));
   $("userStylesMode").addEventListener("click",()=>setLibraryView("styles"));
   $("search").addEventListener("input",applyFilters);
   $("genre").addEventListener("change",applyFilters);
@@ -1053,6 +1229,11 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
       openUserStyleInHost(state.userStyleSelected);
       return;
     }
+    if(state.view==="ideas") {
+      if(!state.userIdeaSelected) { setStatus("Сначала выбери идею.","err"); return; }
+      openUserIdeaInHost(state.userIdeaSelected);
+      return;
+    }
     if(!state.selected) { setStatus("Сначала выбери MIDI.","err"); return; }
     location.href="midi-host.html?library="+encodeURIComponent(state.selected.id)+"&name="+encodeURIComponent(state.selected.name);
   });
@@ -1060,6 +1241,7 @@ label{font-size:12px;color:var(--dim);display:flex;gap:6px;align-items:center}
   updateProgressUI(0);
   loadPrograms();
   initMidi();
+  loadUserIdeas();
   loadUserStyles();
   loadCatalog(false);
 })();

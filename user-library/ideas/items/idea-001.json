@@ -1,0 +1,439 @@
+{
+  "schema": 1,
+  "id": "idea-001",
+  "name": "Refined Chorus Acid Hook",
+  "status": "promising",
+  "style": "acid-breaks",
+  "family": "acid-breaks",
+  "type": "phrase",
+  "roles": [
+    "acid"
+  ],
+  "function": "unassigned",
+  "candidateFunctions": [
+    "chorus",
+    "bridge",
+    "transition",
+    "break"
+  ],
+  "tempo": 112,
+  "meter": [
+    4,
+    4
+  ],
+  "ppq": 480,
+  "bars": 8,
+  "masterTranspose": 7,
+  "summary": "Asymmetric 8-bar TD-3 phrase preserved from an alternate chorus experiment.",
+  "tags": [
+    "acid-breaks",
+    "td-3",
+    "acid",
+    "hook",
+    "melodic",
+    "asymmetric"
+  ],
+  "source": {
+    "project": "Acid Breaks",
+    "originalBars": [
+      93,
+      100
+    ],
+    "provenance": "Former refined chorus variant, parked for later reuse"
+  },
+  "tracks": [
+    {
+      "id": "acid",
+      "name": "Acid",
+      "role": "td3",
+      "channel": 2,
+      "transposeOctaves": 0,
+      "notes": [
+        {
+          "tick": 0,
+          "duration": 100,
+          "note": 48,
+          "velocity": 120
+        },
+        {
+          "tick": 370,
+          "duration": 150,
+          "note": 48,
+          "velocity": 36
+        },
+        {
+          "tick": 480,
+          "duration": 82,
+          "note": 51,
+          "velocity": 42
+        },
+        {
+          "tick": 850,
+          "duration": 170,
+          "note": 55,
+          "velocity": 34
+        },
+        {
+          "tick": 1090,
+          "duration": 78,
+          "note": 48,
+          "velocity": 38
+        },
+        {
+          "tick": 1330,
+          "duration": 285,
+          "note": 46,
+          "velocity": 32
+        },
+        {
+          "tick": 1570,
+          "duration": 105,
+          "note": 48,
+          "velocity": 114
+        },
+        {
+          "tick": 1810,
+          "duration": 92,
+          "note": 55,
+          "velocity": 35
+        },
+        {
+          "tick": 2050,
+          "duration": 82,
+          "note": 48,
+          "velocity": 36
+        },
+        {
+          "tick": 2160,
+          "duration": 185,
+          "note": 48,
+          "velocity": 32
+        },
+        {
+          "tick": 2400,
+          "duration": 102,
+          "note": 55,
+          "velocity": 121
+        },
+        {
+          "tick": 2640,
+          "duration": 170,
+          "note": 51,
+          "velocity": 34
+        },
+        {
+          "tick": 3010,
+          "duration": 82,
+          "note": 48,
+          "velocity": 38
+        },
+        {
+          "tick": 3120,
+          "duration": 305,
+          "note": 46,
+          "velocity": 30
+        },
+        {
+          "tick": 3360,
+          "duration": 105,
+          "note": 48,
+          "velocity": 110
+        },
+        {
+          "tick": 3730,
+          "duration": 92,
+          "note": 51,
+          "velocity": 36
+        },
+        {
+          "tick": 3840,
+          "duration": 100,
+          "note": 48,
+          "velocity": 120
+        },
+        {
+          "tick": 4210,
+          "duration": 150,
+          "note": 48,
+          "velocity": 36
+        },
+        {
+          "tick": 4320,
+          "duration": 82,
+          "note": 51,
+          "velocity": 42
+        },
+        {
+          "tick": 4690,
+          "duration": 170,
+          "note": 55,
+          "velocity": 34
+        },
+        {
+          "tick": 4930,
+          "duration": 78,
+          "note": 48,
+          "velocity": 38
+        },
+        {
+          "tick": 5170,
+          "duration": 285,
+          "note": 46,
+          "velocity": 32
+        },
+        {
+          "tick": 5410,
+          "duration": 105,
+          "note": 48,
+          "velocity": 114
+        },
+        {
+          "tick": 5650,
+          "duration": 92,
+          "note": 55,
+          "velocity": 35
+        },
+        {
+          "tick": 5890,
+          "duration": 82,
+          "note": 48,
+          "velocity": 36
+        },
+        {
+          "tick": 6000,
+          "duration": 185,
+          "note": 48,
+          "velocity": 32
+        },
+        {
+          "tick": 6240,
+          "duration": 102,
+          "note": 55,
+          "velocity": 121
+        },
+        {
+          "tick": 6480,
+          "duration": 170,
+          "note": 51,
+          "velocity": 34
+        },
+        {
+          "tick": 6850,
+          "duration": 82,
+          "note": 48,
+          "velocity": 38
+        },
+        {
+          "tick": 6960,
+          "duration": 305,
+          "note": 46,
+          "velocity": 30
+        },
+        {
+          "tick": 7200,
+          "duration": 105,
+          "note": 48,
+          "velocity": 110
+        },
+        {
+          "tick": 7570,
+          "duration": 92,
+          "note": 51,
+          "velocity": 36
+        },
+        {
+          "tick": 7680,
+          "duration": 100,
+          "note": 48,
+          "velocity": 120
+        },
+        {
+          "tick": 8050,
+          "duration": 150,
+          "note": 48,
+          "velocity": 36
+        },
+        {
+          "tick": 8160,
+          "duration": 82,
+          "note": 51,
+          "velocity": 42
+        },
+        {
+          "tick": 8530,
+          "duration": 170,
+          "note": 55,
+          "velocity": 34
+        },
+        {
+          "tick": 8770,
+          "duration": 78,
+          "note": 48,
+          "velocity": 38
+        },
+        {
+          "tick": 9010,
+          "duration": 285,
+          "note": 46,
+          "velocity": 32
+        },
+        {
+          "tick": 9250,
+          "duration": 105,
+          "note": 48,
+          "velocity": 114
+        },
+        {
+          "tick": 9490,
+          "duration": 92,
+          "note": 58,
+          "velocity": 42
+        },
+        {
+          "tick": 9730,
+          "duration": 82,
+          "note": 48,
+          "velocity": 36
+        },
+        {
+          "tick": 9840,
+          "duration": 185,
+          "note": 48,
+          "velocity": 32
+        },
+        {
+          "tick": 10080,
+          "duration": 102,
+          "note": 55,
+          "velocity": 121
+        },
+        {
+          "tick": 10320,
+          "duration": 170,
+          "note": 55,
+          "velocity": 40
+        },
+        {
+          "tick": 10690,
+          "duration": 82,
+          "note": 48,
+          "velocity": 38
+        },
+        {
+          "tick": 10800,
+          "duration": 305,
+          "note": 46,
+          "velocity": 30
+        },
+        {
+          "tick": 11040,
+          "duration": 105,
+          "note": 48,
+          "velocity": 110
+        },
+        {
+          "tick": 11410,
+          "duration": 92,
+          "note": 51,
+          "velocity": 36
+        },
+        {
+          "tick": 11520,
+          "duration": 100,
+          "note": 55,
+          "velocity": 120
+        },
+        {
+          "tick": 11890,
+          "duration": 150,
+          "note": 55,
+          "velocity": 36
+        },
+        {
+          "tick": 12000,
+          "duration": 82,
+          "note": 58,
+          "velocity": 42
+        },
+        {
+          "tick": 12370,
+          "duration": 170,
+          "note": 62,
+          "velocity": 34
+        },
+        {
+          "tick": 12610,
+          "duration": 78,
+          "note": 55,
+          "velocity": 38
+        },
+        {
+          "tick": 12850,
+          "duration": 285,
+          "note": 53,
+          "velocity": 32
+        },
+        {
+          "tick": 13090,
+          "duration": 105,
+          "note": 55,
+          "velocity": 114
+        },
+        {
+          "tick": 13330,
+          "duration": 92,
+          "note": 62,
+          "velocity": 35
+        },
+        {
+          "tick": 13570,
+          "duration": 82,
+          "note": 55,
+          "velocity": 36
+        },
+        {
+          "tick": 13680,
+          "duration": 185,
+          "note": 55,
+          "velocity": 32
+        },
+        {
+          "tick": 13920,
+          "duration": 102,
+          "note": 62,
+          "velocity": 121
+        },
+        {
+          "tick": 14160,
+          "duration": 170,
+          "note": 58,
+          "velocity": 34
+        },
+        {
+          "tick": 14530,
+          "duration": 82,
+          "note": 55,
+          "velocity": 38
+        },
+        {
+          "tick": 14640,
+          "duration": 305,
+          "note": 53,
+          "velocity": 30
+        },
+        {
+          "tick": 14880,
+          "duration": 105,
+          "note": 55,
+          "velocity": 110
+        },
+        {
+          "tick": 15250,
+          "duration": 92,
+          "note": 58,
+          "velocity": 36
+        }
+      ]
+    }
+  ]
+}

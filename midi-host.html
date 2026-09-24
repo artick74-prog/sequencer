@@ -2772,6 +2772,7 @@ body.timeline-ruler-zooming {
           <button class="file-menu-item" id="btnLoadMid" type="button">Import MIDI…</button>
           <button class="file-menu-item" id="btnLoadJson" type="button">Import JSON…</button>
           <button class="file-menu-item" id="btnExportMid" type="button">Export MIDI…</button>
+          <button class="file-menu-item" id="btnSaveIdea" type="button" title="Save the current loop range into Style Library → Idea Pool">Save Loop to Ideas…</button>
           <div class="file-menu-separator"></div>
           <button class="file-menu-item" id="btnReload" type="button" title="Pull latest project from GitHub and reload">Reload from AI</button>
           <button class="file-menu-item" id="btnSync" type="button" title="Save current.json / overview and push for AI review">Sync to AI</button>
@@ -16674,6 +16675,120 @@ body.timeline-ruler-zooming {
     };
   }
 
+  function ideaStyleSlug(value) {
+    const slug=String(value||"other")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g,"-")
+      .replace(/^-+|-+$/g,"");
+    return slug || "other";
+  }
+
+  async function saveLoopRangeToIdeas() {
+    closeFileMenu();
+    if(!state.project) {
+      setStatus("Idea Pool: no project loaded.", "err");
+      return false;
+    }
+
+    const ppq=state.project.ppq||480;
+    const barTicks=ticksPerBar(ppq);
+    const start=Math.max(0,Number(state.loopStartTick)||0);
+    const end=Math.max(0,Number(state.loopEndTick)||0);
+    if(end<=start) {
+      setStatus("Idea Pool: select a loop range first (Shift+drag on the Bars row).", "err");
+      return false;
+    }
+
+    const bars=Math.max(1,Math.ceil((end-start)/barTicks));
+    const capturedTracks=[];
+    for(const track of (state.project.tracks||[])) {
+      const notes=(track.notes||[])
+        .filter((note)=>note.tick>=start && note.tick<end)
+        .map((note)=>({
+          tick:Math.max(0,Math.round(note.tick-start)),
+          duration:Math.max(1,Math.round(Number(note.duration)||1)),
+          note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
+          velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
+        }));
+      if(!notes.length) continue;
+      capturedTracks.push({
+        id:track.id||("track-"+capturedTracks.length),
+        name:track.name||track.id||"Track",
+        role:track.role||inferTrackRole(track,track.channel||1),
+        channel:Math.max(1,Math.min(16,Number(track.channel)||1)),
+        transposeOctaves:Math.max(-3,Math.min(3,Math.round(Number(track.transposeOctaves)||0))),
+        notes,
+      });
+    }
+    if(!capturedTracks.length) {
+      setStatus("Idea Pool: the selected loop range contains no notes.", "err");
+      return false;
+    }
+
+    const startBar=Math.floor(start/barTicks)+1;
+    const endBar=Math.ceil(end/barTicks);
+    const suggested=(state.project.name||"Project")+" · bars "+startBar+"–"+endBar;
+    const entered=prompt("Idea name:",suggested);
+    if(entered===null) return false;
+    const name=entered.trim()||suggested;
+
+    const defaultStyle=ideaStyleSlug(state.project.name||"other");
+    const styleInput=prompt("Style / family tag:",defaultStyle);
+    if(styleInput===null) return false;
+    const style=ideaStyleSlug(styleInput||defaultStyle);
+
+    const roles=[...new Set(capturedTracks.map((track)=>track.id).filter(Boolean))];
+    const idea={
+      schema:1,
+      name,
+      status:"raw",
+      style,
+      family:style,
+      type:capturedTracks.length===1?"phrase":"section",
+      roles,
+      function:"unassigned",
+      tempo:Number(state.project.tempo)||120,
+      meter:[4,4],
+      ppq,
+      bars,
+      swing:projectSwingPercent(state.project),
+      masterTranspose:Math.max(-36,Math.min(36,Math.round(Number(state.project.masterTranspose)||0))),
+      summary:"Captured from "+(state.project.name||"project")+" · bars "+startBar+"–"+endBar+".",
+      tags:[style,...roles],
+      source:{
+        project:state.project.name||"Project",
+        originalBars:[startBar,endBar],
+        capturedAt:new Date().toISOString(),
+      },
+      tracks:capturedTracks,
+    };
+
+    try {
+      if(!(state.bridgeReady || (await detectLocalBridge()))) {
+        throw new Error("local bridge is unavailable; start start-midi-host.bat");
+      }
+      setStatus("Idea Pool: saving “"+name+"”…");
+      const response=await fetch("/api/ideas/save",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({idea}),
+      });
+      const reply=await response.json().catch(()=>({}));
+      if(!response.ok || !reply.ok) throw new Error(reply.error||("HTTP "+response.status));
+      const saved=reply.idea||{};
+      setStatus(
+        "Saved to Idea Pool: "+String(saved.id||"idea").toUpperCase()+" · "+name+
+        (reply.commit?" · "+reply.commit:""),
+        "ok"
+      );
+      return true;
+    } catch(err) {
+      setStatus("Idea Pool save failed: "+err.message,"err");
+      return false;
+    }
+  }
+
   function setFileMenuOpen(open) {
     const menu = document.getElementById("fileMenu");
     const button = document.getElementById("btnFileMenu");
@@ -17658,6 +17773,9 @@ body.timeline-ruler-zooming {
     }
   });
 
+  document.getElementById("btnSaveIdea")?.addEventListener("click", () => {
+    void saveLoopRangeToIdeas();
+  });
   document.getElementById("btnReload").addEventListener("click", () => reloadCurrent());
   const bindBtns = ["btnBindProjects", "btnBindProjects2"];
   const syncBtns = ["btnSync", "btnSync2"];
@@ -18400,13 +18518,94 @@ body.timeline-ruler-zooming {
   function clearOneShotImportQuery() {
     const url = new URL(window.location.href);
     let changed = false;
-    for (const key of ["userStyle", "library", "name"]) {
+    for (const key of ["userIdea", "userStyle", "library", "name"]) {
       if (url.searchParams.has(key)) {
         url.searchParams.delete(key);
         changed = true;
       }
     }
     if (changed) history.replaceState(null, "", url.toString());
+  }
+
+  async function loadUserIdeaFromQuery() {
+    const params=new URLSearchParams(location.search);
+    const ideaId=params.get("userIdea");
+    if(!ideaId) return false;
+
+    try {
+      setStatus("Loading Idea Pool fragment…");
+      const indexRes=await fetch("user-library/ideas/index.json?_="+Date.now(),{cache:"no-store"});
+      if(!indexRes.ok) throw new Error("Idea index HTTP "+indexRes.status);
+      const index=await indexRes.json();
+      const entry=(index.ideas||[]).find((item)=>item.id===ideaId);
+      if(!entry?.path) throw new Error("Unknown idea: "+ideaId);
+
+      const ideaRes=await fetch(entry.path+"?_="+Date.now(),{cache:"no-store"});
+      if(!ideaRes.ok) throw new Error("Idea HTTP "+ideaRes.status);
+      const idea=await ideaRes.json();
+
+      const ppq=Math.max(24,Number(idea.ppq)||480);
+      const bars=Math.max(1,Number(idea.bars)||1);
+      const project=buildNewProjectTemplate(idea.name||entry.name||ideaId);
+      project.ppq=ppq;
+      project.tempo=Number(idea.tempo)||120;
+      project.swing=Math.max(0,Math.min(100,Number(idea.swing)||0));
+      project.masterTranspose=Math.max(-36,Math.min(36,Math.round(Number(idea.masterTranspose)||0)));
+      project.minimumLengthTicks=bars*ticksPerBar(ppq);
+      project.lengthTicks=project.minimumLengthTicks;
+      project.loopRange={startBar:1,endBar:bars};
+      project.markers=[{tick:0,text:(ideaId.toUpperCase()+" · "+(idea.name||entry.name||"Idea"))}];
+      project.cloudProject=null;
+      project.userIdea={
+        id:idea.id||ideaId,
+        status:idea.status||"raw",
+        style:idea.style||idea.family||"",
+        sourcePath:entry.path,
+      };
+
+      for(const sourceTrack of (idea.tracks||[])) {
+        let target=project.tracks.find((track)=>track.id===sourceTrack.id);
+        if(!target) {
+          target={
+            id:String(sourceTrack.id||("idea-track-"+project.tracks.length)),
+            name:String(sourceTrack.name||sourceTrack.id||"Idea Track"),
+            channel:Math.max(1,Math.min(16,Number(sourceTrack.channel)||1)),
+            role:String(sourceTrack.role||"gm"),
+            notes:[],
+          };
+          project.tracks.push(target);
+        }
+        target.name=String(sourceTrack.name||target.name||sourceTrack.id||"Track");
+        target.channel=Math.max(1,Math.min(16,Number(sourceTrack.channel)||target.channel||1));
+        target.role=String(sourceTrack.role||target.role||inferTrackRole(target,target.channel));
+        target.transposeOctaves=Math.max(-3,Math.min(3,Math.round(Number(sourceTrack.transposeOctaves)||0)));
+        target.notes=(sourceTrack.notes||[]).map((note)=>({
+          tick:Math.max(0,Math.round(Number(note.tick)||0)),
+          duration:Math.max(1,Math.round(Number(note.duration)||1)),
+          note:Math.max(0,Math.min(127,Math.round(Number(note.note)||0))),
+          velocity:Math.max(1,Math.min(127,Math.round(Number(note.velocity)||1))),
+          clipId:"idea:"+String(idea.id||ideaId),
+        }));
+      }
+
+      setProject(normalizeProject(project),{
+        restoreLocal:false,
+        statusText:
+          "Loaded "+ideaId.toUpperCase()+" · “"+(idea.name||entry.name||"Idea")+"” · "+
+          bars+" bars · editable Idea Pool fragment.",
+      });
+      state.loop=true;
+      setLoopRangeBars(1,bars);
+      updateLoopButtonUi();
+      updateLoopRangeVisuals();
+      markHostProjectDirty();
+      saveHostAutosaveNow();
+      clearOneShotImportQuery();
+      return true;
+    } catch(err) {
+      setStatus("Idea Pool load failed: "+err.message,"err");
+      return false;
+    }
   }
 
   async function loadUserStyleFromQuery() {
@@ -18498,6 +18697,11 @@ body.timeline-ruler-zooming {
 
   window.MidiHost = {
     getProject: () => projectToJson(),
+    loadUserIdea: (id) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set("userIdea", id);
+      window.location.href = url.toString();
+    },
     loadUserStyle: (id) => {
       const url = new URL(window.location.href);
       url.searchParams.set("userStyle", id);
@@ -18547,6 +18751,7 @@ body.timeline-ruler-zooming {
   restoreProjectsFolder();
   initMidi();
   (async () => {
+    if (await loadUserIdeaFromQuery()) return;
     if (await loadUserStyleFromQuery()) return;
     if (await loadLibraryReferenceFromQuery()) return;
     if (restoreHostWorkingProject()) return;

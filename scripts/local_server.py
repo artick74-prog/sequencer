@@ -36,6 +36,9 @@ from midi_classifier import classify_midi, parse_midi
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
+IDEAS_ROOT = ROOT / "user-library" / "ideas"
+IDEAS_ITEMS_ROOT = IDEAS_ROOT / "items"
+IDEAS_INDEX_PATH = IDEAS_ROOT / "index.json"
 ALLOWED_FILES = {"current.json", "overview.json", "overview.md", "chiptune-current.json", "chiptune-overview.md", "chiptune-loop-ratings.json", "chiptune-loop-aliases.json", "chiptune-loop-selection.json"}
 MAX_BODY = 32 * 1024 * 1024
 LIBRARY_ROOT = Path(
@@ -1628,6 +1631,176 @@ def optimize_library(genre: str = "edm", kind: str = "unclassified") -> dict:
 
 
 
+def load_idea_index() -> dict:
+    if not IDEAS_INDEX_PATH.exists():
+        return {
+            "schema": 1,
+            "title": "Idea Pool",
+            "description": "User-created musical fragments captured from projects.",
+            "ideas": [],
+        }
+    data = json.loads(IDEAS_INDEX_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("Idea Pool index must be an object")
+    ideas = data.get("ideas")
+    if not isinstance(ideas, list):
+        data["ideas"] = []
+    return data
+
+
+def allocate_idea_id(index: dict) -> str:
+    used = {
+        str(item.get("id") or "")
+        for item in (index.get("ideas") or [])
+        if isinstance(item, dict)
+    }
+    number = 1
+    while True:
+        candidate = f"idea-{number:03d}"
+        if candidate not in used:
+            return candidate
+        number += 1
+
+
+def normalize_idea_id(value: str) -> str:
+    raw = str(value or "").strip().lower()
+    raw = re.sub(r"[^a-z0-9-]+", "-", raw).strip("-")
+    if not raw:
+        raise ValueError("Invalid idea id")
+    if len(raw) > 80:
+        raw = raw[:80].rstrip("-")
+    return raw
+
+
+def save_user_idea(payload: dict) -> dict:
+    idea = payload.get("idea")
+    if not isinstance(idea, dict):
+        raise ValueError("idea must be an object")
+    tracks = idea.get("tracks")
+    if not isinstance(tracks, list) or not tracks:
+        raise ValueError("idea.tracks must be a non-empty array")
+
+    branch = current_branch()
+    ensure_remote_is_safe_to_push(branch)
+
+    index = load_idea_index()
+    requested_id = str(idea.get("id") or "").strip()
+    idea_id = normalize_idea_id(requested_id) if requested_id else allocate_idea_id(index)
+
+    name = " ".join(
+        str(idea.get("name") or idea_id).replace("\r", " ").replace("\n", " ").split()
+    )[:120] or idea_id
+    ppq = max(24, int(idea.get("ppq") or 480))
+    bars = max(1, min(256, int(idea.get("bars") or 1)))
+    tempo = max(20.0, min(400.0, float(idea.get("tempo") or 120)))
+
+    normalized_tracks = []
+    for i, track in enumerate(tracks, start=1):
+        if not isinstance(track, dict):
+            raise ValueError("idea tracks must be objects")
+        notes = track.get("notes")
+        if not isinstance(notes, list):
+            raise ValueError("idea track notes must be arrays")
+        clean_notes = []
+        for note in notes:
+            if not isinstance(note, dict):
+                continue
+            tick = max(0, int(note.get("tick") or 0))
+            duration = max(1, int(note.get("duration") or 1))
+            pitch = max(0, min(127, int(note.get("note") or 0)))
+            velocity = max(1, min(127, int(note.get("velocity") or 1)))
+            clean_notes.append({
+                "tick": tick,
+                "duration": duration,
+                "note": pitch,
+                "velocity": velocity,
+            })
+        clean_notes.sort(key=lambda row: (row["tick"], row["note"]))
+        normalized_tracks.append({
+            "id": str(track.get("id") or f"track-{i}"),
+            "name": str(track.get("name") or f"Track {i}"),
+            "role": str(track.get("role") or ""),
+            "channel": max(1, min(16, int(track.get("channel") or 1))),
+            "transposeOctaves": max(-3, min(3, int(track.get("transposeOctaves") or 0))),
+            "notes": clean_notes,
+        })
+
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    stored = dict(idea)
+    stored.update({
+        "schema": int(idea.get("schema") or 1),
+        "id": idea_id,
+        "name": name,
+        "status": str(idea.get("status") or "raw"),
+        "style": str(idea.get("style") or "other"),
+        "family": str(idea.get("family") or idea.get("style") or "other"),
+        "type": str(idea.get("type") or "fragment"),
+        "function": str(idea.get("function") or "unassigned"),
+        "tempo": tempo,
+        "ppq": ppq,
+        "bars": bars,
+        "tracks": normalized_tracks,
+        "updatedAt": now,
+    })
+    if not stored.get("createdAt"):
+        stored["createdAt"] = now
+
+    IDEAS_ITEMS_ROOT.mkdir(parents=True, exist_ok=True)
+    item_path = IDEAS_ITEMS_ROOT / f"{idea_id}.json"
+    item_tmp = item_path.with_name(item_path.name + ".tmp")
+    item_tmp.write_text(json.dumps(stored, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+    os.replace(item_tmp, item_path)
+
+    entry = {
+        "id": idea_id,
+        "name": name,
+        "status": stored["status"],
+        "style": stored["style"],
+        "family": stored["family"],
+        "type": stored["type"],
+        "roles": list(stored.get("roles") or [t["id"] for t in normalized_tracks]),
+        "function": stored["function"],
+        "bars": bars,
+        "tempo": tempo,
+        "summary": str(stored.get("summary") or ""),
+        "tags": list(stored.get("tags") or []),
+        "path": f"user-library/ideas/items/{idea_id}.json",
+        "updatedAt": now,
+    }
+
+    ideas = [
+        row for row in (index.get("ideas") or [])
+        if not isinstance(row, dict) or str(row.get("id") or "") != idea_id
+    ]
+    ideas.append(entry)
+    ideas.sort(key=lambda row: str(row.get("id") or ""))
+    index["ideas"] = ideas
+    index["schema"] = int(index.get("schema") or 1)
+    index["title"] = str(index.get("title") or "Idea Pool")
+    index["description"] = str(
+        index.get("description")
+        or "User-created musical fragments captured from projects before promotion into reusable styles."
+    )
+    IDEAS_ROOT.mkdir(parents=True, exist_ok=True)
+    index_tmp = IDEAS_INDEX_PATH.with_name(IDEAS_INDEX_PATH.name + ".tmp")
+    index_tmp.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+    os.replace(index_tmp, IDEAS_INDEX_PATH)
+
+    rel_item = str(item_path.relative_to(ROOT)).replace("\\", "/")
+    rel_index = str(IDEAS_INDEX_PATH.relative_to(ROOT)).replace("\\", "/")
+    run_git("add", "--", rel_item, rel_index)
+    changed = commit_staged(f"Idea Pool: {name}")
+    run_git("push", "origin", branch)
+
+    return {
+        "ok": True,
+        "changed": changed,
+        "commit": short_sha(),
+        "branch": branch,
+        "idea": entry,
+    }
+
+
 class GitError(RuntimeError):
     pass
 
@@ -1983,6 +2156,14 @@ class Handler(SimpleHTTPRequestHandler):
             try:
                 self._send_json(200, save_midi_download(self._read_json()))
             except (ValueError, OSError) as exc:
+                self._send_json(409, {"ok": False, "error": str(exc)})
+            except Exception as exc:
+                self._send_json(500, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/ideas/save":
+            try:
+                self._send_json(200, save_user_idea(self._read_json()))
+            except (ValueError, GitError, OSError, json.JSONDecodeError) as exc:
                 self._send_json(409, {"ok": False, "error": str(exc)})
             except Exception as exc:
                 self._send_json(500, {"ok": False, "error": str(exc)})

@@ -74,6 +74,38 @@ python scripts/local_server.py --open
 
 После этой кнопки ассистент может прочитать текущее состояние конструктора из GitHub и обсуждать с пользователем конкретные загруженные лупы и их правки. Не утверждать, что видно текущее состояние браузера, пока пользователь не нажал **Sync to AI** после изменений.
 
+
+### Style Library · Idea Pool
+
+`Style Library` now has three layers:
+
+- **Reference MIDI** — external/reference MIDI material.
+- **Idea Pool** — user-created fragments captured from projects before their final musical function is decided.
+- **My Styles** — reusable arranger-style drafts that can later grow Main/Fill/Break/Intro/Ending sections.
+
+Idea Pool data lives in:
+
+- `user-library/ideas/index.json` — compact catalogue.
+- `user-library/ideas/items/<idea-id>.json` — self-contained note data and metadata.
+
+An idea may contain one track or several tracks. Note ticks are relative to the idea start; duration, velocity, stored MIDI channel, swing/master-transpose metadata and source-project provenance are preserved.
+
+In MIDI Host:
+
+- define a loop range with the existing loop locators;
+- **File → Save Loop to Ideas…** captures every track that has notes inside that range;
+- the local bridge writes/commits/pushes the idea through `POST /api/ideas/save`.
+
+In Style Library → **Idea Pool**:
+
+- click an item to load it;
+- ▶ previews it in-place;
+- Hardware preview uses the idea's stored MIDI channels, so current conventions such as TD-3 ch2 / XR20 bass ch1 / XR20 drums ch10 survive;
+- **Open in Host** loads the idea as an editable standalone fragment.
+
+Do not park reusable experiments at the end of `projects/current.json`. Move them into Idea Pool once they are worth preserving.
+
+
 ---
 
 ## Hardware MIDI Host (`midi-host.html`)
