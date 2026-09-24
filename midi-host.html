@@ -8751,38 +8751,49 @@ body.timeline-ruler-zooming {
 
   function queuePianoRollLivePlaybackRefresh() {
     if (!state.project || !state.playing) return false;
+
+    // If a seamless handoff is already queued, keep it. The handoff rebuilds
+    // from the current project state, so every edit made before it fires is
+    // automatically included without repeatedly pushing the refresh later.
+    if (
+      state.pianoRollLiveEditPending &&
+      Number.isFinite(state.pianoRollLiveEditAtPerf) &&
+      state.pianoRollLiveEditAtPerf > performance.now()
+    ) {
+      return true;
+    }
+
     const now = performance.now();
     const ppq = state.playbackPpq || state.project.ppq || 480;
     const tempo = state.playbackTempo || state.project.tempo || 120;
-    const safeLeadMs = Math.max(HARDWARE_LOOKAHEAD_MS, SF2_LOOKAHEAD_MS) + 45;
-    const absoluteTick = absoluteTransportTick(now);
-    let targetTick = 0;
-    let targetPerf = 0;
 
-    if (state.loop) {
+    // Web MIDI / WebAudio are timestamped ahead of the playhead. Events already
+    // handed to those output queues cannot be safely rewritten without a Stop /
+    // clear(), which would defeat live editing. Handoff just beyond the active
+    // output lookahead, then rebuild the queue from the edited project.
+    const activeLookaheadMs = Math.max(
+      useHwOutput() ? HARDWARE_LOOKAHEAD_MS : 0,
+      useSf2Output() ? SF2_LOOKAHEAD_MS : 0,
+      PLAYBACK_START_LEAD_MS
+    );
+    const safeLeadMs = activeLookaheadMs + 30;
+    const targetPerf = now + safeLeadMs;
+    let targetTick = currentTransportTick(targetPerf);
+
+    if (!state.loop) {
+      const projectLength = Math.max(
+        ticksPerBar(ppq),
+        Number(state.project.lengthTicks) || ticksPerBar(ppq)
+      );
+      if (targetTick >= projectLength) return false;
+      targetTick = Math.max(0, Math.min(projectLength - 1, targetTick));
+    } else {
       const range = loopRangeBounds();
       if (!range?.span) return false;
-      const phase = ((absoluteTick - range.start) % range.span + range.span) % range.span;
-      let remainingTicks = phase < 1 ? range.span : (range.span - phase);
-      targetTick = range.start;
-      targetPerf = now + ticksToMs(remainingTicks, tempo, ppq);
-
-      // If the hardware lookahead may already contain the next loop start,
-      // wait one more cycle instead of clearing/restarting the transport.
-      if (targetPerf - now <= safeLeadMs) {
-        targetPerf += ticksToMs(range.span, tempo, ppq);
-      }
-    } else {
-      const tpb = ticksPerBar(ppq);
-      targetTick = Math.ceil((absoluteTick + 1) / tpb) * tpb;
-      const projectLength = Math.max(tpb, Number(state.project.lengthTicks) || tpb);
-      if (targetTick >= projectLength) return false;
-      targetPerf = state.startPerf + ticksToMs(targetTick - state.startTick, tempo, ppq);
-      if (targetPerf - now <= safeLeadMs) {
-        targetTick += tpb;
-        if (targetTick >= projectLength) return false;
-        targetPerf += ticksToMs(tpb, tempo, ppq);
-      }
+      const absoluteAtHandoff = absoluteTransportTick(targetPerf);
+      const offset =
+        ((absoluteAtHandoff - range.start) % range.span + range.span) % range.span;
+      targetTick = range.start + offset;
     }
 
     state.pianoRollLiveEditPending = true;
@@ -13021,7 +13032,7 @@ body.timeline-ruler-zooming {
     setStatus(
       "Piano Roll · " + message + " · snap " + pianoRollSnapStatusLabel() +
       (wasPlaying
-        ? (state.loop ? " · LIVE EDIT · next loop pass" : " · LIVE EDIT · next bar")
+        ? " · LIVE EDIT · same pass when still ahead of output lookahead"
         : (ctx.fullTrack
           ? " · full project track edited · timeline keeps " + TIMELINE_RUNWAY_BARS + " empty bars ahead"
           : " · Project Clip is now an edited instance")),
