@@ -8972,9 +8972,14 @@ body.timeline-ruler-zooming {
   }
 
   function midiMessageForEvent(event) {
-    if (event.type === "on") return [0x90 | event.ch, event.note, event.velocity];
-    if (event.type === "off") return [0x80 | event.ch, event.note, 0];
-    return midiControlBytes(event, event.ch) || [];
+    const ch = Math.max(0, Math.min(15, Math.round(Number(event.ch) || 0)));
+    const note = Math.max(0, Math.min(127, Math.round(Number(event.note) || 0)));
+    if (event.type === "on") {
+      const velocity = Math.max(1, Math.min(127, Math.round(Number(event.velocity) || 100)));
+      return [0x90 | ch, note, velocity];
+    }
+    if (event.type === "off") return [0x80 | ch, note, 0];
+    return midiControlBytes(event, ch) || [];
   }
 
   function scheduleHardwareWindow(cursor, output, deadline, fromTick, length, tempo, ppq) {
