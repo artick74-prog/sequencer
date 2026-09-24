@@ -5,7 +5,7 @@
   "tempo": 112,
   "swing": 24,
   "masterTranspose": 7,
-  "lengthTicks": 172800,
+  "lengthTicks": 184320,
   "minimumLengthTicks": 153600,
   "hardware": {
     "output": "TD-3 USB (thru to XR20 DIN)",
@@ -58,8 +58,8 @@
     }
   ],
   "loopRange": {
-    "startBar": 1,
-    "endBar": 1
+    "startBar": 7,
+    "endBar": 8
   },
   "cloudProject": {
     "id": "acid-rock-1",
@@ -136,8 +136,8 @@
       "targetTrackId": "bass",
       "targetTrackName": "Bass A · Kick Lock Long",
       "startTick": 0,
-      "endTick": 172800,
-      "baseLengthTicks": 172800,
+      "endTick": 184320,
+      "baseLengthTicks": 184320,
       "repeatCount": 1,
       "noteCount": 394,
       "edited": true,
@@ -158,8 +158,8 @@
       "targetTrackId": "acid",
       "targetTrackName": "Acid",
       "startTick": 0,
-      "endTick": 172800,
-      "baseLengthTicks": 172800,
+      "endTick": 184320,
+      "baseLengthTicks": 184320,
       "repeatCount": 1,
       "noteCount": 1008,
       "edited": true,
@@ -180,8 +180,8 @@
       "targetTrackId": "guitar",
       "targetTrackName": "29 Overdriven Guitar",
       "startTick": 0,
-      "endTick": 172800,
-      "baseLengthTicks": 172800,
+      "endTick": 184320,
+      "baseLengthTicks": 184320,
       "repeatCount": 1,
       "noteCount": 744,
       "edited": true,
@@ -200,15 +200,15 @@
       "targetTrackId": "drums",
       "targetTrackName": "Drums",
       "startTick": 0,
-      "endTick": 172800,
-      "baseLengthTicks": 172800,
+      "endTick": 184320,
+      "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 1675,
+      "noteCount": 1676,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.552Z",
-      "editedAt": "2026-09-24T15:38:43.464Z",
+      "editedAt": "2026-09-24T16:10:51.294Z",
       "editReason": "piano-roll"
     }
   ],
@@ -1044,11 +1044,11 @@
         },
         {
           "tick": 14400,
-          "duration": 96,
-          "note": 36,
-          "velocity": 94,
+          "duration": 120,
+          "note": 37,
+          "velocity": 100,
           "clipId": "track-part:drums",
-          "drumPad": 1
+          "drumPad": 3
         },
         {
           "tick": 14400,
@@ -1067,12 +1067,12 @@
           "drumPad": 4
         },
         {
-          "tick": 14880,
-          "duration": 96,
-          "note": 36,
-          "velocity": 94,
+          "tick": 14770,
+          "duration": 120,
+          "note": 37,
+          "velocity": 100,
           "clipId": "track-part:drums",
-          "drumPad": 1
+          "drumPad": 3
         },
         {
           "tick": 14880,
@@ -1089,6 +1089,14 @@
           "velocity": 78,
           "clipId": "track-part:drums",
           "drumPad": 4
+        },
+        {
+          "tick": 15120,
+          "duration": 120,
+          "note": 37,
+          "velocity": 100,
+          "clipId": "track-part:drums",
+          "drumPad": 3
         },
         {
           "tick": 15120,
