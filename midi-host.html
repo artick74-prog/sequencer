@@ -7195,9 +7195,7 @@ body.timeline-ruler-zooming {
     const summary = material.map((row) => row.target.name).join(", ");
     if (!window.confirm(
       "Apply “" + (entry?.name || ideaAudition.idea.name || ideaSelectedId) + "” to loop " +
-      range.startBar + "–" + range.endBar + "?
-
-" +
+      range.startBar + "–" + range.endBar + "?\n\n" +
       (mode === "replace"
         ? "Matching project tracks will be replaced inside this loop: "
         : "Idea notes will be layered onto existing notes: ") +
