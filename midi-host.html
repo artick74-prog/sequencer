@@ -7142,10 +7142,16 @@ body.timeline-ruler-zooming {
     }
 
     if (choice === "sf2") {
-      const pitchTrack = replaceTarget || sourceTrack || { role:"gm", transposeOctaves:0 };
+      const previewChannel = Math.max(1, Math.min(16, Number(audition?.sf2Channel) || ideaPreviewSf2Channel()));
+      const pitchTrack = {
+        channel:previewChannel,
+        role:"gm",
+        name:"Idea Preview GM",
+        transposeOctaves:Number(replaceTarget?.transposeOctaves ?? sourceTrack?.transposeOctaves) || 0,
+      };
       return {
         route:"sf2",
-        channel:Math.max(1, Math.min(16, Number(audition?.sf2Channel) || ideaPreviewSf2Channel())),
+        channel:previewChannel,
         pitchTrack,
         audibilityTrack:replaceTarget || null,
         percussion:false,
@@ -7356,8 +7362,8 @@ body.timeline-ruler-zooming {
 
   async function selectIdeaEntry(entry) {
     if (!state.project || !entry?.path) return false;
-    const token = ++ideaLoadToken;
     if (ideaAudition?.active) stopIdeaAudition({ restartProject:false });
+    const token = ++ideaLoadToken;
     ideaSelectedId = entry.id;
     ideaSelectedData = null;
     renderIdeaBrowser();
