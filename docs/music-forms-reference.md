@@ -312,6 +312,141 @@ Climax выплачивает накопленное напряжение.
 
 ---
 
+## 12. Жанровые карточки
+
+Ниже — не «правильные формы жанра», а рабочие модели, от которых удобно отталкиваться при аранжировке.
+
+### Pop
+
+**Базовая логика:** песня держится на контрасте Verse → Chorus. Часто между ними есть Pre-Chorus, а после второго припева — Bridge.
+
+**Рабочая схема:**  
+Intro 4–8 → Verse 8–16 → Pre 4–8 → Chorus 8–16 → Verse → Pre → Chorus → Bridge 8 → Final Chorus → Outro.
+
+**Что двигает форму:** текст, мелодический hook, усиление плотности к припеву.
+
+**Типичные переходы:** 1-тактовый fill, pickup, stop перед Chorus, riser, короткое снятие kick.
+
+**Полезное правило:** финальный Chorus можно расширить на 4–8 тактов или сделать второй его половине новую вариацию.
+
+Источник: Berklee рассматривает Verse/Chorus, Verse/Pre-Chorus/Chorus и Bridge как базовые песенные конструкции; Bridge обычно появляется после второго Chorus и создаёт контраст.
+
+### Rock
+
+**Базовая логика:** Verse/Chorus остаётся основной рамкой, но важнее, чем в чистом pop, становится инструментальный контраст: riff, solo, instrumental bridge, stop-time.
+
+**Рабочая схема:**  
+Intro/Riff 4–8 → Verse 8–16 → Chorus 8–16 → Verse → Chorus → Solo или Bridge 8–16 → Final Chorus → Outro/Coda.
+
+**Что двигает форму:** смена риффа, динамики, плотности гитар и барабанной подачи.
+
+**Типичные переходы:** drum fill 1–2 такта, crash, stop, guitar pickup, half-time section.
+
+**Необязательно:** делать Chorus самым громким местом; иногда кульминация — Solo, Bridge или Coda.
+
+### House / Tech House
+
+**Базовая логика:** DJ-friendly intro → постепенное добавление слоёв → breakdown → drop/full groove → новые восьмитактовые комбинации → outro.
+
+**Рабочая схема:**  
+Intro 16–32 → Groove 16 → Breakdown 8–16 → Drop 16–32 → Variation 16 → Break/Build 8–16 → Drop 2 → Outro 16–32.
+
+**Основной кирпич:** 8 тактов. В tech house очень естественно менять один-два элемента каждые 8 тактов.
+
+**Что двигает форму:** включение/выключение kick, bass, percussion, vocal hook, filter automation.
+
+**Типичные переходы:** snare roll, reverse cymbal, 1-bar fill, kick cut, filter sweep.
+
+Native Instruments описывает tech house через DJ-friendly intro, breakdown и drop, а дальнейшее развитие — через смену набора элементов примерно каждые 8 тактов.
+
+### Techno
+
+**Базовая логика:** развитие слоёв и энергии важнее Verse/Chorus.
+
+**Рабочая схема:**  
+Intro 16–32 → Main 16–32 → Breakdown 16–32 → Main 2 / Peak 16–32 → Outro 16–32.
+
+**Что двигает форму:** постепенное добавление слоёв, появление ключевого kick/hat, фильтрация, texture, automation.
+
+**Breakdown:** обычно не обязан приносить новую мелодию; достаточно убрать ключевые ударные и дать контрастную текстуру.
+
+**Типичные переходы:** 8- или 16-тактовая эволюция, короткий fill в конце блока, noise/reverse FX.
+
+В учебном примере Native Instruments используются 16-тактовые Intro, Main и Breakdown; для полного трека они прямо предлагают удваивать длины и добавлять следующую основную секцию и Outro.
+
+### Trance
+
+**Базовая логика:** длинное накопление → эмоциональный breakdown → возвращение ритмической энергии.
+
+**Рабочая схема:**  
+DJ Intro 16–32 → Build 16–32 → Main 16–32 → Breakdown 16–32 → Build 8–16 → Main/Peak 16–32 → Outro.
+
+**Что двигает форму:** постепенное введение riffs, pads, arpeggios, percussion и автоматизации.
+
+**Важная особенность:** trance не всегда строится вокруг резкого EDM-drop. Часто энергия растёт длинной дугой, а после build композиция разрешается в breakdown или постепенно возвращает полный groove.
+
+**Типичные переходы:** long riser, snare build, filter opening, reverse cymbal, reverb tail, kick removal.
+
+Native Instruments отдельно отмечает длинные builds, как минимум один instrumental breakdown без percussion и часто две стадии build.
+
+### Drum'n'Bass / Breaks
+
+**Базовая логика:** Intro → A/B sections → Break/Breakdown → возвращение beats+bass → Outro.
+
+**Рабочая схема:**  
+Intro 16–32 → Breakdown 16 → Drop/A 16 → B 16 → Variation 16 → Break 8–16 → A2/B2 16–32 → Outro 16.
+
+**Основной кирпич:** часто 8 или 16 тактов.
+
+**Что двигает форму:** плотность breakbeat, появление/исчезновение bass, замена break-pattern, новые percussion layers.
+
+**Терминология:** для инструментального DnB полезнее A / B / Break, чем Verse / Chorus.
+
+В примере Native Instruments DnB breakdown начинается на 33-м такте, beats+bass входят на 49-м, а новые элементы добавляются 16-тактовыми блоками. Ableton в разборе Photek подчёркивает, что форма DnB часто определяется именно текстурной плотностью и кратностью 8 тактам.
+
+### Acid House
+
+**Базовая логика:** groove + постепенная эволюция 303-партии.
+
+**Рабочая схема:**  
+Intro 8–16 → Groove 8–16 → Breakdown 8 → Acid entrance → Drop/Full groove 16–32 → Variations → Outro.
+
+**Что двигает форму:** не столько новые ноты, сколько изменение cutoff, resonance, accent, slides и плотности ударных.
+
+**Типичный приём:** представить acid-лид во время breakdown, а затем дать полный rhythm section на следующем крупном блоке.
+
+В примере Native Instruments breakdown начинается на 17-м такте, acid lead вводится там, а полный drop приходит на 25-м.
+
+### Dubstep
+
+**Базовая логика:** Intro → Breakdown/Setup → Drop → 8-тактовые вариации → Outro.
+
+**Рабочая схема:**  
+Intro 8 + 8 → Breakdown 8 → Drop 16–32 → Variation 8/16 → second movement → Outro 8–16.
+
+**Что двигает форму:** смена bass phrases, паузы, fill, разрежение перед drop, FX.
+
+**Полезный приём:** после первого Drop менять один заметный слой каждые 8 тактов, чтобы heavy section не превращалась в один длинный loop.
+
+В учебном аранжировочном примере Native Instruments первые два блока идут по 8 тактов, затем breakdown и drop, после чего arrangement обновляется восьмитактовыми сменами.
+
+---
+
+## 13. Быстрая сравнительная таблица
+
+| Жанр | Главный принцип формы | Типичный кирпич | Что обычно создаёт контраст |
+|---|---|---:|---|
+| Pop | Verse ↔ Chorus | 4–16 | melody, lyric, density |
+| Rock | Verse/Chorus + riff/solo | 4–16 | riff, dynamics, instrumentation |
+| House / Tech House | layers + DJ flow | 8–16 | kick/bass/percussion on/off |
+| Techno | evolution of layers | 8–32 | texture, automation, density |
+| Trance | long tension arcs | 8–32 | build, breakdown, harmonic lift |
+| DnB / Breaks | texture + beats/bass | 8–16 | break pattern, bass, density |
+| Acid House | evolving 303 | 8–16 | cutoff/resonance + drum density |
+| Dubstep | setup → drop → variation | 8–16 | bass phrase, silence, fills |
+
+---
+
 ## Источники для дальнейшего расширения
 
 - Music Theory for the 21st-Century Classroom — Form in Popular Music:  
@@ -326,10 +461,24 @@ Climax выплачивает накопленное напряжение.
   https://online.berklee.edu/takenote/writing-bridges-for-your-songs-can-be-much-easier/
 - Berklee Online — Writing Hit Songs syllabus:  
   https://online.berklee.edu/courses/songwriting-writing-hit-songs
+- Native Instruments — House music 101:  
+  https://blog.native-instruments.com/house-music-101/
+- Native Instruments — Tech House:  
+  https://blog.native-instruments.com/tech-house/
+- Native Instruments — How to make Techno:  
+  https://blog.native-instruments.com/how-to-make-techno/
+- Native Instruments — Trance music:  
+  https://blog.native-instruments.com/trance-music/
+- Native Instruments — Drum & Bass:  
+  https://blog.native-instruments.com/drum-and-bass/
+- Native Instruments — Acid House:  
+  https://blog.native-instruments.com/acid-house/
+- Native Instruments — Dubstep arrangement:  
+  https://blog.native-instruments.com/how-to-make-dubstep/
 
 ## Что добавить в следующих версиях
 
-- отдельные карточки жанров: pop, rock, punk, techno, house, trance, breaks, DnB, dub, trip-hop;
+- расширить жанровые карточки: punk, dub, trip-hop, electro, synthpop, jungle, Goa/psytrance;
 - реальные разборы 20–30 известных треков по тактам;
 - словарь переходов;
 - каталог вариантов breakdown/build/drop;
