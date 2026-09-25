@@ -33,6 +33,10 @@
       "text": "Development A · Full Main Hook · 8 bars"
     },
     {
+      "tick": 57600,
+      "text": "Transition · Main Hook → Verse · 2 bars"
+    },
+    {
       "tick": 61440,
       "text": "Verse A1 · sparse acid · 8 bars"
     },
@@ -188,8 +192,8 @@
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.551Z",
-      "editedAt": "2026-09-25T01:09:53.792Z",
-      "editReason": "ai-progressive-hook-reveal-intro"
+      "editedAt": "2026-09-25T01:18:27.901Z",
+      "editReason": "ai-smooth-bars-31-32-into-verse"
     },
     {
       "id": "project-track-part",
@@ -205,13 +209,13 @@
       "endTick": 322560,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 1277,
+      "noteCount": 1267,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.551Z",
-      "editedAt": "2026-09-25T01:09:53.792Z",
-      "editReason": "ai-progressive-hook-reveal-intro"
+      "editedAt": "2026-09-25T01:18:27.905Z",
+      "editReason": "ai-smooth-bars-31-32-into-verse"
     },
     {
       "id": "project-track-part",
@@ -232,8 +236,8 @@
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.551Z",
-      "editedAt": "2026-09-25T01:09:53.792Z",
-      "editReason": "ai-progressive-hook-reveal-intro"
+      "editedAt": "2026-09-25T01:18:27.905Z",
+      "editReason": "ai-smooth-bars-31-32-into-verse"
     },
     {
       "id": "project-track-part",
@@ -249,13 +253,13 @@
       "endTick": 322560,
       "baseLengthTicks": 184320,
       "repeatCount": 1,
-      "noteCount": 3428,
+      "noteCount": 3425,
       "edited": true,
       "nativeTrackPart": true,
       "hiddenOnTimeline": true,
       "insertedAt": "2026-09-23T21:12:18.552Z",
-      "editedAt": "2026-09-25T01:09:53.792Z",
-      "editReason": "ai-progressive-hook-reveal-intro"
+      "editedAt": "2026-09-25T01:18:27.905Z",
+      "editReason": "ai-smooth-bars-31-32-into-verse"
     }
   ],
   "tracks": [
@@ -4523,23 +4527,9 @@
         },
         {
           "tick": 61200,
-          "duration": 96,
-          "note": 36,
-          "velocity": 80,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 61200,
           "duration": 65,
           "note": 38,
           "velocity": 74,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 61200,
-          "duration": 78,
-          "note": 44,
-          "velocity": 71,
           "clipId": "track-part:drums"
         },
         {
@@ -4547,13 +4537,6 @@
           "duration": 65,
           "note": 38,
           "velocity": 103,
-          "clipId": "track-part:drums"
-        },
-        {
-          "tick": 61330,
-          "duration": 68,
-          "note": 42,
-          "velocity": 49,
           "clipId": "track-part:drums"
         },
         {
@@ -30548,196 +30531,126 @@
           "tick": 57600,
           "duration": 67,
           "note": 48,
-          "velocity": 127,
+          "velocity": 104,
           "clipId": "track-part:acid"
         },
         {
           "tick": 57730,
           "duration": 64,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 57840,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
+          "velocity": 104,
           "clipId": "track-part:acid"
         },
         {
           "tick": 57970,
           "duration": 72,
           "note": 36,
-          "velocity": 127,
+          "velocity": 104,
           "clipId": "track-part:acid"
         },
         {
           "tick": 58080,
           "duration": 66,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 58210,
-          "duration": 186,
-          "note": 24,
-          "velocity": 127,
+          "velocity": 52,
           "clipId": "track-part:acid"
         },
         {
           "tick": 58450,
           "duration": 67,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 58560,
-          "duration": 71,
-          "note": 48,
-          "velocity": 64,
+          "velocity": 104,
           "clipId": "track-part:acid"
         },
         {
           "tick": 58690,
           "duration": 125,
           "note": 36,
-          "velocity": 127,
+          "velocity": 104,
           "clipId": "track-part:acid"
         },
         {
           "tick": 58801,
           "duration": 65,
           "note": 24,
-          "velocity": 127,
+          "velocity": 104,
           "clipId": "track-part:acid"
         },
         {
           "tick": 58930,
           "duration": 185,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 59159,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
+          "velocity": 104,
           "clipId": "track-part:acid"
         },
         {
           "tick": 59280,
           "duration": 135,
           "note": 58,
-          "velocity": 64,
+          "velocity": 52,
           "clipId": "track-part:acid"
         },
         {
           "tick": 59410,
           "duration": 67,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 59520,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
+          "velocity": 52,
           "clipId": "track-part:acid"
         },
         {
           "tick": 59650,
-          "duration": 64,
+          "duration": 76,
           "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 59760,
-          "duration": 67,
-          "note": 36,
-          "velocity": 127,
+          "velocity": 41,
           "clipId": "track-part:acid"
         },
         {
           "tick": 59890,
           "duration": 72,
           "note": 36,
-          "velocity": 127,
+          "velocity": 38,
           "clipId": "track-part:acid"
         },
         {
           "tick": 60000,
-          "duration": 66,
+          "duration": 82,
           "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 60130,
-          "duration": 186,
-          "note": 24,
-          "velocity": 127,
+          "velocity": 46,
           "clipId": "track-part:acid"
         },
         {
           "tick": 60370,
-          "duration": 67,
-          "note": 48,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 60480,
-          "duration": 71,
-          "note": 48,
-          "velocity": 64,
+          "duration": 74,
+          "note": 36,
+          "velocity": 41,
           "clipId": "track-part:acid"
         },
         {
           "tick": 60610,
-          "duration": 125,
-          "note": 36,
-          "velocity": 127,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 60721,
-          "duration": 65,
-          "note": 24,
-          "velocity": 127,
+          "duration": 80,
+          "note": 48,
+          "velocity": 43,
           "clipId": "track-part:acid"
         },
         {
           "tick": 60850,
-          "duration": 185,
-          "note": 48,
-          "velocity": 127,
+          "duration": 88,
+          "note": 51,
+          "velocity": 106,
           "clipId": "track-part:acid"
         },
         {
           "tick": 61079,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
-          "clipId": "track-part:acid"
-        },
-        {
-          "tick": 61200,
-          "duration": 135,
-          "note": 58,
-          "velocity": 64,
+          "duration": 72,
+          "note": 36,
+          "velocity": 38,
           "clipId": "track-part:acid"
         },
         {
           "tick": 61330,
-          "duration": 67,
-          "note": 48,
-          "velocity": 64,
+          "duration": 84,
+          "note": 46,
+          "velocity": 49,
           "clipId": "track-part:acid"
         },
         {
